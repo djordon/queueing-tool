@@ -53,18 +53,6 @@ class Queue_network :
             self.set_graph(ab)
         elif isinstance(ab, gt.Graph) :
             self.set_graph(ab)
-        elif isinstance(ab, gt.Graph) and False :
-            self.g      = ab
-            self.nV     = ab.num_vertices()
-            self.nE     = ab.num_edges()
-            self.nAgents= [0 for k in range(self.nE)]
-            e_props = set()
-            for key in self.g.edge_properties.keys() :
-                e_props = e_props.union( [key] )
-            if 'queues' not in e_props :
-                for e in self.g.edges() :
-                    qissn   = (int(e.source()), int(e.target()), self.g.edge_index[e])
-                    self.g.ep['queues'][e]  = qs.Queue_server(2, issn=qissn, net_size=self.nE)
         elif ab == 0 :
             pass
 
