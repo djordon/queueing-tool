@@ -14,7 +14,7 @@ from queue_agents           import Agent, Smart_Agent, Learning_Agent, Random_Ag
 
 class Queue_network :
 
-    def __init__(self, ab=None, graph_type="normal", p_dest=None, p_garage=None, seed=None) :
+    def __init__(self, g=None, nVertices=250, pDest=None, pGarage=None, seed=None, graph_type="normal") :
 
         self.t          = 0
         self.to_animate = False
@@ -39,21 +39,13 @@ class Queue_network :
             np.random.seed(seed)
             gt.seed_rng(seed)
 
-        if ab == None :
-            if graph_type == "periodic" :
-                self.create_graph2(p_dest=p_dest, p_garage=p_garage)
-            else :
-                self.create_graph(p=p_dest)
-        elif isinstance(ab, list) :
-            if graph_type == "periodic" :
-                self.create_graph2(ab, p_dest, p_garage)
-            else :
-                self.create_graph(ab, p_dest)
-        elif isinstance(ab, str) :
-            self.set_graph(ab)
-        elif isinstance(ab, gt.Graph) :
-            self.set_graph(ab)
-        elif ab == 0 :
+        if g == None :
+            self.create_graph(nVertices, pDest, pGarage)
+        elif isinstance(g, str) :
+            self.set_graph(g)
+        elif isinstance(g, gt.Graph) :
+            self.set_graph(g)
+        else :
             pass
 
 
@@ -140,8 +132,8 @@ class Queue_network :
         self.edges      = [e for e in self.g.edges()]
 
         HAS_LENGTH  = 'edge_length' in e_props
-        HAS_CAP     = 'cap' in v_props
         HAS_LANES   = 'lanes' in v_props
+        HAS_CAP     = 'cap' in v_props
 
         for e in self.g.edges() :
             qissn   = (int(e.source()), int(e.target()), self.g.edge_index[e])
@@ -215,7 +207,6 @@ class Queue_network :
         self.g.vp['vertex_pen_width']   = vertex_pen_width
         self.g.vp['vertex_size']        = vertex_size
 
-            
         self.g.ep['edge_t_size']        = edge_t_size
         self.g.ep['edge_t_distance']    = edge_t_distance
         self.g.ep['edge_t_parallel']    = edge_t_parallel
@@ -233,133 +224,109 @@ class Queue_network :
         self.g.gp['dest_count']         = dest_count
         self.g.gp['node_index']         = node_index
 
-        self.queue_heap = [ self.g.ep['queues'][e] for e in self.g.edges()]
+        self.queue_heap = [self.g.ep['queues'][e] for e in self.g.edges()]
         heapify(self.queue_heap)
 
 
 
-    def create_graph(self, ab=None,  p=None) :
-        if p == None :
-            p = 0.45            
-        if ab == None :
-            ab  = [np.random.randint(2, 5), np.random.randint(2, 5)]
+    def create_graph(self, nVertices=250, pDest=None, pGarage=None) :
 
-        g   = gt.lattice(ab)
+        points      = np.random.random( (nVertices, 2) ) * 2
+        radii       = [(4+k)/200 for k in range(560)]
 
-        destination = g.new_vertex_property("bool")
-        garage      = g.new_vertex_property("bool")
-        tmp_set     = set([2, 3])
+        for r in radii :
+            g, pos  = gt.geometric_graph( points, r, [(0,2), (0,2)])
+            comp, a = gt.label_components(g)
+            if max(comp.a) == 0 :
+                break
 
-        g2  = g.copy()
-        for v in g2.vertices() :
-            if np.random.uniform() < p:
-                y       = g.vertex( int(v) )
-                v_iter  = g.add_vertex( int(np.random.multinomial(1, [0, 0.35, 0.55, 0.10]).argmax()) )
-                destination[y]  = True
-                if isinstance( v_iter, gt.Vertex) :
-                    garage[v_iter]   = True
-                    g.add_edge(y, v_iter)
-                else :
-                    for z in v_iter :
-                        garage[z]   = True
-                        g.add_edge(y, z)
-
-        g2  = g.copy()
-        for v1 in g2.vertices() :
-            if destination[v1] :
-                for v2 in v1.all_neighbours() :
-                    if destination[v2] :
-                        for v3 in v2.all_neighbours() :
-                            if garage[v3] :
-                                if np.random.uniform() < 0.6 :
-                                    g.add_edge(v1, v3)
-
-
-        to_remove   = g.new_vertex_property("bool")
+        pos         = gt.sfdp_layout(g, epsilon=1e-2, cooling_step=0.95)
+        pos_array   = array( [pos[v] for v in g.vertices()] )
+        pos_array   = pos_array / (100*(np.max(pos_array,0) - np.min(pos_array,0)))
         for v in g.vertices() :
-            if v.out_degree() in tmp_set and not destination[v] and not garage[v] :
-                to_remove[v] = True
-                for y in v.all_neighbours() :
-                    if destination[y] :
-                        to_remove[v] = False
+            pos[v] = pos_array[int(v),:]
 
-        g.set_vertex_filter(to_remove, inverted=True)        
-        g.purge_vertices(in_place=False)
+        g.vp['pos'] = pos
+
+        g = self.add_properties(g, pDest, pGarage)
+        self.set_graph(g)
+
+
+
+    def add_properties(self, g, pDest=None, pGarage=None) :
+        if pDest == None :
+            pDest   = 0.1
+        if pGarage == None :
+            pGarage = 1
+        pDest   = pDest * 100
+
+        def calculate_distance( latlon1, latlon2 ) :
+            lat1, lon1  = latlon1
+            lat2, lon2  = latlon2
+            R       = 6371          # radius of the earth in kilometers
+            dlon    = lon2 - lon1
+            dlat    = lat2 - lat1
+            a       = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * (np.sin(dlon/2))**2
+            c       = 2 * np.pi * R * np.arctan2( np.sqrt(a), np.sqrt(1-a) ) / 180
+            return c
+
+        pagerank    = gt.pagerank(g)
+        tmp         = np.array(pagerank.a)
+        tmp.sort()
+        nDests      = int( np.ceil(g.num_vertices()/pDest) )
+        dests       = np.where( pagerank.a >= tmp[-nDests] )[0]
+
+        dest_pos    = array([g.vp['pos'][g.vertex(k)] for k in dests])
+        nGarages    = int(pGarage * np.size(dests))
+        min_g_dist  = ones(nGarages) * infty
+        ind_g_dist  = ones(nGarages, int)
+
+        r, theta    = np.random.random(nGarages) / 500, np.random.random(nGarages) * 360
+        xy_pos      = array([r * np.cos(theta), r * np.sin(theta)]).transpose()
+        g_pos       = xy_pos + dest_pos[ np.array( np.mod(np.arange(nGarages), nDests), int) ]
+
+        for v in g.vertices() :
+            if int(v) not in dests :
+                tmp = array([calculate_distance( g.vp['pos'][v], g_pos[k,:] ) for k in range(nGarages)])
+                min_g_dist = np.min( (tmp, min_g_dist), 0 )
+                ind_g_dist[min_g_dist == tmp] = int(v)
+
+        ind_g_dist  = np.unique(ind_g_dist)
+        garas       = ind_g_dist[:min( (nGarages,len(ind_g_dist)) )]
+
         g.set_directed(True)
 
         g2  = g.copy()
         for e in g2.edges() :
-            target1 = int(e.target())
-            source1 = int(e.source())
-            g.add_edge(source=target1, target=source1)
+            e = g.add_edge( source=int(e.target()), target=int(e.source()) )
 
-        for v in g.vertices() :
-            if garage[v] :
-                g.add_edge(source=int(v), target=int(v))
-
-        egarage = g.new_edge_property("bool")
-        for e in g.edges() :
-            if e.target() == e.source() :
-                egarage[e]  = True
-            else :
-                egarage[e]  = False
-
-        g.vp['destination'] = destination
-        g.vp['garage']      = garage
-        g.ep['garage']      = egarage
-
-        if sum(destination.a) < 2 :
-            self.create_graph(ab=ab, p=p)
-        else :
-            self.set_graph(g)
-
-
-
-    def create_graph2(self, ab=None,  p_dest=None, p_garage=None) :
-        if p_dest == None :
-            p_dest  = 0.2
-        if p_garage == None :
-            p_garage = 0.55
-        if ab == None :
-            ab  = [np.random.randint(4, 7), np.random.randint(4, 7)]
-
-        g           = gt.lattice(ab, periodic=True)
-        g.set_directed(True)
 
         destination = g.new_vertex_property("bool")
         garage      = g.new_vertex_property("bool")
         egarage     = g.new_edge_property("bool")
+        edge_length = g.new_edge_property('double')
 
         for v in g.vertices() :
-            if np.random.uniform() < p_dest :
+            if int(v) in dests :
                 destination[v]  = True
-                for w in v.all_neighbours() :
-                    if np.random.uniform() < p_garage and not destination[w] :
-                        garage[w]   = True
+            if int(v) in garas :
+                garage[v]       = True
 
-        g2  = g.copy()
-        for e in g2.edges() :
-            if np.random.uniform() < 10.75 :
-                g.add_edge( source=int(e.target()), target=int(e.source()) )
+        for e in g.edges() :
+            latlon1         = g.vp['pos'][e.target()]
+            latlon2         = g.vp['pos'][e.source()]
+            edge_length[e]  = np.round( calculate_distance( latlon1, latlon2 ), 3)
 
         for v in g.vertices() :
             if garage[v] :
-                g.add_edge(source=v, target=v)
-
-        for e in g.edges() :
-            if e.target() == e.source() :
+                e           = g.add_edge(source=v, target=v)
                 egarage[e]  = True
-            else :
-                egarage[e]  = False
 
         g.vp['destination'] = destination
         g.vp['garage']      = garage
         g.ep['garage']      = egarage
 
-        if sum(destination.a) < 2 :
-            self.create_graph2(ab, p_dest, p_garage)
-        else :
-            self.set_graph(g)
+        return g
 
 
     def __repr__(self) :
@@ -542,18 +509,18 @@ class Queue_network :
             if self.g.vp['destination'][v] :
                 a       = list(self.colors['vertex_destination'])
                 a[2]   += (1-a[2]) * tmp
-                self.g.vp['vertex_color'][v]    = a
             elif self.g.vp['garage'][v] :
                 a       = list(self.colors['vertex_garage'])
                 a[1]   += (1-a[1]) * tmp
-                self.g.vp['vertex_color'][v]    = a
             else :
-                self.g.vp['vertex_color'][v]    = [tmp, tmp, tmp, 0.85]
-            self.g.vp['halo_color'][v]          = self.colors['halo_arrival']
-            self.g.vp['halo'][v]                = True
-            self.g.ep['state'][e]               = self.g.ep['queues'][e].nSystem
+                a       = [tmp, tmp, tmp, 0.85]
+
+            self.g.vp['vertex_color'][v]    = a
+            self.g.vp['halo_color'][v]      = self.colors['halo_arrival']
+            self.g.vp['halo'][v]            = True
+            self.g.ep['state'][e]           = self.g.ep['queues'][e].nSystem
             if self.g.ep['garage'][e] :
-                self.g.vp['state'][v]           = self.g.ep['queues'][e].nSystem
+                self.g.vp['state'][v]       = self.g.ep['queues'][e].nSystem
 
         elif ad == 'departure' :
             cap = self.g.ep['queues'][e].nServers
@@ -562,19 +529,19 @@ class Queue_network :
             if self.g.vp['destination'][v] :
                 a       = list(self.colors['vertex_destination'])
                 a[2]   += (1-a[2]) * tmp
-                self.g.vp['vertex_color'][v]    = a
             elif self.g.vp['garage'][v] :
                 a       = list(self.colors['vertex_garage'])
                 a[1]   += (1-a[1]) * tmp
-                self.g.vp['vertex_color'][v]    = a
             else :
-                self.g.vp['vertex_color'][v]    = [tmp, tmp, tmp, 0.85]
-            self.g.ep['state'][e]               = self.g.ep['queues'][e].nSystem
-            self.g.ep['edge_color'][e]          = self.colors['edge_departure']
-            self.g.vp['halo_color'][v]          = self.colors['halo_departure']
-            self.g.vp['halo'][v]                = True
+                a       = [tmp, tmp, tmp, 0.85]
+
+            self.g.vp['vertex_color'][v]    = a
+            self.g.ep['state'][e]           = self.g.ep['queues'][e].nSystem
+            self.g.ep['edge_color'][e]      = self.colors['edge_departure']
+            self.g.vp['halo_color'][v]      = self.colors['halo_departure']
+            self.g.vp['halo'][v]            = True
             if self.g.ep['garage'][e] :
-                self.g.vp['state'][v]           = self.g.ep['queues'][e].nSystem
+                self.g.vp['state'][v]       = self.g.ep['queues'][e].nSystem
 
 
     def next_time(self) :
@@ -599,8 +566,7 @@ class Queue_network :
             if isinstance(self.g.ep['queues'][e0].departures[0], qs.Learning_Agent) :
                 return "STOP"
 
-        if self.t < t :
-            self.t  = t
+        self.t  = t
 
         if event_type == "departure" :
             agent           = self.g.ep['queues'][e0].next_event()

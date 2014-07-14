@@ -51,11 +51,11 @@ class Queue_server :
         self.arrivals   = []
         self.departures = []
 
-        infty_agent     = Agent(0, 1)
-        infty_agent.time = infty
+        inftyAgent      = Agent(0, 1)
+        inftyAgent.time = infty
 
-        heappush(self.arrivals, infty_agent)
-        heappush(self.departures, infty_agent )
+        heappush(self.arrivals, inftyAgent)
+        heappush(self.departures, inftyAgent )
 
         self.xArrival   = xArrival
         self.xDepart    = xDepart
@@ -216,11 +216,11 @@ class Queue_server :
         self.arrivals   = []
         self.departures = []
 
-        infty_agent     = Agent(0, 1)
-        infty_agent.time = infty
+        inftyAgent      = Agent(0, 1)
+        inftyAgent.time = infty
 
-        heappush(self.arrivals, infty_agent)
-        heappush(self.departures, infty_agent )
+        heappush(self.arrivals, inftyAgent)
+        heappush(self.departures, inftyAgent )
 
         self.networking(self.net_data.shape[0])
 
