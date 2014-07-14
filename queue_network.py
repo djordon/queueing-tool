@@ -18,6 +18,7 @@ class Queue_network :
 
         self.t          = 0
         self.to_animate = False
+        self.undirected = False
         self.nAgents    = [0]
         self.agent_cap  = 100
         self.colors     =  {'edge_departure'    : [0, 0, 0, 1], 
@@ -161,38 +162,45 @@ class Queue_network :
 
 
         if 'shortest_path' not in v_props :
-            shortest_path       = self.g.new_vertex_property("vector<int>")
-            node_index[self.g]  = dict({'garage' : [], 'destination' : [], 'road' : []})
-            tmp                 = [0 for k in range(self.nV)]
+            shortest_path   = self.g.new_vertex_property("vector<int>")
+            spath           = np.ones( (self.nV, self.nV), int) * -1
 
-            for k in range(self.nV) :
-                tmp[k]  = 0
-                vk      = self.g.vertex(k)
-                if self.g.vp['garage'].a[k] :
-                    node_index[self.g]['garage'].append(k)
-                elif self.g.vp['destination'].a[k] :
-                    node_index[self.g]['destination'].append(k)
-                else :
-                    node_index[self.g]['road'].append(k)
-                for j in range(self.nV) :
-                    if k == j : 
-                        continue
-                    tmp[j]  = int(gt.shortest_path(self.g, vk, 
-                                  self.g.vertex(j), weights=edge_length)[0][1])
-                shortest_path[vk] = tmp
-            self.g.vp['shortest_path']  = shortest_path
-        else :
-            node_dict   = {'garage' : [], 'destination' : [], 'road' : [], 'dest_road' : []}
             for v in self.g.vertices() :
-                if self.g.vp['garage'][v] :
-                    node_dict['garage'].append( int(v) )
-                elif self.g.vp['destination'][v] :
-                    node_dict['destination'].append( int(v) )
-                else :
-                    node_dict['road'].append( int(v) )
-            node_dict['dest_road'] = copy.copy( node_dict['destination'] )
-            node_dict['dest_road'].extend( node_dict['road'] )
-            node_index[self.g]  = node_dict
+                for u in self.g.vertices() :
+                    if u == v or spath[int(v), int(u)] != -1 :
+                        continue
+
+                    path    = gt.shortest_path(self.g, v, u, weights=edge_length)[0]
+                    path    = [int(z) for z in path]
+                    spath[path[:-1], path[-1]] = path[1:]
+
+                    for j in range(1,len(path)-1) :
+                        pa  = path[:-j]
+                        spath[pa[:-1], pa[-1]] = pa[1:]
+
+                    if self.undirected :
+                        path.reverse()
+                        spath[path[:-1], path[-1]] = path[1:]
+
+                        for j in range(1,len(path)-1) :
+                            pa  = path[:-j]
+                            spath[pa[:-1], pa[-1]] = pa[1:]
+
+                shortest_path[v] = spath[path[0], :]
+
+            self.g.vp['shortest_path']  = shortest_path
+
+        node_dict   = {'garage' : [], 'destination' : [], 'road' : [], 'dest_road' : []}
+        for v in self.g.vertices() :
+            if self.g.vp['garage'][v] :
+                node_dict['garage'].append( int(v) )
+            elif self.g.vp['destination'][v] :
+                node_dict['destination'].append( int(v) )
+            else :
+                node_dict['road'].append( int(v) )
+        node_dict['dest_road'] = copy.copy( node_dict['destination'] )
+        node_dict['dest_road'].extend( node_dict['road'] )
+        node_index[self.g]  = node_dict
 
 
         self.g.vp['vertex_t_color']     = vertex_t_color
@@ -246,7 +254,8 @@ class Queue_network :
         for v in g.vertices() :
             pos[v] = pos_array[int(v),:]
 
-        g.vp['pos'] = pos
+        g.vp['pos']     = pos
+        self.undirected = True
 
         g = self.add_properties(g, pDest, pGarage)
         self.set_graph(g)
@@ -453,7 +462,7 @@ class Queue_network :
 
     def draw(self, file_name=None) :
         if file_name == None :
-            gt.graph_draw(self.g, self.g.vp['pos'], geometry=(750, 750),
+            ans = gt.graph_draw(self.g, self.g.vp['pos'], geometry=(750, 750),
                         bg_color=self.colors['bg_color'],
                         edge_color=self.g.ep['edge_color'],
                         edge_control_points=self.g.ep['control'],
@@ -474,7 +483,7 @@ class Queue_network :
                         vertex_font_size=self.g.vp['vertex_t_size'],
                         vertex_size=self.g.vp['vertex_size'])
         else :
-            gt.graph_draw(self.g, self.g.vp['pos'], geometry=(750, 750), output=file_name,
+            ans = gt.graph_draw(self.g, self.g.vp['pos'], geometry=(750, 750), output=file_name,
                         bg_color=self.colors['bg_color'],
                         edge_color=self.g.ep['edge_color'],
                         edge_control_points=self.g.ep['control'],
