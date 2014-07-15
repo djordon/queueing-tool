@@ -1,6 +1,4 @@
 import numpy                as np
-import matplotlib           as mpl
-import matplotlib.pyplot    as plt
 import graph_tool.all       as gt
 import queue_server         as qs
 import time
