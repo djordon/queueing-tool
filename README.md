@@ -1,8 +1,8 @@
-Queueing-network:
+Queueing-network
 ================
 
-A python module for simulation of queueing networks
----
+### A python module for simulating a network of queues
+
 
 This is a python class for a network of queues. It is written for python3.* and uses [`graph_tool`](http://graph-tool.skewed.de/) (and [`numpy`](http://www.numpy.org/) of course).
 
