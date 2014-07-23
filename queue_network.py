@@ -6,8 +6,7 @@ import copy
 
 from numpy                  import ones, zeros, array, arange, logical_and, infty
 from heapq                  import heappush, heappop, heapify
-from collections            import deque
-from gi.repository          import Gtk, Gdk, GdkPixbuf, GObject
+from gi.repository          import Gtk, GObject
 from queue_agents           import Agent, Smart_Agent, Learning_Agent, Random_Agent
 
 class Queue_network :
@@ -86,15 +85,11 @@ class Queue_network :
         dest_count[self.g]  = sum( self.g.vp['destination'].a )
         garage_count[self.g]= sum( self.g.vp['garage'].a )
 
-        if garage_count[self.g] == 0 :
-            print("Need more than 0 garages")
-            return
-
-        v_props = set()
+        vertex_props = set()
         for key in self.g.vertex_properties.keys() :
-            v_props = v_props.union( [key] )
+            vertex_props = vertex_props.union( [key] )
 
-        HAS_LIGHTS  = 'light' in v_props
+        HAS_LIGHTS  = 'light' in vertex_props
 
         for v in self.g.vertices() :
             if self.g.vp['destination'][v] :
@@ -117,22 +112,21 @@ class Queue_network :
             vertex_pen_width[v] = 0.8
             vertex_size[v]      = 7
 
-
-        if 'pos' not in v_props :
+        if 'pos' not in vertex_props :
             self.g.vp['pos']    = gt.sfdp_layout(self.g, epsilon=1e-2, cooling_step=0.95)
 
-        e_props = set()
+        edge_props = set()
         for key in self.g.edge_properties.keys() :
-            e_props = e_props.union( [key] )
+            edge_props = edge_props.union( [key] )
 
         self.nV         = self.g.num_vertices()
         self.nE         = self.g.num_edges()
         self.nAgents    = [0 for k in range(self.nE)]
         self.edges      = [e for e in self.g.edges()]
 
-        HAS_LENGTH  = 'edge_length' in e_props
-        HAS_LANES   = 'lanes' in v_props
-        HAS_CAP     = 'cap' in v_props
+        HAS_LENGTH      = 'edge_length' in edge_props
+        HAS_LANES       = 'lanes' in vertex_props
+        HAS_CAP         = 'cap' in vertex_props
 
         for e in self.g.edges() :
             qissn   = (int(e.source()), int(e.target()), self.g.edge_index[e])
@@ -146,7 +140,6 @@ class Queue_network :
                 queues[e]       = qs.Queue_server(lanes, issn=qissn, net_size=self.nE)
                 edge_length[e]  = self.g.ep['edge_length'][e] if HAS_LENGTH else 1
                 control[e]      = [0, 0, 0, 0]
-
             
             edge_color[e]       = self.colors['edge_normal']
             edge_width[e]       = 1.25
@@ -159,7 +152,7 @@ class Queue_network :
             edge_state[e]       = 0
 
 
-        if 'shortest_path' not in v_props :
+        if 'shortest_path' not in vertex_props :
             shortest_path   = self.g.new_vertex_property("vector<int>")
             spath           = np.ones( (self.nV, self.nV), int) * -1
 
@@ -249,18 +242,19 @@ class Queue_network :
         pos         = gt.sfdp_layout(g, epsilon=1e-2, cooling_step=0.95)
         pos_array   = array( [pos[v] for v in g.vertices()] )
         pos_array   = pos_array / (100*(np.max(pos_array,0) - np.min(pos_array,0)))
+
         for v in g.vertices() :
-            pos[v] = pos_array[int(v),:]
+            pos[v]  = pos_array[int(v),:]
 
         g.vp['pos']     = pos
         self.undirected = True
 
-        g = self.add_properties(g, pDest, pGarage)
+        g = self.set_special_nodes(g, pDest, pGarage)
         self.set_graph(g)
 
 
 
-    def add_properties(self, g, pDest=None, pGarage=None) :
+    def set_special_nodes(self, g, pDest=None, pGarage=None) :
         if pDest == None :
             pDest   = 0.1
         if pGarage == None :
@@ -301,12 +295,12 @@ class Queue_network :
         ind_g_dist  = np.unique(ind_g_dist)
         garas       = ind_g_dist[:min( (nGarages,len(ind_g_dist)) )]
 
-        g.set_directed(True)
+        if not g.is_directed() :
+            g.set_directed(True)
 
-        g2  = g.copy()
-        for e in g2.edges() :
-            e = g.add_edge( source=int(e.target()), target=int(e.source()) )
-
+            g2  = g.copy()
+            for e in g2.edges() :
+                e = g.add_edge( source=int(e.target()), target=int(e.source()) )
 
         destination = g.new_vertex_property("bool")
         garage      = g.new_vertex_property("bool")
@@ -466,7 +460,6 @@ class Queue_network :
                         edge_control_points=self.g.ep['control'],
                         edge_marker_size=self.g.ep['arrow_width'],
                         edge_pen_width=self.g.ep['edge_width'],
-                        #edge_text=self.g.ep['state'],
                         edge_font_size=self.g.ep['edge_t_size'],
                         edge_text_distance=self.g.ep['edge_t_distance'],
                         edge_text_parallel=self.g.ep['edge_t_parallel'],
@@ -487,7 +480,6 @@ class Queue_network :
                         edge_control_points=self.g.ep['control'],
                         edge_marker_size=self.g.ep['arrow_width'],
                         edge_pen_width=self.g.ep['edge_width'],
-                        edge_text=self.g.ep['state'],
                         edge_font_size=self.g.ep['edge_t_size'],
                         edge_text_distance=self.g.ep['edge_t_distance'],
                         edge_text_parallel=self.g.ep['edge_t_parallel'],
@@ -497,7 +489,7 @@ class Queue_network :
                         vertex_halo_color=self.g.vp['halo_color'],
                         vertex_halo_size=self.g.vp['vertex_halo_size'],
                         vertex_pen_width=self.g.vp['vertex_pen_width'],
-                        vertex_text=self.g.vp['state'],
+                        #vertex_text=self.g.vp['state'],
                         vertex_text_position=self.g.vp['vertex_t_pos'],
                         vertex_font_size=self.g.vp['vertex_t_size'],
                         vertex_size=self.g.vp['vertex_size'])
