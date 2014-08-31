@@ -2,7 +2,7 @@ import numpy                as np
 import matplotlib           as mpl
 import matplotlib.pyplot    as plt
 import graph_tool.all       as gt
-import queue_network        as qn
+import queue_tool           as qt
 import queue_server         as qs
 import heapq
 import time
@@ -35,7 +35,7 @@ class approximate_dynamic_program :
         if Qn == None :
             self.Qn = self.create_network(agent_cap=self.agent_cap, seed=seed)
         elif isinstance(Qn, gt.Graph) :
-            self.Qn = qn.Queue_network(Qn)
+            self.Qn = qt.Queue_network(Qn)
             tmp0    = self.Qn.g.vp['destination'].a + self.Qn.g.vp['garage'].a
             self.ce = np.arange( self.Qn.nV )[tmp0==min(tmp0)]
 
@@ -45,7 +45,7 @@ class approximate_dynamic_program :
 
 
     def create_network(self, agent_cap, net_size=150, seed=None) :
-        Qn  = qn.Queue_network(nVertices=net_size, graph_type="periodic", seed=seed)
+        Qn  = qt.Queue_network(nVertices=net_size, graph_type="periodic", seed=seed)
         Qn.agent_cap = agent_cap
         for e in Qn.g.edges() :
             q               = Qn.g.ep['queues'][e]
