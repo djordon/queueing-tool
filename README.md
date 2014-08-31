@@ -7,7 +7,7 @@ Note: This program is under active development and is distributed in the hope th
 
 ## Features
 
-  - It's fast. Since queueing-tool is designed for large scale simulations, it is build with performance in mind. Using graph-tool for the networking component makes most network operations very fast. With a heap based scheduler, things don't get much quicker the main bottlenecks come from the scheduler.
+  - It's fast. Since queueing-tool is designed for large scale simulations, it is build with performance in mind. Using graph-tool for the networking component makes most network operations very fast. With a heap based scheduler managing events, things don't get much quicker.
   - It's flexible. You can use general functions (including time dependent functions) for the arrival and departure rates for each queue. You can have queues along the edges (for either directed or undirected graphs) and queues along the nodes too.
   - It's friendly (sometimes). There are functions that make incorporating transportation networks from [openstreetmaps.org](www.openstreetmaps.org) easy.
 
