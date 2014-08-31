@@ -1,6 +1,6 @@
 import numpy            as np
 import graph_tool.all   as gt
-import queue_network    as qn
+import queue_tool       as qt
 import queue_server     as qs
 import adp
 import copy
@@ -12,9 +12,9 @@ np.set_printoptions(precision=2,suppress=True,threshold=2000)
 
 directory   = '/home/dan/math/code/python/queueing/'
 pit = pickle.load(open(directory+'pitt_network.p', 'rb') )
-#Qn  = qn.Queue_network( pit.g )
+#Qn  = qt.Queue_network( pit.g )
 #g   = gt.load_graph('pitt_network.xml')
-#Qn  = qn.Queue_network( g )
+#Qn  = qt.Queue_network( g )
 a   = adp.approximate_dynamic_program(pit.g)
 vs  = [a.Qn.g.vertex(202), a.Qn.g.vertex(453), a.Qn.g.vertex(255),
        a.Qn.g.vertex(449), a.Qn.g.vertex(218), a.Qn.g.vertex(72),
@@ -67,7 +67,7 @@ a.approximate_policy_iteration(orig, dest, save_frames=True)
 
 
 """
-import queue_network    as qn
+import queue_tool       as qt
 import queue_server     as qs
 agent       = qs.Learning_Agent(5, 10)
 learning_agents = {k : qs.Learning_Agent(k, 10) for k in range(4)}
@@ -83,11 +83,11 @@ import approximate_DP   as adp
 import numpy            as np
 import graph_tool.all   as gt
 import queue_server     as qs
-import queue_network    as qn
+import queue_tool       as qt
 import cProfile
 import pickle
 net = pickle.load( open('pitt_network.p', 'rb') )
-que = qn.Queue_network( net.g )
+que = qt.Queue_network( net.g )
 #que.draw()
 a   = adp.approximate_dynamic_program(seed=10)
 pr  = cProfile.Profile()
