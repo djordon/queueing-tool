@@ -49,7 +49,7 @@ import approximate_DP   as adp
 import numpy            as np
 import graph_tool.all   as gt
 import queue_server     as qs
-import queue_network    as qn
+import queue_tool    as qn
 import cProfile
 import pickle
 net = pickle.load( open('pitt_network.p', 'rb') )
