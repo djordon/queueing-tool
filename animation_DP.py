@@ -33,7 +33,7 @@ pickle.dump( (a.theta_history, a.value_history), open(loc+"theta_data_"+dat+".p"
 
 
 """
-import queue_network    as qn
+import queue_tool    as qn
 import queue_server     as qs
 agent       = qs.Learning_Agent(5, 10)
 learning_agents = {k : qs.Learning_Agent(k, 10) for k in range(4)}
