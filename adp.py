@@ -2,8 +2,7 @@ import numpy                as np
 import matplotlib           as mpl
 import matplotlib.pyplot    as plt
 import graph_tool.all       as gt
-import queue_tool           as qt
-import queue_server         as qs
+import queueing_tool        as qt
 import heapq
 import time
 import copy
@@ -50,8 +49,8 @@ class approximate_dynamic_program :
         for e in Qn.g.edges() :
             q               = Qn.g.ep['queues'][e]
             q.CREATE        = False
-            q.xArrival      = lambda x : qs.exponential_rv( 1, x )
-            q.xDepart       = lambda x : qs.exponential_rv( 3, x )
+            q.xArrival      = lambda x : qt.exponential_rv( 1, x )
+            q.xDepart       = lambda x : qt.exponential_rv( 3, x )
             q.xDepart_mu    = lambda x : 1/3 
             q.set_nServers(1)
 
@@ -73,15 +72,15 @@ class approximate_dynamic_program :
                     Qn.g.ep['queues'][e].CREATE   = True
                     Qn.g.ep['queues'][e].create_p = 0
                     Qn.g.ep['queues'][e].set_nServers(1)
-                    Qn.g.ep['queues'][e].xArrival   = lambda x : qs.exponential_rv( 8, x )
-                    Qn.g.ep['queues'][e].xDepart    = lambda x : qs.exponential_rv( 3, x )
+                    Qn.g.ep['queues'][e].xArrival   = lambda x : qt.exponential_rv( 8, x )
+                    Qn.g.ep['queues'][e].xDepart    = lambda x : qt.exponential_rv( 3, x )
                     Qn.g.ep['queues'][e].xDepart_mu = lambda x : 1/3
                     Qn.g.ep['queues'][e].add_arrival()
 
         for e in Qn.g.edges() :
             if Qn.g.ep['garage'][e] :
                 Qn.g.ep['queues'][e].set_nServers( garage_cap[ct] )
-                Qn.g.ep['queues'][e].xDepart    = lambda x : qs.exponential_rv( 0.5, x )
+                Qn.g.ep['queues'][e].xDepart    = lambda x : qt.exponential_rv( 0.5, x )
                 Qn.g.ep['queues'][e].xDepart_mu = lambda x : 2
                 ct += 1
 
@@ -434,7 +433,7 @@ class approximate_dynamic_program :
                 ei  = e
                 break
 
-            agent       = qs.Learning_Agent(self.agent_cap+count, self.Qn.nE)
+            agent       = qt.Learning_Agent(self.agent_cap+count, self.Qn.nE)
             agent.od    = [orig[i], dest[i]]
             agent.set_type(1)
             agent.set_dest(dest=dest[i])

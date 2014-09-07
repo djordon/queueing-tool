@@ -1,13 +1,14 @@
 import numpy                as np
 import graph_tool.all       as gt
-import queue_server         as qs
 import time
 import copy
 
 from numpy                  import ones, zeros, array, arange, logical_and, infty
 from heapq                  import heappush, heappop, heapify
 from gi.repository          import Gtk, GObject
-from queue_agents           import Agent, Smart_Agent, Learning_Agent, Random_Agent
+from .. agents.queue_agents import Agent, Smart_Agent, Learning_Agent, Random_Agent
+
+from .. servers import queue_server as qs
 
 class Queue_network :
 

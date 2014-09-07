@@ -1,10 +1,10 @@
-from numpy.random   import uniform
-from numpy          import ones, zeros, infty, log
-from heapq          import heappush, heappop
-from collections    import deque
-from queue_agents   import Agent, Smart_Agent, Learning_Agent, Random_Agent
+from numpy.random           import uniform
+from numpy                  import ones, zeros, infty, log
+from heapq                  import heappush, heappop
+from collections            import deque
+from .. agents.queue_agents import Agent, Smart_Agent, Learning_Agent, Random_Agent
 
-import numpy        as np
+import numpy                as np
 import copy
 
 

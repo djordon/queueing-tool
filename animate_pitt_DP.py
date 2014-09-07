@@ -1,7 +1,6 @@
 import numpy            as np
 import graph_tool.all   as gt
-import queue_tool       as qt
-import queue_server     as qs
+import queueing_tool    as qt
 import adp
 import copy
 import datetime
@@ -10,7 +9,7 @@ import pickle
 
 np.set_printoptions(precision=2,suppress=True,threshold=2000)
 
-directory   = '/home/dan/math/code/python/queueing/'
+directory   = './'
 pit = pickle.load(open(directory+'pitt_network.p', 'rb') )
 #Qn  = qt.Queue_network( pit.g )
 #g   = gt.load_graph('pitt_network.xml')
@@ -24,8 +23,8 @@ for v in vs :
     for e in v.in_edges() :
         a.Qn.g.ep['queues'][e].CREATE       = True
         a.Qn.g.ep['queues'][e].create_p     = 0
-        a.Qn.g.ep['queues'][e].xArrival     = lambda x : qs.exponential_rv( 2, x )
-        a.Qn.g.ep['queues'][e].xDepart      = lambda x : qs.exponential_rv( 3, x )
+        a.Qn.g.ep['queues'][e].xArrival     = lambda x : qt.exponential_rv( 2, x )
+        a.Qn.g.ep['queues'][e].xDepart      = lambda x : qt.exponential_rv( 3, x )
         a.Qn.g.ep['queues'][e].xDepart_mu   = lambda x : 1/3
         a.Qn.g.ep['queues'][e].add_arrival()
         break
@@ -68,9 +67,9 @@ a.approximate_policy_iteration(orig, dest, save_frames=True)
 
 """
 import queue_tool       as qt
-import queue_server     as qs
-agent       = qs.Learning_Agent(5, 10)
-learning_agents = {k : qs.Learning_Agent(k, 10) for k in range(4)}
+import queue_server     as qt
+agent       = qt.Learning_Agent(5, 10)
+learning_agents = {k : qt.Learning_Agent(k, 10) for k in range(4)}
 learning_agents[agent.issn] = agent
 
 n=10
@@ -82,7 +81,7 @@ b          = [-k for k in range(n-1,-1,-1)]
 import approximate_DP   as adp
 import numpy            as np
 import graph_tool.all   as gt
-import queue_server     as qs
+import queue_server     as qt
 import queue_tool       as qt
 import cProfile
 import pickle
@@ -107,8 +106,8 @@ for v in v1,v2 :
     for e in v.in_edges() :
         Qn.g.ep['queues'][e].CREATE       = True
         Qn.g.ep['queues'][e].create_p     = 0
-        Qn.g.ep['queues'][e].xArrival     = lambda x : qs.exponential_rv( 8, x )
-        Qn.g.ep['queues'][e].xDepart      = lambda x : qs.exponential_rv( 3, x )
+        Qn.g.ep['queues'][e].xArrival     = lambda x : qt.exponential_rv( 8, x )
+        Qn.g.ep['queues'][e].xDepart      = lambda x : qt.exponential_rv( 3, x )
         Qn.g.ep['queues'][e].xDepart_mu   = lambda x : 1/3
         Qn.g.ep['queues'][e].add_arrival()
         break

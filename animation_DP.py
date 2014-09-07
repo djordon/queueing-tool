@@ -27,7 +27,7 @@ for p in range( int(a.dist.max()-2) ) :
 #i,j = int(i), int(j)
 a.approximate_policy_iteration(orig, dest, save_frames=True)
 
-loc = "/home/dan/math/code/python/queueing/data/"
+loc = "/home/dan/math/code/python/old-queueing/data/"
 dat = datetime.datetime.today().isoformat().replace('T', '_')
 pickle.dump( (a.theta_history, a.value_history), open(loc+"theta_data_"+dat+".p", "wb") )
 
