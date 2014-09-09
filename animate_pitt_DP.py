@@ -8,7 +8,6 @@ import cProfile
 import pickle
 
 np.set_printoptions(precision=2,suppress=True,threshold=2000)
-
 directory   = './'
 pit = pickle.load(open(directory+'pitt_network.p', 'rb') )
 #Qn  = qt.Queue_network( pit.g )

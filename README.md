@@ -19,7 +19,7 @@ The hardest part of getting graph-tool installed. There are [precompiled package
 Once you have graph-tool and numpy install you can import queueing-tool with
 
 ```python
-import queue_tool as qt
+import queueing_tool as qt
 ```
 
 An old demo setting up downtown Pittsburgh's traffic network can be found [here](http://nbviewer.ipython.org/gist/djordon/975bf898c1ed2f4c8198).
