@@ -1,29 +1,33 @@
 from   numpy import dot, array
 import numpy as np
 import scipy.optimize as op
+import matplotlib.pyplot as plt
 
 np.set_printoptions(precision=2,suppress=True,threshold=2000)
 
 # Boundary points
 bps = array([[1,0], [0,1], [-1,-1]])
-
 p   = array([0, 0]) # point supplied by user
 
-# pick any point in the set, then
-# pick two other point in the set
-x0  = bps[0] 
-x1  = bps[1]
-x2  = bps[2]
+points  = np.array([[0,1],
+                    [0.5, 2],
+                    [1, 1.75],
+                    [2, .5],
+                    [1.5, 0],
+                    [0.25, 0.25]])
 
-def convex_min(y, *args) :
-    a, b  = y
-    p, x  = args[:2]
-    y, z  = args[2:]
-    ans   = b * x + a*(1-b) * y + (1-a)*(1-b) * z - p
-    return dot(ans, ans)
 
-bnds  = ( (0,1), (0,1) )
-ans   = op.minimize( convex_min, x0=array([0.5, 0.5]), args=(p,x0,x1,x2), method='L-BFGS-B', bounds=bnds)
+## This function tests to see if the line segment connecting
+## the first pair of points (v1 and v2), intersects
+## with the line connecting the second pair (v3 and v4) 
+
+def intersect( v1, v2, v3, v4 ) :
+    M   = np.array([v2 - v1, v4 - v3]).T
+    if np.linalg.det(M) == 0 :
+      return False
+    y   = v4 - v1
+    x   = np.linalg.solve(M,y)
+    return 0 <= x[0] <= 1 and 0 <= x[1] <= 1
 
 
 def convex_boundary( points ) :
@@ -36,24 +40,13 @@ def convex_boundary( points ) :
             ## Throw some flag
             return
     
-    ## This function tests to see if the line connecting
-    ## the first pair of points (v1 and v2), intersects
-    ## with the line connecting the second pair (v3 and v4) 
-    def intersect( v1, v2, v3, v4 ) :
-        M   = np.array([v2 - v1, v4 - v3]).T
-        if np.linalg.det(M) == 0 :
-          return False
-        y   = v4 - v1
-        x   = np.linalg.solve(M,y)
-        return 0 <= x[0] <= 1 and 0 <= x[1] <= 1
-    
     pairs   = []
     nPoints = points.shape[0]
     nPairs  = int( nPoints*(nPoints-1)/2 )
     inter   = np.zeros( (nPairs, nPairs), bool)
     
     for k in range(nPoints) :
-        if k < n-1:
+        if k < nPoints-1:
             for j in range(k+1, nPoints) :
                 pairs.append( [k,j] )
     
@@ -93,27 +86,47 @@ def convex_boundary( points ) :
     return edges, sortedp
 
 
+def convex_distance(ab, *args) :
+    a, b  = ab
+    p, x  = args[:2]
+    y, z  = args[2:]
+    ans   = b * x + a*(1-b) * y + (1-a)*(1-b) * z - p
+    return dot(ans, ans)
+
+## Test whether a point is within a region. The region is the
+## convex hull of the points supplied in the variable region.
+
+def point_region( region, point ) :
+    epsilon         = 1e-7
+    nPoints, p1     = len(region), region[0]
+    edges, sortedp  = convex_boundary( region )
+    in_region       = False
+    
+    for k in range(2, nPoints) :
+        p2, p3  = region[(k-1):(k+1)]
+        ans     = op.minimize(convex_boundary, x0=array([0.5, 0.5]), args=(point,p1,p2,p3),
+                              method='L-BFGS-B', bounds=[(0,1), (0,1)] )
+        if ans.fun < epsilon :
+            in_region = True
+            break
+    
+    return in_region
 
 def test_convexity( points ) :
     pass
 
 
 
-import numpy as np
-import matplotlib.pyplot as plt
 
-points  = np.array([[0,1],
-                    [0.5, 2],
-                    [1, 1.75],
-                    [2, .5],
-                    [1.5, 0],
-                    [0.25, 0.25]])
+
+
 
 
 fig, ax = plt.subplots()
 ax.set_xlim([-0.25, 2.25])
 ax.set_ylim([-0.25, 2.25])
-ax.plot(points[tmp,0], points[tmp,1])
+ax.plot(points[:,0], points[:,1], 'o')
+ax.plot(1,1, 'o')
 plt.show()
 
 fig, ax = plt.subplots()
