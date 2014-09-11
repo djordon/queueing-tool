@@ -5,10 +5,8 @@ import matplotlib.pyplot as plt
 
 np.set_printoptions(precision=2,suppress=True,threshold=2000)
 
+EPS = 1e-14
 # Boundary points
-bps = array([[1,0], [0,1], [-1,-1]])
-p   = array([0, 0]) # point supplied by user
-
 points  = np.array([[0,1],
                     [0.5, 2],
                     [1, 1.75],
@@ -21,16 +19,16 @@ points  = np.array([[0,1],
 ## the first pair of points (v1 and v2), intersects
 ## with the line connecting the second pair (v3 and v4) 
 
-def intersect( v1, v2, v3, v4 ) :
-    M   = np.array([v2 - v1, v4 - v3]).T
+def intersects(v1, v2, v3, v4) :
+    M   = np.array([v1 - v2, v4 - v3]).T
     if np.linalg.det(M) == 0 :
-      return False
-    y   = v4 - v1
+        return False
+    y   = v4 - v2
     x   = np.linalg.solve(M,y)
-    return 0 <= x[0] <= 1 and 0 <= x[1] <= 1
+    return (-EPS <= x[0] <= 1+EPS) and (-EPS <= x[1] <= 1+EPS)
 
 
-def convex_boundary( points ) :
+def convex_boundary(points) :
     if points.shape[0] < 4 :
         if points.shape[0] == 3 :
             edges   = np.array([[0,1], [0,2], [1,2]])
@@ -43,45 +41,41 @@ def convex_boundary( points ) :
     pairs   = []
     nPoints = points.shape[0]
     nPairs  = int( nPoints*(nPoints-1)/2 )
-    inter   = np.zeros( (nPairs, nPairs), bool)
+    bndry   = np.ones(nPairs, bool)
     
-    for k in range(nPoints) :
-        if k < nPoints-1:
-            for j in range(k+1, nPoints) :
-                pairs.append( [k,j] )
+    for k in range(nPoints-1) :
+        for j in range(k+1, nPoints) :
+            pairs.append([k, j])
     
-    for k in range( nPairs ) :
-        if k < nPoints-1:
-            pair1 = pairs[k]
-            for j in range(k+1, nPairs ) :
-                if not pairs[j][0] in pair1 and not pairs[j][1] in pair1 :
-                    pair2   = pairs[j]
-                    p1, p2  = points[pair1[0]], points[pair1[1]]
-                    p3, p4  = points[pair2[0]], points[pair2[1]]
-                    if intersect( p1, p2, p3, p4 ) :
-                        inter[k, j] = True
-                        inter[j, k] = True
+    for k in range(nPairs-1) :
+        pair = pairs[k]
+        for j in range(k+1, nPairs) :
+            if not pairs[j][0] in pair and not pairs[j][1] in pair :
+                p1, p2  = points[pair]
+                p3, p4  = points[pairs[j]]
+                if intersects(p1, p2, p3, p4) :
+                    bndry[[k, j]] = False
     
-    eindex  = np.where( np.sum(inter, 1) == 0 )[0]
-    edges   = np.array( pairs )[eindex]
-    adj     = [ [] for k in range(nPoints) ]
+    eindex  = np.where(bndry)[0]
+    edges   = np.array(pairs)[eindex]
+    adj     = [ [] for k in range(nPoints)]
     
     for pair in edges :
-        adj[pair[0]].append( pair[1] )
-        adj[pair[1]].append( pair[0] )
+        adj[pair[0]].append(pair[1])
+        adj[pair[1]].append(pair[0])
     
-    a, b    = 0, adj[0][0]
+    a, b    = edges[0][0], adj[edges[0][0]][0]
     sortedp = []
-    sortedp.append(0)
-    sortedp.append(adj[0][0])
-    
-    for k in range(nPoints-2) :
-        if adj[b][0] == a :
-            sortedp.append( adj[b][1] )
-            a, b = b, adj[b][1]
-        else :
-            sortedp.append( adj[b][0] )
-            a, b = b, adj[b][0]
+    sortedp.append(edges[0][0])
+    sortedp.append(adj[edges[0][0]][0])
+    if False :
+        for k in range( edges.shape[0]-2 ) :
+            if adj[b][0] == a :
+                sortedp.append( adj[b][1] )
+                a, b = b, adj[b][1]
+            else :
+                sortedp.append( adj[b][0] )
+                a, b = b, adj[b][0]
     
     return edges, sortedp
 
@@ -97,7 +91,6 @@ def convex_distance(ab, *args) :
 ## convex hull of the points supplied in the variable region.
 
 def point_region( region, point ) :
-    epsilon         = 1e-7
     nPoints, p1     = len(region), region[0]
     edges, sortedp  = convex_boundary( region )
     in_region       = False
@@ -106,7 +99,7 @@ def point_region( region, point ) :
         p2, p3  = region[(k-1):(k+1)]
         ans     = op.minimize(convex_boundary, x0=array([0.5, 0.5]), args=(point,p1,p2,p3),
                               method='L-BFGS-B', bounds=[(0,1), (0,1)] )
-        if ans.fun < epsilon :
+        if ans.fun < EPS :
             in_region = True
             break
     
@@ -120,43 +113,22 @@ def test_convexity( points ) :
 
 
 
-
-
+points      = 10*np.random.random( (20,2) )
+edges, ps   = convex_boundary( points ) 
 fig, ax = plt.subplots()
-ax.set_xlim([-0.25, 2.25])
-ax.set_ylim([-0.25, 2.25])
+ax.set_xlim([-0.25, 10.25])
+ax.set_ylim([-0.25, 10.25])
+for k in points[edges] :
+    ax.plot(k[:,0], k[:,1], 'k')
+
 ax.plot(points[:,0], points[:,1], 'o')
-ax.plot(1,1, 'o')
-plt.show()
-
-fig, ax = plt.subplots()
-t   = np.asmatrix( np.arange(-1,2,.1) )
-ps  = np.array( np.asmatrix(points[0]).T * t + np.asmatrix(points[1]).T * (1-t) ).T
-ax.plot(ps[:,0], ps[:,1], 'o')
 plt.show()
 
 
-v1  = points[0]
-v2  = points[2]
-v3  = points[1]
-v4  = points[-1]
-v5  = points[-2]
 
 
 
 
-ans = np.linalg.solve(M2,y)
-
-fig, ax = plt.subplots()
-ax.set_xlim([-0.5, 2.25])
-ax.set_ylim([-0.5, 2.25])
-ax.plot(points[:,0], points[:,1], 'o')
-
-
-pstar = (1-ans[0]) * v1 + ans[0] * v3
-ax.plot( pstar[0], pstar[1], 'o' )
-
-plt.show()
 
 """
 import cProfile

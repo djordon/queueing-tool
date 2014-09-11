@@ -33,10 +33,10 @@ pickle.dump( (a.theta_history, a.value_history), open(loc+"theta_data_"+dat+".p"
 
 
 """
-import queue_tool    as qn
-import queue_server     as qs
-agent       = qs.Learning_Agent(5, 10)
-learning_agents = {k : qs.Learning_Agent(k, 10) for k in range(4)}
+import queue_tool    as qt
+import queue_server  as qs
+agent       = qs.LearningAgent(5, 10)
+learning_agents = {k : qs.LearningAgent(k, 10) for k in range(4)}
 learning_agents[agent.issn] = agent
 
 n=10
@@ -49,11 +49,11 @@ import approximate_DP   as adp
 import numpy            as np
 import graph_tool.all   as gt
 import queue_server     as qs
-import queue_tool    as qn
+import queue_tool       as qt
 import cProfile
 import pickle
 net = pickle.load( open('pitt_network.p', 'rb') )
-que = qn.Queue_network( net.g )
+que = qt.QueueNetwork( net.g )
 que.draw()
 a   = adp.approximate_dynamic_program(seed=10)
 pr  = cProfile.Profile()

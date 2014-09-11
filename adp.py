@@ -34,7 +34,7 @@ class approximate_dynamic_program :
         if Qn == None :
             self.Qn = self.create_network(agent_cap=self.agent_cap, seed=seed)
         elif isinstance(Qn, gt.Graph) :
-            self.Qn = qt.Queue_network(Qn)
+            self.Qn = qt.QueueNetwork(Qn)
             tmp0    = self.Qn.g.vp['destination'].a + self.Qn.g.vp['garage'].a
             self.ce = np.arange( self.Qn.nV )[tmp0==min(tmp0)]
 
@@ -44,7 +44,7 @@ class approximate_dynamic_program :
 
 
     def create_network(self, agent_cap, net_size=150, seed=None) :
-        Qn  = qt.Queue_network(nVertices=net_size, graph_type="periodic", seed=seed)
+        Qn  = qt.QueueNetwork(nVertices=net_size, graph_type="periodic", seed=seed)
         Qn.agent_cap = agent_cap
         for e in Qn.g.edges() :
             q               = Qn.g.ep['queues'][e]
@@ -433,7 +433,7 @@ class approximate_dynamic_program :
                 ei  = e
                 break
 
-            agent       = qt.Learning_Agent(self.agent_cap+count, self.Qn.nE)
+            agent       = qt.LearningAgent(self.agent_cap+count, self.Qn.nE)
             agent.od    = [orig[i], dest[i]]
             agent.set_type(1)
             agent.set_dest(dest=dest[i])
