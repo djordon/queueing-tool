@@ -1,3 +1,3 @@
-from .queue_agents import Agent, Learning_Agent, Random_Agent, Smart_Agent
+from .queue_agents import Agent, LearningAgent, RandomAgent, SmartAgent
 
-__all__ = ['queue_agents', 'Agent', 'Learning_Agent', 'Random_Agent', 'Smart_Agent']
+__all__ = ['queue_agents', 'Agent', 'LearningAgent', 'RandomAgent', 'SmartAgent']
