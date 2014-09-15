@@ -1,46 +1,51 @@
-from   numpy import dot, array
-import numpy as np
 import scipy.optimize as op
-import matplotlib.pyplot as plt
+import numpy as np
 
-np.set_printoptions(precision=2,suppress=True,threshold=2000)
-
-EPS = 1e-14
-# Boundary points
-points  = np.array([[0,1],
-                    [0.5, 2],
-                    [1, 1.75],
-                    [2, .5],
-                    [1.5, 0],
-                    [0.25, 0.25]])
-
-
+## intersects(v1, v2, v3, v4)
 ## This function tests to see if the line segment connecting
 ## the first pair of points (v1 and v2), intersects
-## with the line connecting the second pair (v3 and v4) 
+## with the line connecting the second pair (v3 and v4)
+## Parallel are returned as non-intersecting (even if they are 
+## on the same line)
+
+## point_region(point, points, edges)
+## Test whether a point is within a region. The region is assumed to
+## the convex hull of the points supplied in the variable 'points'.
+
+## extreme_points(points)
+## Given a list of points, find the points that make up the boundary
+## of the given points. That is, every other point is in the convex
+## hull of the returned points. A list of edges that make up the 
+## boundary is returned.
+
+EPS = 1e-10
+
 
 def intersects(v1, v2, v3, v4) :
     M   = np.array([v1 - v2, v4 - v3]).T
-    if np.linalg.det(M) == 0 :
+    det = M[0,0] * M[1,1] - M[0,1] * M[1,0]
+    if det == 0 :
         return False
-    y   = v4 - v2
-    x   = np.linalg.solve(M,y)
-    return (-EPS <= x[0] <= 1+EPS) and (-EPS <= x[1] <= 1+EPS)
+    M[0, 0], M[1, 1] = M[1, 1], M[0, 0]
+    M[0, 1] = -M[0, 1]
+    M[1, 0] = -M[1, 0]
+    y = v4 - v2
+    x = np.dot(M, y) / det
+    return (0 <= x[0] <= 1) and (0 <= x[1] <= 1)
 
 
-def convex_boundary(points) :
-    if points.shape[0] < 4 :
-        if points.shape[0] == 3 :
-            edges   = np.array([[0,1], [0,2], [1,2]])
-            sortedp = [0, 1, 2]
-            return edges, sortedp
-        else :
-            ## Throw some flag
-            return
-    
+def _convex_distance(ab, *args) :
+    a, b  = ab
+    p, x  = args[:2]
+    y, z  = args[2:]
+    ans   = b * x + a*(1-b) * y + (1-a)*(1-b) * z - p
+    return np.dot(ans, ans)
+
+
+def _convex_boundary(points) :
     pairs   = []
-    nPoints = points.shape[0]
-    nPairs  = int( nPoints*(nPoints-1)/2 )
+    nPoints = len(points)
+    nPairs  = int(nPoints * (nPoints-1) / 2)
     bndry   = np.ones(nPairs, bool)
     
     for k in range(nPoints-1) :
@@ -50,6 +55,8 @@ def convex_boundary(points) :
     for k in range(nPairs-1) :
         pair = pairs[k]
         for j in range(k+1, nPairs) :
+            if not bndry[k] and not bndry[j] :
+                continue
             if not pairs[j][0] in pair and not pairs[j][1] in pair :
                 p1, p2  = points[pair]
                 p3, p4  = points[pairs[j]]
@@ -58,114 +65,61 @@ def convex_boundary(points) :
     
     eindex  = np.where(bndry)[0]
     edges   = np.array(pairs)[eindex]
-    adj     = [ [] for k in range(nPoints)]
-    
-    for pair in edges :
-        adj[pair[0]].append(pair[1])
-        adj[pair[1]].append(pair[0])
-    
-    a, b    = edges[0][0], adj[edges[0][0]][0]
-    sortedp = []
-    sortedp.append(edges[0][0])
-    sortedp.append(adj[edges[0][0]][0])
-    if False :
-        for k in range( edges.shape[0]-2 ) :
-            if adj[b][0] == a :
-                sortedp.append( adj[b][1] )
-                a, b = b, adj[b][1]
-            else :
-                sortedp.append( adj[b][0] )
-                a, b = b, adj[b][0]
-    
-    return edges, sortedp
+    return edges
 
 
-def convex_distance(ab, *args) :
-    a, b  = ab
-    p, x  = args[:2]
-    y, z  = args[2:]
-    ans   = b * x + a*(1-b) * y + (1-a)*(1-b) * z - p
-    return dot(ans, ans)
-
-## Test whether a point is within a region. The region is the
-## convex hull of the points supplied in the variable region.
-
-def point_region( region, point ) :
-    nPoints, p1     = len(region), region[0]
-    edges, sortedp  = convex_boundary( region )
-    in_region       = False
+def _region_test(p, points, edges) :
+    p1  = points[p]
+    ept = set(np.unique(edges))
+    reg = {p : False for p in ept}
+    ept = ept - {p}
     
-    for k in range(2, nPoints) :
-        p2, p3  = region[(k-1):(k+1)]
-        ans     = op.minimize(convex_boundary, x0=array([0.5, 0.5]), args=(point,p1,p2,p3),
-                              method='L-BFGS-B', bounds=[(0,1), (0,1)] )
+    for edge in edges :
+        if p in edge :
+            continue
+        for point in ept :
+            if point in edge :
+                continue
+            pt      = points[point]
+            p2, p3  = points[edge]
+            ans     = op.minimize(_convex_distance, x0=np.array([0.5, 0.5]),
+                                  args=(pt, p1, p2, p3), method='L-BFGS-B',
+                                  bounds=[(0,1), (0,1)] )
+            if ans.fun < EPS :
+                reg[point] = True
+    
+    return np.array([e for e in edges if not (reg[e[0]] or reg[e[1]]) ])
+
+
+def extreme_points(points) :
+    if len(points) < 4 :
+        if len(points) == 3 :
+            edges   = np.array([[0,1], [0,2], [1,2]])
+            return edges
+        else :
+            raise Exception("Need 3 of more points for extreme_points; given %s." % (len(points)))
+    
+    edges = _convex_boundary(points)
+    edges = _region_test(edges[0][0], points, edges)
+    edges = _region_test(edges[0][1], points, edges)
+    return edges
+
+
+def point_region(pt, points, edges=None) :
+    if edges == None :
+        edges = extreme_points(points)
+    p1  = points[0]
+    ans = False
+    
+    for edge in edges :
+        if 0 in edge :
+            continue
+        p2, p3  = points[edge]
+        ans     = op.minimize(_convex_distance, x0=np.array([0.5, 0.5]), 
+                              args=(pt, p1, p2, p3), method='L-BFGS-B',
+                              bounds=[(0,1), (0,1)])
         if ans.fun < EPS :
-            in_region = True
+            ans = True
             break
     
-    return in_region
-
-def test_convexity( points ) :
-    pass
-
-
-
-
-
-
-points      = 10*np.random.random( (20,2) )
-edges, ps   = convex_boundary( points ) 
-fig, ax = plt.subplots()
-ax.set_xlim([-0.25, 10.25])
-ax.set_ylim([-0.25, 10.25])
-for k in points[edges] :
-    ax.plot(k[:,0], k[:,1], 'k')
-
-ax.plot(points[:,0], points[:,1], 'o')
-plt.show()
-
-
-
-
-
-
-
-"""
-import cProfile
-
-p     = array([5,5])
-bnds  = ( (0,1), (0,1) )
-pr    = cProfile.Profile()
-pr.enable()
-for k in range(500):
-    ans = op.minimize( convex_min, x0=array([0.5, 0.5]), args=(p,x0,x1,x2), method='L-BFGS-B', bounds=bnds)
-
-pr.disable()
-pr.print_stats(sort='time')
-
-
-SLSQP       0.716 seconds
-CG          0.897 seconds
-BFGS        0.922 seconds
-L-BFGS-B    0.494 seconds
-TNC         0.703 seconds
-COBYLA      0.467 seconds
-Powell      3.320 seconds
-Nelder-Mead 1.789 seconds
-
-def jacobian(y, *args) :
-    a, b  = y
-    p, x  = args[:2]
-    y, z  = args[2:]
-    fun   =  b * x + a*(1-b) * y + (1-a)*(1-b) * z - p
-    ans   = array([0,0])
-    ans[0]= 2 * dot( fun, (1-b)*(y-z) )
-    ans[1]= 2 * dot( fun, x - a*y - (1-a)*z ) 
     return ans
-"""
-
-
-
-
-
-
