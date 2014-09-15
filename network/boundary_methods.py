@@ -82,10 +82,10 @@ def _region_test(p, points, edges) :
                 continue
             pt      = points[point]
             p2, p3  = points[edge]
-            ans     = op.minimize(_convex_distance, x0=np.array([0.5, 0.5]),
+            optim   = op.minimize(_convex_distance, x0=np.array([0.5, 0.5]),
                                   args=(pt, p1, p2, p3), method='L-BFGS-B',
                                   bounds=[(0,1), (0,1)] )
-            if ans.fun < EPS :
+            if optim.fun < EPS :
                 reg[point] = True
     
     return np.array([e for e in edges if not (reg[e[0]] or reg[e[1]]) ])
@@ -115,10 +115,10 @@ def point_region(pt, points, edges=None) :
         if 0 in edge :
             continue
         p2, p3  = points[edge]
-        ans     = op.minimize(_convex_distance, x0=np.array([0.5, 0.5]), 
+        optim   = op.minimize(_convex_distance, x0=np.array([0.5, 0.5]), 
                               args=(pt, p1, p2, p3), method='L-BFGS-B',
                               bounds=[(0,1), (0,1)])
-        if ans.fun < EPS :
+        if optim.fun < EPS :
             ans = True
             break
     
