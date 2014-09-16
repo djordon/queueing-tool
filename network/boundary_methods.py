@@ -18,7 +18,7 @@ import numpy as np
 ## hull of the returned points. A list of edges that make up the 
 ## boundary is returned.
 
-EPS = 1e-10
+EPS = 1e-7
 
 
 def intersects(v1, v2, v3, v4) :
@@ -105,21 +105,24 @@ def extreme_points(points) :
     return edges
 
 
-def point_region(pt, points, edges=None) :
+def point_region(pts, points, edges=None) :
     if edges == None :
         edges = extreme_points(points)
-    p1  = points[0]
-    ans = False
+    if len(pts.shape) == 1 :
+        pts = (pts,)
+    p1  = points[edges[0][0]]
+    ans = np.zeros(len(pts), bool)
     
-    for edge in edges :
-        if 0 in edge :
-            continue
-        p2, p3  = points[edge]
-        optim   = op.minimize(_convex_distance, x0=np.array([0.5, 0.5]), 
-                              args=(pt, p1, p2, p3), method='L-BFGS-B',
-                              bounds=[(0,1), (0,1)])
-        if optim.fun < EPS :
-            ans = True
-            break
+    for k in range(len(pts)) :
+        for edge in edges :
+            if edges[0][0] in edge :
+                continue
+            p2, p3  = points[edge]
+            optim   = op.minimize(_convex_distance, x0=np.array([0.5, 0.5]), 
+                                  args=(pts[k], p1, p2, p3), method='L-BFGS-B',
+                                  bounds=[(0,1), (0,1)])
+            if optim.fun < EPS :
+                ans[k] = True
+                break
     
-    return ans
+    return ans if len(pts) > 1 else ans[0]

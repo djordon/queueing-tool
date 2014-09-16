@@ -10,48 +10,48 @@ from .. agents.queue_agents import Agent, SmartAgent, LearningAgent, RandomAgent
 
 from .. servers import queue_server as qs
 
-class QueueNetwork:
+class QueueNetwork :
 
-    def __init__(self, g=None, nVertices=250, pDest=None, pGarage=None, seed=None, graph_type="normal"):
+    def __init__(self, g=None, nVertices=250, pDest=None, pGarage=None, seed=None, graph_type="normal") :
 
         self.t          = 0
         self.to_animate = False
         self.undirected = False
         self.nAgents    = [0]
         self.agent_cap  = 100
-        self.colors     =  {'edge_departure'   : [0, 0, 0, 1], 
-                            'edge_normal'      : [0.339, 0.3063, 0.3170, 0.290],
-                            'vertex_normal'    : [0.0, 0.5, 1.0, 0.85],
-                            'vertex_light'     : [1.0, 0.135, 0.0, 1.0],
-                            'vertex_garage'    : [0.133, 0.545, 0.133, 1.0],
-                            'vertex_destination': [0.282, 0.239, 0.545, 1.0],
-                            'vertex_arrival'   : [0.4, 0.8, 0.4, 0.75], 
-                            'vertex_departure' : [0.4, 0.8, 0.4, 0.75],
-                            'halo_normal'      : [0, 0, 0, 0],
-                            'halo_arrival'     : [0.1, 0.8, 0.8, 0.25],
-                            'halo_departure'   : [0.9, 0.9, 0.9, 0.25],
-                            'text_normal'      : [1, 1, 1, 0.5],
-                            'bg_color'         : [1.95, 1.95, 1.95, 1.0]}
+        self.colors     =  {'edge_departure'    : [0, 0, 0, 1], 
+                            'edge_normal'       : [0.339, 0.3063, 0.3170, 0.290],
+                            'vertex_normal'     : [0.0, 0.5, 1.0, 0.85],
+                            'vertex_light'      : [1.0, 0.135, 0.0, 1.0],
+                            'vertex_garage'     : [0.133, 0.545, 0.133, 1.0],
+                            'vertex_destination' : [0.282, 0.239, 0.545, 1.0],
+                            'vertex_arrival'    : [0.4, 0.8, 0.4, 0.75], 
+                            'vertex_departure'  : [0.4, 0.8, 0.4, 0.75],
+                            'halo_normal'       : [0, 0, 0, 0],
+                            'halo_arrival'      : [0.1, 0.8, 0.8, 0.25],
+                            'halo_departure'    : [0.9, 0.9, 0.9, 0.25],
+                            'text_normal'       : [1, 1, 1, 0.5],
+                            'bg_color'          : [1.95, 1.95, 1.95, 1.0]}
 
 
-        if isinstance(seed, int):
+        if isinstance(seed, int) :
             np.random.seed(seed)
             gt.seed_rng(seed)
 
-        if g == None:
+        if g == None :
             self.create_graph(nVertices, pDest, pGarage)
-        elif isinstance(g, str):
+        elif isinstance(g, str) :
             self.set_graph(g)
-        elif isinstance(g, gt.Graph):
+        elif isinstance(g, gt.Graph) :
             self.set_graph(g)
-        else:
+        else :
             pass
 
 
-    def set_graph(self, g):
-        if isinstance(g, str):
+    def set_graph(self, g) :
+        if isinstance(g, str) :
             self.g = gt.load_graph(g, fmt='xml')
-        elif isinstance(g, gt.Graph):
+        elif isinstance(g, gt.Graph) :
             self.g = g
 
         vertex_t_color      = self.g.new_vertex_property("vector<double>")
@@ -77,30 +77,30 @@ class QueueNetwork:
         edge_t_distance     = self.g.new_edge_property("double")
         edge_t_parallel     = self.g.new_edge_property("bool")
         edge_state          = self.g.new_edge_property("int")
-        queues              = self.g.new_edge_property("python::object")
+        queues              = self.g.new_edge_property("python : :object")
 
         garage_count        = self.g.new_graph_property("int")
         dest_count          = self.g.new_graph_property("int")
-        node_index          = self.g.new_graph_property("python::object")
+        node_index          = self.g.new_graph_property("python : :object")
 
         dest_count[self.g]  = sum(self.g.vp['destination'].a)
         garage_count[self.g]= sum(self.g.vp['garage'].a)
 
         vertex_props = set()
-        for key in self.g.vertex_properties.keys():
+        for key in self.g.vertex_properties.keys() :
             vertex_props = vertex_props.union([key])
 
         HAS_LIGHTS  = 'light' in vertex_props
 
-        for v in self.g.vertices():
-            if self.g.vp['destination'][v]:
+        for v in self.g.vertices() :
+            if self.g.vp['destination'][v] :
                 vertex_color[v] = self.colors['vertex_destination']
-            elif self.g.vp['garage'][v]:
+            elif self.g.vp['garage'][v] :
                 vertex_color[v] = self.colors['vertex_garage']
-            else:
+            else :
                 vertex_color[v] = self.colors['vertex_normal']
-            if HAS_LIGHTS:
-                if self.g.vp['light'][v]:
+            if HAS_LIGHTS :
+                if self.g.vp['light'][v] :
                     vertex_color[v] = self.colors['vertex_light']
 
             vertex_t_color[v]   = self.colors['text_normal']
@@ -113,11 +113,11 @@ class QueueNetwork:
             halo[v]             = False
             state[v]            = 0
 
-        if 'pos' not in vertex_props:
+        if 'pos' not in vertex_props :
             self.g.vp['pos']    = gt.sfdp_layout(self.g, epsilon=1e-2, cooling_step=0.95)
 
         edge_props = set()
-        for key in self.g.edge_properties.keys():
+        for key in self.g.edge_properties.keys() :
             edge_props = edge_props.union( [key] )
 
         self.nV       = self.g.num_vertices()
@@ -129,13 +129,13 @@ class QueueNetwork:
         HAS_LANES     = 'lanes' in vertex_props
         HAS_CAP       = 'cap' in vertex_props
 
-        for e in self.g.edges():
+        for e in self.g.edges() :
             qissn   = (int(e.source()), int(e.target()), self.g.edge_index[e])
-            if self.g.ep['garage'][e]:
+            if self.g.ep['garage'][e] :
                 cap             = self.g.vp['cap'][e.target()] if HAS_CAP else 1
                 queues[e]       = qs.LossQueue(cap, issn=qissn, net_size=self.nE)
                 edge_length[e]  = self.g.ep['edge_length'][e] if HAS_LENGTH else 0.1
-            else:
+            else :
                 lanes           = self.g.vp['lanes'][e.target()] if HAS_LANES else 1
                 lanes           = lanes if lanes > 10 else max([int(lanes / 2), 1])
                 queues[e]       = qs.QueueServer(lanes, issn=qissn, net_size=self.nE)
@@ -153,28 +153,28 @@ class QueueNetwork:
             edge_state[e]       = 0
 
 
-        if 'shortest_path' not in vertex_props:
+        if 'shortest_path' not in vertex_props :
             shortest_path   = self.g.new_vertex_property("vector<int>")
             spath           = np.ones( (self.nV, self.nV), int) * -1
 
-            for v in self.g.vertices():
-                for u in self.g.vertices():
-                    if u == v or spath[int(v), int(u)] != -1:
+            for v in self.g.vertices() :
+                for u in self.g.vertices() :
+                    if u == v or spath[int(v), int(u)] != -1 :
                         continue
 
                     path  = gt.shortest_path(self.g, v, u, weights=edge_length)[0]
                     path  = [int(z) for z in path]
                     spath[path[:-1], path[-1]] = path[1:]
 
-                    for j in range(1,len(path)-1):
+                    for j in range(1,len(path)-1) :
                         pa  = path[:-j]
                         spath[pa[:-1], pa[-1]] = pa[1:]
 
-                    if self.undirected:
+                    if self.undirected :
                         path.reverse()
                         spath[path[:-1], path[-1]] = path[1:]
 
-                        for j in range(1,len(path)-1):
+                        for j in range(1,len(path)-1) :
                             pa  = path[:-j]
                             spath[pa[:-1], pa[-1]] = pa[1:]
 
@@ -182,13 +182,13 @@ class QueueNetwork:
 
             self.g.vp['shortest_path'] = shortest_path
 
-        node_dict = {'garage': [], 'destination': [], 'road': [], 'dest_road': []}
-        for v in self.g.vertices():
-            if self.g.vp['garage'][v]:
+        node_dict = {'garage' : [], 'destination' : [], 'road' : [], 'dest_road' : []}
+        for v in self.g.vertices() :
+            if self.g.vp['garage'][v] :
                 node_dict['garage'].append( int(v) )
-            elif self.g.vp['destination'][v]:
+            elif self.g.vp['destination'][v] :
                 node_dict['destination'].append( int(v) )
-            else:
+            else :
                 node_dict['road'].append( int(v) )
         node_dict['dest_road'] = copy.copy( node_dict['destination'] )
         node_dict['dest_road'].extend( node_dict['road'] )
@@ -229,22 +229,22 @@ class QueueNetwork:
 
 
 
-    def create_graph(self, nVertices=250, pDest=None, pGarage=None):
+    def create_graph(self, nVertices=250, pDest=None, pGarage=None) :
 
         points  = np.random.random((nVertices, 2)) * 2
         radii   = [(4+k)/200 for k in range(560)]
 
-        for r in radii:
+        for r in radii :
             g, pos  = gt.geometric_graph(points, r, [(0,2), (0,2)])
             comp, a = gt.label_components(g)
-            if max(comp.a) == 0:
+            if max(comp.a) == 0 :
                 break
 
         pos       = gt.sfdp_layout(g, epsilon=1e-2, cooling_step=0.95)
         pos_array = array([pos[v] for v in g.vertices()])
         pos_array = pos_array / (100*(np.max(pos_array,0) - np.min(pos_array,0)))
 
-        for v in g.vertices():
+        for v in g.vertices() :
             pos[v]  = pos_array[int(v), :]
 
         g.vp['pos']     = pos
@@ -255,14 +255,14 @@ class QueueNetwork:
 
 
 
-    def set_special_nodes(self, g, pDest=None, pGarage=None):
-        if pDest == None:
+    def set_special_nodes(self, g, pDest=None, pGarage=None) :
+        if pDest == None :
             pDest = 0.1
-        if pGarage == None:
+        if pGarage == None :
             pGarage = 1
         pDest = pDest * 100
 
-        def calculate_distance(latlon1, latlon2):
+        def calculate_distance(latlon1, latlon2) :
             lat1, lon1  = latlon1
             lat2, lon2  = latlon2
             R     = 6371          # radius of the earth in kilometers
@@ -287,8 +287,8 @@ class QueueNetwork:
         xy_pos      = array([r * np.cos(theta), r * np.sin(theta)]).transpose()
         g_pos       = xy_pos + dest_pos[ np.array( np.mod(np.arange(nGarages), nDests), int) ]
 
-        for v in g.vertices():
-            if int(v) not in dests:
+        for v in g.vertices() :
+            if int(v) not in dests :
                 tmp = array([calculate_distance(g.vp['pos'][v], g_pos[k, :]) for k in range(nGarages)])
                 min_g_dist = np.min((tmp, min_g_dist), 0)
                 ind_g_dist[min_g_dist == tmp] = int(v)
@@ -296,11 +296,11 @@ class QueueNetwork:
         ind_g_dist  = np.unique(ind_g_dist)
         garas       = ind_g_dist[:min( (nGarages,len(ind_g_dist)) )]
 
-        if not g.is_directed():
+        if not g.is_directed() :
             g.set_directed(True)
 
             g2  = g.copy()
-            for e in g2.edges():
+            for e in g2.edges() :
                 e = g.add_edge(source=int(e.target()), target=int(e.source()))
 
         destination = g.new_vertex_property("bool")
@@ -308,19 +308,19 @@ class QueueNetwork:
         egarage     = g.new_edge_property("bool")
         edge_length = g.new_edge_property('double')
 
-        for v in g.vertices():
-            if int(v) in dests:
+        for v in g.vertices() :
+            if int(v) in dests :
                 destination[v]  = True
-            if int(v) in garas:
+            if int(v) in garas :
                 garage[v] = True
 
-        for e in g.edges():
+        for e in g.edges() :
             latlon1         = g.vp['pos'][e.target()]
             latlon2         = g.vp['pos'][e.source()]
             edge_length[e]  = np.round(calculate_distance(latlon1, latlon2), 3)
 
-        for v in g.vertices():
-            if garage[v]:
+        for v in g.vertices() :
+            if garage[v] :
                 e           = g.add_edge(source=v, target=v)
                 egarage[e]  = True
 
@@ -331,18 +331,18 @@ class QueueNetwork:
         return g
 
 
-    def __repr__(self):
-        return 'QueueNetwork. # nodes: %s, # edges: %s, # agents: %s' % (self.nV, self.nE, sum(self.nAgents))
+    def __repr__(self) :
+        return 'QueueNetwork. # nodes : %s, # edges : %s, # agents : %s' % (self.nV, self.nE, sum(self.nAgents))
 
 
-    def agent_stats(self):
+    def agent_stats(self) :
         ans     = zeros(7)
         parked  = 0
         spaces  = 0
-        for e in self.g.edges():
+        for e in self.g.edges() :
             q        = self.g.ep['queues'][e]
             ans[:4] += q.travel_stats()
-            if isinstance(q, qs.LossQueue):
+            if isinstance(q, qs.LossQueue) :
                 ans[4] += q.lossed()
                 parked += q.nSystem
                 spaces += q.nServers
@@ -351,12 +351,12 @@ class QueueNetwork:
         return ans
             
 
-    def information_stats(self):
+    def information_stats(self) :
         real  = zeros(self.nE)
         data  = zeros(self.nE)
         a     = arange(self.nE)
 
-        for e in self.g.edges():
+        for e in self.g.edges() :
             q   = self.g.ep['queues'][e]
             key = self.g.edge(q.issn[0], q.issn[1]) 
             real[q.issn[2]] = q.nSystem / q.nServers    # q.issn[2] is the edge_index for that edge
@@ -365,7 +365,7 @@ class QueueNetwork:
         d_index = array(self.g.gp['node_index']['destination'])
         r_index = array(self.g.gp['node_index']['road'])
 
-        for e in self.g.edges():
+        for e in self.g.edges() :
             q           = self.g.ep['queues'][e]
             k           = self.g.edge_index[e]
             tmpdata     = q.net_data[:,2]
@@ -380,7 +380,7 @@ class QueueNetwork:
                         (np.mean(data),          np.std(data)) ) )
 
 
-    def _information_stats(self):
+    def _information_stats(self) :
         g   = self.g.gp['node_index']['garage'][0]
         d   = self.g.gp['node_index']['destination'][0]
         r   = self.g.gp['node_index']['road'][1]
@@ -388,16 +388,16 @@ class QueueNetwork:
         ans = zeros( (3,2) )
         ct  = 0
 
-        for q in g,d,r:
+        for q in g,d,r :
             data  = infty * ones(self.nE)
             a     = np.arange(self.nE)
             a     = a[a!=q]
             qnew  = self.g.ep['queues'][self.edges[q]]
             real  = qnew.nSystem / qnew.nServers
 
-            for k in a:
+            for k in a :
                 tmpdata = self.g.ep['queues'][self.edges[k]].net_data[q,2]
-                if tmpdata == -1: 
+                if tmpdata == -1 : 
                     continue
                 data[k] = (tmpdata - real)
          
@@ -408,44 +408,44 @@ class QueueNetwork:
         return ans
 
 
-    def lossed(self):
+    def lossed(self) :
         ans = 0
-        for e in self.g.edges():
+        for e in self.g.edges() :
             q   = self.g.ep['queues'][e]
-            if isinstance(q, qs.LossQueue):
+            if isinstance(q, qs.LossQueue) :
                 ans += q.lossed()
         return ans
 
 
-    def reset_colors(self, which_colors=('all',)):
-        if 'all' in which_colors:
-            for e in self.g.edges():
+    def reset_colors(self, which_colors=('all',)) :
+        if 'all' in which_colors :
+            for e in self.g.edges() :
                 self.g.ep['edge_color'][e]    = self.colors['edge_normal']
-            for v in self.g.vertices():
+            for v in self.g.vertices() :
                 self.g.vp['vertex_color'][v]  = self.colors['vertex_normal']
                 self.g.vp['halo_color'][v]    = self.colors['halo_normal']
                 self.g.vp['halo'][v]          = False
                 self.g.vp['state'][v]         = 0
-        if 'edges' in which_colors:
-            for e in self.g.edges():
+        if 'edges' in which_colors :
+            for e in self.g.edges() :
                 self.g.ep['edge_color'][e]    = self.colors['edge_normal']
-        if 'vertices' in which_colors:
-            for v in self.g.vertices():
+        if 'vertices' in which_colors :
+            for v in self.g.vertices() :
                 self.g.vp['vertex_color'][v]  = self.colors['vertex_normal']
                 self.g.vp['halo_color'][v]    = self.colors['halo_normal']
                 self.g.vp['halo'][v]          = False
                 self.g.vp['state'][v]         = 0
-        if 'halos' in which_colors:
-            for v in self.g.vertices():
+        if 'halos' in which_colors :
+            for v in self.g.vertices() :
                 self.g.vp['halo_color'][v]    = self.colors['halo_normal']
                 self.g.vp['halo'][v]          = False
-        if 'basic' in which_colors:
-            for v in self.g.vertices():
-                if self.g.vp['destination'][v]:
+        if 'basic' in which_colors :
+            for v in self.g.vertices() :
+                if self.g.vp['destination'][v] :
                     self.g.vp['vertex_color'][v]  = self.colors['vertex_destination']
-                elif self.g.vp['garage'][v]:
+                elif self.g.vp['garage'][v] :
                     self.g.vp['vertex_color'][v]  = self.colors['vertex_garage']
-                else:
+                else :
                     self.g.vp['vertex_color'][v]  = self.colors['vertex_normal']
                 self.g.vp['halo_color'][v]        = self.colors['halo_normal']
                 self.g.vp['halo'][v]    = False
@@ -453,8 +453,8 @@ class QueueNetwork:
 
 
 
-    def draw(self, file_name=None):
-        if file_name == None:
+    def draw(self, file_name=None) :
+        if file_name == None :
             ans = gt.graph_draw(self.g, self.g.vp['pos'], geometry=(750, 750),
                         bg_color=self.colors['bg_color'],
                         edge_color=self.g.ep['edge_color'],
@@ -474,7 +474,7 @@ class QueueNetwork:
                         vertex_text_position=self.g.vp['vertex_t_pos'],
                         vertex_font_size=self.g.vp['vertex_t_size'],
                         vertex_size=self.g.vp['vertex_size'])
-        else:
+        else :
             ans = gt.graph_draw(self.g, self.g.vp['pos'], geometry=(750, 750), output=file_name,
                         bg_color=self.colors['bg_color'],
                         edge_color=self.g.ep['edge_color'],
@@ -498,41 +498,41 @@ class QueueNetwork:
 
 
 
-    def _update_graph(self, ad, vertex, edge ):
+    def _update_graph(self, ad, vertex, edge ) :
         v, e    = vertex, edge
         self.reset_colors(('edges','halos'))
         
-        if ad == 'arrival':
+        if ad == 'arrival' :
             cap = self.g.ep['queues'][e].nServers
             tmp = self.g.vp['state'][v]/( 2*cap if cap < infty else self.agent_cap / self.nV )
 
-            if self.g.vp['destination'][v]:
+            if self.g.vp['destination'][v] :
                 a     = list(self.colors['vertex_destination'])
                 a[2] += (1-a[2]) * tmp
-            elif self.g.vp['garage'][v]:
+            elif self.g.vp['garage'][v] :
                 a     = list(self.colors['vertex_garage'])
                 a[1] += (1-a[1]) * tmp
-            else:
+            else :
                 a     = [tmp, tmp, tmp, 0.85]
 
             self.g.vp['vertex_color'][v]  = a
             self.g.vp['halo_color'][v]    = self.colors['halo_arrival']
             self.g.vp['halo'][v]          = True
             self.g.ep['state'][e]         = self.g.ep['queues'][e].nSystem
-            if self.g.ep['garage'][e]:
+            if self.g.ep['garage'][e] :
                 self.g.vp['state'][v]     = self.g.ep['queues'][e].nSystem
 
-        elif ad == 'departure':
+        elif ad == 'departure' :
             cap = self.g.ep['queues'][e].nServers
             tmp = self.g.vp['state'][v]/(2*cap if cap < infty else self.agent_cap/self.nV)
 
-            if self.g.vp['destination'][v]:
+            if self.g.vp['destination'][v] :
                 a     = list(self.colors['vertex_destination'])
                 a[2] += (1-a[2]) * tmp
-            elif self.g.vp['garage'][v]:
+            elif self.g.vp['garage'][v] :
                 a     = list(self.colors['vertex_garage'])
                 a[1] += (1-a[1]) * tmp
-            else:
+            else :
                 a     = [tmp, tmp, tmp, 0.85]
 
             self.g.vp['vertex_color'][v]  = a
@@ -540,11 +540,11 @@ class QueueNetwork:
             self.g.ep['edge_color'][e]    = self.colors['edge_departure']
             self.g.vp['halo_color'][v]    = self.colors['halo_departure']
             self.g.vp['halo'][v]          = True
-            if self.g.ep['garage'][e]:
+            if self.g.ep['garage'][e] :
                 self.g.vp['state'][v]     = self.g.ep['queues'][e].nSystem
 
 
-    def next_time(self):
+    def next_time(self) :
         self.queue_heap.sort()
         t   = self.queue_heap[0].next_time()
         que = self.queue_heap[0].issn
@@ -552,47 +552,47 @@ class QueueNetwork:
         return t, e
 
 
-    def next_event_type(self):
+    def next_event_type(self) :
         t, e0   = self.next_time()
         return self.g.ep['queues'][e0].next_event_type()
 
 
-    def next_event(self, Fast=False, STOP_LEARNER=False):
+    def next_event(self, Fast=False, STOP_LEARNER=False) :
         t, e0 = self.next_time()
         j     = self.g.edge_index[e0] #vertex(j)        
         event_type  = self.g.ep['queues'][e0].next_event_type()
 
-        if event_type == "departure" and STOP_LEARNER:
-            if isinstance(self.g.ep['queues'][e0].departures[0], qs.LearningAgent):
+        if event_type == "departure" and STOP_LEARNER :
+            if isinstance(self.g.ep['queues'][e0].departures[0], qs.LearningAgent) :
                 return "STOP"
 
         self.t  = t
 
-        if event_type == "departure":
+        if event_type == "departure" :
             agent           = self.g.ep['queues'][e0].next_event()
             self.nAgents[j] = self.g.ep['queues'][e0].nTotal
 
-            if len(list(e0.target().out_edges())) > 0:
+            if len(list(e0.target().out_edges())) > 0 :
                 e1   = agent.desired_destination(self, e0) # expects the network, and current location
                 agent.set_arrival(t + 0.25 * self.g.ep['edge_length'][e1] )
 
                 self.g.ep['queues'][e1].add_arrival(agent)
                 self.nAgents[self.g.edge_index[e1]] = self.g.ep['queues'][e1].nTotal
 
-                if not Fast:
+                if not Fast :
                     self._update_graph(ad='departure', vertex=e1.target(), edge=e1)
 
-        else:
-            if self.g.ep['queues'][e0].CREATE and sum(self.nAgents) > self.agent_cap - 1:
+        else :
+            if self.g.ep['queues'][e0].CREATE and sum(self.nAgents) > self.agent_cap - 1 :
                 self.g.ep['queues'][e0].CREATE = False
 
             self.g.ep['queues'][e0].next_event()
             self.nAgents[j] = self.g.ep['queues'][e0].nTotal
 
-            if not Fast:
+            if not Fast :
                 self._update_graph(ad='arrival', vertex=e0.target(), edge=e0)
 
-        if self.to_animate:
+        if self.to_animate :
             future = self.next_time()[0]
             time.sleep( future - self.t )
             self.win.graph.regenerate_surface(lazy=False)
@@ -600,7 +600,7 @@ class QueueNetwork:
             return True
 
 
-    def animation(self):
+    def animation(self) :
         self.to_animate = True
         self.win = gt.GraphWindow(self.g, self.g.vp['pos'], geometry=(750, 750),
                 bg_color=self.colors['bg_color'],
@@ -630,22 +630,22 @@ class QueueNetwork:
         self.to_animate = False
 
 
-    def simulate(self, T=25):
+    def simulate(self, T=25) :
         now = self.t
-        while self.t < now + T:
+        while self.t < now + T :
             self.next_event(Fast=True)
 
 
-    def reset(self):
+    def reset(self) :
         self.t          = 0
         self.nAgents    = [0 for k in range( self.nE )]
         self.to_animate = False
         self.reset_colors()
-        for e in self.g.edges():
+        for e in self.g.edges() :
             self.g.ep['queues'][e].reset()
 
 
-    def copy(self):
+    def copy(self) :
         net             = QueueNetwork(0)
         net.t           = copy.deepcopy(self.t)
         net.agent_cap   = copy.deepcopy(self.agent_cap)
@@ -656,9 +656,9 @@ class QueueNetwork:
         net.nAgents     = copy.deepcopy(self.nAgents)
         net.colors      = copy.deepcopy(self.colors)
         net.edges       = [e for e in net.g.edges()]
-        queues          = net.g.new_edge_property("python::object")
+        queues          = net.g.new_edge_property("python : :object")
 
-        for e in net.g.edges():
+        for e in net.g.edges() :
             queues[e]   = copy.deepcopy( net.g.ep['queues'][e] )
 
         net.g.ep['queues']  = queues

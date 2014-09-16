@@ -49,8 +49,8 @@ class approximate_dynamic_program :
         for e in Qn.g.edges() :
             q               = Qn.g.ep['queues'][e]
             q.CREATE        = False
-            q.xArrival      = lambda x : qt.exponential_rv( 1, x )
-            q.xDepart       = lambda x : qt.exponential_rv( 3, x )
+            q.xArrival      = lambda x : qt.exponential_rv(1, x)
+            q.xDepart       = lambda x : qt.exponential_rv(3, x)
             q.xDepart_mu    = lambda x : 1/3 
             q.set_nServers(1)
 
@@ -72,15 +72,15 @@ class approximate_dynamic_program :
                     Qn.g.ep['queues'][e].CREATE   = True
                     Qn.g.ep['queues'][e].create_p = 0
                     Qn.g.ep['queues'][e].set_nServers(1)
-                    Qn.g.ep['queues'][e].xArrival   = lambda x : qt.exponential_rv( 8, x )
-                    Qn.g.ep['queues'][e].xDepart    = lambda x : qt.exponential_rv( 3, x )
+                    Qn.g.ep['queues'][e].xArrival   = lambda x : qt.exponential_rv(8, x)
+                    Qn.g.ep['queues'][e].xDepart    = lambda x : qt.exponential_rv(3, x)
                     Qn.g.ep['queues'][e].xDepart_mu = lambda x : 1/3
                     Qn.g.ep['queues'][e].add_arrival()
 
         for e in Qn.g.edges() :
             if Qn.g.ep['garage'][e] :
-                Qn.g.ep['queues'][e].set_nServers( garage_cap[ct] )
-                Qn.g.ep['queues'][e].xDepart    = lambda x : qt.exponential_rv( 0.5, x )
+                Qn.g.ep['queues'][e].set_nServers(garage_cap[ct])
+                Qn.g.ep['queues'][e].xDepart    = lambda x : qt.exponential_rv(0.5, x)
                 Qn.g.ep['queues'][e].xDepart_mu = lambda x : 2
                 ct += 1
 
@@ -104,11 +104,11 @@ class approximate_dynamic_program :
         exp_s   = copy.deepcopy(QN.t)
 
         if S == None :
-            kk  = max( (QN.g.ep['queues'][e].nSystem - QN.g.ep['queues'][e].nServers, 0) ) + 1
+            kk  = max((QN.g.ep['queues'][e].nSystem - QN.g.ep['queues'][e].nServers, 0)) + 1
         else :
-            kk  = max( (S[QN.g.edge_index[e]+1] - QN.g.ep['queues'][e].nServers, 0) ) + 1
+            kk  = max((S[QN.g.edge_index[e]+1] - QN.g.ep['queues'][e].nServers, 0)) + 1
 
-        for k in range( kk ) :
+        for k in range(kk) :
             exp_s   += QN.g.ep['queues'][e].xDepart_mu(exp_s)
 
         exp_s   += 0.25 * QN.g.ep['edge_length'][e]
@@ -138,8 +138,8 @@ class approximate_dynamic_program :
             if exp_depart[e] > 0 :
                 exp_state[e]   -= exp_depart[e]
                 
-                od  = int( e.target().out_degree() )
-                ed  = int( np.floor(exp_depart[e] / od) )
+                od  = int(e.target().out_degree())
+                ed  = int(np.floor(exp_depart[e] / od))
                 c   = 0
                 depart_list = zeros( od, int )
 
@@ -158,7 +158,7 @@ class approximate_dynamic_program :
                     c  += 1
 
         ans = [state[0]]
-        ans.extend( [exp_state[e] for e in QN.g.edges()] )
+        ans.extend([exp_state[e] for e in QN.g.edges()])
         return ans
 
 
@@ -169,7 +169,7 @@ class approximate_dynamic_program :
         a       = QN.g.edge_index[e]
         S[k+1] -= 0 ### Fix later
         S[a+1] += 1
-        S[0][0] = int( e.target() )
+        S[0][0] = int(e.target())
         return S
 
 
@@ -197,18 +197,18 @@ class approximate_dynamic_program :
                 dist[w,v]  += self.Qn.g.ep['edge_length'][ self.Qn.g.edge(w, u) ]
                 while v != u :
                     u_new       = self.Qn.g.vp['shortest_path'][self.Qn.g.vertex(u)][v]
-                    dist[w,v]  += self.Qn.g.ep['edge_length'][ self.Qn.g.edge(u, u_new) ]
+                    dist[w,v]  += self.Qn.g.ep['edge_length'][self.Qn.g.edge(u, u_new)]
                     u           = u_new
 
-        dist       += np.transpose( dist ) 
-        self.dist   = copy.deepcopy( dist )
+        dist       += np.transpose(dist) 
+        self.dist   = copy.deepcopy(dist)
 
         for k in range(self.Qn.nV) :
             for j in range(self.Qn.nV) :
                 if not self.Qn.g.vp['garage'][self.Qn.g.vertex(k)] :
                     dist[k,j]   = 8000
                 else :
-                    dist[k,j]   = min( (0.5 * np.exp(1.5 * dist[k,j]) - 2, 1000) )
+                    dist[k,j]   = min((0.5 * np.exp(1.5 * dist[k,j]) - 2, 1000))
 
         self.parking_penalty    = np.abs(dist)
         self.full_penalty       = 10
@@ -218,12 +218,12 @@ class approximate_dynamic_program :
 
         v_props = set()
         for key in self.Qn.g.vertex_properties.keys() :
-            v_props = v_props.union( [key] )
+            v_props = v_props.union([key])
 
-        dist    = zeros( (self.Qn.nV, self.Qn.nV) )
+        dist    = zeros((self.Qn.nV, self.Qn.nV))
 
         if 'dist' not in v_props :        
-            dist    = zeros( (self.Qn.nV, self.Qn.nV) )
+            dist    = zeros((self.Qn.nV, self.Qn.nV))
             for ve in self.Qn.g.vertices() :
                 for we in self.Qn.g.vertices() :
                     v,w  = int(ve), int(we)
@@ -232,9 +232,9 @@ class approximate_dynamic_program :
                     tmp     = gt.shortest_path(self.Qn.g, ve, we, weights=self.Qn.g.ep['edge_length'])
                     path    = [int(v) for v in tmp[0]]
                     elen    = [self.Qn.g.ep['edge_length'][e] for e in tmp[1]]
-                    for i in range( len(path) - 1 ):
-                        for j in range(i+1, len(path) ):
-                            dist[path[i], path[j]] = sum( elen[i:j] )
+                    for i in range(len(path) - 1):
+                        for j in range(i+1, len(path)):
+                            dist[path[i], path[j]] = sum(elen[i:j])
 
             dist       += np.transpose( dist ) 
         else :
@@ -342,11 +342,11 @@ class approximate_dynamic_program :
                     for e in QN.g.vertex(state[0][0]).out_edges() :
                         if e.target() == QN.g.vertex(state[0][0]) :
                             continue
-                        Sa              = self.post_decision_state( state, e, QN )
-                        v, b            = self.value_function( Sa, agent.beta, QN)
+                        Sa              = self.post_decision_state(state, e, QN)
+                        v, b            = self.value_function(Sa, agent.beta, QN)
                         value_es[ct]    = v
                         basis_es[:,ct]  = b
-                        tmp             = self.time2cost( self.expected_sojourn(e, QN, state) )
+                        tmp             = self.time2cost(self.expected_sojourn(e, QN, state))
                         obj_func[ct]    = tmp + value_es[ct] * gamma
                         target_node[ct] = int(e.target())
                         ct             += 1
