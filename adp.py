@@ -15,6 +15,22 @@ from heapq          import heappush, heappop
 from collections    import deque
 from gi.repository  import Gtk, Gdk, GdkPixbuf, GObject
 
+## Incorporate expected_sojourn calculation into QueueNetwork, perhaps by doing the 
+## calculation at every, departure event. Find out how much this will slow things down
+
+
+# basis_function1(S, QN)
+# Calculates the actual shortest path between current location and destination
+
+# basis_function2(S, QN, RETURN_PATH=False)
+# Calculates the expected travel times between nodes in the graph and returns the
+# time of the stochastic shortest path between our current location and destination
+
+# basis_function3(S, QN, PRE_SET=False)
+# Calculates the expected travel times between nodes in the graph and returns the
+# time of the stochastic shortest path between our current location and the garage
+# that is 'closest' to the destination
+
 
 class approximate_dynamic_program :
 
@@ -30,6 +46,7 @@ class approximate_dynamic_program :
         self.beta               = 0.5 * ones( self.nFeatures )
         self.agent_variables    = {}
         self.parked             = {}
+        self.dir                = {'frames' : './figures/frames/'}
 
         if Qn == None :
             self.Qn = self.create_network(agent_cap=self.agent_cap, seed=seed)
@@ -40,7 +57,7 @@ class approximate_dynamic_program :
 
         self.edge_text      = self.Qn.g.new_edge_property("string")
         self.vertex_text    = self.Qn.g.new_vertex_property("string")
-        #self.calculate_parking_penalty2()
+        self.calculate_parking_penalty2()
 
 
     def create_network(self, agent_cap, net_size=150, seed=None) :
@@ -100,7 +117,8 @@ class approximate_dynamic_program :
         return l
 
     ## Calculates it incorrectly, fix
-    def expected_sojourn(self, e, QN, S=None) : 
+    ## if time2cost was a different function, make sure to apply it here
+    def expected_sojourn(self, e, QN, S=None, time2cost=True) : 
         exp_s   = copy.deepcopy(QN.t)
 
         if S == None :
@@ -206,12 +224,12 @@ class approximate_dynamic_program :
         for k in range(self.Qn.nV) :
             for j in range(self.Qn.nV) :
                 if not self.Qn.g.vp['garage'][self.Qn.g.vertex(k)] :
-                    dist[k,j]   = 8000
+                    dist[k,j] = 8000
                 else :
-                    dist[k,j]   = min((0.5 * np.exp(1.5 * dist[k,j]) - 2, 1000))
+                    dist[k,j] = min((0.5 * np.exp(1.5 * dist[k,j]) - 2, 1000))
 
-        self.parking_penalty    = np.abs(dist)
-        self.full_penalty       = 10
+        self.parking_penalty  = np.abs(dist)
+        self.full_penalty     = 10
 
 
     def calculate_parking_penalty2(self) :
@@ -247,10 +265,10 @@ class approximate_dynamic_program :
 
         for v in self.Qn.g.vertices() :
             if not self.Qn.g.vp['garage'][v] :
-                pp[int(v),:]    = 8000
+                pp[int(v), :] = 8000
 
-        self.parking_penalty    = np.abs(pp)
-        self.full_penalty       = 10
+        self.parking_penalty  = np.abs(pp)
+        self.full_penalty     = 10
 
 
     def parking_value(self, origin, destination, S, QN) :
@@ -258,9 +276,8 @@ class approximate_dynamic_program :
         if isinstance(e, gt.Edge) :
             cap = QN.g.ep['queues'][e].nServers
             ei  = QN.g.edge_index[e]
-            r   = S[ei+1]/cap
-
-            p   = 1.0 / (1.0 + np.exp(-40*(r-19/20)) )
+            r   = S[ei+1] / cap
+            p   = 1.0 / ( 1.0 + np.exp(-40*(r-19/20)) )
             ans = self.parking_penalty[origin, destination] + p * self.full_penalty
         else :
             ans = self.parking_penalty[origin, destination]
@@ -270,9 +287,10 @@ class approximate_dynamic_program :
 
     # algorithm from pg 405 of Powell 2011
     # theta update from pg 349 of Powell 2011
+
     def approximate_policy_iteration(self, orig, dest, COMPLETE_INFORMATION=True, save_frames=False) :
-        if save_frames and not os.path.exists("./frames") :
-            os.mkdir("./frames")
+        if save_frames and not os.path.exists(self.dir['frames']) :
+            os.mkdir(self.dir['frames'])
 
         N, M, T = self.parameters['N'], self.parameters['M'], self.parameters['T']
         gamma   = self.parameters['gamma']
@@ -284,10 +302,10 @@ class approximate_dynamic_program :
             max_out_degree  = max( (max_out_degree, v.out_degree()) )
         max_out_degree += 1
 
-        cost        = zeros( max_out_degree )
-        target_node = zeros( max_out_degree, int )
-        value_es    = zeros( max_out_degree )
-        obj_func    = zeros( max_out_degree )
+        cost        = zeros(max_out_degree)
+        target_node = zeros(max_out_degree, int)
+        value_es    = zeros(max_out_degree)
+        obj_func    = zeros(max_out_degree)
         basis_es    = np.mat(zeros( (self.nFeatures, max_out_degree) ))
         for_state   = [0 for k in range(self.Qn.nE)]
 
@@ -300,6 +318,7 @@ class approximate_dynamic_program :
         for n in range(N) :
             self.random_state(orig, dest, (10,20) )
             print( sum(self.Qn.nAgents) )
+
             for m in range(M) :
                 QN  = self.Qn.copy()
 
@@ -324,20 +343,20 @@ class approximate_dynamic_program :
                     state.extend(for_state)
 
                     if not COMPLETE_INFORMATION :
-                        data    = agent.net_data[:,1:3]
-                        data    = data[:,0] * data[:,1]
+                        data  = agent.net_data[:, 1:3]
+                        data  = data[:, 0] * data[:, 1]
                         for e in QN.g.edges() :
-                            state[QN.g.edge_index[e]+1] = data[QN.g.edge_index[e]]
+                            state[QN.g.edge_index[e] + 1] = data[QN.g.edge_index[e]]
                     else :
                         for e in QN.g.edges() :
-                            state[QN.g.edge_index[e]+1] = QN.g.ep['queues'][e].nSystem
+                            state[QN.g.edge_index[e] + 1] = QN.g.ep['queues'][e].nSystem
 
                     obj_func[0] = self.parking_value(state[0][0], state[0][1], state, QN)
                     if QN.g.vp['garage'][QN.g.vertex( state[0][0] )] :
                         nServers    = QN.g.ep['queues'][QN.g.edge(state[0][0], state[0][0])].nServers
                         if state[state[0][0]+1] == nServers :
                             obj_func[0] += self.full_penalty 
-                    ct      = 1
+                    ct  = 1
 
                     for e in QN.g.vertex(state[0][0]).out_edges() :
                         if e.target() == QN.g.vertex(state[0][0]) :
@@ -346,7 +365,7 @@ class approximate_dynamic_program :
                         v, b            = self.value_function(Sa, agent.beta, QN)
                         value_es[ct]    = v
                         basis_es[:,ct]  = b
-                        tmp             = self.time2cost(self.expected_sojourn(e, QN, state))
+                        tmp             = self.expected_sojourn(e, QN, state)
                         obj_func[ct]    = tmp + value_es[ct] * gamma
                         target_node[ct] = int(e.target())
                         ct             += 1
@@ -375,31 +394,30 @@ class approximate_dynamic_program :
 
                     if save_frames :
                         self._update_graph(state, QN)
-                        self.save_frame('./figures/frames/sirs_%s_%s_%s_%s-0.png' % (agent.issn,n,m,tau), QN )
+                        self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-0.png' % (agent.issn,n,m,tau), QN )
                         self._update_graph(state, QN, target_node[policy])
-                        self.save_frame('./figures/frames/sirs_%s_%s_%s_%s-1.png' % (agent.issn,n,m,tau), QN )
+                        self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-1.png' % (agent.issn,n,m,tau), QN )
 
                     QN.g.ep['queues'][e0].departures[0].dest    = target_node[policy]
                     QN.g.ep['queues'][e0].departures[0].od[0]   = target_node[policy]
                     self.simulate_forward( QN )
 
                     agent.costs[n,m,tau]  = self.time2cost(QN.t - old_t)
-                    print( "Realized cost: %s" % (agent.costs[n,m,tau]) )
                     agent.tau  += 1
-
+                    print( "Realized cost: %s" % (agent.costs[n,m,tau-1]) )
 
                 for agent in self.agent_variables.values() :
                     for t in range(T-1, -1,-1) :
                         agent.values[n,m,t] = agent.costs[n,m,t] + gamma * agent.values[n,m,t+1]
 
-                    print( array([agent.issn, agent.values[n,m,0], agent.v_est[n,m,0], np.sum(QN.nAgents)]) )
-                    a, b  = self.update_theta( agent.beta, agent.Bmat, agent.basis[n,m,:,:], 
-                                               agent.values[n,m,:], agent.v_est[n,m,:] ) ###
+                    a, b  = self.update_theta(agent.beta, agent.Bmat, agent.basis[n,m,:,:], 
+                                              agent.values[n,m,:], agent.v_est[n,m,:])
                     agent.beta_history[n,m,:]   = a
                     agent.value_history[n,m,:]  = agent.values[n,m,0], agent.v_est[n,m,0]
-                    print("Agent : %s, Weights : %s" % (agent.issn, a))
                     agent.beta  = a.T 
                     agent.Bmat  = b
+                    print( array([agent.issn, agent.values[n,m,0], agent.v_est[n,m,0], np.sum(QN.nAgents)]) )
+                    print("Agent : %s, Weights : %s" % (agent.issn, a))
 
 
     def setup_adp(self, nLearners) :
@@ -453,13 +471,13 @@ class approximate_dynamic_program :
 
     ## time weighted updating
     def update_theta(self, v, B, basis, value, value_est ) :
-        lam     = 0.95
-        x       = np.mat(basis[0,:]).T
-        gamma   = lam + x.T * B * x
-        H       = B / gamma
-        B       = (B - B * x * x.T * B / gamma) / lam
-        ipsilon = value_est[0] - value[0]
-        return np.squeeze(np.asarray(np.mat(v).T - ipsilon * H * x)), B
+        lam = 0.95
+        x   = np.mat(basis[0,:]).T
+        gam = lam + x.T * B * x
+        H   = B / gam
+        B   = (B - B * x * x.T * B / gam) / lam
+        ips = value_est[0] - value[0]
+        return np.squeeze(np.asarray(np.mat(v).T - ips * H * x)), B
 
 
     def update_theta2(self, v, B, basis, value, value_est ) :
@@ -474,113 +492,104 @@ class approximate_dynamic_program :
 
 
     def value_function(self, state, theta, QN) :
-        if len(theta) != self.nFeatures :
-            print(("theta not of correct length: value_function", theta.shape))
-            return
+        #if len(theta) != self.nFeatures :
+        #    print(("theta not of correct length: value_function", theta.shape))
+        #    return
 
-        value       = zeros(self.nFeatures)
-        value[0]    = theta[0]
-        value[1]    = theta[1] * self.basis_function1( state, QN )
-        value[2]    = theta[2] * self.basis_function2( state, QN )
-        value[3]    = theta[3] * self.basis_function3( state, QN )
-        value[4]    = theta[4] * self.basis_function4( state, QN )
-        return sum(np.squeeze(np.asarray(value))), np.mat(value).T
+        value    = zeros(self.nFeatures)
+        value[0] = theta[0]
+        value[1] = theta[1] * self.basis_function1(state, QN)
+        value[2] = theta[2] * self.basis_function2(state, QN)
+        value[3] = theta[3] * self.basis_function3(state, QN)
+        value[4] = theta[4] * self.basis_function4(state, QN)
+        return sum(value), np.mat(value).T
 
 
     def basis_function1(self, S, QN) :
-        # Calculates the actual shortest path between current location and destination
-        #print( 0.25 * self.dist[ S[0][0], S[0][1] ] )
         return 1 * 0.25 * self.dist[ S[0][0], S[0][1] ]
 
 
     def basis_function2(self, S, QN, RETURN_PATH=False) :
-        # Calculates the expected travel times between nodes in the graph and returns the
-        # time of the stochastic shortest path between our current location and destination
 
-        for e in QN.g.edges() :
-            if e.source() != e.target() :
-                sojourn                     = self.expected_sojourn(e, QN, S)
-                QN.g.ep['edge_times'][e]    = sojourn + 0.25 * QN.g.ep['edge_length'][e]
+        #for e in QN.g.edges() :
+        #    if e.source() != e.target() :
+        #        sojourn                     = self.expected_sojourn(e, QN, S)
+        #        QN.g.ep['edge_times'][e]    = sojourn + 0.25 * QN.g.ep['edge_length'][e]
 
         origin  = QN.g.vertex(S[0][0])
         destin  = QN.g.vertex(S[0][1])
-        answer  = gt.shortest_path(QN.g, origin, destin, weights=QN.g.ep['edge_times'])[1]
+        #answer  = gt.shortest_path(QN.g, origin, destin, weights=QN.g.ep['edge_times'])[1]
 
         if RETURN_PATH :
             an  = answer
         else :
-            an      = 0
-            for e in answer :
-                an += self.time2cost( QN.g.ep['edge_times'][e] )
-            #print( an )
+            an  = 0
+            an  = 1
+            #for e in answer :
+            #    an += self.time2cost( QN.g.ep['edge_times'][e] )
         return an
 
 
     def basis_function3(self, S, QN, PRE_SET=False) :
-        # Calculates the expected travel times between nodes in the graph and returns the
-        # time of the stochastic shortest path between our current location and the garage
-        # that is 'closest' to the destination
 
-        indices = np.argsort( self.dist[S[0][1], QN.g.gp['node_index']['garage']] )
-        garages = [QN.g.gp['node_index']['garage'][k] for k in indices]
+        #indices = np.argsort( self.dist[S[0][1], QN.g.gp['node_index']['garage']] )
+        #garages = [QN.g.gp['node_index']['garage'][k] for k in indices]
 
-        if len( garages ) > 4 :
-            garages = garages[:4]
+        #if len( garages ) > 4 :
+        #    garages = garages[:4]
 
-        if not PRE_SET :
-            for e in QN.g.edges() :
-                if e.source() != e.target() :
-                    sojourn                     = self.expected_sojourn(e, QN, S)
-                    #print( ("sojourn", sojourn) )
-                    QN.g.ep['edge_times'][e]    = sojourn + 0.25 * QN.g.ep['edge_length'][e]
+        #if not PRE_SET :
+        #    for e in QN.g.edges() :
+        #        if e.source() != e.target() :
+        #            sojourn = self.expected_sojourn(e, QN, S)
+        #            QN.g.ep['edge_times'][e] = sojourn + 0.25 * QN.g.ep['edge_length'][e]
 
-        an      = zeros( len(garages) )
-        ct      = 0
+        #an  = zeros( len(garages) )
+        ct  = 0
         origin  = QN.g.vertex(S[0][0])
 
-        for g in garages:
-            destin  = QN.g.vertex(g)
-            answer  = gt.shortest_path(QN.g, origin, destin, weights=QN.g.ep['edge_times'])[1]
-            for e in answer :
-                an[ct] += self.time2cost( QN.g.ep['edge_times'][e] )
-            an[ct] += self.parking_value(g, S[0][1], S, QN)
+        for g in (1,):# garages:
+            #destin  = QN.g.vertex(g)
+            #answer  = gt.shortest_path(QN.g, origin, destin, weights=QN.g.ep['edge_times'])[1]
+            #for e in answer :
+            #    an[ct] += self.time2cost(QN.g.ep['edge_times'][e])
+            #an[ct] += self.parking_value(g, S[0][1], S, QN)
             ct     += 1
 
-        #print( min(an) )
+        an = (1,)
+
         return min(an)
 
 
     def basis_function4(self, S, QN) :
-        destination = QN.g.vertex( S[0][1] ) 
+        destination = QN.g.vertex(S[0][1]) 
         for v in QN.g.vertex(S[0][0]).out_neighbours():
             if v == destination :
                 return 0
         v   = [self.parking_value(g, S[0][1], S, QN) for g in QN.g.gp['node_index']['garage']]
         ans = np.min(v) 
-        #print( ans )
-        return 1 * ans
+        return ans
 
 
 
     def _update_graph(self, state, QN, target=None ) :
-        ###
         QN.reset_colors(('all','basic'))
 
         v_props = set()
         for key in QN.g.vertex_properties.keys() :
             v_props = v_props.union( [key] )
 
-        HAS_LIGHT   = 'light' in v_props
+        HAS_LIGHT = 'light' in v_props
 
         i, j    = state[0]
         vi, vj  = QN.g.vertex(i), QN.g.vertex(j)
-        self.edge_text      = QN.g.new_edge_property("string")
-        self.vertex_text    = QN.g.new_vertex_property("string")
-        self.vertex_text[vj]= QN.g.vp['name'][vj]
+        self.edge_text       = QN.g.new_edge_property("string")
+        self.vertex_text     = QN.g.new_vertex_property("string")
+        self.vertex_text[vj] = QN.g.vp['name'][vj]
 
         for e in QN.g.edges() :
-            QN.g.ep['edge_width'][e]    = 1.25
-            QN.g.ep['arrow_width'][e]   = 4
+            QN.g.ep['edge_width'][e]  = 1.25
+            QN.g.ep['arrow_width'][e] = 4
             if e.target() != e.source() :
                 QN.g.ep['edge_color'][e]    = [0.5, 0.5, 0.5, 0.45]
                 QN.g.ep['edge_t_color'][e]  = [0.0, 0.0, 0.0, 0.45]
@@ -661,13 +670,11 @@ class approximate_dynamic_program :
             QN.g.ep['arrow_width'][e]   = 9
 
 
-        #for v in QN.g.vertices() :
-        #    print( QN.g.vp['vertex_color'][v] )
 
     def save_frame(self, filename, QN) :
         gt.graph_draw(QN.g, QN.g.vp['pos'], 
                 output_size=(1200, 1200), output=filename,
-                bg_color=[1,1,1,0],#QN.colors['bg_color'],
+                bg_color=[1,1,1,1],#QN.colors['bg_color'],
                 edge_color=QN.g.ep['edge_color'],
                 edge_control_points=QN.g.ep['control'],
                 edge_marker_size=QN.g.ep['arrow_width'],

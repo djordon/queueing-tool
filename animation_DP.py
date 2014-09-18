@@ -32,37 +32,5 @@ dat = datetime.datetime.today().isoformat().replace('T', '_')
 pickle.dump( (a.theta_history, a.value_history), open(loc+"theta_data_"+dat+".p", "wb") )
 
 
-"""
-import queue_tool    as qt
-import queue_server  as qs
-agent       = qs.LearningAgent(5, 10)
-learning_agents = {k : qs.LearningAgent(k, 10) for k in range(4)}
-learning_agents[agent.issn] = agent
-
-n=10
-open_slot  = [-k for k in range(n)]
-open_slot  = [open_slot[-k] for k in range(1,n+1)]
-b          = [-k for k in range(n-1,-1,-1)]
-
-
-import approximate_DP   as adp
-import numpy            as np
-import graph_tool.all   as gt
-import queue_server     as qs
-import queue_tool       as qt
-import cProfile
-import pickle
-net = pickle.load( open('pitt_network.p', 'rb') )
-que = qt.QueueNetwork( net.g )
-que.draw()
-a   = adp.approximate_dynamic_program(seed=10)
-pr  = cProfile.Profile()
-pr.enable()
-a.Qn.simulate(20)
-pr.disable()
-pr.print_stats(sort='time')
-
-cProfile.run('a.Qn.simulate()')
-"""
 
 

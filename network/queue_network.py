@@ -77,11 +77,11 @@ class QueueNetwork :
         edge_t_distance     = self.g.new_edge_property("double")
         edge_t_parallel     = self.g.new_edge_property("bool")
         edge_state          = self.g.new_edge_property("int")
-        queues              = self.g.new_edge_property("python : :object")
+        queues              = self.g.new_edge_property("python::object")
 
         garage_count        = self.g.new_graph_property("int")
         dest_count          = self.g.new_graph_property("int")
-        node_index          = self.g.new_graph_property("python : :object")
+        node_index          = self.g.new_graph_property("python::object")
 
         dest_count[self.g]  = sum(self.g.vp['destination'].a)
         garage_count[self.g]= sum(self.g.vp['garage'].a)
@@ -656,7 +656,7 @@ class QueueNetwork :
         net.nAgents     = copy.deepcopy(self.nAgents)
         net.colors      = copy.deepcopy(self.colors)
         net.edges       = [e for e in net.g.edges()]
-        queues          = net.g.new_edge_property("python : :object")
+        queues          = net.g.new_edge_property("python::object")
 
         for e in net.g.edges() :
             queues[e]   = copy.deepcopy( net.g.ep['queues'][e] )

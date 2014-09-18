@@ -9,10 +9,8 @@ import pickle
 
 np.set_printoptions(precision=2,suppress=True,threshold=2000)
 directory   = './'
-pit = pickle.load(open(directory+'pitt_network.p', 'rb') )
-#Qn  = qt.QueueNetwork( pit.g )
-#g   = gt.load_graph('pitt_network.xml')
-#Qn  = qt.QueueNetwork( g )
+g   = gt.load_graph('pitt_network.xml', fmt='xml')
+pit = qt.QueueNetwork( g )
 a   = adp.approximate_dynamic_program(pit.g)
 vs  = [a.Qn.g.vertex(202), a.Qn.g.vertex(453), a.Qn.g.vertex(255),
        a.Qn.g.vertex(449), a.Qn.g.vertex(218), a.Qn.g.vertex(72),
@@ -34,8 +32,8 @@ a.agent_cap     = 1000
 nLearners   = 3
 dest        = list( np.random.choice(a.Qn.g.gp['node_index']['destination'], nLearners) )
 orig        = list( np.random.choice(a.Qn.g.gp['node_index']['road'], nLearners) )
-
-a.approximate_policy_iteration(orig, dest, save_frames=True)
+print((orig, dest))
+a.approximate_policy_iteration(orig, dest, save_frames=False)
 
 """
 orig, dest  = [], []
@@ -65,29 +63,15 @@ a.approximate_policy_iteration(orig, dest, save_frames=True)
 
 
 """
-import queueing_tool    as qt
-import queue_server     as qt
-agent       = qt.LearningAgent(5, 10)
-learning_agents = {k : qt.LearningAgent(k, 10) for k in range(4)}
-learning_agents[agent.issn] = agent
-
-n=10
-open_slot  = [-k for k in range(n)]
-open_slot  = [open_slot[-k] for k in range(1,n+1)]
-b          = [-k for k in range(n-1,-1,-1)]
-
-
 import approximate_DP   as adp
 import numpy            as np
 import graph_tool.all   as gt
-import queue_server     as qs
 import queueing_tool    as qt
 import cProfile
 import pickle
-net = pickle.load( open('pitt_network.p', 'rb') )
-que = qt.QueueNetwork( net.g )
-#que.draw()
-a   = adp.approximate_dynamic_program(seed=10)
+g   = gt.load_graph('pitt_network.xml', fmt='xml')
+pit = qt.QueueNetwork(g)
+a   = adp.approximate_dynamic_program(pit.g, seed=10)
 pr  = cProfile.Profile()
 pr.enable()
 a.Qn.simulate(20)
@@ -95,20 +79,4 @@ pr.disable()
 pr.print_stats(sort='time')
 
 cProfile.run('a.Qn.simulate()')
-"""
-
-"""
-v1  = Qn.g.vertex(202)
-v2  = Qn.g.vertex(453)
-
-for v in v1,v2 :
-    for e in v.in_edges() :
-        Qn.g.ep['queues'][e].CREATE       = True
-        Qn.g.ep['queues'][e].create_p     = 0
-        Qn.g.ep['queues'][e].xArrival     = lambda x : qt.exponential_rv( 8, x )
-        Qn.g.ep['queues'][e].xDepart      = lambda x : qt.exponential_rv( 3, x )
-        Qn.g.ep['queues'][e].xDepart_mu   = lambda x : 1/3
-        Qn.g.ep['queues'][e].add_arrival()
-        break
-
 """
