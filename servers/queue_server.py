@@ -28,9 +28,9 @@ def exponential_rv(rate, t) :
 
 class QueueServer :
 
-    def __init__(self, nServers=1, issn=(0,0,0), create=True, net_size=1,
-            xArrival=lambda x : exponential_rv(1, x), 
-            xDepart =lambda x : exponential_rv(1.1, x),
+    def __init__(self, nServers=1, issn=(0,0,0), active=True, net_size=1,
+            xArrival=lambda x : x - log(uniform()) / 1, 
+            xDepart =lambda x : x - log(uniform()) / 1.1,
             xDepart_mu= lambda x : 1/1.1) :
 
         self.issn       = issn
@@ -40,8 +40,9 @@ class QueueServer :
         self.nSystem    = 0
         self.nTotal     = 0
 
-        self.t          = 0
-        self.CREATE     = create
+        self.local_t    = 0
+        self.next_time  = infty
+        self.active     = active
         self.smart_p    = 0
         self.next_ct    = 0
 
@@ -62,19 +63,14 @@ class QueueServer :
         self.networking(net_size)
 
     def __repr__(self) :
-        tmp = "QueueServer. # servers : %s, queued : %s, arrivals : %s, departures : %s, local_time : %s" \
-            %  (self.nServers, len(self.queue), self.nArrivals, \
-                self.nArrivals - self.nSystem, self.t)
+        tmp = "QueueServer. servers: %s, queued: %s, arrivals: %s, departures: %s, local_time: %s" \
+            %  (self.nServers, len(self.queue), self.nArrivals, self.nArrivals - self.nSystem, self.local_t)
         return tmp
 
     def __lt__(a,b) :
-        min_a = min(a.arrivals[0].time, a.departures[0].time)
-        min_b = min(b.arrivals[0].time, b.departures[0].time)
-        return min_a < min_b
+        return a.next_time < b.next_time
     def __gt__(a,b) :
-        min_a = min(a.arrivals[0].time, a.departures[0].time)
-        min_b = min(b.arrivals[0].time, b.departures[0].time)
-        return min_a > min_b
+        return a.next_time > b.next_time
     def __eq__(a,b) :
         return (not a < b) and (not b < a)
     def __le__(a,b) :
@@ -94,7 +90,7 @@ class QueueServer :
 
     def nQueued(self) :
         n = 0 if self.nServers == infty else self.nSystem - self.nServers
-        return max([n,0])
+        return max([n, 0])
 
 
     def travel_stats(self) :
@@ -125,10 +121,10 @@ class QueueServer :
                 self.nTotal += 1
                 heappush(self.arrivals, a)
         else : 
-            if self.CREATE :
-                if self.t >= self.next_ct :
+            if self.active :
+                if self.local_t >= self.next_ct :
                     self.nTotal  += 1
-                    self.next_ct  = self.xArrival(self.t)
+                    self.next_ct  = self.xArrival(self.local_t)
                     if uniform() < self.smart_p :
                         new_arrival = SmartAgent(self.nArrivals+1, self.net_data.shape[0])
                     else :
@@ -136,9 +132,7 @@ class QueueServer :
                     new_arrival.set_arrival( self.next_ct )
                     heappush(self.arrivals, new_arrival)
 
-
-    def next_time(self) :
-        return min(self.arrivals[0].time, self.departures[0].time)
+        self.next_time = self.arrivals[0].time if self.arrivals[0].time < self.departures[0].time else self.departures[0].time
 
 
     def next_event_type(self) :
@@ -173,31 +167,34 @@ class QueueServer :
 
     def next_event(self) :
         if self.arrivals[0].time < self.departures[0].time :
-            new_arrival = heappop(self.arrivals)
-            self.t      = new_arrival.time
+            new_arrival   = heappop(self.arrivals)
+            self.local_t  = new_arrival.time
 
-            self.add_arrival()
-            self.append_departure(new_arrival, self.t)
+            if self.active :
+                self.add_arrival()
+            self.append_departure(new_arrival, self.local_t)
+            self.next_time  = self.arrivals[0].time if self.arrivals[0].time < self.departures[0].time else self.departures[0].time
                 
         elif self.departures[0].time < infty :
             new_depart      = heappop(self.departures)
-            self.t          = new_depart[1]
+            self.local_t    = new_depart[1]
             self.nDeparts  += 1
             self.nTotal    -= 1
             self.nSystem   -= 1
 
             if len(self.queue) > 0 :
                 agent             = self.queue.popleft()
-                agent.arr_ser[1]  = self.t
-                agent.set_departure(self.xDepart(self.t))
+                agent.arr_ser[1]  = self.local_t
+                agent.set_departure(self.xDepart(self.local_t))
                 heappush(self.departures, agent)
 
             new_depart.update_information(self.net_data)
-            new_depart.stamp(self.issn, self.nSystem, self.nServers, self.t)
+            new_depart.stamp(self.issn, self.nSystem, self.nServers, self.local_t)
 
             if self.nSystem == 0 : 
                 self.networking(self.net_data.shape[0])
 
+            self.next_time = self.arrivals[0].time if self.arrivals[0].time < self.departures[0].time else self.departures[0].time 
             return new_depart
 
 
@@ -205,7 +202,8 @@ class QueueServer :
         self.nArrivals  = 0
         self.nSystem    = 0
         self.nTotal     = 0
-        self.t          = 0
+        self.local_t    = 0
+        self.next_time  = infty
         self.next_ct    = 0
         self.queue      = deque()
         self.arrivals   = []
@@ -227,7 +225,8 @@ class QueueServer :
         new_server.nSystem      = copy.deepcopy(self.nSystem)
         new_server.nTotal       = copy.deepcopy(self.nTotal)
         new_server.nServers     = copy.deepcopy(self.nServers)
-        new_server.t            = copy.deepcopy(self.t)
+        new_server.local_t      = copy.deepcopy(self.local_t)
+        new_server.next_time    = copy.deepcopy(self.next_time)
         new_server.next_ct      = copy.deepcopy(self.next_ct)
         new_server.queue        = copy.deepcopy(self.queue)
         new_server.arrivals     = copy.deepcopy(self.arrivals)
@@ -238,7 +237,7 @@ class QueueServer :
 
 class LossQueue( QueueServer ) :
 
-    def __init__(self, nServers=1, issn=0, create=True, net_size=1, 
+    def __init__(self, nServers=1, issn=0, active=True, net_size=1, 
             xArrival=lambda x : exponential_rv(1,x), 
             xDepart =lambda x : exponential_rv(1,x), queue_cap=0) :
 
@@ -246,15 +245,14 @@ class LossQueue( QueueServer ) :
             print("LossQueue must have finite number of servers. Setting to 1")
             nServers = 1
 
-        QueueServer.__init__(self, nServers+1, issn, create, net_size, xArrival, xDepart) 
+        QueueServer.__init__(self, nServers+1, issn, active, net_size, xArrival, xDepart) 
         self.nServers   = nServers
         self.nLossed    = 0
         self.queue_cap  = queue_cap
 
     def __repr__(self) :
-        tmp = "Loss_queue. # servers : %s, queued : %s, arrivals : %s, departures : %s, local_time : %s" \
-            %  (self.nServers, len(self.queue), self.nArrivals, \
-                self.nArrivals - self.nSystem, self.t)
+        tmp = "LossQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, time: %s" \
+            %  (self.nServers, len(self.queue), self.nArrivals, self.nArrivals - self.nSystem, self.local_t)
         return tmp
 
     def set_nServers(self, n) :
@@ -284,13 +282,16 @@ class LossQueue( QueueServer ) :
                 new_arrival     = heappop(self.arrivals)
                 new_arrival.add_loss(self.issn)
 
-                self.t  = new_arrival.time
-                self.add_arrival()
-                new_arrival.arr_ser[0]  = self.t
-                new_arrival.arr_ser[1]  = self.t
+                self.local_t    = new_arrival.time
+                if self.active :
+                    self.add_arrival()
+
+                new_arrival.arr_ser[0]  = self.local_t
+                new_arrival.arr_ser[1]  = self.local_t
                 self.extract_information(new_arrival)
 
                 heappush(self.departures, new_arrival)
+                #self.next_time = self.arrivals[0].time if self.arrivals[0].time < self.departures[0].time else self.departures[0].time 
 
         elif event == "departure" :
             return QueueServer.next_event(self)
@@ -310,11 +311,53 @@ class LossQueue( QueueServer ) :
         new_server.nTotal       = copy.deepcopy(self.nTotal)
         new_server.nLossed      = copy.deepcopy(self.nTotal)
         new_server.nServers     = copy.deepcopy(self.nServers)
-        new_server.t            = copy.deepcopy(self.t)
+        new_server.local_t      = copy.deepcopy(self.local_t)
+        new_server.next_time    = copy.deepcopy(self.next_time)
         new_server.next_ct      = copy.deepcopy(self.next_ct)
         new_server.queue        = copy.deepcopy(self.queue)
         new_server.arrivals     = copy.deepcopy(self.arrivals)
         new_server.departures   = copy.deepcopy(self.departures)
         new_server.net_data     = copy.deepcopy(self.net_data)
         return new_server
+
+
+class MarkovianQueue(QueueServer) :
+
+    def __init__(self, nServers=1, issn=0, active=True, net_size=1, aRate=1, dRate=1.1) :
+        def aPoisson(t) :
+            return t - log(uniform()) / aRate
+    
+        def dPoisson(t) :
+            return t - log(uniform()) / dRate
+
+        def dMean(t) :
+            return 1 / dRate
+
+        QueueServer.__init__(self, nServers, issn, active, net_size, lambda t : t - log(uniform()) / aRate, lambda t : t - log(uniform()) / dRate, dMean) 
+
+        self.rates  = [aRate, dRate]
+
+
+    def __repr__(self) :
+        tmp = "MarkovianQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, local_time: %s, rates: %s" \
+            %  (self.nServers, len(self.queue), self.nArrivals, self.nArrivals - self.nSystem, self.local_t, self.rates)
+        return tmp
+
+
+    def change_rates(aRate=None, dRate=None) :
+        if aRate != None :
+            def aPoisson(t) :
+                return t - log(uniform()) / aRate
+
+            self.xArrival = aPoisson
+
+        if dRate != None :    
+            def dPoisson(t) :
+                return t - log(uniform()) / dRate
+            def dMean(t) :
+                return 1 / dRate
+
+            self.xDepart    = dPoisson
+            self.xDepart_mu = dMean
+
 

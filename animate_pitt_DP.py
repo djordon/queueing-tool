@@ -18,8 +18,8 @@ vs  = [a.Qn.g.vertex(202), a.Qn.g.vertex(453), a.Qn.g.vertex(255),
 
 for v in vs :
     for e in v.in_edges() :
-        a.Qn.g.ep['queues'][e].CREATE       = True
-        a.Qn.g.ep['queues'][e].create_p     = 0
+        a.Qn.g.ep['queues'][e].active       = True
+        a.Qn.g.ep['queues'][e].active_p     = 0
         a.Qn.g.ep['queues'][e].xArrival     = lambda x : qt.exponential_rv( 2, x )
         a.Qn.g.ep['queues'][e].xDepart      = lambda x : qt.exponential_rv( 3, x )
         a.Qn.g.ep['queues'][e].xDepart_mu   = lambda x : 1/3
@@ -80,3 +80,39 @@ pr.print_stats(sort='time')
 
 cProfile.run('a.Qn.simulate()')
 """
+
+
+
+
+
+"""
+import numpy            as np
+import graph_tool.all   as gt
+import queueing_tool    as qt
+import cProfile
+g   = gt.load_graph('pitt_network.xml', fmt='xml')
+pit = qt.QueueNetwork(g, seed=10)
+pit.initialize(nActive=5)
+pit.agent_cap = 2000
+pr  = cProfile.Profile()
+pr.enable()
+pit.simulate(5)
+pr.disable()
+pr.print_stats(sort='time')
+
+cProfile.run('a.Qn.simulate()')
+"""
+
+
+
+
+import numpy            as np
+import graph_tool.all   as gt
+import queueing_tool    as qt
+import cProfile
+g   = gt.load_graph('pitt_network.xml', fmt='xml')
+pit = qt.QueueNetwork(g, seed=10)
+pit.initialize(nActive=5)
+pit.agent_cap = 2000
+%timeit pit.simulate(5)
+

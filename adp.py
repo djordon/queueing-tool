@@ -49,26 +49,26 @@ class approximate_dynamic_program :
         self.dir                = {'frames' : './figures/frames/'}
 
         if Qn == None :
-            self.Qn = self.create_network(agent_cap=self.agent_cap, seed=seed)
+            self.Qn = self.active_network(agent_cap=self.agent_cap, seed=seed)
         elif isinstance(Qn, gt.Graph) :
             self.Qn = qt.QueueNetwork(Qn)
             tmp0    = self.Qn.g.vp['destination'].a + self.Qn.g.vp['garage'].a
             self.ce = np.arange( self.Qn.nV )[tmp0==min(tmp0)]
 
-        self.edge_text      = self.Qn.g.new_edge_property("string")
-        self.vertex_text    = self.Qn.g.new_vertex_property("string")
+        self.edge_text    = self.Qn.g.new_edge_property("string")
+        self.vertex_text  = self.Qn.g.new_vertex_property("string")
         self.calculate_parking_penalty2()
 
 
-    def create_network(self, agent_cap, net_size=150, seed=None) :
+    def active_network(self, agent_cap, net_size=150, seed=None) :
         Qn  = qt.QueueNetwork(nVertices=net_size, graph_type="periodic", seed=seed)
         Qn.agent_cap = agent_cap
         for e in Qn.g.edges() :
-            q               = Qn.g.ep['queues'][e]
-            q.CREATE        = False
-            q.xArrival      = lambda x : qt.exponential_rv(1, x)
-            q.xDepart       = lambda x : qt.exponential_rv(3, x)
-            q.xDepart_mu    = lambda x : 1/3 
+            q             = Qn.g.ep['queues'][e]
+            q.active      = False
+            q.xArrival    = lambda x : qt.exponential_rv(1, x)
+            q.xDepart     = lambda x : qt.exponential_rv(3, x)
+            q.xDepart_mu  = lambda x : 1/3 
             q.set_nServers(1)
 
         tmp0    = Qn.g.vp['destination'].a + Qn.g.vp['garage'].a
@@ -86,8 +86,8 @@ class approximate_dynamic_program :
         for v in Qn.g.vertices() :
             if not Qn.g.vp['destination'][v] and not Qn.g.vp['garage'][v] :
                 for e in v.in_edges() :
-                    Qn.g.ep['queues'][e].CREATE   = True
-                    Qn.g.ep['queues'][e].create_p = 0
+                    Qn.g.ep['queues'][e].active   = True
+                    Qn.g.ep['queues'][e].active_p = 0
                     Qn.g.ep['queues'][e].set_nServers(1)
                     Qn.g.ep['queues'][e].xArrival   = lambda x : qt.exponential_rv(8, x)
                     Qn.g.ep['queues'][e].xDepart    = lambda x : qt.exponential_rv(3, x)
@@ -154,7 +154,7 @@ class approximate_dynamic_program :
                 exp_depart[e] = state[QN.g.edge_index[e]+1]
 
             if exp_depart[e] > 0 :
-                exp_state[e]   -= exp_depart[e]
+                exp_state[e]  -= exp_depart[e]
                 
                 od  = int(e.target().out_degree())
                 ed  = int(np.floor(exp_depart[e] / od))
@@ -192,20 +192,20 @@ class approximate_dynamic_program :
 
 
     def advise_agent(self, action, QN) :
-        t, e    = QN.next_time()
+        t, e  = QN.next_time()
         QN.g.ep['queues'][e].departures[0].dest = action
 
 
     def simulate_forward(self, QN):
-        stop    = QN.next_event(Fast=True, STOP_LEARNER=False)
-        stop    = None
+        stop  = QN.next_event(Fast=True, STOP_LEARNER=False)
+        stop  = None
         while stop == None :
-            stop    = QN.next_event(Fast=True, STOP_LEARNER=True)
+            stop  = QN.next_event(Fast=True, STOP_LEARNER=True)
         return
 
 
     def calculate_parking_penalty(self) :
-        dist   = zeros( (self.Qn.nV, self.Qn.nV) )
+        dist = zeros( (self.Qn.nV, self.Qn.nV) )
         for ve in self.Qn.g.vertices() :
             for we in self.Qn.g.vertices() :
                 v,w  = int(ve), int(we)
@@ -434,7 +434,7 @@ class approximate_dynamic_program :
         
         self.Qn.edges[self.ce[0]]
         self.Qn.reset()
-        self.Qn.g.ep['queues'][self.Qn.edges[self.ce[0]]].CREATE = True
+        self.Qn.g.ep['queues'][self.Qn.edges[self.ce[0]]].active = True
         self.Qn.g.ep['queues'][self.Qn.edges[self.ce[0]]].add_arrival()
         self.Qn.simulate( np.random.randint(H[0], H[1]) )
 
