@@ -238,8 +238,8 @@ class QueueServer :
 class LossQueue( QueueServer ) :
 
     def __init__(self, nServers=1, issn=0, active=True, net_size=1, 
-            xArrival=lambda x : exponential_rv(1,x), 
-            xDepart =lambda x : exponential_rv(1,x), queue_cap=0) :
+            xArrival=lambda x : x - log(uniform()) / 1, 
+            xDepart =lambda x : x - log(uniform()) / 1.1, queue_cap=0) :
 
         if nServers == infty :
             print("LossQueue must have finite number of servers. Setting to 1")

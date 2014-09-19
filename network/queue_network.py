@@ -135,10 +135,10 @@ class QueueNetwork :
                 cap             = g.vp['cap'][e.target()] if HAS_CAP else 1
                 queues[e]       = qs.LossQueue(cap, issn=qissn, net_size=self.nE)
                 edge_length[e]  = g.ep['edge_length'][e] if HAS_LENGTH else 0.1
-            else :
+            else : #QueueServer MarkovianQueue
                 lanes           = g.vp['lanes'][e.target()] if HAS_LANES else 1
                 lanes           = lanes if lanes > 10 else max([int(lanes / 2), 1])
-                queues[e]       = qs.MarkovianQueue(lanes, issn=qissn, net_size=self.nE) #QueueServer MarkovianQueue
+                queues[e]       = qs.QueueServer(lanes, issn=qissn, net_size=self.nE)
                 edge_length[e]  = g.ep['edge_length'][e] if HAS_LENGTH else 1
                 control[e]      = [0, 0, 0, 0]
             
@@ -174,7 +174,7 @@ class QueueNetwork :
                         path.reverse()
                         spath[path[:-1], path[-1]] = path[1:]
 
-                        for j in range(1,len(path)-1) :
+                        for j in range(1, len(path)-1) :
                             pa  = path[:-j]
                             spath[pa[:-1], pa[-1]] = pa[1:]
 
@@ -185,13 +185,13 @@ class QueueNetwork :
         node_dict = {'garage' : [], 'destination' : [], 'road' : [], 'dest_road' : []}
         for v in g.vertices() :
             if g.vp['garage'][v] :
-                node_dict['garage'].append( int(v) )
+                node_dict['garage'].append(int(v))
             elif g.vp['destination'][v] :
-                node_dict['destination'].append( int(v) )
+                node_dict['destination'].append(int(v))
             else :
-                node_dict['road'].append( int(v) )
-        node_dict['dest_road'] = copy.copy( node_dict['destination'] )
-        node_dict['dest_road'].extend( node_dict['road'] )
+                node_dict['road'].append(int(v))
+        node_dict['dest_road'] = copy.copy(node_dict['destination'])
+        node_dict['dest_road'].extend(node_dict['road'])
         node_index[g]  = node_dict
 
         g.vp['vertex_t_color']   = vertex_t_color
@@ -232,7 +232,7 @@ class QueueNetwork :
     def active_graph(self, nVertices=250, pDest=None, pGarage=None) :
 
         points  = np.random.random((nVertices, 2)) * 2
-        radii   = [(4+k)/200 for k in range(560)]
+        radii   = [(4 + k) / 200 for k in range(560)]
 
         for r in radii :
             g, pos  = gt.geometric_graph(points, r, [(0,2), (0,2)])
@@ -600,9 +600,9 @@ class QueueNetwork :
             agent           = queue.next_event()
             self.nAgents[j] = queue.nTotal
 
-            if len(list(e0.target().out_edges())) > 0 :
-                e1   = agent.desired_destination(self, e0) # expects the network, and current location
-                agent.set_arrival(t + 0.25 * self.g.ep['edge_length'][e1] )
+            if e0.target().out_degree() > 0 :
+                e1  = agent.desired_destination(self, e0) # expects the network, and current location
+                agent.set_arrival(t + 0.25 * self.g.ep['edge_length'][e1])
 
                 self.g.ep['queues'][e1].add_arrival(agent)
                 self.nAgents[self.g.edge_index[e1]] = self.g.ep['queues'][e1].nTotal
@@ -695,4 +695,62 @@ class QueueNetwork :
         net.queue_heap      = [net.g.ep['queues'][e] for e in net.g.edges()]
         heapify(net.queue_heap)
         return net
+
+
+
+
+
+
+"""
+class QueueNetwork :
+
+    def __init__(self, g=None, nVertices=250, pDest=None, pGarage=None, seed=None, graph_type="normal") :
+        a = 1
+
+    def next_event(self, Fast=False, STOP_LEARNER=False) :
+        t, e0 = self.next_time()
+        queue = self.g.ep['queues'][e0]
+        j     = self.g.edge_index[e0] #vertex(j)        
+        event_type  = queue.next_event_type()
+
+        if event_type == "departure" and STOP_LEARNER :
+            if isinstance(queue.departures[0], qs.LearningAgent) :
+                return "STOP"
+
+        self.nEvents += 1
+        self.t  = t
+
+        if event_type == "departure" :
+            agent           = queue.next_event()
+            self.nAgents[j] = queue.nTotal
+
+            if len(list(e0.target().out_edges())) > 0 :
+                e1   = agent.desired_destination(self, e0) # expects the network, and current location
+                agent.set_arrival(t + 0.25 * self.g.ep['edge_length'][e1] )
+
+                self.g.ep['queues'][e1].add_arrival(agent)
+                self.nAgents[self.g.edge_index[e1]] = self.g.ep['queues'][e1].nTotal
+
+                if not Fast :
+                    self._update_graph(ad='departure', vertex=e1.target(), edge=e1)
+
+        else :
+            if queue.active and sum(self.nAgents) > self.agent_cap - 1 :
+                queue.active = False
+
+            queue.next_event()
+            self.nAgents[j] = queue.nTotal
+
+            if not Fast :
+                self._update_graph(ad='arrival', vertex=e0.target(), edge=e0)
+
+        if self.to_animate :
+            future = self.next_time()[0]
+            time.sleep( future - self.t )
+            self.win.graph.regenerate_surface(lazy=False)
+            self.win.graph.queue_draw()
+            return True
+
+"""
+
 

@@ -63,29 +63,6 @@ a.approximate_policy_iteration(orig, dest, save_frames=True)
 
 
 """
-import approximate_DP   as adp
-import numpy            as np
-import graph_tool.all   as gt
-import queueing_tool    as qt
-import cProfile
-import pickle
-g   = gt.load_graph('pitt_network.xml', fmt='xml')
-pit = qt.QueueNetwork(g)
-a   = adp.approximate_dynamic_program(pit.g, seed=10)
-pr  = cProfile.Profile()
-pr.enable()
-a.Qn.simulate(20)
-pr.disable()
-pr.print_stats(sort='time')
-
-cProfile.run('a.Qn.simulate()')
-"""
-
-
-
-
-
-"""
 import numpy            as np
 import graph_tool.all   as gt
 import queueing_tool    as qt
@@ -96,7 +73,7 @@ pit.initialize(nActive=5)
 pit.agent_cap = 2000
 pr  = cProfile.Profile()
 pr.enable()
-pit.simulate(5)
+pit.simulate(20)
 pr.disable()
 pr.print_stats(sort='time')
 
