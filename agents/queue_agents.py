@@ -73,8 +73,8 @@ class Agent :
             self.dest = int(dest)
         else :
             nodes   = net.g.gp['node_index']['dest_road']
-            dLen    = net.g.gp['dest_count']
-            rLen    = net.nV - dLen - net.g.gp['garage_count']
+            dLen    = net.dest_count
+            rLen    = net.nV - dLen - net.fcq_count
             probs   = [0.3 / dLen for k in range(dLen)]
             probs.extend([0.7/rLen for k in range(rLen)])
             dest    = int(choice(nodes, size=1, p=probs))
@@ -93,8 +93,8 @@ class Agent :
 
 
     def desired_destination(self, *info) :
-        network, e = info[:2]
-        if self.dest != None and int(e.target()) == self.dest :
+        network, qissn = info[:2]
+        if self.dest != None and qissn[1] == self.dest :
             self.old_dest   = self.dest
             self.dest       = None
             self.park_t[0]  = network.t
@@ -106,11 +106,11 @@ class Agent :
         elif self.dest == None :
             self.trip_t[0]  = network.t
             self.set_dest(net = network)
-            while self.dest == int(e.target()) :
+            while self.dest == qissn[1] : #int(e.target()) :
                 self.set_dest(net = network)
         
-        z   = network.g.vp['shortest_path'][e.target()][self.dest]
-        z   = network.g.edge(e.target(), z)
+        z   = network.shortest_path[qissn[1], self.dest]
+        z   = network.g.edge(qissn[1], z)
         return z
 
 
@@ -168,8 +168,8 @@ class LearningAgent(Agent) :
 
 
     def desired_destination(self, *info) :
-        network, e = info[:2]
-        return network.g.edge(e.target(), self.dest)
+        network, queue = info[:2]
+        return network.g.edge(queue[1], self.dest)
 
 
 
@@ -227,15 +227,10 @@ class RandomAgent(Agent) :
 
 
     def desired_destination(self, *info) :
-        network, e = info[:2]
-        n   = e.target().out_degree()
+        network, qissn = info[:2]
+        v   = network.g.vertex(qissn[1])
+        n   = v.out_degree()
         d   = randint(0, n)
-        ct  = 0
-        for eo in e.target().out_edges() :
-            if ct == d :
-                z   = eo
-                break
-            ct += 1
-
+        z   = list(v.out_edges())[d]
         return z
 

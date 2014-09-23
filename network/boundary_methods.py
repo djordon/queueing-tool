@@ -29,17 +29,17 @@ def intersects(v1, v2, v3, v4) :
     M[0, 0], M[1, 1] = M[1, 1], M[0, 0]
     M[0, 1] = -M[0, 1]
     M[1, 0] = -M[1, 0]
-    y = v4 - v2
-    x = np.dot(M, y) / det
-    return (0 <= x[0] <= 1) and (0 <= x[1] <= 1)
+    y   = v4 - v2
+    x0  = (M[0, 0] * y[0] + M[0, 1] * y[1]) / det
+    x1  = (M[1, 0] * y[0] + M[1, 1] * y[1]) / det
+    return (0 <= x0 <= 1) and (0 <= x1 <= 1)
 
 
-def _convex_distance(ab, *args) :
-    a, b  = ab
-    p, x  = args[:2]
-    y, z  = args[2:]
-    ans   = b * x + a*(1-b) * y + (1-a)*(1-b) * z - p
-    return np.dot(ans, ans)
+def _convex_distance(ab, p, x, y, z) :
+    a, b = ab
+    vx   = b * x[0] + a*(1-b) * y[0] + (1-a)*(1-b) * z[0] - p[0]
+    vy   = b * x[1] + a*(1-b) * y[1] + (1-a)*(1-b) * z[1] - p[1]
+    return vx**2 + vy**2
 
 
 def _convex_boundary(points) :

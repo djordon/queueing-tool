@@ -28,10 +28,10 @@ def exponential_rv(rate, t) :
 
 class QueueServer :
 
-    def __init__(self, nServers=1, issn=(0,0,0), active=True, net_size=1,
+    def __init__(self, nServers=1, issn=(0,0,0), active=False, net_size=1,
             xArrival=lambda x : x - log(uniform()) / 1, 
             xDepart =lambda x : x - log(uniform()) / 1.1,
-            xDepart_mu= lambda x : 1/1.1) :
+            xDepart_mu=lambda x : 1/1.1) :
 
         self.issn       = issn
         self.nServers   = nServers
@@ -43,7 +43,7 @@ class QueueServer :
         self.local_t    = 0
         self.next_time  = infty
         self.active     = active
-        self.smart_p    = 0
+        self.active_p   = 0
         self.next_ct    = 0
 
         self.queue      = deque()
@@ -82,6 +82,12 @@ class QueueServer :
     def networking(self, network_size) :
         self.net_data   = -1 * ones((network_size, 3))
 
+
+    def initialize(self, active_p=0, add_arrival=True) :
+        self.active   = True
+        self.active_p = active_p
+        if add_arrival :
+            self.add_arrival()
 
     ## Needs updating
     def set_nServers(self, n) :
@@ -125,7 +131,7 @@ class QueueServer :
                 if self.local_t >= self.next_ct :
                     self.nTotal  += 1
                     self.next_ct  = self.xArrival(self.local_t)
-                    if uniform() < self.smart_p :
+                    if uniform() < self.active_p :
                         new_arrival = SmartAgent(self.nArrivals+1, self.net_data.shape[0])
                     else :
                         new_arrival = RandomAgent(self.nArrivals+1, self.net_data.shape[0])
