@@ -30,7 +30,3 @@ a.approximate_policy_iteration(orig, dest, save_frames=True)
 loc = "./data/"
 dat = datetime.datetime.today().isoformat().replace('T', '_')
 pickle.dump( (a.theta_history, a.value_history), open(loc+"theta_data_"+dat+".p", "wb") )
-
-
-
-
