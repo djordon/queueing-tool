@@ -29,11 +29,11 @@ class QueueNetwork :
         self.fcq_count  = 0
         self.prev_issn  = None
         self.colors     =  {'edge_departure'   : [0, 0, 0, 1], 
-                            'edge_normal'      : [0.339, 0.3063, 0.3170, 0.290],
-                            'vertex' :     { 0 : [1.0, 1.0, 1.0, 1.0],          # normal
-                                             1 : [1.0, 1.0, 1.0, 1.0],          # garages aka fcq
-                                             2 : [1.0, 1.0, 1.0, 1.0],          # destination
-                                             3 : [1.0, 1.0, 1.0, 1.0]},         # light
+                            'edge_normal'      : array([0.7, 0.7, 0.7, 0.50]),
+                            'vertex' :     { 0 : [0.9, 0.9, 0.9, 1.0],          # normal
+                                             1 : [0.9, 0.9, 0.9, 1.0],          # garages aka fcq
+                                             2 : [0.9, 0.9, 0.9, 1.0],          # destination
+                                             3 : [0.9, 0.9, 0.9, 1.0]},         # light
                             'vertex_pen' : { 0 : [0.0, 0.5, 1.0, 1.0],          # normal vertex
                                              1 : [0.133, 0.545, 0.133, 1.0],    # garages aka fcq
                                              2 : [0.282, 0.239, 0.545, 1.0],    # destination
@@ -135,8 +135,6 @@ class QueueNetwork :
             self.dest_count = dest_count
             self.fcq_count  = fcq_count
 
-
-
         for v in g.vertices() :
             vertex_pen_color[v] = self.colors['vertex_pen'][g.vp['vType'][v]]
             vertex_color[v]     = self.colors['vertex'][g.vp['vType'][v]]
@@ -161,7 +159,6 @@ class QueueNetwork :
         has_length    = 'edge_length' in edge_props
         has_lanes     = 'lanes' in vertex_props
         has_cap       = 'cap' in vertex_props
-
 
         for e in g.edges() :
             qissn = (int(e.source()), int(e.target()), g.edge_index[e])
@@ -480,6 +477,25 @@ class QueueNetwork :
 
 
     def draw(self, file_name=None) :
+        ep  = self.g.ep
+        vp  = self.g.vp
+        for e in self.g.edges() :
+            v   = e.target()
+            nSy = ep['queues'][e].nSystem
+            cap = ep['queues'][e].nServers
+            tmp = 0.9 - min(nSy / 5, 0.9) if cap == 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+            ep['state'][e] = nSy
+
+            if e.target() == e.source() :
+                vp['state'][v] = nSy
+                vp['halo'][v]  = True
+                vp['vertex_color'][v] = [tmp, tmp, tmp, 1.0]
+            else :
+                en = self.colors['edge_normal'] * tmp / 0.9
+                en[3] = 0.5
+                ep['state'][e] = nSy
+                ep['edge_color'][e] = en
+
         if file_name == None :
             ans = gt.graph_draw(self.g, self.g.vp['pos'], geometry=(750, 750),
                         bg_color=self.colors['bg_color'],
@@ -538,34 +554,38 @@ class QueueNetwork :
 
             nSy = ep['queues'][pe].nSystem
             cap = ep['queues'][pe].nServers
-            tmp = (2 * cap if cap < infty else self.agent_cap / self.nV ) / (nSy + 2)
+            tmp = 0.9 - min(nSy / 5, 0.9) if cap == 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
             if pe.target() == pe.source() :
-                vp['vertex_color'][pv] = [tmp, tmp, tmp, 0.85]
+                vp['vertex_color'][pv] = [tmp, tmp, tmp, 1.0]
                 vp['halo_color'][pv]   = self.colors['halo_normal']
                 vp['halo'][pv]  = False
                 ep['state'][pe] = nSy
                 vp['state'][pv] = nSy
             else :
+                en = self.colors['edge_normal'] * tmp / 0.9
+                en[3] = 0.5
                 ep['state'][pe] = nSy
-                ep['edge_color'][pe] = [tmp, tmp, tmp, 0.85] #self.colors['edge_departure']
+                ep['edge_color'][pe] = en
 
         nSy = ep['queues'][e].nSystem
         cap = ep['queues'][e].nServers
-        tmp = (2 * cap if cap < infty else self.agent_cap / self.nV ) / (nSy + 2)
+        tmp = 0.9 - min(nSy / 5, 0.9) if cap == 1 else 0.9 - min(nSy / (3 * cap), 0.9)
         ep['state'][e] = nSy
 
         if e.target() == e.source() :
             vp['state'][v] = nSy
             vp['halo'][v]  = True
-            vp['vertex_color'][v] = [tmp, tmp, tmp, 0.85]
+            vp['vertex_color'][v] = [tmp, tmp, tmp, 1.0]
 
             if ad == 'arrival' :
                 vp['halo_color'][v] = self.colors['halo_arrival']
             elif ad == 'departure' :
                 vp['halo_color'][v] = self.colors['halo_departure']
         else :
-            ep['edge_color'][e] = [tmp, tmp, tmp, 0.85]
+            en = self.colors['edge_normal'] * tmp / 0.9
+            en[3] = 0.5
+            ep['edge_color'][e] = en
 
 
 
