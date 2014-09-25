@@ -163,14 +163,14 @@ class QueueNetwork :
         for e in g.edges() :
             qissn = (int(e.source()), int(e.target()), g.edge_index[e])
             if g.ep['eType'][e] == 1 :
-                cap             = g.vp['cap'][e.target()] if has_cap else 1
+                cap             = g.vp['cap'][e.target()] if has_cap else 4
                 queues[e]       = qs.LossQueue(cap, issn=qissn, net_size=self.nE)
-                edge_length[e]  = g.ep['edge_length'][e] if has_length else 1
+                edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
             else : #QueueServer MarkovianQueue
-                lanes           = g.vp['lanes'][e.target()] if has_lanes else 1
-                lanes           = lanes if lanes > 10 else max([int(lanes / 2), 1])
+                lanes           = g.vp['lanes'][e.target()] if has_lanes else 8
+                lanes           = lanes if lanes > 10 else max([lanes // 2, 1])
                 queues[e]       = qs.QueueServer(lanes, issn=qissn, net_size=self.nE)
-                edge_length[e]  = g.ep['edge_length'][e] if has_length else 1
+                edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
 
             if qissn[0] == qissn[1] :
                 edge_color[e]   = [0, 0, 0, 0]
@@ -384,6 +384,8 @@ class QueueNetwork :
             else :
                 raise Exception("Could not initialize, try again.")
 
+        self.queue_heap.sort()
+
 
     def __repr__(self) :
         return 'QueueNetwork. # nodes: %s, edges: %s, agents: %s' % (self.nV, self.nE, sum(self.nAgents))
@@ -476,25 +478,26 @@ class QueueNetwork :
             self.g.vp['state'][v]         = 0
 
 
-    def draw(self, file_name=None) :
-        ep  = self.g.ep
-        vp  = self.g.vp
-        for e in self.g.edges() :
-            v   = e.target()
-            nSy = ep['queues'][e].nSystem
-            cap = ep['queues'][e].nServers
-            tmp = 0.9 - min(nSy / 5, 0.9) if cap == 1 else 0.9 - min(nSy / (3 * cap), 0.9)
-            ep['state'][e] = nSy
-
-            if e.target() == e.source() :
-                vp['state'][v] = nSy
-                vp['halo'][v]  = True
-                vp['vertex_color'][v] = [tmp, tmp, tmp, 1.0]
-            else :
-                en = self.colors['edge_normal'] * tmp / 0.9
-                en[3] = 0.5
+    def draw(self, file_name=None, update_colors=True) :
+        if update_colors :
+            ep  = self.g.ep
+            vp  = self.g.vp
+            for e in self.g.edges() :
+                v   = e.target()
+                nSy = ep['queues'][e].nSystem
+                cap = ep['queues'][e].nServers
+                tmp = 0.9 - min(nSy / 5, 0.9) if cap == 1 else 0.9 - min(nSy / (3 * cap), 0.9)
                 ep['state'][e] = nSy
-                ep['edge_color'][e] = en
+
+                if e.target() == e.source() :
+                    vp['state'][v] = nSy
+                    vp['halo'][v]  = True
+                    vp['vertex_color'][v] = [tmp, tmp, tmp, 1.0]
+                else :
+                    en = self.colors['edge_normal'] * tmp / 0.9
+                    en[3] = 0.5
+                    ep['state'][e] = nSy
+                    ep['edge_color'][e] = en
 
         if file_name == None :
             ans = gt.graph_draw(self.g, self.g.vp['pos'], geometry=(750, 750),
@@ -589,20 +592,12 @@ class QueueNetwork :
 
 
 
-    def next_time(self) :
-        self.queue_heap.sort()
-        t   = self.queue_heap[0].next_time
-        que = self.queue_heap[0].issn
-        e   = self.g.edge(que[0], que[1])
-        return t, e, que[2]
-
-
     def next_event_type(self) :
         self.queue_heap.sort()
         return self.queue_heap[0].next_event_type()
 
 
-    def next_event(self, Fast=False, STOP_LEARNER=False) :
+    def next_event(self, Slow=True, STOP_LEARNER=False) :
         self.queue_heap.sort()
         q = self.queue_heap[0]
         t = q.next_time
@@ -610,7 +605,7 @@ class QueueNetwork :
 
         event_type  = q.next_event_type()
 
-        if event_type == "departure" and STOP_LEARNER :
+        if STOP_LEARNER and event_type == "departure" :
             if isinstance(q.departures[0], qs.LearningAgent) :
                 return "STOP"
 
@@ -627,11 +622,10 @@ class QueueNetwork :
 
             q2.add_arrival(agent)
             self.nAgents[q2.issn[2]] = q2.nTotal
+            self.prev_issn = q2.issn
 
-            if not Fast :
+            if Slow :
                 self._update_graph(ad='departure', qissn=q2.issn)
-
-            self.prev_issn  = q2.issn
 
         else :
             if q.active and sum(self.nAgents) > self.agent_cap - 1 :
@@ -639,11 +633,10 @@ class QueueNetwork :
 
             q.next_event()
             self.nAgents[j] = q.nTotal
+            self.prev_issn  = q.issn
 
-            if not Fast :
+            if Slow :
                 self._update_graph(ad='arrival', qissn=q.issn)
-
-            self.prev_issndge  = q.issn
 
         if self.to_animate :
             #future = self.queue_heap[1].next_time
@@ -687,7 +680,7 @@ class QueueNetwork :
     def simulate(self, T=25) :
         now = self.t
         while self.t < now + T :
-            self.next_event(Fast=True)
+            self.next_event(Slow=False)
 
 
     def reset(self) :

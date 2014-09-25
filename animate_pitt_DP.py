@@ -7,7 +7,7 @@ import datetime
 import cProfile
 import pickle
 
-np.set_printoptions(precision=2,suppress=True,threshold=2000)
+np.set_printoptions(precision=3,suppress=True,threshold=2000)
 directory   = './'
 g   = gt.load_graph('pitt_network.xml', fmt='xml')
 pit = qt.QueueNetwork( g )
@@ -100,8 +100,11 @@ import graph_tool.all   as gt
 import queueing_tool    as qt
 import cProfile
 g   = gt.load_graph('pitt_network.xml', fmt='xml')
-pit = qt.QueueNetwork(seed=11)
+pit = qt.QueueNetwork(nVertices=50, seed=12)
 pit.initialize(nActive=5)
 pit.agent_cap = 1000
-pit.simulate(50)
-pit.draw()
+pr  = cProfile.Profile()
+pr.enable()
+pit.simulate(90)
+pr.disable()
+pr.print_stats(sort='time')

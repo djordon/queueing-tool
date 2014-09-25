@@ -4,7 +4,7 @@ from numpy          import ones, zeros, logical_or, argmax
 import numpy as np
 import copy
 
-
+np.set_printoptions(precision=3,suppress=True,threshold=2000)
 class Agent :
 
     def __init__(self, issn, net_size) :
@@ -38,7 +38,7 @@ class Agent :
         return not a < b
 
     def __repr__(self) :
-        return "Agent. issn : %s, arr. or dep. time : %s" % (self.issn, self.time)
+        return "Agent. issn: %s, time: %s" % (self.issn, self.time)
 
     def set_arrival(self, t) :
         self.time = t
@@ -149,7 +149,7 @@ class LearningAgent(Agent) :
         self.net_data = -1 * ones((net_size, 3))
 
     def __repr__(self) :
-        return "LearningAgent. issn : %s, arr. or dep. time : %s" % (self.issn, self.time)
+        return "LearningAgent. issn: %s, time: %s" % (self.issn, self.time)
 
     def stamp(self, server_name, nSystem, cap, depart_t) :
         n = server_name[2]    # This is the edge_index of the server
@@ -181,7 +181,7 @@ class SmartAgent(Agent) :
         self.net_data = -1 * ones((net_size, 3))
 
     def __repr__(self) :
-        return "SmartAgent. issn : %s, arr. or dep. time : %s" % (self.issn, self.time)
+        return "SmartAgent. issn: %s, time: %s" % (self.issn, self.time)
 
     def stamp(self, server_name, nSystem, cap, depart_t) :
         n   = server_name[2]    # This is the edge_index of the server
@@ -208,7 +208,7 @@ class RandomAgent(Agent) :
         self.net_data = -1 * ones((net_size, 3))
 
     def __repr__(self) :
-        return "RandomAgent. issn : %s, arr. or dep. time : %s" % (self.issn, self.time)
+        return "RandomAgent. issn: %s, time: %s" % (self.issn, self.time)
 
     def stamp(self, server_name, nSystem, cap, depart_t) :
         n   = server_name[2]    # This is the edge_index of the server
