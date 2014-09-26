@@ -588,15 +588,6 @@ class QueueNetwork :
             ep['edge_color'][e] = en
 
 
-
-    def next_time(self) :
-        self.queue_heap.sort()
-        t   = self.queue_heap[0].next_time
-        que = self.queue_heap[0].issn
-        e   = self.g.edge(que[0], que[1])
-        return t, e, que[2]
-
-
     def next_event_type(self) :
         self.queue_heap.sort()
         return self.queue_heap[0].next_event_type()
