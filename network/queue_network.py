@@ -393,17 +393,17 @@ class QueueNetwork :
 
     def agent_stats(self) :
         ans     = zeros(7)
-        parked  = 0
+        rested  = 0
         spaces  = 0
         for e in self.g.edges() :
             q        = self.g.ep['queues'][e]
             ans[:4] += q.travel_stats()
             if isinstance(q, qs.LossQueue) :
                 ans[4] += q.lossed()
-                parked += q.nSystem
+                rested += q.nSystem
                 spaces += q.nServers
         ans[5] = self.fcq_count
-        ans[6] = parked/spaces
+        ans[6] = rested/spaces
         return ans
             
 
