@@ -620,7 +620,7 @@ class QueueNetwork :
             q2  = self.g.ep['queues'][e]
             agent.set_arrival(t + 0.001)
 
-            q2.add_arrival(agent)
+            q2._add_arrival(agent)
             self.nAgents[q2.issn[2]] = q2.nTotal
             self.prev_issn = q2.issn
 

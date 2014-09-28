@@ -2,7 +2,7 @@ from numpy.random           import uniform
 from numpy                  import ones, zeros, infty, log
 from heapq                  import heappush, heappop
 from collections            import deque
-from .. agents.queue_agents import Agent, SmartAgent, LearningAgent, RandomAgent
+from .. agents.queue_agents import Agent, SmartAgent, LearningAgent, RandomAgent, ResourceAgent
 
 import numpy                as np
 import copy
@@ -117,11 +117,10 @@ class QueueServer :
         return ans
 
 
-    def _add_arrival(self, *args, **kwargs) :
-        if len(args) != 0 :
-            for a in args :
-                self.nTotal += 1
-                heappush(self.arrivals, a)
+    def _add_arrival(self, agent=None) :
+        if agent != None :
+            self.nTotal += 1
+            heappush(self.arrivals, agent)
         else : 
             if self.local_t >= self.next_ct :
                 self.nTotal  += 1
@@ -320,9 +319,9 @@ class LossQueue( QueueServer ) :
 class MarkovianQueue(QueueServer) :
 
     def __init__(self, nServers=1, issn=0, active=False, net_size=1, aRate=1, dRate=1.1) :
-        QueueServer.__init__(self, nServers, issn, active, net_size, 
-            lambda t : t - log(uniform()) / aRate, 
-            lambda t : t - log(uniform()) / dRate, lambda t = 1 / dRate) 
+        QueueServer.__init__(self, nServers, issn, active, net_size,
+            lambda t : t - log(uniform()) / aRate,
+            lambda t : t - log(uniform()) / dRate, lambda t : 1 / dRate, RandomAgent) 
 
         self.rates  = [aRate, dRate]
 
@@ -348,7 +347,7 @@ class ResourceQueue(QueueServer) :
     def __init__(self, nServers=1, issn=0, active=False, net_size=1) :
         QueueServer.__init__(self, nServers, issn, active, net_size, 
             xArrival=lambda t : t - log(uniform()) / aRate, 
-             xDepart=lambda t : t, xDepart_mu=lambda t : 0)
+             xDepart=lambda t : t, xDepart_mu=lambda t : 0, agent_class=ResourceAgent)
 
 
 
