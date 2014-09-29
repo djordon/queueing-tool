@@ -4,6 +4,7 @@ from numpy          import ones, zeros, logical_or, argmax
 import numpy as np
 import copy
 
+
 np.set_printoptions(precision=3, suppress=True, threshold=2000)
 
 class Agent :
@@ -50,7 +51,7 @@ class Agent :
         self.time = t
 
 
-    def add_loss(self, server_name) :
+    def add_loss(self, server_name, *args, **kwargs) :
         n = server_name[2]    # This is the edge_index of the server
         self.stats[n, 2] += 1 
 
@@ -200,29 +201,56 @@ class ResourceAgent(Agent) :
     def __init__(self, issn, net_size) :
         Agent.__init__(self, issn, net_size)
         self.has_resource = False
+        self.had_resource = False
+        self.rejected     = False
 
     def __repr__(self) :
-        return "RandomAgent. issn: %s, time: %s" % (self.issn, self.time)
+        return "ResourceAgent. issn: %s, time: %s" % (self.issn, self.time)
 
 
     def desired_destination(self, *info) :
         network, qissn = info[:2]
-        v   = network.g.vertex(qissn[1])
-        n   = v.out_degree()
-        d   = randint(0, n)
-        z   = list(v.out_edges())[d]
+        v = network.g.vertex(qissn[1])
+
+        if self.had_resource :
+            z = network.g.edge(qissn[0], qissn[1])
+        else :
+            #n = v.out_degree()
+            v = network.g.vertex(qissn[1])
+            d = randint(0, v.out_degree())
+            z = list(v.out_edges())[d]
+
         return z
 
 
+    def set_arrival(self, t) :
+        if self.had_resource or self.rejected :
+            self.time = np.infty
+        else :
+            self.time = t
+
+
+    def set_departure(self, t) :
+        if self.had_resource or self.rejected :
+            self.time = np.infty
+        else :
+            self.time = t
+
+
     def queue_action(self, queue, event_type) :
-        #Agent.queue_action(queue, event_type)
         nServers = queue.nServers
-        if isinstance(queue, ResourceQueue) :
+        if str(queue) == "ResourceQueue" :
             if self.has_resource :
                 queue.set_nServers(nServers + 1)
                 self.has_resource = False
+                self.had_resource = True
+                if queue.nServers > queue.max_servers :
+                    queue.over_max += 1
             else :
-                queue.set_nServers(nServers - 1)
-                self.has_resource = True
+                if queue.nServers > 0 :
+                    queue.set_nServers(nServers - 1)
+                    self.has_resource = True
+                else :
+                    self.rejected     = True
 
 

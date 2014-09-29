@@ -6,7 +6,7 @@ import copy
 from numpy                  import ones, zeros, array, arange, logical_and, infty
 from heapq                  import heappush, heappop, heapify
 from gi.repository          import Gtk, GObject
-from .. agents.queue_agents import Agent, SmartAgent, LearningAgent, RandomAgent
+from .. agents.queue_agents import LearningAgent
 
 from .. servers import queue_server as qs
 
@@ -19,7 +19,7 @@ from .. servers import queue_server as qs
 
 class QueueNetwork :
 
-    def __init__(self, g=None, nVertices=100, pDest=None, pFCQ=None, seed=None, graph_type="osm") :
+    def __init__(self, g=None, nVertices=100, pDest=None, pFCQ=None, seed=None, graph_type="osm", calcpath=False) :
         self.nEvents    = 0
         self.t          = 0
         self.to_animate = False
@@ -54,12 +54,12 @@ class QueueNetwork :
         if g == None :
             self.active_graph(nVertices, pDest, pFCQ)
         elif isinstance(g, str) or isinstance(g, gt.Graph) :
-            self.set_graph(g, graph_type)
+            self.set_graph(g, graph_type, calcpath)
         else :
             pass
 
 
-    def set_graph(self, g, graph_type=None) :
+    def set_graph(self, g, graph_type=None, calc_shortest_path=False) :
         if isinstance(g, str) :
             g = gt.load_graph(g, fmt='xml')
         elif not isinstance(g, gt.Graph) :
@@ -162,14 +162,14 @@ class QueueNetwork :
 
         for e in g.edges() :
             qissn = (int(e.source()), int(e.target()), g.edge_index[e])
-            if g.ep['eType'][e] == 1 :
+            if g.ep['eType'][e] == 1 : #qs.LossQueue(cap, issn=qissn, net_size=self.nE)
                 cap             = g.vp['cap'][e.target()] if has_cap else 4
-                queues[e]       = qs.LossQueue(cap, issn=qissn, net_size=self.nE)
+                queues[e]       = qs.ResourceQueue(cap, issn=qissn, net_size=self.nE) 
                 edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
-            else : #QueueServer MarkovianQueue
+            else : #qs.QueueServer(lanes, issn=qissn, net_size=self.nE)
                 lanes           = g.vp['lanes'][e.target()] if has_lanes else 8
                 lanes           = lanes if lanes > 10 else max([lanes // 2, 1])
-                queues[e]       = qs.QueueServer(lanes, issn=qissn, net_size=self.nE)
+                queues[e]       = qs.ResourceQueue(lanes, issn=qissn, net_size=self.nE)
                 edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
 
             if qissn[0] == qissn[1] :
@@ -186,7 +186,7 @@ class QueueNetwork :
             edge_t_distance[e]  = 8
             edge_t_parallel[e]  = False
 
-        if 'shortest_path' not in vertex_props :
+        if calc_shortest_path and 'shortest_path' not in vertex_props :
             shortest_path = np.ones( (self.nV, self.nV), int)
             spath         = np.ones( (self.nV, self.nV), int) * -1
 
@@ -364,25 +364,18 @@ class QueueNetwork :
         self.g.reindex_edges()
         initialized = False
         if queues == None :
-            queues = np.random.randint(0, self.nV, nActive)
+            queues = np.arange(self.nV)  
+            np.random.shuffle(queues)
+            queues = queues[:nActive]
 
         for vi in queues :
             for e in self.g.vertex(vi).out_edges() :
-                if e.source() != e.target() :
+                if e.source() == e.target() :
                     self.g.ep['queues'][e].initialize()
                     initialized = True
                     break
-
-        if not initialized :
-            print("Could not initialize, trying again")
-            if not hasattr(self, tmp) :
-                self.tmp  = 1
-            else :
-                self.tmp += 1
-            if self.tmp < 10 :
-                self.initialize()
-            else :
-                raise Exception("Could not initialize, try again.")
+            if not initialized :
+                self.g.ep['queues'][e].initialize()
 
         self.queue_heap.sort()
 
@@ -486,7 +479,7 @@ class QueueNetwork :
                 v   = e.target()
                 nSy = ep['queues'][e].nSystem
                 cap = ep['queues'][e].nServers
-                tmp = 0.9 - min(nSy / 5, 0.9) if cap == 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+                tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
                 ep['state'][e] = nSy
 
                 if e.target() == e.source() :
@@ -557,7 +550,7 @@ class QueueNetwork :
 
             nSy = ep['queues'][pe].nSystem
             cap = ep['queues'][pe].nServers
-            tmp = 0.9 - min(nSy / 5, 0.9) if cap == 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+            tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
             if pe.target() == pe.source() :
                 vp['vertex_color'][pv] = [tmp, tmp, tmp, 1.0]
@@ -573,7 +566,7 @@ class QueueNetwork :
 
         nSy = ep['queues'][e].nSystem
         cap = ep['queues'][e].nServers
-        tmp = 0.9 - min(nSy / 5, 0.9) if cap == 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+        tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
         ep['state'][e] = nSy
 
         if e.target() == e.source() :
@@ -602,6 +595,10 @@ class QueueNetwork :
         q = self.queue_heap[0]
         t = q.next_time
         j = q.issn[2]
+
+        if t == infty :
+            self.t == infty
+            return
 
         event_type  = q.next_event_type()
 

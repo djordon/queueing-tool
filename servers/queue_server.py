@@ -26,9 +26,9 @@ def departure(rate, rate_max, t) :
 class QueueServer :
 
     def __init__(self, nServers=1, issn=(0,0,0), active=False, net_size=1,
-            xArrival=lambda x : x - log(uniform()) / 1, 
-            xDepart =lambda x : x - log(uniform()) / 1.1,
-            xDepart_mu=lambda x : 1/1.1, agent_class=RandomAgent) :
+            fArrival=lambda x : x - log(uniform()) / 1, 
+            fDepart =lambda x : x - log(uniform()) / 1.1,
+            fDepart_mu=lambda x : 1/1.1, agent_class=RandomAgent) :
 
         self.issn       = issn
         self.nServers   = nServers
@@ -53,9 +53,9 @@ class QueueServer :
         heappush(self.arrivals, inftyAgent)
         heappush(self.departures, inftyAgent)
 
-        self.xArrival   = xArrival
-        self.xDepart    = xDepart
-        self.xDepart_mu = xDepart_mu # returns the mean of the departure distribution at time t
+        self.fArrival   = fArrival
+        self.fDepart    = fDepart
+        self.fDepart_mu = fDepart_mu # returns the mean of the departure distribution at time t
 
         self.networking(net_size)
 
@@ -117,14 +117,14 @@ class QueueServer :
         return ans
 
 
-    def _add_arrival(self, agent=None) :
-        if agent != None :
+    def _add_arrival(self, *args) :
+        if len(args) > 0 :
             self.nTotal += 1
-            heappush(self.arrivals, agent)
+            heappush(self.arrivals, args[0])
         else : 
             if self.local_t >= self.next_ct :
                 self.nTotal  += 1
-                self.next_ct  = self.xArrival(self.local_t)
+                self.next_ct  = self.fArrival(self.local_t)
                 new_arrival   = self.AgentClass(self.nArrivals+1, self.net_data.shape[0])
                 new_arrival.set_arrival( self.next_ct )
                 heappush(self.arrivals, new_arrival)
@@ -159,7 +159,7 @@ class QueueServer :
 
         if self.nSystem <= self.nServers :
             agent.arr_ser[1]    = t
-            agent.set_departure(self.xDepart(t))
+            agent.set_departure(self.fDepart(t))
             heappush(self.departures, agent)
         else :
             self.queue.append(agent)
@@ -172,6 +172,7 @@ class QueueServer :
 
             if self.active :
                 self._add_arrival()
+
             self.append_departure(new_arrival, self.local_t)
             new_depart = None
                 
@@ -185,7 +186,7 @@ class QueueServer :
             if len(self.queue) > 0 :
                 agent             = self.queue.popleft()
                 agent.arr_ser[1]  = self.local_t
-                agent.set_departure(self.xDepart(self.local_t))
+                agent.set_departure(self.fDepart(self.local_t))
                 heappush(self.departures, agent)
 
             new_depart.queue_action(self, 'departure')
@@ -238,16 +239,18 @@ class QueueServer :
         return new_server
 
 
-class LossQueue( QueueServer ) :
+
+class LossQueue(QueueServer) :
 
     def __init__(self, nServers=1, issn=0, active=False, net_size=1, 
-            xArrival=lambda x : x - log(uniform()) / 1, 
-            xDepart =lambda x : x - log(uniform()) / 1.1, queue_cap=0) :
+            fArrival=lambda x : x - log(uniform()) / 1, 
+            fDepart =lambda x : x - log(uniform()) / 1.1, agent_class=RandomAgent,
+            queue_cap=0) :
 
-        QueueServer.__init__(self, nServers+1, issn, active, net_size, xArrival, xDepart) 
-        self.nServers   = nServers
-        self.nLossed    = 0
+        QueueServer.__init__(self, nServers+1, issn, active, net_size, fArrival, fDepart, agent_class) 
+        self.nBlocked    = 0
         self.queue_cap  = queue_cap
+
 
     def __repr__(self) :
         tmp = "LossQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, local_time: %s" \
@@ -255,8 +258,8 @@ class LossQueue( QueueServer ) :
         return tmp
 
 
-    def lossed(self) :
-        return (self.nLossed / self.nArrivals) if self.nArrivals > 0 else 0
+    def blocked(self) :
+        return (self.nBlocked / self.nArrivals) if self.nArrivals > 0 else 0
 
 
     def next_event(self) :
@@ -267,7 +270,7 @@ class LossQueue( QueueServer ) :
 
                 QueueServer.next_event(self)
             else :
-                self.nLossed   += 1
+                self.nBlocked  += 1
                 self.nArrivals += 1
                 self.nSystem   += 1
                 new_arrival     = heappop(self.arrivals)
@@ -294,7 +297,7 @@ class LossQueue( QueueServer ) :
 
     def reset(self) :
         QueueServer.reset(self)
-        self.nLossed  = 0
+        self.nBlocked  = 0
 
 
     def __deepcopy__(self, memo) :
@@ -304,7 +307,7 @@ class LossQueue( QueueServer ) :
         new_server.nDeparts     = copy.deepcopy(self.nDeparts)
         new_server.nSystem      = copy.deepcopy(self.nSystem)
         new_server.nTotal       = copy.deepcopy(self.nTotal)
-        new_server.nLossed      = copy.deepcopy(self.nTotal)
+        new_server.nBlocked     = copy.deepcopy(self.nBlocked)
         new_server.nServers     = copy.deepcopy(self.nServers)
         new_server.local_t      = copy.deepcopy(self.local_t)
         new_server.next_time    = copy.deepcopy(self.next_time)
@@ -314,6 +317,7 @@ class LossQueue( QueueServer ) :
         new_server.departures   = copy.deepcopy(self.departures)
         new_server.net_data     = copy.deepcopy(self.net_data)
         return new_server
+
 
 
 class MarkovianQueue(QueueServer) :
@@ -335,29 +339,70 @@ class MarkovianQueue(QueueServer) :
 
     def change_rates(aRate=None, dRate=None) :
         if aRate != None :
-            self.xArrival   = lambda t : t - log(uniform()) / aRate
+            self.fArrival   = lambda t : t - log(uniform()) / aRate
         if dRate != None :    
-            self.xDepart    = lambda t : t - log(uniform()) / dRate
-            self.xDepart_mu = lambda t : 1 / aRate
+            self.fDepart    = lambda t : t - log(uniform()) / dRate
+            self.fDepart_mu = lambda t : 1 / aRate
 
 
 
 class ResourceQueue(QueueServer) :
 
-    def __init__(self, nServers=1, issn=0, active=False, net_size=1) :
+    def __init__(self, nServers=1, issn=0, active=False, net_size=1, max_servers=5) :
         QueueServer.__init__(self, nServers, issn, active, net_size, 
-            xArrival=lambda t : t - log(uniform()) / aRate, 
-             xDepart=lambda t : t, xDepart_mu=lambda t : 0, agent_class=ResourceAgent)
+            fArrival=lambda t : t - log(uniform()), 
+             fDepart=lambda t : t, fDepart_mu=lambda t : 0, agent_class=ResourceAgent)
 
+        self.max_servers  = max_servers
+        self.over_max     = 0
+        self.nBlocked      = 0
 
 
     def __repr__(self) :
-        tmp = "MarkovianQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, local_time: %s, rates: %s" \
-            %  (self.nServers, len(self.queue), self.nArrivals, 
-                self.nArrivals - self.nSystem, self.local_t, self.rates)
+        tmp = "ResourceQueue. servers: %s, max servers: %s, arrivals: %s, departures: %s, local_time: %s" \
+            %  (self.nServers, self.max_servers, self.nArrivals, self.nArrivals - self.nSystem, self.local_t)
         return tmp
 
+    def __str__(self) :
+        return "ResourceQueue"
 
 
+    def blocked(self) :
+        return (self.nBlocked / self.nArrivals) if self.nArrivals > 0 else 0
+
+
+    def next_event(self) :
+        event    = self.next_event_type()
+        if event == "arrival" :
+            if self.nSystem < self.nServers :
+                QueueServer.next_event(self)
+            else :
+                new_arrival     = heappop(self.arrivals)
+                self.nBlocked  += 1
+                self.nArrivals += 1
+                self.nSystem   += 1
+                self.local_t    = new_arrival.time
+
+                if self.active :
+                    self._add_arrival()
+
+                new_arrival.arr_ser[0]  = self.local_t
+                new_arrival.arr_ser[1]  = self.local_t
+
+                heappush(self.departures, new_arrival)
+
+                if self.arrivals[0].time < self.departures[0].time :
+                    self.next_time = self.arrivals[0].time
+                else :
+                    self.next_time = self.departures[0].time
+
+        elif event == "departure" :
+            return QueueServer.next_event(self)
+
+
+    def reset(self) :
+        QueueServer.reset(self)
+        self.nBlocked  = 0
+        self.over_max = 0
 
 

@@ -87,11 +87,10 @@ import numpy            as np
 import graph_tool.all   as gt
 import queueing_tool    as qt
 import cProfile
-g   = gt.load_graph('pitt_network.xml', fmt='xml')
 pit = qt.QueueNetwork(nVertices=50, seed=10)
-pit.initialize(nActive=5)
+pit.initialize(nActive=50)
 pit.agent_cap = 1000
-pit.simulate(50)
+pit.simulate(500)
 pit.draw()
 
 
@@ -105,6 +104,17 @@ pit.initialize(nActive=5)
 pit.agent_cap = 1000
 pr  = cProfile.Profile()
 pr.enable()
-pit.simulate(90)
+pit.simulate(50)
 pr.disable()
 pr.print_stats(sort='time')
+
+
+
+import numpy            as np
+import graph_tool.all   as gt
+import queueing_tool    as qt
+import cProfile
+pit = qt.QueueNetwork(nVertices=50, seed=10)
+pit.initialize(nActive=5)
+pit.agent_cap = 1000
+%timeit pit.simulate(50)
