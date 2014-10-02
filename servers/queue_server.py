@@ -28,11 +28,11 @@ class QueueServer :
     def __init__(self, nServers=1, issn=(0,0,0), active=False, net_size=1,
             fArrival=lambda x : x - log(uniform()) / 1, 
             fDepart =lambda x : x - log(uniform()) / 1.1,
-            fDepart_mu=lambda x : 1/1.1, agent_class=RandomAgent) :
+            fDepart_mu=lambda x : 1/1.1, AgentClass=RandomAgent) :
 
         self.issn       = issn
         self.nServers   = nServers
-        self.AgentClass = agent_class
+        self.AgentClass = AgentClass
         self.nArrivals  = 0
         self.nDeparts   = 0
         self.nSystem    = 0
@@ -43,10 +43,12 @@ class QueueServer :
         self.active     = active
         self.next_ct    = 0
 
+        self.color_dict   =  {'edge_normal' : np.array([0.7, 0.7, 0.7, 0.5]),
+                              'vertex_pen'  : np.array([0.0, 0.5, 1.0, 1.0]) }
+
         self.queue      = deque()
         self.arrivals   = []
         self.departures = []
-
         inftyAgent      = Agent(0, 1)
         inftyAgent.time = infty
 
@@ -61,7 +63,7 @@ class QueueServer :
 
     def __repr__(self) :
         tmp = "QueueServer. servers: %s, queued: %s, arrivals: %s, departures: %s, local_time: %s" \
-            %  (self.nServers, len(self.queue), self.nArrivals, self.nArrivals - self.nSystem, self.local_t)
+            %  (self.nServers, len(self.queue), self.nArrivals, self.nDeparts, self.local_t)
         return tmp
 
     def __lt__(a,b) :
@@ -178,7 +180,7 @@ class QueueServer :
                 
         elif self.departures[0].time < infty :
             new_depart      = heappop(self.departures)
-            self.local_t    = new_depart[1]
+            self.local_t    = new_depart.time
             self.nDeparts  += 1
             self.nTotal    -= 1
             self.nSystem   -= 1
@@ -200,6 +202,23 @@ class QueueServer :
             self.next_time = self.departures[0].time
 
         return new_depart
+
+
+    def color(self, which='main') :
+        if which == 'pen' :
+            color = self.color_dict['vertex_pen']
+        else :
+            nSy = self.nSystem
+            cap = self.nServers
+            tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+
+            if self.issn[0] == self.issn[1] :
+                color = [tmp, tmp, tmp, 1.0]
+            else :
+                color    = self.color_dict['edge_normal'] * tmp / 0.9
+                color[3] = 0.5
+
+        return color
 
 
     def reset(self) :
@@ -244,17 +263,20 @@ class LossQueue(QueueServer) :
 
     def __init__(self, nServers=1, issn=0, active=False, net_size=1, 
             fArrival=lambda x : x - log(uniform()) / 1, 
-            fDepart =lambda x : x - log(uniform()) / 1.1, agent_class=RandomAgent,
-            queue_cap=0) :
+            fDepart =lambda x : x - log(uniform()) / 1.1, fDepart_mu=lambda x : 1/1.1,
+            AgentClass=RandomAgent, queue_cap=0) :
 
-        QueueServer.__init__(self, nServers+1, issn, active, net_size, fArrival, fDepart, agent_class) 
-        self.nBlocked    = 0
+        QueueServer.__init__(self, nServers, issn, active, net_size, fArrival, fDepart, AgentClass=AgentClass)
+
+        self.color_dict =  {'edge_normal' : np.array([0.7, 0.7, 0.7, 0.50]),
+                            'vertex_pen'  : np.array([0.133, 0.545, 0.133, 1.0]) }
+        self.nBlocked   = 0
         self.queue_cap  = queue_cap
 
 
     def __repr__(self) :
         tmp = "LossQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, local_time: %s" \
-            %  (self.nServers, len(self.queue), self.nArrivals, self.nArrivals - self.nSystem, self.local_t)
+            %  (self.nServers, len(self.queue), self.nArrivals, self.nDeparts, self.local_t)
         return tmp
 
 
@@ -263,8 +285,7 @@ class LossQueue(QueueServer) :
 
 
     def next_event(self) :
-        event    = self.next_event_type()
-        if event == "arrival" :
+        if self.arrivals[0].time < self.departures[0].time :
             if self.nSystem < self.nServers + self.queue_cap :
                 self.arrivals[0].set_rest()
 
@@ -291,7 +312,7 @@ class LossQueue(QueueServer) :
                 else :
                     self.next_time = self.departures[0].time
 
-        elif event == "departure" :
+        elif self.departures[0].time < self.arrivals[0].time :
             return QueueServer.next_event(self)
 
 
@@ -333,7 +354,7 @@ class MarkovianQueue(QueueServer) :
     def __repr__(self) :
         tmp = "MarkovianQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, local_time: %s, rates: %s" \
             %  (self.nServers, len(self.queue), self.nArrivals, 
-                self.nArrivals - self.nSystem, self.local_t, self.rates)
+                self.nDeparts, self.local_t, self.rates)
         return tmp
 
 
@@ -346,58 +367,84 @@ class MarkovianQueue(QueueServer) :
 
 
 
-class ResourceQueue(QueueServer) :
+class ResourceQueue(LossQueue) :
 
-    def __init__(self, nServers=1, issn=0, active=False, net_size=1, max_servers=5) :
-        QueueServer.__init__(self, nServers, issn, active, net_size, 
-            fArrival=lambda t : t - log(uniform()), 
-             fDepart=lambda t : t, fDepart_mu=lambda t : 0, agent_class=ResourceAgent)
+    def __init__(self, nServers=1, issn=0, active=False, net_size=1, max_servers=10) :
+        LossQueue.__init__(self, nServers, issn, active, net_size, 
+            fArrival=lambda t : t - log(uniform()), fDepart=lambda t : t, 
+            fDepart_mu=lambda t : 0, AgentClass=ResourceAgent, queue_cap=0)
 
+        self.color_dict   =  {'edge_normal' : np.array([0.7, 0.7, 0.7, 0.50]),
+                              'vertex_pen'  : np.array([0.0, 0.235, 0.718, 1.0]) }
         self.max_servers  = max_servers
         self.over_max     = 0
-        self.nBlocked      = 0
+        self.nBlocked     = 0
 
 
     def __repr__(self) :
         tmp = "ResourceQueue. servers: %s, max servers: %s, arrivals: %s, departures: %s, local_time: %s" \
-            %  (self.nServers, self.max_servers, self.nArrivals, self.nArrivals - self.nSystem, self.local_t)
+            %  (self.nServers, self.max_servers, self.nArrivals, self.nDeparts, self.local_t)
         return tmp
 
     def __str__(self) :
         return "ResourceQueue"
 
 
-    def blocked(self) :
-        return (self.nBlocked / self.nArrivals) if self.nArrivals > 0 else 0
+    def set_nServers(self, n) :
+        self.nServers = n
+        if n > self.max_servers :
+            self.over_max += 1
 
 
     def next_event(self) :
-        event    = self.next_event_type()
-        if event == "arrival" :
-            if self.nSystem < self.nServers :
-                QueueServer.next_event(self)
-            else :
-                new_arrival     = heappop(self.arrivals)
-                self.nBlocked  += 1
-                self.nArrivals += 1
-                self.nSystem   += 1
-                self.local_t    = new_arrival.time
+        if isinstance(self.arrivals[0], ResourceAgent) :
+            if self.arrivals[0].time < self.departures[0].time :
+                if self.arrivals[0].has_resource :
+                    new_arrival  = heappop(self.arrivals)
+                    self.local_t = new_arrival.time
+                    self.nTotal -= 1
+                    self.set_nServers(self.nServers+1)
 
-                if self.active :
-                    self._add_arrival()
+                    if self.arrivals[0].time < self.departures[0].time :
+                        self.next_time = self.arrivals[0].time
+                    else :
+                        self.next_time = self.departures[0].time
 
-                new_arrival.arr_ser[0]  = self.local_t
-                new_arrival.arr_ser[1]  = self.local_t
+                elif self.nSystem < self.nServers :
+                    QueueServer.next_event(self)
 
-                heappush(self.departures, new_arrival)
-
-                if self.arrivals[0].time < self.departures[0].time :
-                    self.next_time = self.arrivals[0].time
                 else :
-                    self.next_time = self.departures[0].time
+                    self.nBlocked  += 1
+                    self.nArrivals += 1
+                    self.nTotal    -= 1
+                    new_arrival     = heappop(self.arrivals)
+                    self.local_t    = new_arrival.time
+                    if self.arrivals[0].time < self.departures[0].time :
+                        self.next_time = self.arrivals[0].time
+                    else :
+                        self.next_time = self.departures[0].time
 
-        elif event == "departure" :
-            return QueueServer.next_event(self)
+            elif self.departures[0].time < self.arrivals[0].time :
+                return QueueServer.next_event(self)
+        else :
+            return LossQueue.next_event(self)
+
+
+    def color(self, which='main') :
+        if which == 'pen' :
+            color = self.color_dict['vertex_pen']
+        else :
+            nSy = self.nServers
+            cap = self.max_servers
+            tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+
+            if self.issn[0] == self.issn[1] :
+                color = np.array([tmp, tmp, tmp, 1.0])
+            else :
+                color    = self.color_dict['edge_normal'] * tmp / 0.9
+                color[3] = 0.5
+
+        return color
 
 
     def reset(self) :

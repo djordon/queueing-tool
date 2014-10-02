@@ -28,20 +28,21 @@ class Agent :
 
     def __lt__(a,b) :
         return a.time < b.time
+
     def __gt__(a,b) :
         return a.time > b.time
+
     def __eq__(a,b) :
         return (not a < b) and (not b < a)
+
     def __le__(a,b) :
         return not b < a
+
     def __ge__(a,b) :
         return not a < b
 
     def __repr__(self) :
         return "Agent. issn: %s, time: %s" % (self.issn, self.time)
-
-    def __getitem__(self, index) :
-        return self.time
 
     def set_arrival(self, t) :
         self.time = t
@@ -49,11 +50,6 @@ class Agent :
 
     def set_departure(self, t) :
         self.time = t
-
-
-    def add_loss(self, server_name, *args, **kwargs) :
-        n = server_name[2]    # This is the edge_index of the server
-        self.stats[n, 2] += 1 
 
 
     def set_type(self, n) :
@@ -82,6 +78,11 @@ class Agent :
         self.rest_t[1] += self.time - self.rest_t[0]
 
 
+    def add_loss(self, qissn, *args, **kwargs) :
+        # This qissn[2] is the edge_index of the server
+        self.stats[qissn[2], 2] += 1 
+
+
     def desired_destination(self, *info) :
         network, qissn = info[:2]
         if self.dest != None and qissn[1] == self.dest :
@@ -108,17 +109,16 @@ class Agent :
         pass
 
 
-    def queue_action(self, queue, event_type) :
-        if event_type == 'departure' :
-            ### update information
-            a = logical_or(self.net_data[:, 0] < queue.net_data[:, 0], self.net_data[:, 0] == -1)
-            self.net_data[a, :] = queue.net_data[a, :]
+    def queue_action(self, queue, *args, **kwargs) :
+        ### update information
+        a = logical_or(self.net_data[:, 0] < queue.net_data[:, 0], self.net_data[:, 0] == -1)
+        self.net_data[a, :] = queue.net_data[a, :]
 
-            ### stamp this information
-            n   = queue.issn[2]    # This is the edge_index of the server
-            self.stats[n, 0]    = self.stats[n, 0] + (self.arr_ser[1] - self.arr_ser[0])
-            self.stats[n, 1]   += 1 if (self.arr_ser[1] - self.arr_ser[0]) > 0 else 0
-            self.net_data[n, :] = queue.local_t, queue.nServers, queue.nSystem / queue.nServers
+        ### stamp this information
+        n   = queue.issn[2]    # This is the edge_index of the server
+        self.stats[n, 0]    = self.stats[n, 0] + (self.arr_ser[1] - self.arr_ser[0])
+        self.stats[n, 1]   += 1 if (self.arr_ser[1] - self.arr_ser[0]) > 0 else 0
+        self.net_data[n, :] = queue.local_t, queue.nServers, queue.nSystem / queue.nServers
 
 
     def __deepcopy__(self, memo) :
@@ -202,7 +202,6 @@ class ResourceAgent(Agent) :
         Agent.__init__(self, issn, net_size)
         self.has_resource = False
         self.had_resource = False
-        self.rejected     = False
 
     def __repr__(self) :
         return "ResourceAgent. issn: %s, time: %s" % (self.issn, self.time)
@@ -224,33 +223,22 @@ class ResourceAgent(Agent) :
 
 
     def set_arrival(self, t) :
-        if self.had_resource or self.rejected :
-            self.time = np.infty
-        else :
-            self.time = t
+        self.time = t
 
 
     def set_departure(self, t) :
-        if self.had_resource or self.rejected :
-            self.time = np.infty
-        else :
-            self.time = t
+        self.time = t
 
 
-    def queue_action(self, queue, event_type) :
+    def queue_action(self, queue, *args, **kwargs) :
         nServers = queue.nServers
         if str(queue) == "ResourceQueue" :
             if self.has_resource :
-                queue.set_nServers(nServers + 1)
                 self.has_resource = False
                 self.had_resource = True
-                if queue.nServers > queue.max_servers :
-                    queue.over_max += 1
             else :
                 if queue.nServers > 0 :
                     queue.set_nServers(nServers - 1)
                     self.has_resource = True
-                else :
-                    self.rejected     = True
 
 

@@ -6,7 +6,7 @@ import copy
 from numpy                  import ones, zeros, array, arange, logical_and, infty
 from heapq                  import heappush, heappop, heapify
 from gi.repository          import Gtk, GObject
-from .. agents.queue_agents import LearningAgent
+from .. agents.queue_agents import LearningAgent, ResourceAgent
 
 from .. servers import queue_server as qs
 
@@ -135,18 +135,6 @@ class QueueNetwork :
             self.dest_count = dest_count
             self.fcq_count  = fcq_count
 
-        for v in g.vertices() :
-            vertex_pen_color[v] = self.colors['vertex_pen'][g.vp['vType'][v]]
-            vertex_color[v]     = self.colors['vertex'][g.vp['vType'][v]]
-            vertex_t_color[v]   = self.colors['text_normal']
-            halo_color[v]       = self.colors['halo_normal']
-            vertex_t_pos[v]     = 0 * np.pi / 4
-            vertex_t_size[v]    = 8
-            vertex_halo_size[v] = 1.3
-            vertex_pen_width[v] = 0.8
-            vertex_size[v]      = 7
-            halo[v]             = False
-            state[v]            = 0
 
         if 'pos' not in vertex_props :
             g.vp['pos'] = gt.sfdp_layout(g, epsilon=1e-2, cooling_step=0.95)
@@ -163,13 +151,19 @@ class QueueNetwork :
         for e in g.edges() :
             qissn = (int(e.source()), int(e.target()), g.edge_index[e])
             if g.ep['eType'][e] == 1 : #qs.LossQueue(cap, issn=qissn, net_size=self.nE)
-                cap             = g.vp['cap'][e.target()] if has_cap else 4
-                queues[e]       = qs.ResourceQueue(cap, issn=qissn, net_size=self.nE) 
+                cap       = g.vp['cap'][e.target()] if has_cap else 4
+                if qissn[0] == qissn[1] :
+                    queues[e] = qs.ResourceQueue(20, issn=qissn, net_size=self.nE)
+                else :
+                    queues[e] = qs.LossQueue(20, issn=qissn, net_size=self.nE, AgentClass=ResourceAgent)
                 edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
             else : #qs.QueueServer(lanes, issn=qissn, net_size=self.nE)
-                lanes           = g.vp['lanes'][e.target()] if has_lanes else 8
-                lanes           = lanes if lanes > 10 else max([lanes // 2, 1])
-                queues[e]       = qs.ResourceQueue(lanes, issn=qissn, net_size=self.nE)
+                lanes     = g.vp['lanes'][e.target()] if has_lanes else 8
+                lanes     = lanes if lanes > 10 else max([lanes // 2, 1])
+                if qissn[0] == qissn[1] :
+                    queues[e] = qs.ResourceQueue(20, issn=qissn, net_size=self.nE)
+                else :
+                    queues[e] = qs.QueueServer(20, issn=qissn, net_size=self.nE, AgentClass=ResourceAgent)
                 edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
 
             if qissn[0] == qissn[1] :
@@ -185,6 +179,20 @@ class QueueNetwork :
             edge_t_color[e] = [0.0, 0.0, 0.0, 1.0]
             edge_t_distance[e]  = 8
             edge_t_parallel[e]  = False
+
+        for v in g.vertices() :
+            e = g.edge(v, v)
+            vertex_pen_color[v] = queues[e].color('pen')
+            vertex_color[v]     = queues[e].color()
+            vertex_t_color[v]   = self.colors['text_normal']
+            halo_color[v]       = self.colors['halo_normal']
+            vertex_t_pos[v]     = 0 * np.pi / 4
+            vertex_t_size[v]    = 8
+            vertex_halo_size[v] = 1.3
+            vertex_pen_width[v] = 0.8
+            vertex_size[v]      = 7
+            halo[v]             = False
+            state[v]            = 0
 
         if calc_shortest_path and 'shortest_path' not in vertex_props :
             shortest_path = np.ones( (self.nV, self.nV), int)
@@ -476,21 +484,15 @@ class QueueNetwork :
             ep  = self.g.ep
             vp  = self.g.vp
             for e in self.g.edges() :
-                v   = e.target()
                 nSy = ep['queues'][e].nSystem
-                cap = ep['queues'][e].nServers
-                tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
                 ep['state'][e] = nSy
 
                 if e.target() == e.source() :
+                    v = e.target()
                     vp['state'][v] = nSy
-                    vp['halo'][v]  = True
-                    vp['vertex_color'][v] = [tmp, tmp, tmp, 1.0]
+                    vp['vertex_color'][v] = ep['queues'][e].color()
                 else :
-                    en = self.colors['edge_normal'] * tmp / 0.9
-                    en[3] = 0.5
-                    ep['state'][e] = nSy
-                    ep['edge_color'][e] = en
+                    ep['edge_color'][e]   = ep['queues'][e].color()
 
         if file_name == None :
             ans = gt.graph_draw(self.g, self.g.vp['pos'], geometry=(750, 750),
@@ -547,41 +549,32 @@ class QueueNetwork :
         if self.prev_issn != None :
             pe  = self.g.edge(self.prev_issn[0], self.prev_issn[1])
             pv  = self.g.vertex(self.prev_issn[1])
-
             nSy = ep['queues'][pe].nSystem
-            cap = ep['queues'][pe].nServers
-            tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+
+            ep['state'][pe] = nSy
 
             if pe.target() == pe.source() :
-                vp['vertex_color'][pv] = [tmp, tmp, tmp, 1.0]
+                vp['vertex_color'][pv] = ep['queues'][pe].color()
                 vp['halo_color'][pv]   = self.colors['halo_normal']
                 vp['halo'][pv]  = False
-                ep['state'][pe] = nSy
                 vp['state'][pv] = nSy
             else :
-                en = self.colors['edge_normal'] * tmp / 0.9
-                en[3] = 0.5
-                ep['state'][pe] = nSy
-                ep['edge_color'][pe] = en
+                ep['edge_color'][pe] = ep['queues'][e].color()
 
         nSy = ep['queues'][e].nSystem
-        cap = ep['queues'][e].nServers
-        tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
         ep['state'][e] = nSy
 
         if e.target() == e.source() :
-            vp['state'][v] = nSy
             vp['halo'][v]  = True
-            vp['vertex_color'][v] = [tmp, tmp, tmp, 1.0]
+            vp['state'][v] = nSy
+            vp['vertex_color'][v] = ep['queues'][e].color()
 
             if ad == 'arrival' :
                 vp['halo_color'][v] = self.colors['halo_arrival']
             elif ad == 'departure' :
                 vp['halo_color'][v] = self.colors['halo_departure']
         else :
-            en = self.colors['edge_normal'] * tmp / 0.9
-            en[3] = 0.5
-            ep['edge_color'][e] = en
+            ep['edge_color'][e] = ep['queues'][e].color()
 
 
 
@@ -699,6 +692,7 @@ class QueueNetwork :
         net.to_animate    = False
         net.g             = self.g.copy()
         net.fcq_count     = copy.deepcopy(self.fcq_count)
+        net.dest_count    = copy.deepcopy(self.dest_count)
         net.shortest_path = copy.deepcopy(self.shortest_path)
         net.prev_issn     = copy.deepcopy(self.prev_issn)
         net.nEvents       = copy.deepcopy(self.nEvents)
