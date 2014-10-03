@@ -459,7 +459,6 @@ class approximate_dynamic_program :
 
 
 
-
     ## time weighted updating
     def update_theta(self, v, B, basis, value, value_est ) :
         lam = 0.95

@@ -10,7 +10,7 @@ import os
 
 from numpy.random   import uniform, multinomial
 from numpy          import size, ones, zeros, array, ndarray, transpose, vstack, arange
-from numpy          import logical_and, logical_or, logical_not, infty
+from numpy          import logical_and, logical_or, logical_not, infty, log
 from heapq          import heappush, heappop
 from collections    import deque
 from gi.repository  import Gtk, Gdk, GdkPixbuf, GObject
@@ -63,41 +63,35 @@ class approximate_dynamic_program :
     def active_network(self, agent_cap, net_size=150, seed=None) :
         Qn  = qt.QueueNetwork(nVertices=net_size, graph_type="periodic", seed=seed)
         Qn.agent_cap = agent_cap
-        for e in Qn.g.edges() :
-            q             = Qn.g.ep['queues'][e]
-            q.active      = False
-            q.xArrival    = lambda x : qt.exponential_rv(1, x)
-            q.xDepart     = lambda x : qt.exponential_rv(3, x)
+        for q in Qn.queue_heap :
+            q.xArrival    = lambda x : x - log(uniform()) / 1
+            q.xDepart     = lambda x : x - log(uniform()) / 3
             q.xDepart_mu  = lambda x : 1/3 
-            q.set_nServers(1)
 
-        tmp0    = Qn.g.vp['destination'].a + Qn.g.vp['garage'].a
+        tmp0    = Qn.g.vp['vType'].a
         self.ce = np.arange( Qn.nV )[tmp0==min(tmp0)] # Creation edge
         
-        garage_cap  = int( np.ceil( agent_cap / (1.5 * Qn.g.gp['garage_count']) ) )
+        garage_cap  = int( np.ceil( agent_cap / (1.5 * Qn.fcq_count) ) )
         garage_sum  = [[] for k in range(Qn.nV)]
 
-        garage_cap  = np.random.uniform(0,1,Qn.g.gp['garage_count']) / Qn.g.gp['garage_count']
+        garage_cap  = np.random.uniform(0, 1, Qn.garage_count) / Qn.garage_count
         garage_cap  = np.floor( garage_cap * agent_cap * 8 )
         garage_cap  = [max([int(k),2]) for k in garage_cap]
         ct          = 0
         print( (garage_cap, sum(garage_cap), agent_cap) )
 
         for v in Qn.g.vertices() :
-            if not Qn.g.vp['destination'][v] and not Qn.g.vp['garage'][v] :
+            if Qn.g.vp['vType'][v] not in (1,2) :
                 for e in v.in_edges() :
-                    Qn.g.ep['queues'][e].active   = True
-                    Qn.g.ep['queues'][e].active_p = 0
-                    Qn.g.ep['queues'][e].set_nServers(1)
-                    Qn.g.ep['queues'][e].xArrival   = lambda x : qt.exponential_rv(8, x)
-                    Qn.g.ep['queues'][e].xDepart    = lambda x : qt.exponential_rv(3, x)
+                    Qn.g.ep['queues'][e].xArrival   = lambda x : x - log(uniform()) / 8
+                    Qn.g.ep['queues'][e].xDepart    = lambda x : x - log(uniform()) / 3
                     Qn.g.ep['queues'][e].xDepart_mu = lambda x : 1/3
-                    Qn.g.ep['queues'][e].add_arrival()
+                    Qn.g.ep['queues'][e].initialize()
 
         for e in Qn.g.edges() :
-            if Qn.g.ep['garage'][e] :
+            if Qn.g.ep['eType'][e] == 1 :
                 Qn.g.ep['queues'][e].set_nServers(garage_cap[ct])
-                Qn.g.ep['queues'][e].xDepart    = lambda x : qt.exponential_rv(0.5, x)
+                Qn.g.ep['queues'][e].xDepart    = lambda x : x - log(uniform()) / 0.5
                 Qn.g.ep['queues'][e].xDepart_mu = lambda x : 2
                 ct += 1
 
@@ -211,11 +205,11 @@ class approximate_dynamic_program :
                 v,w  = int(ve), int(we)
                 if v == w or dist[w, v] != 0 or dist[v, w] != 0 :
                     continue
-                u           = self.Qn.g.vp['shortest_path'][we][v]
-                dist[w,v]  += self.Qn.g.ep['edge_length'][ self.Qn.g.edge(w, u) ]
+                u           = self.Qn.shortest_path[w, v]
+                dist[w, v] += self.Qn.g.ep['edge_length'][ self.Qn.g.edge(w, u) ]
                 while v != u :
-                    u_new       = self.Qn.g.vp['shortest_path'][self.Qn.g.vertex(u)][v]
-                    dist[w,v]  += self.Qn.g.ep['edge_length'][self.Qn.g.edge(u, u_new)]
+                    u_new       = self.Qn.shortest_path[u, v]
+                    dist[w, v] += self.Qn.g.ep['edge_length'][self.Qn.g.edge(u, u_new)]
                     u           = u_new
 
         dist       += np.transpose(dist) 
@@ -223,10 +217,10 @@ class approximate_dynamic_program :
 
         for k in range(self.Qn.nV) :
             for j in range(self.Qn.nV) :
-                if not self.Qn.g.vp['garage'][self.Qn.g.vertex(k)] :
-                    dist[k,j] = 8000
+                if self.Qn.g.vp['vType'][self.Qn.g.vertex(k)] != 1 :
+                    dist[k, j] = 8000
                 else :
-                    dist[k,j] = min((0.5 * np.exp(1.5 * dist[k,j]) - 2, 1000))
+                    dist[k, j] = min((0.5 * np.exp(1.5 * dist[k, j]) - 2, 1000))
 
         self.parking_penalty  = np.abs(dist)
         self.full_penalty     = 10
@@ -264,7 +258,7 @@ class approximate_dynamic_program :
         pp[pp>1000] = 1000
 
         for v in self.Qn.g.vertices() :
-            if not self.Qn.g.vp['garage'][v] :
+            if self.Qn.g.vp['vType'][v] != 1 :
                 pp[int(v), :] = 8000
 
         self.parking_penalty  = np.abs(pp)
@@ -352,8 +346,8 @@ class approximate_dynamic_program :
                             state[QN.g.edge_index[e] + 1] = QN.g.ep['queues'][e].nSystem
 
                     obj_func[0] = self.parking_value(state[0][0], state[0][1], state, QN)
-                    if QN.g.vp['garage'][QN.g.vertex( state[0][0] )] :
-                        nServers    = QN.g.ep['queues'][QN.g.edge(state[0][0], state[0][0])].nServers
+                    if QN.g.vp['vType'][QN.g.vertex( state[0][0] )] == 1 :
+                        nServers = QN.g.ep['queues'][QN.g.edge(state[0][0], state[0][0])].nServers
                         if state[state[0][0]+1] == nServers :
                             obj_func[0] += self.full_penalty 
                     ct  = 1
@@ -532,8 +526,8 @@ class approximate_dynamic_program :
 
     def basis_function3(self, S, QN, PRE_SET=False) :
 
-        #indices = np.argsort( self.dist[S[0][1], QN.g.gp['node_index']['garage']] )
-        #garages = [QN.g.gp['node_index']['garage'][k] for k in indices]
+        #indices = np.argsort( self.dist[S[0][1], QN.node_index['fcq']] )
+        #garages = [QN.node_index['fcq'][k] for k in indices]
 
         #if len( garages ) > 4 :
         #    garages = garages[:4]
@@ -566,7 +560,7 @@ class approximate_dynamic_program :
         for v in QN.g.vertex(S[0][0]).out_neighbours():
             if v == destination :
                 return 0
-        v   = [self.parking_value(g, S[0][1], S, QN) for g in QN.g.gp['node_index']['garage']]
+        v   = [self.parking_value(g, S[0][1], S, QN) for g in QN.node_index['fcq']]
         ans = np.min(v) 
         return ans
 
@@ -601,10 +595,10 @@ class approximate_dynamic_program :
             else :
                 self.edge_text[e] = ''
 
-        dest_color      = list(QN.colors['vertex_destination'])
-        gara_color      = list(QN.colors['vertex_garage'])
-        road_color      = list(QN.colors['vertex_normal'])
-        ligh_color      = list(QN.colors['vertex_light'])
+        dest_color      = list(QN.colors['vertex'][2])
+        gara_color      = list(QN.colors['vertex'][1])
+        road_color      = list(QN.colors['vertex'][0])
+        ligh_color      = list(QN.colors['vertex'][3])
         dest_color[-1]  = 1.25
         gara_color[-1]  = 1.25
         road_color[-1]  = 0.5
@@ -620,21 +614,21 @@ class approximate_dynamic_program :
                 continue
             if QN.g.vp['destination'][v] :
                 QN.g.vp['vertex_color'][v]  = dest_color
-            elif QN.g.vp['garage'][v] :
+            elif QN.g.vp['vType'][v] == 1 :
                 QN.g.vp['vertex_color'][v]  = gara_color
-            elif HAS_LIGHT and QN.g.vp['light'][v] :
+            elif HAS_LIGHT and QN.g.vp['vType'][v] == 3 :
                 QN.g.vp['vertex_color'][v]  = ligh_color
             else :
                 QN.g.vp['vertex_color'][v]  = road_color
 
-            if QN.g.vp['garage'][v] :
+            if QN.g.vp['vType'][v] == 1 :
                 QN.g.vp['vertex_t_color'][v]    = [0.0, 0.0, 0.0, 1.0]
                 QN.g.vp['state'][v]             = QN.g.ep['queues'][QN.g.edge(v,v)].nSystem
             else :
                 QN.g.vp['vertex_t_color'][v]    = [0.0, 0.0, 0.0, 0.0]
 
             halo_alpha                  = 1/self.parking_penalty[int(v), int(vj)]
-            QN.g.vp['halo'][v]          = QN.g.vp['garage'][v]
+            QN.g.vp['halo'][v]          = QN.g.vp['vType'][v] == 1
             QN.g.vp['halo_color'][v]    = [0.0, 0.502, 0.502, 0.15]
             #QN.g.vp['halo_color'][v]    = [0.0, 1.0, 0.0, halo_alpha/2]
 
@@ -645,14 +639,14 @@ class approximate_dynamic_program :
             QN.g.vp['halo'][vj]             = True
 
         for e in QN.g.vertex(state[0][1]).all_edges() :
-            if QN.g.vp['garage'][e.target()] :
+            if QN.g.vp['vType'][e.target()] == 1 :
                 QN.g.ep['edge_color'][e]    = [0.0, 0.5, 1.0, 1.0]
                 QN.g.ep['edge_t_color'][e]  = [0.0, 0.0, 0.0, 1.0]
 
         a           = i
         edge_list   = []
         while a != j :
-            a0  = QN.g.vp['shortest_path'][QN.g.vertex(a)][int(j)]
+            a0  = QN.shortest_path[a, int(j)]
             edge_list.append( QN.g.edge(a, a0) )
             a   = a0
 

@@ -152,18 +152,18 @@ class QueueNetwork :
             qissn = (int(e.source()), int(e.target()), g.edge_index[e])
             if g.ep['eType'][e] == 1 : #qs.LossQueue(cap, issn=qissn, net_size=self.nE)
                 cap       = g.vp['cap'][e.target()] if has_cap else 4
-                if qissn[0] == qissn[1] :
-                    queues[e] = qs.ResourceQueue(20, issn=qissn, net_size=self.nE)
-                else :
-                    queues[e] = qs.LossQueue(20, issn=qissn, net_size=self.nE, AgentClass=ResourceAgent)
+                #if qissn[0] == qissn[1] :
+                #    queues[e] = qs.ResourceQueue(20, issn=qissn, net_size=self.nE)
+                #else :
+                queues[e] = qs.LossQueue(20, issn=qissn, net_size=self.nE)#, AgentClass=ResourceAgent)
                 edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
             else : #qs.QueueServer(lanes, issn=qissn, net_size=self.nE)
                 lanes     = g.vp['lanes'][e.target()] if has_lanes else 8
                 lanes     = lanes if lanes > 10 else max([lanes // 2, 1])
-                if qissn[0] == qissn[1] :
-                    queues[e] = qs.ResourceQueue(20, issn=qissn, net_size=self.nE)
-                else :
-                    queues[e] = qs.QueueServer(20, issn=qissn, net_size=self.nE, AgentClass=ResourceAgent)
+                #if qissn[0] == qissn[1] :
+                #    queues[e] = qs.ResourceQueue(20, issn=qissn, net_size=self.nE)
+                #else :
+                queues[e] = qs.QueueServer(20, issn=qissn, net_size=self.nE)#, AgentClass=ResourceAgent)
                 edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
 
             if qissn[0] == qissn[1] :
@@ -182,8 +182,9 @@ class QueueNetwork :
 
         for v in g.vertices() :
             e = g.edge(v, v)
-            vertex_pen_color[v] = queues[e].color('pen')
-            vertex_color[v]     = queues[e].color()
+            if isinstance(e, gt.Edge) :
+                vertex_pen_color[v] = queues[e].color('pen')
+                vertex_color[v]     = queues[e].color()
             vertex_t_color[v]   = self.colors['text_normal']
             halo_color[v]       = self.colors['halo_normal']
             vertex_t_pos[v]     = 0 * np.pi / 4
@@ -460,12 +461,8 @@ class QueueNetwork :
         return ans
 
 
-    def lossed(self) :
-        ans = 0
-        for e in self.g.edges() :
-            q   = self.g.ep['queues'][e]
-            if isinstance(q, qs.LossQueue) :
-                ans += q.lossed()
+    def blocked(self) :
+        ans = [q.lossed() for q in self.queue_heap]
         return ans
 
 
@@ -481,18 +478,7 @@ class QueueNetwork :
 
     def draw(self, file_name=None, update_colors=True) :
         if update_colors :
-            ep  = self.g.ep
-            vp  = self.g.vp
-            for e in self.g.edges() :
-                nSy = ep['queues'][e].nSystem
-                ep['state'][e] = nSy
-
-                if e.target() == e.source() :
-                    v = e.target()
-                    vp['state'][v] = nSy
-                    vp['vertex_color'][v] = ep['queues'][e].color()
-                else :
-                    ep['edge_color'][e]   = ep['queues'][e].color()
+            self.update_graph_colors()
 
         if file_name == None :
             ans = gt.graph_draw(self.g, self.g.vp['pos'], geometry=(750, 750),
@@ -540,7 +526,24 @@ class QueueNetwork :
 
 
 
-    def _update_graph(self, ad, qissn) :
+    def update_graph_colors(self) :
+        ep  = self.g.ep
+        vp  = self.g.vp
+        for e in self.g.edges() :
+            nSy = ep['queues'][e].nSystem
+            ep['state'][e] = nSy
+
+            if e.target() == e.source() :
+                v = e.target()
+                vp['state'][v] = nSy
+                vp['vertex_color'][v] = ep['queues'][e].color()
+                ep['edge_color'][e]   = ep['queues'][e].color('edge')
+            else :
+                ep['edge_color'][e]   = ep['queues'][e].color()
+
+
+
+    def _update_graph_colors(self, ad, qissn) :
         e   = self.g.edge(qissn[0], qissn[1])
         v   = e.target()
         ep  = self.g.ep
@@ -554,6 +557,7 @@ class QueueNetwork :
             ep['state'][pe] = nSy
 
             if pe.target() == pe.source() :
+                ep['edge_color'][pe]   = ep['queues'][pe].color('edge')
                 vp['vertex_color'][pv] = ep['queues'][pe].color()
                 vp['halo_color'][pv]   = self.colors['halo_normal']
                 vp['halo'][pv]  = False
@@ -565,9 +569,10 @@ class QueueNetwork :
         ep['state'][e] = nSy
 
         if e.target() == e.source() :
+            ep['edge_color'][e]   = ep['queues'][e].color('edge')
+            vp['vertex_color'][v] = ep['queues'][e].color()
             vp['halo'][v]  = True
             vp['state'][v] = nSy
-            vp['vertex_color'][v] = ep['queues'][e].color()
 
             if ad == 'arrival' :
                 vp['halo_color'][v] = self.colors['halo_arrival']
@@ -599,7 +604,6 @@ class QueueNetwork :
             if isinstance(q.departures[0], qs.LearningAgent) :
                 return "STOP"
 
-        self.nEvents += 1
         self.t = t
 
         if event_type == "departure" :
@@ -608,25 +612,39 @@ class QueueNetwork :
 
             e   = agent.desired_destination(self, q.issn) # expects the network, and current location
             q2  = self.g.ep['queues'][e]
-            agent.set_arrival(t + 0.001)
+            agent.set_arrival(t)
 
             q2._add_arrival(agent)
             self.nAgents[q2.issn[2]] = q2.nTotal
-            self.prev_issn = q2.issn
 
             if Slow :
-                self._update_graph(ad='departure', qissn=q2.issn)
+                self._update_graph_colors(ad='departure', qissn=q.issn)
+                self.prev_issn = q.issn
+
+            if q2.active and sum(self.nAgents) > self.agent_cap - 1 :
+                q2.active = False
+
+            if q2.departures[0].time <= q2.arrivals[0].time :
+                print("WHOA! THIS NEEDS CHANGING!")
+
+            q2.next_event()
+            self.nEvents += 2
+
+            if Slow :
+                self._update_graph_colors(ad='arrival', qissn=q2.issn)
+                self.prev_issn = q2.issn
 
         else :
             if q.active and sum(self.nAgents) > self.agent_cap - 1 :
                 q.active = False
 
             q.next_event()
+            self.nEvents   += 1
             self.nAgents[j] = q.nTotal
-            self.prev_issn  = q.issn
 
             if Slow :
                 self._update_graph(ad='arrival', qissn=q.issn)
+                self.prev_issn  = q.issn
 
         if self.to_animate :
             #future = self.queue_heap[1].next_time

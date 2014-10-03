@@ -67,10 +67,12 @@ import numpy            as np
 import graph_tool.all   as gt
 import queueing_tool    as qt
 import cProfile
-g   = gt.load_graph('pitt_network.xml', fmt='xml')
+import os
+data_dir  = os.path.expanduser('~') + '/math/data/graphs/'
+g   = gt.load_graph(data_dir+'pitt_network.xml', fmt='xml')
 pit = qt.QueueNetwork(g, seed=10)
 pit.initialize(nActive=5)
-pit.agent_cap = 2000
+pit.agent_cap = 1000
 pr  = cProfile.Profile()
 pr.enable()
 pit.simulate(90)
@@ -87,10 +89,10 @@ import numpy            as np
 import graph_tool.all   as gt
 import queueing_tool    as qt
 import cProfile
-pit = qt.QueueNetwork(nVertices=50, seed=10)
+pit = qt.QueueNetwork(nVertices=50, seed=12)
 pit.initialize(nActive=50)
-pit.agent_cap = 1000
-pit.simulate(500)
+pit.agent_cap = 10000
+pit.simulate(150)
 pit.draw()
 
 
@@ -98,10 +100,9 @@ import numpy            as np
 import graph_tool.all   as gt
 import queueing_tool    as qt
 import cProfile
-g   = gt.load_graph('pitt_network.xml', fmt='xml')
 pit = qt.QueueNetwork(nVertices=50, seed=12)
-pit.initialize(nActive=5)
-pit.agent_cap = 1000
+pit.initialize(nActive=50)
+pit.agent_cap = 10000
 pr  = cProfile.Profile()
 pr.enable()
 pit.simulate(50)
@@ -114,7 +115,13 @@ import numpy            as np
 import graph_tool.all   as gt
 import queueing_tool    as qt
 import cProfile
-pit = qt.QueueNetwork(nVertices=50, seed=10)
-pit.initialize(nActive=5)
+pit = qt.QueueNetwork(nVertices=50, seed=13)
+pit.initialize(nActive=25)
 pit.agent_cap = 1000
-%timeit pit.simulate(50)
+pit.simulate(40)
+%timeit -n3 pit.simulate(20)
+pr  = cProfile.Profile()
+pr.enable()
+pit.simulate(20)
+pr.disable()
+pr.print_stats(sort='time')

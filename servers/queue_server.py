@@ -43,8 +43,9 @@ class QueueServer :
         self.active     = active
         self.next_ct    = 0
 
-        self.color_dict   =  {'edge_normal' : np.array([0.7, 0.7, 0.7, 0.5]),
-                              'vertex_pen'  : np.array([0.0, 0.5, 1.0, 1.0]) }
+        self.color_dict   = {'edge_normal'   : np.array([0.8, 0.8, 0.8, 0.5]),
+                             'vertex_normal' : np.array([1.0, 1.0, 1.0, 1.0]),
+                             'vertex_pen'    : np.array([0.0, 0.5, 1.0, 1.0]) }
 
         self.queue      = deque()
         self.arrivals   = []
@@ -76,6 +77,10 @@ class QueueServer :
         return not b < a
     def __ge__(a,b) :
         return not a < b
+
+
+    def blocked(self) :
+        pass
 
 
     def networking(self, network_size) :
@@ -204,16 +209,26 @@ class QueueServer :
         return new_depart
 
 
-    def color(self, which='main') :
-        if which == 'pen' :
+    def color(self, which='') :
+        if which == 'edge' :
+            nSy = self.nSystem
+            cap = self.nServers
+            tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+
+            color    = self.color_dict['edge_normal'] * tmp / 0.9
+            color[3] = 0.0
+  
+        elif which == 'pen' :
             color = self.color_dict['vertex_pen']
+
         else :
             nSy = self.nSystem
             cap = self.nServers
             tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
             if self.issn[0] == self.issn[1] :
-                color = [tmp, tmp, tmp, 1.0]
+                color    = self.color_dict['vertex_normal'] * tmp / 0.9
+                color[3] = 1.0
             else :
                 color    = self.color_dict['edge_normal'] * tmp / 0.9
                 color[3] = 0.5
@@ -268,8 +283,9 @@ class LossQueue(QueueServer) :
 
         QueueServer.__init__(self, nServers, issn, active, net_size, fArrival, fDepart, AgentClass=AgentClass)
 
-        self.color_dict =  {'edge_normal' : np.array([0.7, 0.7, 0.7, 0.50]),
-                            'vertex_pen'  : np.array([0.133, 0.545, 0.133, 1.0]) }
+        self.color_dict = { 'edge_normal'   : np.array([0.7, 0.7, 0.7, 0.50]),
+                            'vertex_normal' : np.array([1.0, 1.0, 1.0, 1.0]),
+                            'vertex_pen'    : np.array([0.133, 0.545, 0.133, 1.0]) }
         self.nBlocked   = 0
         self.queue_cap  = queue_cap
 
@@ -374,8 +390,9 @@ class ResourceQueue(LossQueue) :
             fArrival=lambda t : t - log(uniform()), fDepart=lambda t : t, 
             fDepart_mu=lambda t : 0, AgentClass=ResourceAgent, queue_cap=0)
 
-        self.color_dict   =  {'edge_normal' : np.array([0.7, 0.7, 0.7, 0.50]),
-                              'vertex_pen'  : np.array([0.0, 0.235, 0.718, 1.0]) }
+        self.color_dict   = { 'edge_normal'   : np.array([0.7, 0.7, 0.7, 0.50]),
+                              'vertex_normal' : np.array([1.0, 1.0, 1.0, 1.0]),
+                              'vertex_pen'    : np.array([0.0, 0.235, 0.718, 1.0]) }
         self.max_servers  = max_servers
         self.over_max     = 0
         self.nBlocked     = 0
@@ -430,8 +447,16 @@ class ResourceQueue(LossQueue) :
             return LossQueue.next_event(self)
 
 
-    def color(self, which='main') :
-        if which == 'pen' :
+    def color(self, which='') :
+        if which == 'edge' :
+            nSy = self.nServers
+            cap = self.max_servers
+            tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+
+            color    = self.color_dict['edge_normal'] * tmp / 0.9
+            color[3] = 0.0
+  
+        elif which == 'pen' :
             color = self.color_dict['vertex_pen']
         else :
             nSy = self.nServers
@@ -439,7 +464,8 @@ class ResourceQueue(LossQueue) :
             tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
             if self.issn[0] == self.issn[1] :
-                color = np.array([tmp, tmp, tmp, 1.0])
+                color    = self.color_dict['vertex_normal'] * tmp / 0.9
+                color[3] = 1.0
             else :
                 color    = self.color_dict['edge_normal'] * tmp / 0.9
                 color[3] = 0.5
