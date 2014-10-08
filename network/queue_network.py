@@ -10,6 +10,8 @@ from .. agents.queue_agents import LearningAgent, ResourceAgent
 
 from .. servers import queue_server as qs
 
+from sorting import insertionsort_special
+
 # Garages changed to FCQ (finite capacity queue)
 # each edge and vertex has an eType and vType respectively now. 
 #   The default edge type is an arc type, which has given the number 0. 
@@ -266,8 +268,7 @@ class QueueNetwork :
 
         self.g  = g
         self.queue_heap = [self.g.ep['queues'][e] for e in self.g.edges()]
-        heapify(self.queue_heap)
-
+        #heapify(self.queue_heap)
 
 
     def active_graph(self, nVertices=250, pDest=None, pGarage=None) :
@@ -588,9 +589,11 @@ class QueueNetwork :
         return self.queue_heap[0].next_event_type()
 
 
-    def next_event(self, Slow=True, STOP_LEARNER=False) :
-        self.queue_heap.sort()
+    def next_event(self, Slow=False, STOP_LEARNER=False) :
+        insertionsort_special( self.queue_heap)
         q = self.queue_heap[0]
+        #qissn = self.queue_heap[0][1:]#.issn
+        #q = self.g.ep['queues'][self.g.edge(qissn[0], qissn[1])]
         t = q.next_time
         j = q.issn[2]
 

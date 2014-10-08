@@ -33,13 +33,13 @@ class Agent :
         return a.time > b.time
 
     def __eq__(a,b) :
-        return (not a < b) and (not b < a)
+        return a.time == b.time
 
     def __le__(a,b) :
-        return not b < a
+        return a.time <= b.time
 
     def __ge__(a,b) :
-        return not a < b
+        return a.time >= b.time
 
     def __repr__(self) :
         return "Agent. issn: %s, time: %s" % (self.issn, self.time)

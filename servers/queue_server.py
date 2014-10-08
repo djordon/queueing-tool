@@ -63,8 +63,8 @@ class QueueServer :
         self.networking(net_size)
 
     def __repr__(self) :
-        tmp = "QueueServer. servers: %s, queued: %s, arrivals: %s, departures: %s, local_time: %s" \
-            %  (self.nServers, len(self.queue), self.nArrivals, self.nDeparts, self.local_t)
+        tmp = "QueueServer. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
+            %  (self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.next_time, 3))
         return tmp
 
     def __lt__(a,b) :
@@ -72,11 +72,11 @@ class QueueServer :
     def __gt__(a,b) :
         return a.next_time > b.next_time
     def __eq__(a,b) :
-        return (not a < b) and (not b < a)
+        return a.next_time == b.next_time
     def __le__(a,b) :
-        return not b < a
+        return a.next_time <= b.next_time
     def __ge__(a,b) :
-        return not a < b
+        return a.next_time >= b.next_time
 
 
     def blocked(self) :
@@ -291,8 +291,8 @@ class LossQueue(QueueServer) :
 
 
     def __repr__(self) :
-        tmp = "LossQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, local_time: %s" \
-            %  (self.nServers, len(self.queue), self.nArrivals, self.nDeparts, self.local_t)
+        tmp = "LossQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
+            %  (self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.next_time, 3))
         return tmp
 
 
@@ -368,9 +368,9 @@ class MarkovianQueue(QueueServer) :
 
 
     def __repr__(self) :
-        tmp = "MarkovianQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, local_time: %s, rates: %s" \
+        tmp = "MarkovianQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s, rates: %s" \
             %  (self.nServers, len(self.queue), self.nArrivals, 
-                self.nDeparts, self.local_t, self.rates)
+                self.nDeparts, np.round(self.next_time, 3), self.rates)
         return tmp
 
 
@@ -399,8 +399,8 @@ class ResourceQueue(LossQueue) :
 
 
     def __repr__(self) :
-        tmp = "ResourceQueue. servers: %s, max servers: %s, arrivals: %s, departures: %s, local_time: %s" \
-            %  (self.nServers, self.max_servers, self.nArrivals, self.nDeparts, self.local_t)
+        tmp = "ResourceQueue. servers: %s, max servers: %s, arrivals: %s, departures: %s, next time: %s" \
+            %  (self.nServers, self.max_servers, self.nArrivals, self.nDeparts, np.round(self.next_time, 3))
         return tmp
 
     def __str__(self) :

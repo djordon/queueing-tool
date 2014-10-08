@@ -47,6 +47,7 @@ class approximate_dynamic_program :
         self.agent_variables    = {}
         self.parked             = {}
         self.dir                = {'frames' : './figures/frames/'}
+        self.agent_locations    = {}
 
         if Qn == None :
             self.Qn = self.activate_network(agent_cap=self.agent_cap, seed=seed)
@@ -335,23 +336,19 @@ class approximate_dynamic_program :
             for m in range(M) :
                 QN  = self.Qn.copy()
 
-                for agent_var in self.agent_variables.values() :
-                    agent_var.tau   = 0
-
                 for t in range(T) :
                     issn  = QN.queue_heap[0].departures[0].issn
                     agent = self.agent_variables[issn]
                     tau   = agent.tau
                     state = [agent.obj.od]
-                    state.extend(for_state)
+                    #state.extend(for_state)
                     #s0    = QN.g.ep['queues'][e0].departures[0].od
 
                     if verbose :
                         print( "Frame: %s, %s, %s, %s" % (issn,n,m,agent.costs[n,m,tau-1],np.sum(QN.nAgents)]) )
 
                     if not complete_info :
-                        data  = agent.net_data[:, 1:3]
-                        data  = data[:, 0] * data[:, 1]
+                        data  = agent.net_data[:, 1] * agent.net_data[:, 2]
                         state.extend( data )
                     else :
                         state.extend( QN.nAgents )
@@ -426,8 +423,9 @@ class approximate_dynamic_program :
                                               agent.values[n,m,:], agent.v_est[n,m,:])
                     agent.beta_history[n,m,:]   = a
                     agent.value_history[n,m,:]  = agent.values[n,m,0], agent.v_est[n,m,0]
-                    agent.beta  = a.T 
+                    agent.beta  = a.T
                     agent.Bmat  = b
+                    agent.tau   = 0
                     if verbose :
                         print( array([agent.issn, agent.values[n,m,0], agent.v_est[n,m,0]) )
                         print("Agent : %s, Weights : %s" % (agent.issn, a))
@@ -650,6 +648,10 @@ class AgentStruct() :
         self.v_est  = zeros( (N,M,T) )
         self.costs  = zeros( (N,M,T+1) )
         self.basis  = zeros( (N,M,T, nFeatures) )
+
+        self.scale_vector   = zeros( nFeatures )
+        self.nInteractions  = 0
+        self.beta_cov       = np.eye( nFeatures )
 
         self.beta_history   = zeros( (N,M, nFeatures) )
         self.value_history  = zeros( (N,M,2) )
