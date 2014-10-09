@@ -39,7 +39,7 @@ class QueueServer :
         self.nTotal     = 0
 
         self.local_t    = 0
-        self.next_time  = infty
+        self.time       = infty
         self.active     = active
         self.next_ct    = 0
 
@@ -64,19 +64,19 @@ class QueueServer :
 
     def __repr__(self) :
         tmp = "QueueServer. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.next_time, 3))
+            %  (self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
         return tmp
 
     def __lt__(a,b) :
-        return a.next_time < b.next_time
+        return a.time < b.time
     def __gt__(a,b) :
-        return a.next_time > b.next_time
+        return a.time > b.time
     def __eq__(a,b) :
-        return a.next_time == b.next_time
+        return a.time == b.time
     def __le__(a,b) :
-        return a.next_time <= b.next_time
+        return a.time <= b.time
     def __ge__(a,b) :
-        return a.next_time >= b.next_time
+        return a.time >= b.time
 
 
     def blocked(self) :
@@ -137,9 +137,9 @@ class QueueServer :
                 heappush(self.arrivals, new_arrival)
 
         if self.arrivals[0].time < self.departures[0].time :
-            self.next_time = self.arrivals[0].time
+            self.time = self.arrivals[0].time
         else :
-            self.next_time = self.departures[0].time
+            self.time = self.departures[0].time
 
 
     def next_event_type(self) :
@@ -202,9 +202,9 @@ class QueueServer :
                 self.networking(self.net_data.shape[0])
 
         if self.arrivals[0].time < self.departures[0].time :
-            self.next_time = self.arrivals[0].time
+            self.time = self.arrivals[0].time
         else :
-            self.next_time = self.departures[0].time
+            self.time = self.departures[0].time
 
         return new_depart
 
@@ -241,7 +241,7 @@ class QueueServer :
         self.nSystem    = 0
         self.nTotal     = 0
         self.local_t    = 0
-        self.next_time  = infty
+        self.time  = infty
         self.next_ct    = 0
         self.queue      = deque()
         self.arrivals   = []
@@ -264,7 +264,7 @@ class QueueServer :
         new_server.nTotal       = copy.deepcopy(self.nTotal)
         new_server.nServers     = copy.deepcopy(self.nServers)
         new_server.local_t      = copy.deepcopy(self.local_t)
-        new_server.next_time    = copy.deepcopy(self.next_time)
+        new_server.time         = copy.deepcopy(self.time)
         new_server.next_ct      = copy.deepcopy(self.next_ct)
         new_server.queue        = copy.deepcopy(self.queue)
         new_server.arrivals     = copy.deepcopy(self.arrivals)
@@ -292,7 +292,7 @@ class LossQueue(QueueServer) :
 
     def __repr__(self) :
         tmp = "LossQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.next_time, 3))
+            %  (self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
         return tmp
 
 
@@ -324,9 +324,9 @@ class LossQueue(QueueServer) :
                 heappush(self.departures, new_arrival)
 
                 if self.arrivals[0].time < self.departures[0].time :
-                    self.next_time = self.arrivals[0].time
+                    self.time = self.arrivals[0].time
                 else :
-                    self.next_time = self.departures[0].time
+                    self.time = self.departures[0].time
 
         elif self.departures[0].time < self.arrivals[0].time :
             return QueueServer.next_event(self)
@@ -347,7 +347,7 @@ class LossQueue(QueueServer) :
         new_server.nBlocked     = copy.deepcopy(self.nBlocked)
         new_server.nServers     = copy.deepcopy(self.nServers)
         new_server.local_t      = copy.deepcopy(self.local_t)
-        new_server.next_time    = copy.deepcopy(self.next_time)
+        new_server.time         = copy.deepcopy(self.time)
         new_server.next_ct      = copy.deepcopy(self.next_ct)
         new_server.queue        = copy.deepcopy(self.queue)
         new_server.arrivals     = copy.deepcopy(self.arrivals)
@@ -370,7 +370,7 @@ class MarkovianQueue(QueueServer) :
     def __repr__(self) :
         tmp = "MarkovianQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s, rates: %s" \
             %  (self.nServers, len(self.queue), self.nArrivals, 
-                self.nDeparts, np.round(self.next_time, 3), self.rates)
+                self.nDeparts, np.round(self.time, 3), self.rates)
         return tmp
 
 
@@ -400,7 +400,7 @@ class ResourceQueue(LossQueue) :
 
     def __repr__(self) :
         tmp = "ResourceQueue. servers: %s, max servers: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.nServers, self.max_servers, self.nArrivals, self.nDeparts, np.round(self.next_time, 3))
+            %  (self.nServers, self.max_servers, self.nArrivals, self.nDeparts, np.round(self.time, 3))
         return tmp
 
     def __str__(self) :
@@ -423,9 +423,9 @@ class ResourceQueue(LossQueue) :
                     self.set_nServers(self.nServers+1)
 
                     if self.arrivals[0].time < self.departures[0].time :
-                        self.next_time = self.arrivals[0].time
+                        self.time = self.arrivals[0].time
                     else :
-                        self.next_time = self.departures[0].time
+                        self.time = self.departures[0].time
 
                 elif self.nSystem < self.nServers :
                     QueueServer.next_event(self)
@@ -437,9 +437,9 @@ class ResourceQueue(LossQueue) :
                     new_arrival     = heappop(self.arrivals)
                     self.local_t    = new_arrival.time
                     if self.arrivals[0].time < self.departures[0].time :
-                        self.next_time = self.arrivals[0].time
+                        self.time = self.arrivals[0].time
                     else :
-                        self.next_time = self.departures[0].time
+                        self.time = self.departures[0].time
 
             elif self.departures[0].time < self.arrivals[0].time :
                 return QueueServer.next_event(self)

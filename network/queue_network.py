@@ -10,7 +10,7 @@ from .. agents.queue_agents import LearningAgent, ResourceAgent
 
 from .. servers import queue_server as qs
 
-from .sorting import onesort, departsort
+from .sorting import arrivalsort, departsort
 
 # Garages changed to FCQ (finite capacity queue)
 # each edge and vertex has an eType and vType respectively now. 
@@ -588,10 +588,8 @@ class QueueNetwork :
 
 
     def next_event(self, Slow=False, STOP_LEARNER=False) :
-        #self.queue_heap.sort()
-        #q = self.queue_heap[0]
         q = self.queue_heap.pop(0)
-        t = q.next_time
+        t = q.time
         j = q.issn[2]
 
         if t == infty :
@@ -604,6 +602,7 @@ class QueueNetwork :
             if isinstance(q.departures[0], qs.LearningAgent) :
                 return "STOP"
 
+        self.nEvents += 1
         self.t = t
 
         if event_type == "departure" :
@@ -628,7 +627,6 @@ class QueueNetwork :
                 print("WHOA! THIS NEEDS CHANGING!")
 
             q2.next_event()
-            self.nEvents += 1
 
             if Slow :
                 self._update_graph_colors(ad='arrival', qissn=q2.issn)
@@ -641,18 +639,17 @@ class QueueNetwork :
                 q.active = False
 
             q.next_event()
-            self.nEvents   += 1
             self.nAgents[j] = q.nTotal
 
             if Slow :
                 self._update_graph(ad='arrival', qissn=q.issn)
                 self.prev_issn  = q.issn
 
-            onesort(self.queue_heap, q, self.nE)
+            arrivalsort(self.queue_heap, q, self.nE)
 
 
         if self.to_animate :
-            #future = self.queue_heap[1].next_time
+            #future = self.queue_heap[1].time
             #time.sleep( future - self.t )
             self.win.graph.regenerate_surface(lazy=False)
             self.win.graph.queue_draw()
