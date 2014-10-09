@@ -10,7 +10,7 @@ from .. agents.queue_agents import LearningAgent, ResourceAgent
 
 from .. servers import queue_server as qs
 
-from .sorting import onesort, twosort
+from .sorting import onesort, departsort
 
 # Garages changed to FCQ (finite capacity queue)
 # each edge and vertex has an eType and vType respectively now. 
@@ -589,8 +589,8 @@ class QueueNetwork :
 
     def next_event(self, Slow=False, STOP_LEARNER=False) :
         #self.queue_heap.sort()
-        q = self.queue_heap[0]
-        #q = self.queue_heap.pop(0)
+        #q = self.queue_heap[0]
+        q = self.queue_heap.pop(0)
         t = q.next_time
         j = q.issn[2]
 
@@ -634,14 +634,7 @@ class QueueNetwork :
                 self._update_graph_colors(ad='arrival', qissn=q2.issn)
                 self.prev_issn = q2.issn
 
-            #self.queue_heap.sort()
-            twosort(self.queue_heap, self.nE)
-            #print( [q.next_time for q in self.queue_heap] )
-            #print( "%s\n%s\n%s\n%s" % (k, self.queue_heap[k-1], self.queue_heap[k], self.queue_heap[k+1]) )
-            #return
-            #q0 = self.queue_heap.pop(k)
-            #heappush(self.queue_heap, q0)
-            #heappush(self.queue_heap, q)
+            departsort(self.queue_heap, q, self.nE)
 
         else :
             if q.active and sum(self.nAgents) > self.agent_cap - 1 :
@@ -655,8 +648,8 @@ class QueueNetwork :
                 self._update_graph(ad='arrival', qissn=q.issn)
                 self.prev_issn  = q.issn
 
-            onesort(self.queue_heap, self.nE)
-            #heappush(self.queue_heap, q)
+            onesort(self.queue_heap, q, self.nE)
+
 
         if self.to_animate :
             #future = self.queue_heap[1].next_time

@@ -1,55 +1,44 @@
-from heapq import heappush
 cimport numpy as np
 cimport cython
 
-#ctypedef np.object_ DTYPE_t
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def insertionsort_special(np.ndarray[object, ndim=1] a) :
-    cdef Py_ssize_t k, j
-    for k in range(1, len(a)) :
+def departsort(object a, object q, Py_ssize_t pos) :
+    cdef Py_ssize_t k, j, ppos
+    cdef bint issorted = False
+    ppos  = pos - 1
+
+    for k in range(1, pos) :
         j = k
         while j > 0 and a[j] < a[j-1] :
+            issorted = True
             a[j], a[j-1] = a[j-1], a[j]
             j -= 1
+        if issorted :
+            break
+
+    while ppos > 0 and  q < a[ppos] :
+        pos  = ppos
+        ppos = (pos - 1) >> 1
+
+    while pos > 0 and q < a[pos-1] :
+        pos = pos - 1
+
+    a.insert(pos, q)
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def insertionsort_special2(object a, int n) :
-    cdef Py_ssize_t k, j
-    for k in range(1, n) :
-        j = k
-        while j > 0 and a[j] < a[j-1] :
-            a[j], a[j-1] = a[j-1], a[j]
-            j -= 1
+def onesort(object a, object q, Py_ssize_t pos) :
+    cdef Py_ssize_t ppos
+    ppos  = pos - 1
+    
+    while ppos > 0 and  q < a[ppos] :
+        pos  = ppos
+        ppos = (pos - 1) >> 1
 
+    while pos > 0 and q < a[pos-1] :
+        pos = pos - 1
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def twosort(object a, int n) :
-    cdef Py_ssize_t k, j
-    cdef bint one, two
-    for k in range(1, n) :
-        if a[k] < a[k-1] :
-            j = k
-            if one :
-                two = True
-            while j > 0 and a[j] < a[j-1] :
-                a[j], a[j-1] = a[j-1], a[j]
-                j = j - 1
-            one = True
-            if one and two :
-                return
+    a.insert(pos, q)
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def onesort(object a, int n) :
-    cdef Py_ssize_t k
-    for k in range(1, n) :
-        if a[k] < a[k-1] :
-            while k > 0 and a[k] < a[k-1] :
-                a[k], a[k-1] = a[k-1], a[k]
-                k = k - 1
-                return
