@@ -4,11 +4,13 @@ import time
 import copy
 
 from numpy                  import ones, zeros, array, arange, logical_and, infty
-from heapq                  import heappush, heappop, heapify
+from heapq                  import heappush
 from gi.repository          import Gtk, GObject
 from .. agents.queue_agents import LearningAgent, ResourceAgent
 
 from .. servers import queue_server as qs
+
+from .sorting import onesort, twosort
 
 # Garages changed to FCQ (finite capacity queue)
 # each edge and vertex has an eType and vType respectively now. 
@@ -153,7 +155,7 @@ class QueueNetwork :
             if g.ep['eType'][e] == 1 : #qs.LossQueue(cap, issn=qissn, net_size=self.nE)
                 cap       = g.vp['cap'][e.target()] if has_cap else 4
                 #if qissn[0] == qissn[1] :
-                #    queues[e] = qs.ResourceQueue(20, issn=qissn, net_size=self.nE)
+                #    queues[e] = qs.ResourceQueue(20000, issn=qissn, net_size=self.nE)
                 #else :
                 queues[e] = qs.LossQueue(20, issn=qissn, net_size=self.nE)#, AgentClass=ResourceAgent)
                 edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
@@ -161,7 +163,7 @@ class QueueNetwork :
                 lanes     = g.vp['lanes'][e.target()] if has_lanes else 8
                 lanes     = lanes if lanes > 10 else max([lanes // 2, 1])
                 #if qissn[0] == qissn[1] :
-                #    queues[e] = qs.ResourceQueue(20, issn=qissn, net_size=self.nE)
+                #    queues[e] = qs.ResourceQueue(20000, issn=qissn, net_size=self.nE)
                 #else :
                 queues[e] = qs.QueueServer(20, issn=qissn, net_size=self.nE)#, AgentClass=ResourceAgent)
                 edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
@@ -266,7 +268,7 @@ class QueueNetwork :
 
         self.g  = g
         self.queue_heap = [self.g.ep['queues'][e] for e in self.g.edges()]
-
+        self.queue_heap.sort()
 
     def active_graph(self, nVertices=250, pDest=None, pGarage=None) :
 
@@ -582,13 +584,13 @@ class QueueNetwork :
 
 
     def next_event_type(self) :
-        self.queue_heap.sort()
         return self.queue_heap[0].next_event_type()
 
 
     def next_event(self, Slow=False, STOP_LEARNER=False) :
-        self.queue_heap.sort()
+        #self.queue_heap.sort()
         q = self.queue_heap[0]
+        #q = self.queue_heap.pop(0)
         t = q.next_time
         j = q.issn[2]
 
@@ -626,11 +628,20 @@ class QueueNetwork :
                 print("WHOA! THIS NEEDS CHANGING!")
 
             q2.next_event()
-            self.nEvents += 2
+            self.nEvents += 1
 
             if Slow :
                 self._update_graph_colors(ad='arrival', qissn=q2.issn)
                 self.prev_issn = q2.issn
+
+            #self.queue_heap.sort()
+            twosort(self.queue_heap, self.nE)
+            #print( [q.next_time for q in self.queue_heap] )
+            #print( "%s\n%s\n%s\n%s" % (k, self.queue_heap[k-1], self.queue_heap[k], self.queue_heap[k+1]) )
+            #return
+            #q0 = self.queue_heap.pop(k)
+            #heappush(self.queue_heap, q0)
+            #heappush(self.queue_heap, q)
 
         else :
             if q.active and sum(self.nAgents) > self.agent_cap - 1 :
@@ -643,6 +654,9 @@ class QueueNetwork :
             if Slow :
                 self._update_graph(ad='arrival', qissn=q.issn)
                 self.prev_issn  = q.issn
+
+            onesort(self.queue_heap, self.nE)
+            #heappush(self.queue_heap, q)
 
         if self.to_animate :
             #future = self.queue_heap[1].next_time

@@ -1,3 +1,4 @@
+from heapq import heappush
 cimport numpy as np
 cimport cython
 
@@ -5,8 +6,8 @@ cimport cython
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def insertionsort_special(object a) :
-    cdef unsigned int k, j
+def insertionsort_special(np.ndarray[object, ndim=1] a) :
+    cdef Py_ssize_t k, j
     for k in range(1, len(a)) :
         j = k
         while j > 0 and a[j] < a[j-1] :
@@ -16,18 +17,39 @@ def insertionsort_special(object a) :
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def insertionsort_special2(object a) :
-    cdef unsigned int k, j
-    cdef unsigned int m = 0
-    cdef bint swapped
-    for k in range(1, len(a)) :
+def insertionsort_special2(object a, int n) :
+    cdef Py_ssize_t k, j
+    for k in range(1, n) :
         j = k
-        swapped = False
-        while j > 0 and a[j,0] < a[j-1,0] :
+        while j > 0 and a[j] < a[j-1] :
             a[j], a[j-1] = a[j-1], a[j]
-            swapped = True
-            j = j - 1
-        if swapped :
-            m = m + 1
-            if m == 2 :
-                break
+            j -= 1
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def twosort(object a, int n) :
+    cdef Py_ssize_t k, j
+    cdef bint one, two
+    for k in range(1, n) :
+        if a[k] < a[k-1] :
+            j = k
+            if one :
+                two = True
+            while j > 0 and a[j] < a[j-1] :
+                a[j], a[j-1] = a[j-1], a[j]
+                j = j - 1
+            one = True
+            if one and two :
+                return
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def onesort(object a, int n) :
+    cdef Py_ssize_t k
+    for k in range(1, n) :
+        if a[k] < a[k-1] :
+            while k > 0 and a[k] < a[k-1] :
+                a[k], a[k-1] = a[k-1], a[k]
+                k = k - 1
+                return
