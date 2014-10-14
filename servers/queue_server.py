@@ -2,7 +2,7 @@ from numpy.random           import uniform
 from numpy                  import ones, zeros, infty, log
 from heapq                  import heappush, heappop
 from collections            import deque
-from .. agents.queue_agents import Agent, SmartAgent, LearningAgent, RandomAgent, ResourceAgent
+from .. agents.queue_agents import Agent, SmartAgent, LearningAgent, ResourceAgent
 
 import numpy                as np
 import copy
@@ -28,7 +28,7 @@ class QueueServer :
     def __init__(self, nServers=1, issn=(0,0,0), active=False, net_size=1,
             fArrival=lambda x : x - log(uniform()) / 1, 
             fDepart =lambda x : x - log(uniform()) / 1.1,
-            fDepart_mu=lambda x : 1/1.1, AgentClass=RandomAgent) :
+            fDepart_mu=lambda x : 1/1.1, AgentClass=Agent) :
 
         self.issn       = issn
         self.nServers   = nServers
@@ -43,9 +43,9 @@ class QueueServer :
         self.active     = active
         self.next_ct    = 0
 
-        self.color_dict   = {'edge_normal'   : np.array([0.8, 0.8, 0.8, 0.5]),
-                             'vertex_normal' : np.array([1.0, 1.0, 1.0, 1.0]),
-                             'vertex_pen'    : np.array([0.0, 0.5, 1.0, 1.0]) }
+        self.color_dict = {'edge_normal'   : np.array([0.8, 0.8, 0.8, 0.5]),
+                           'vertex_normal' : np.array([1.0, 1.0, 1.0, 1.0]),
+                           'vertex_pen'    : np.array([0.0, 0.5, 1.0, 1.0]) }
 
         self.queue      = deque()
         self.arrivals   = []
@@ -63,18 +63,22 @@ class QueueServer :
         self.networking(net_size)
 
     def __repr__(self) :
-        tmp = "QueueServer. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
+        tmp = "QueueServer: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
+            %  (self.issn[2], self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
         return tmp
 
     def __lt__(a,b) :
         return a.time < b.time
+
     def __gt__(a,b) :
         return a.time > b.time
+
     def __eq__(a,b) :
         return a.time == b.time
+
     def __le__(a,b) :
         return a.time <= b.time
+
     def __ge__(a,b) :
         return a.time >= b.time
 
@@ -144,11 +148,11 @@ class QueueServer :
 
     def next_event_type(self) :
         if self.arrivals[0].time < self.departures[0].time :
-            return "arrival"
+            return 1
         elif self.arrivals[0].time > self.departures[0].time :
-            return "departure"
+            return 2
         else :
-            return "nothing"
+            return 0
 
 
     def extract_information(self, agent) :
@@ -279,7 +283,7 @@ class LossQueue(QueueServer) :
     def __init__(self, nServers=1, issn=0, active=False, net_size=1, 
             fArrival=lambda x : x - log(uniform()) / 1, 
             fDepart =lambda x : x - log(uniform()) / 1.1, fDepart_mu=lambda x : 1/1.1,
-            AgentClass=RandomAgent, queue_cap=0) :
+            AgentClass=Agent, queue_cap=0) :
 
         QueueServer.__init__(self, nServers, issn, active, net_size, fArrival, fDepart, AgentClass=AgentClass)
 
@@ -291,8 +295,8 @@ class LossQueue(QueueServer) :
 
 
     def __repr__(self) :
-        tmp = "LossQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
+        tmp = "LossQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
+            %  (self.issn[2], self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
         return tmp
 
 
@@ -362,14 +366,13 @@ class MarkovianQueue(QueueServer) :
     def __init__(self, nServers=1, issn=0, active=False, net_size=1, aRate=1, dRate=1.1) :
         QueueServer.__init__(self, nServers, issn, active, net_size,
             lambda t : t - log(uniform()) / aRate,
-            lambda t : t - log(uniform()) / dRate, lambda t : 1 / dRate, RandomAgent) 
+            lambda t : t - log(uniform()) / dRate, lambda t : 1 / dRate, Agent) 
 
         self.rates  = [aRate, dRate]
 
-
     def __repr__(self) :
-        tmp = "MarkovianQueue. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s, rates: %s" \
-            %  (self.nServers, len(self.queue), self.nArrivals, 
+        tmp = "MarkovianQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s, rates: %s" \
+            %  (self.issn[2], self.nServers, len(self.queue), self.nArrivals, 
                 self.nDeparts, np.round(self.time, 3), self.rates)
         return tmp
 
@@ -399,8 +402,8 @@ class ResourceQueue(LossQueue) :
 
 
     def __repr__(self) :
-        tmp = "ResourceQueue. servers: %s, max servers: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.nServers, self.max_servers, self.nArrivals, self.nDeparts, np.round(self.time, 3))
+        tmp = "ResourceQueue: %s. servers: %s, max servers: %s, arrivals: %s, departures: %s, next time: %s" \
+            %  (self.issn[2], self.nServers, self.max_servers, self.nArrivals, self.nDeparts, np.round(self.time, 3))
         return tmp
 
     def __str__(self) :

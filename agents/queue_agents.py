@@ -16,15 +16,17 @@ class Agent :
         self.old_dest = None
         self.resting  = False
         self.trips    = 0
+        self.type     = 0
         self.rest_t   = [0, 0]
         self.trip_t   = [0, 0]
-        self.type     = 0
         self.arr_ser  = [0, 0]
         self.od       = [0, 0]
 
         self.stats    = zeros((net_size, 3), np.int32 )
         self.net_data = ones((net_size, 3)) * -1
 
+    def __repr__(self) :
+        return "Agent. issn: %s, time: %s" % (self.issn, self.time)
 
     def __lt__(a,b) :
         return a.time < b.time
@@ -41,8 +43,6 @@ class Agent :
     def __ge__(a,b) :
         return a.time >= b.time
 
-    def __repr__(self) :
-        return "Agent. issn: %s, time: %s" % (self.issn, self.time)
 
     def set_arrival(self, t) :
         self.time = t
@@ -54,23 +54,6 @@ class Agent :
 
     def set_type(self, n) :
         self.type = n
-
-
-    def set_dest(self, net=None, dest=None) :
-        if dest != None :
-            self.dest = int(dest)
-        else :
-            nodes   = net.g.gp['node_index']['dest_road']
-            dLen    = net.dest_count
-            rLen    = net.nV - dLen - net.fcq_count
-            probs   = [0.3 / dLen for k in range(dLen)]
-            probs.extend([0.7/rLen for k in range(rLen)])
-            dest    = int(choice(nodes, size=1, p=probs))
-
-            if self.old_dest != None :
-                while dest == int(self.old_dest) :
-                    dest = int(choice(nodes, size=1, p=probs))
-            self.dest = dest
 
 
     def set_rest(self) :
@@ -85,23 +68,9 @@ class Agent :
 
     def desired_destination(self, *info) :
         network, qissn = info[:2]
-        if self.dest != None and qissn[1] == self.dest :
-            self.old_dest   = self.dest
-            self.dest       = None
-            self.rest_t[0]  = network.t
-            self.trip_t[1] += network.t - self.trip_t[0] 
-            self.resting    = True
-            self.trips     += 1
-            self.set_dest(net = network)
-
-        elif self.dest == None :
-            self.trip_t[0]  = network.t
-            self.set_dest(net = network)
-            while self.dest == qissn[1] : #int(e.target()) :
-                self.set_dest(net = network)
-        
-        z   = network.shortest_path[qissn[1], self.dest]
-        z   = network.g.edge(qissn[1], z)
+        n   = len( network.adjacency[qissn[1]] )
+        d   = randint(0, n)
+        z   = network.adjacency[qissn[1]][d]
         return z
 
 
@@ -110,15 +79,7 @@ class Agent :
 
 
     def queue_action(self, queue, *args, **kwargs) :
-        ### update information
-        a = logical_or(self.net_data[:, 0] < queue.net_data[:, 0], self.net_data[:, 0] == -1)
-        self.net_data[a, :] = queue.net_data[a, :]
-
-        ### stamp this information
-        n   = queue.issn[2]    # This is the edge_index of the server
-        self.stats[n, 0]    = self.stats[n, 0] + (self.arr_ser[1] - self.arr_ser[0])
-        self.stats[n, 1]   += 1 if (self.arr_ser[1] - self.arr_ser[0]) > 0 else 0
-        self.net_data[n, :] = queue.local_t, queue.nServers, queue.nSystem / queue.nServers
+        pass
 
 
     def __deepcopy__(self, memo) :
@@ -140,7 +101,72 @@ class Agent :
 
 
 
-class LearningAgent(Agent) :
+class SmartAgent(Agent) :
+
+    def __init__(self, issn, net_size) :
+        Agent.__init__(self, issn, net_size)
+
+    def __repr__(self) :
+        return "SmartAgent. issn: %s, time: %s" % (self.issn, self.time)
+
+
+    def get_beliefs(self) :
+        return self.net_data[:, 2]
+
+
+    def _set_dest(self, net=None, dest=None) :
+        if dest != None :
+            self.dest = int(dest)
+        else :
+            nodes   = net.g.gp['node_index']['dest_road']
+            dLen    = net.dest_count
+            rLen    = net.nV - dLen - net.fcq_count
+            probs   = [0.3 / dLen for k in range(dLen)]
+            probs.extend([0.7/rLen for k in range(rLen)])
+            dest    = int(choice(nodes, size=1, p=probs))
+
+            if self.old_dest != None :
+                while dest == int(self.old_dest) :
+                    dest = int(choice(nodes, size=1, p=probs))
+            self.dest = dest
+
+
+    def desired_destination(self, *info) :
+        network, qissn = info[:2]
+        if self.dest != None and qissn[1] == self.dest :
+            self.old_dest   = self.dest
+            self.dest       = None
+            self.rest_t[0]  = network.t
+            self.trip_t[1] += network.t - self.trip_t[0] 
+            self.resting    = True
+            self.trips     += 1
+            self._set_dest(net = network)
+
+        elif self.dest == None :
+            self.trip_t[0]  = network.t
+            self._set_dest(net = network)
+            while self.dest == qissn[1] : #int(e.target()) :
+                self._set_dest(net = network)
+        
+        z   = network.shortest_path[qissn[1], self.dest]
+        z   = network.g.edge(qissn[1], z)
+        return z
+
+
+    def queue_action(self, queue, *args, **kwargs) :
+        ### update information
+        a = logical_or(self.net_data[:, 0] < queue.net_data[:, 0], self.net_data[:, 0] == -1)
+        self.net_data[a, :] = queue.net_data[a, :]
+
+        ### stamp this information
+        n   = queue.issn[2]    # This is the edge_index of the server
+        self.stats[n, 0]    = self.stats[n, 0] + (self.arr_ser[1] - self.arr_ser[0])
+        self.stats[n, 1]   += 1 if (self.arr_ser[1] - self.arr_ser[0]) > 0 else 0
+        self.net_data[n, :] = queue.local_t, queue.nServers, queue.nSystem / queue.nServers
+
+
+
+class LearningAgent(SmartAgent) :
 
     def __init__(self, issn, net_size) :
         Agent.__init__(self, issn, net_size)
@@ -156,44 +182,6 @@ class LearningAgent(Agent) :
     def desired_destination(self, *info) :
         network, queue = info[:2]
         return network.g.edge(queue[1], self.dest)
-
-
-
-class SmartAgent(Agent) :
-
-    def __init__(self, issn, net_size) :
-        Agent.__init__(self, issn, net_size)
-
-    def __repr__(self) :
-        return "SmartAgent. issn: %s, time: %s" % (self.issn, self.time)
-
-
-    def get_beliefs(self) :
-        return self.net_data[:, 2]
-
-
-
-class RandomAgent(Agent) :
-
-    def __init__(self, issn, net_size) :
-        Agent.__init__(self, issn, net_size)
-        self.net_data = -1 * ones((net_size, 3))
-
-    def __repr__(self) :
-        return "RandomAgent. issn: %s, time: %s" % (self.issn, self.time)
-
-
-    def get_beliefs(self) :
-        return self.net_data[:, 2]
-
-
-    def desired_destination(self, *info) :
-        network, qissn = info[:2]
-        v   = network.g.vertex(qissn[1])
-        n   = v.out_degree()
-        d   = randint(0, n)
-        z   = list(v.out_edges())[d]
-        return z
 
 
 
