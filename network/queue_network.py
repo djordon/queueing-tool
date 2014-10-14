@@ -10,7 +10,7 @@ from .. agents.queue_agents import LearningAgent, ResourceAgent
 
 from .. servers import queue_server as qs
 
-from .sorting import arrivalsort, departsort
+from .sorting import zeroOneSort, zeroSort, oneSort, twoSort
 
 # Garages changed to FCQ (finite capacity queue)
 # each edge and vertex has an eType and vType respectively now. 
@@ -26,7 +26,7 @@ class QueueNetwork :
         self.t          = 0
         self.to_animate = False
         self.undirected = False
-        self.nAgents    = [0]
+        self.nAgents    = np.array([0])
         self.agent_cap  = 100
         self.fcq_count  = 0
         self.prev_issn  = None
@@ -58,7 +58,18 @@ class QueueNetwork :
         elif isinstance(g, str) or isinstance(g, gt.Graph) :
             self.set_graph(g, graph_type, calcpath)
         else :
-            pass
+            raise Exception("Not sure which graph type was passes")
+
+
+        def ei_wrapper(e) :
+            return self.g.edge_index[e]
+
+        self.adjacency  = [ [i for i in map(ei_wrapper, list(v.out_edges()))] for v in self.g.vertices()]
+        self.edge2queue = [self.g.ep['queues'][e] for e in self.g.edges()]
+        self.queues     = [self.g.ep['queues'][e] for e in self.g.edges()]
+        self.queues.sort()
+
+
 
 
     def set_graph(self, g, graph_type=None, calc_shortest_path=False) :
@@ -143,7 +154,7 @@ class QueueNetwork :
 
         self.nV       = g.num_vertices()
         self.nE       = g.num_edges()
-        self.nAgents  = [0 for k in range(self.nE)]
+        self.nAgents  = np.array([0 for k in range(self.nE)])
         self.edges    = [e for e in g.edges()]
 
         has_length    = 'edge_length' in edge_props
@@ -267,8 +278,7 @@ class QueueNetwork :
         g.ep['queues']           = queues
 
         self.g  = g
-        self.queue_heap = [self.g.ep['queues'][e] for e in self.g.edges()]
-        self.queue_heap.sort()
+
 
     def active_graph(self, nVertices=250, pDest=None, pGarage=None) :
 
@@ -386,11 +396,15 @@ class QueueNetwork :
             if not initialized :
                 self.g.ep['queues'][e].initialize()
 
-        self.queue_heap.sort()
+        self.queues.sort()
+        while self.queues[-1].time == infty :
+            self.queues.pop()
+
+        self._queues = set([q.issn[2] for q in self.queues])
 
 
     def __repr__(self) :
-        return 'QueueNetwork. # nodes: %s, edges: %s, agents: %s' % (self.nV, self.nE, sum(self.nAgents))
+        return 'QueueNetwork. # nodes: %s, edges: %s, agents: %s' % (self.nV, self.nE, np.sum(self.nAgents))
 
 
     def agent_stats(self) :
@@ -462,7 +476,7 @@ class QueueNetwork :
 
 
     def blocked(self) :
-        ans = [q.lossed() for q in self.queue_heap]
+        ans = [q.lossed() for q in self.queues]
         return ans
 
 
@@ -584,11 +598,11 @@ class QueueNetwork :
 
 
     def next_event_type(self) :
-        return self.queue_heap[0].next_event_type()
+        return self.queues[0].next_event_type()
 
 
     def next_event(self, Slow=False, STOP_LEARNER=False) :
-        q = self.queue_heap.pop(0)
+        q = self.queues.pop(0)
         t = q.time
         j = q.issn[2]
 
@@ -598,19 +612,21 @@ class QueueNetwork :
 
         event_type  = q.next_event_type()
 
-        if STOP_LEARNER and event_type == "departure" :
+        if STOP_LEARNER and event_type == 2 :
             if isinstance(q.departures[0], qs.LearningAgent) :
                 return "STOP"
 
         self.nEvents += 1
         self.t = t
 
-        if event_type == "departure" :
+        if event_type == 2 :
             agent           = q.next_event()
             self.nAgents[j] = q.nTotal
 
-            e   = agent.desired_destination(self, q.issn) # expects the network, and current location
-            q2  = self.g.ep['queues'][e]
+            ei  = agent.desired_destination(self, q.issn) # expects the network, and current location
+            q2  = self.edge2queue[ei]
+
+            q2inSet = q2.time < infty
             agent.set_arrival(t)
 
             q2._add_arrival(agent)
@@ -620,7 +636,7 @@ class QueueNetwork :
                 self._update_graph_colors(ad='departure', qissn=q.issn)
                 self.prev_issn = q.issn
 
-            if q2.active and sum(self.nAgents) > self.agent_cap - 1 :
+            if q2.active and np.sum(self.nAgents) > self.agent_cap - 1 :
                 q2.active = False
 
             if q2.departures[0].time <= q2.arrivals[0].time :
@@ -632,10 +648,24 @@ class QueueNetwork :
                 self._update_graph_colors(ad='arrival', qissn=q2.issn)
                 self.prev_issn = q2.issn
 
-            departsort(self.queue_heap, q, self.nE)
+            if q.time < infty :
+                if q2.issn[2] in self._queues :
+                    zeroOneSort(self.queues, q, len(self.queues) )
+                elif q2.time < infty :
+                    self._queues.add(q2.issn[2])
+                    twoSort(self.queues, q, q2, len(self.queues))
+                else :
+                    oneSort(self.queues, q, len(self.queues))
+            else :
+                self._queues.remove(j)
+                if q2.issn[2] in self._queues :
+                    zeroSort(self.queues, len(self.queues))
+                elif q2.time < infty :
+                    self._queues.add(q2.issn[2])
+                    oneSort(self.queues, q2, len(self.queues))
 
-        else :
-            if q.active and sum(self.nAgents) > self.agent_cap - 1 :
+        elif event_type == 1 :
+            if q.active and np.sum(self.nAgents) > self.agent_cap - 1 :
                 q.active = False
 
             q.next_event()
@@ -645,11 +675,12 @@ class QueueNetwork :
                 self._update_graph(ad='arrival', qissn=q.issn)
                 self.prev_issn  = q.issn
 
-            arrivalsort(self.queue_heap, q, self.nE)
+            if q.time < infty :
+                oneSort(self.queues, q, len(self.queues) )
 
 
         if self.to_animate :
-            #future = self.queue_heap[1].time
+            #future = self.queues[1].time
             #time.sleep( future - self.t )
             self.win.graph.regenerate_surface(lazy=False)
             self.win.graph.queue_draw()
@@ -696,7 +727,7 @@ class QueueNetwork :
     def reset(self) :
         self.t          = 0
         self.nEvents    = 0
-        self.nAgents    = [0 for k in range( self.nE )]
+        self.nAgents    = np.array([0 for k in range( self.nE )])
         self.to_animate = False
         self.reset_colors()
         for e in self.g.edges() :
@@ -725,6 +756,6 @@ class QueueNetwork :
             queues[e]   = copy.deepcopy( net.g.ep['queues'][e] )
 
         net.g.ep['queues']  = queues
-        net.queue_heap      = [net.g.ep['queues'][e] for e in net.g.edges()]
-        heapify(net.queue_heap)
+        net.queues      = [net.g.ep['queues'][e] for e in net.g.edges()]
+        heapify(net.queues)
         return net
