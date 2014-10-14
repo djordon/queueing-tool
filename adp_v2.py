@@ -68,13 +68,14 @@ class approximate_dynamic_program :
     def activate_network(self, agent_cap, net_size=150, seed=None) :
         Qn  = qt.QueueNetwork(nVertices=net_size, graph_type="periodic", seed=seed)
         Qn.agent_cap = agent_cap
-        for q in Qn.queue_heap :
+        for q in Qn.queues :
             q.xArrival    = lambda x : x - log(uniform()) / 1
             q.xDepart     = lambda x : x - log(uniform()) / 3
             q.xDepart_mu  = lambda x : 1/3 
 
         tmp0    = Qn.g.vp['vType'].a
         self.ce = np.arange( Qn.nV )[tmp0==min(tmp0)] # Creation edge
+        Qn.initialize(queues=self.ce)
         
         garage_cap  = int( np.ceil( agent_cap / (1.5 * Qn.fcq_count) ) )
         garage_sum  = [[] for k in range(Qn.nV)]
@@ -91,7 +92,6 @@ class approximate_dynamic_program :
                     Qn.g.ep['queues'][e].xArrival   = lambda x : x - log(uniform()) / 8
                     Qn.g.ep['queues'][e].xDepart    = lambda x : x - log(uniform()) / 3
                     Qn.g.ep['queues'][e].xDepart_mu = lambda x : 1/3
-                    Qn.g.ep['queues'][e].initialize()
 
         for e in Qn.g.edges() :
             if Qn.g.ep['eType'][e] == 1 :
@@ -260,17 +260,13 @@ class approximate_dynamic_program :
         N, M, T = self.parameters['N'], self.parameters['M'], self.parameters['T']
         np.random.shuffle(self.ce)
         
-        self.Qn.edges[self.ce[0]]
         self.Qn.reset()
-        self.Qn.g.ep['queues'][self.Qn.edges[self.ce[0]]].active = True
-        self.Qn.g.ep['queues'][self.Qn.edges[self.ce[0]]].add_arrival()
+        self.Qn.initialize(queues=self.ce[:(Qn.nV // 3)]
         self.Qn.simulate( np.random.randint(H[0], H[1]) )
 
-        t, e0   = self.Qn.next_time()
         if not hasattr(orig, '__iter__') :
-            orig    = [orig]
-        if not hasattr(dest, '__iter__') :
-            dest    = [dest]
+            orig  = [orig]
+            dest  = [dest]
 
         count   = 1
         for i in range(len(orig)) :
@@ -292,7 +288,7 @@ class approximate_dynamic_program :
             self.parked[self.agent_cap+count] = False
             count  += 1
 
-        if not np.array([self.Qn.edges[i] == e0 for i in orig]).any():
+        if not isinstance(self.Qn.queues[0].departures[0], qt.LearningAgent) :
             self.simulate_forward( self.Qn )
 
         return
@@ -337,7 +333,7 @@ class approximate_dynamic_program :
                 QN  = self.Qn.copy()
 
                 for t in range(T) :
-                    issn  = QN.queue_heap[0].departures[0].issn
+                    issn  = QN.queues[0].departures[0].issn
                     agent = self.agent_variables[issn]
                     tau   = agent.tau
                     state = [agent.obj.od]
@@ -444,8 +440,7 @@ class approximate_dynamic_program :
 
 
     def advise_agent(self, action, QN) :
-        t, e  = QN.next_time()
-        QN.g.ep['queues'][e].departures[0].dest = action
+        QN.queues[0].departures[0].dest = action
 
 
     def simulate_forward(self, QN):
