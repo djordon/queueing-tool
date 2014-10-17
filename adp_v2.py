@@ -9,6 +9,7 @@ import copy
 import os
 
 from numpy.random   import uniform, multinomial
+from numpy.linalg   import pinv
 from numpy          import size, ones, zeros, array, ndarray, transpose, vstack, arange
 from numpy          import logical_and, logical_or, logical_not, infty, log
 from heapq          import heappush, heappop
@@ -47,7 +48,6 @@ class approximate_dynamic_program :
         self.agent_variables    = {}
         self.parked             = {}
         self.dir                = {'frames' : './figures/frames/'}
-        self.agent_locations    = {}
 
         if Qn == None :
             self.Qn = self.activate_network(agent_cap=self.agent_cap, seed=seed)
@@ -56,6 +56,12 @@ class approximate_dynamic_program :
             tmp0    = self.Qn.g.vp['destination'].a + self.Qn.g.vp['garage'].a
             self.ce = np.arange( self.Qn.nV )[tmp0==min(tmp0)]
 
+
+        def edge_index(e) :
+            return self.Qn.g.edge_index[e]
+
+        self.in_edges     = [ [i for i in map(edge_index, list(v.out_edges()))] for v in self.Qn.g.vertices() ]
+        self.locations    = { self.Qn.g.edge_index[e] : set() for e in self.Qn.g.edges() }
         self.edge_text    = self.Qn.g.new_edge_property("string")
         self.vertex_text  = self.Qn.g.new_vertex_property("string")
         self.calculate_parking_penalty2()
@@ -68,7 +74,7 @@ class approximate_dynamic_program :
     def activate_network(self, agent_cap, net_size=150, seed=None) :
         Qn  = qt.QueueNetwork(nVertices=net_size, graph_type="periodic", seed=seed)
         Qn.agent_cap = agent_cap
-        for q in Qn.queues :
+        for q in [Qn.g.ep['queues'][e] for e in Qn.g.edges()] :
             q.xArrival    = lambda x : x - log(uniform()) / 1
             q.xDepart     = lambda x : x - log(uniform()) / 3
             q.xDepart_mu  = lambda x : 1/3 
@@ -112,19 +118,18 @@ class approximate_dynamic_program :
 
     ## Calculates it incorrectly, fix
     ## if time2cost was a different function, make sure to apply it here
-    def expected_sojourn(self, e, QN, S=None, time2cost=True) : 
+    def expected_sojourn(self, ei, QN, S=None, time2cost=True) : 
         exp_s   = copy.deepcopy(QN.t)
 
         if S == None :
-            kk  = max((QN.g.ep['queues'][e].nSystem - QN.g.ep['queues'][e].nServers, 0)) + 1
+            kk  = max((QN.edge2queue[ei].nSystem - QN.edge2queue[ei].nServers, 0)) + 1
         else :
-            kk  = max((S[QN.g.edge_index[e]+1] - QN.g.ep['queues'][e].nServers, 0)) + 1
+            kk  = max((S[ei+1] - QN.edge2queue[ei].nServers, 0)) + 1
 
         for k in range(kk) :
-            exp_s   += QN.g.ep['queues'][e].xDepart_mu(exp_s)
+            exp_s   += QN.edge2queue[ei].xDepart_mu(exp_s)
 
-        exp_s   += 0.25 * QN.g.ep['edge_length'][e]
-        return exp_s-QN.t
+        return exp_s - QN.t
 
 
     def simple_model(self, act, QN, state) :
@@ -137,8 +142,8 @@ class approximate_dynamic_program :
             exp_depart[e] = -1
 
         for e in QN.g.edges() :
-            exp_state[e]   += state[QN.g.edge_index[e]+1]
-            dum_t           = QN.t
+            exp_state[e] += state[QN.g.edge_index[e]+1]
+            dum_t         = QN.t
 
             while dum_t <= exp_t :
                 dum_t          += QN.g.ep['queues'][e].xDepart_mu(dum_t)
@@ -257,34 +262,37 @@ class approximate_dynamic_program :
 
     def random_state(self, orig, dest, H=(25, 75) ) :
 
-        N, M, T = self.parameters['N'], self.parameters['M'], self.parameters['T']
-        np.random.shuffle(self.ce)
-        
-        self.Qn.reset()
-        self.Qn.initialize(queues=self.ce[:(Qn.nV // 3)]
-        self.Qn.simulate( np.random.randint(H[0], H[1]) )
-
         if not hasattr(orig, '__iter__') :
             orig  = [orig]
             dest  = [dest]
 
-        count   = 1
-        for i in range(len(orig)) :
-            for e in self.Qn.g.vertex(orig[i]).in_edges() :
-                q   = self.Qn.g.ep['queues'][e]
-                ei  = e
-                break
+        N, M, T = self.parameters['N'], self.parameters['M'], self.parameters['T']
+        np.random.shuffle(self.ce)
 
-            aissn     = self.agent_cap + count
-            agent     = qt.LearningAgent(aissn, self.Qn.nE)
+        starting_qs = self.ce[:(Qn.nV // 3)]
+        starting_qs.extend( orig )
+
+        self.Qn.reset()
+        self.Qn.initialize(queues=starting_qs)
+        self.Qn.simulate( np.random.randint(H[0], H[1]) )
+
+        count   = 1
+
+        for i in range(len(orig)) :
+            aissn = self.agent_cap + count
+            agent = qt.LearningAgent(aissn, self.Qn.nE)
+
+            for ei in self.in_edges[ orig[i] ] :
+                self.locations[ei].add( aissn )
+
+            q = self.Qn.edge2queue[ei]
             agent.od  = [orig[i], dest[i]]
             agent.set_type(1)
             agent.set_dest(dest=dest[i])
             agent.queue_action(q)
 
             self.agent_variables[aissn].agent = [agent]
-
-            q.append_departure(agent, self.Qn.t)
+            self.Qn.append_departure(q, agent, self.Qn.t)
             self.parked[self.agent_cap+count] = False
             count  += 1
 
@@ -333,18 +341,16 @@ class approximate_dynamic_program :
                 QN  = self.Qn.copy()
 
                 for t in range(T) :
-                    issn  = QN.queues[0].departures[0].issn
-                    agent = self.agent_variables[issn]
-                    tau   = agent.tau
-                    state = [agent.obj.od]
-                    #state.extend(for_state)
-                    #s0    = QN.g.ep['queues'][e0].departures[0].od
+                    issn    = QN.queues[0].departures[0].issn
+                    aStruct = self.agent_variables[issn]
+                    tau     = aStruct.tau
+                    state   = [aStruct.agent[0].od]
 
                     if verbose :
-                        print( "Frame: %s, %s, %s, %s" % (issn,n,m,agent.costs[n,m,tau-1],np.sum(QN.nAgents)]) )
+                        print( "Frame: %s, %s, %s, %s" % (issn,n,m,aStruct.costs[n,m,tau-1],np.sum(QN.nAgents)]) )
 
                     if not complete_info :
-                        data  = agent.net_data[:, 1] * agent.net_data[:, 2]
+                        data  = aStruct.agent[0].net_data[:, 1] * aStruct.agent[0].net_data[:, 2]
                         state.extend( data )
                     else :
                         state.extend( QN.nAgents )
@@ -356,36 +362,36 @@ class approximate_dynamic_program :
                             obj_func[0] += self.full_penalty 
                     ct  = 0
 
-                    for e in QN.g.vertex(state[0][0]).out_edges() :
-                        if e.target() == QN.g.vertex(state[0][0]) :
+                    for ei in QN.adjacency[ state[0][0] ] :
+                        if QN.edges2queue[ei].issn[0] == QN.edges2queue[ei].issn[1] :
                             continue
 
                         ct   += 1
-                        Sa    = self.post_decision_state(state, e, QN)
-                        v, b  = self.value_function(Sa, agent.beta, QN)
+                        Sa    = self.post_decision_state(state, ei, QN)
+                        v, b  = self.value_function(Sa, aStruct.beta, QN)
 
-                        obj_func[ct]    = v * gamma + self.expected_sojourn(e, QN, state)
+                        obj_func[ct]    = v * gamma + self.expected_sojourn(ei, QN, state)
                         target_node[ct] = int(e.target())
                         value_es[ct]    = v
                         basis_es[:, ct] = b
                         if verbose :
                             print( "One step cost: %s\nNum in queue %s: %s, %s" 
-                            % (obj_func[ct] - v * gamma, int(e.target()), QN.g.ep['queues'][e].nSystem) )
+                            % (obj_func[ct] - v * gamma, int(e.target()), QN.edge2queue[ei].nSystem) )
 
                     
                     old_t   = QN.t
                     policy  = np.argmin( obj_func[:ct+1] )
-                    agent.v_est[n,m,tau]    = value_es[policy]
-                    agent.basis[n,m,tau,:]  = array( basis_es[:, policy].T )
+                    aStruct.v_est[n,m,tau]    = value_es[policy]
+                    aStruct.basis[n,m,tau,:]  = array( basis_es[:, policy].T )
 
                     if policy == 0 :
                         if verbose :
                             print( "Options: %s\nParked!" % (obj_func[:ct+1]) )
 
                         next_M  = True
-                        agent.costs[n,m,tau]        = obj_func[0]
-                        agent.parking               = True
-                        self.agent_variables[issn]  = agent
+                        aStruct.costs[n,m,tau]      = obj_func[0]
+                        aStruct.parking             = True
+                        self.agent_variables[issn]  = aStruct
                         self.parked[issn]           = True  ## Fix later
                         for parked in self.parked.values() :
                             if not parked :
@@ -400,42 +406,48 @@ class approximate_dynamic_program :
                         self._update_graph(state, QN, target_node[policy])
                         self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-1.png' % (agent.issn,n,m,tau), QN)
 
-                    agent.obj[0].dest  = target_node[policy]
-                    agent.obj[0].od[0] = target_node[policy]
+                    for ei in self.in_edges[ state[0][0] ] :
+                        self.locations[ei].remove( aStruct.issn )
+
+                    for ei in self.in_edges[ target_node[policy] ] :
+                        self.locations[ei].add( aStruct.issn )
+
+                    self.exchange_information( target_node[policy] ) 
+
+                    aStruct.agent[0].dest  = target_node[policy]
+                    aStruct.agent[0].od[0] = target_node[policy]
 
                     self.simulate_forward(QN)
 
-                    agent.costs[n,m,tau]  = self.time2cost(QN.t - old_t)
-                    agent.tau  += 1
+                    aStruct.costs[n,m,tau]  = self.time2cost(QN.t - old_t)
+                    aStruct.tau  += 1
 
                     if verbose :
-                        print( "Options: %s\nRealized cost: %s" % (obj_func[:ct+1], agent.costs[n,m,tau-1]) )
+                        print( "Options: %s\nRealized cost: %s" % (obj_func[:ct+1], aStruct.costs[n,m,tau-1]) )
 
                 for agent in self.agent_variables.values() :
                     for t in range(T-1, -1,-1) :
                         agent.values[n,m,t] = agent.costs[n,m,t] + gamma * agent.values[n,m,t+1]
 
-                    a, b  = self.update_theta(agent.beta, agent.Bmat, agent.basis[n,m,:,:], 
-                                              agent.values[n,m,:], agent.v_est[n,m,:])
-                    agent.beta_history[n,m,:]   = a
-                    agent.value_history[n,m,:]  = agent.values[n,m,0], agent.v_est[n,m,0]
-                    agent.beta  = a.T
-                    agent.Bmat  = b
+                    agent = self.update_theta(agent, n, m)
+
                     agent.tau   = 0
+                    agent.beta_history[n,m,:]   = agent.beta
+                    agent.value_history[n,m,:]  = agent.values[n,m,0], agent.v_est[n,m,0]
                     if verbose :
                         print( array([agent.issn, agent.values[n,m,0], agent.v_est[n,m,0]) )
-                        print("Agent : %s, Weights : %s" % (agent.issn, a))
+                        print("Agent : %s, Weights : %s" % (agent.issn, agent.beta))
 
 
 
-    def post_decision_state(self, state, e, QN) :
-        # S: stands for state, a: stands for action
-        S       = copy.deepcopy(state)
-        k       = S[0][0]
-        a       = QN.g.edge_index[e]
-        S[k+1] -= 0 ### Fix later
-        S[a+1] += 1
-        S[0][0] = int(e.target())
+    def post_decision_state(self, state, ei, QN) :
+        # S: stands for state, a: stands for action edge
+        S     = copy.deepcopy(state)
+        k     = S[0][0] + 1
+        a     = ei + 1
+        S[k]  = S[k] - 1 if S[k] > 0 else 0
+        S[a] += 1
+        S[0][0] = QN.edge2queue[ei].issn[1]
         return S
 
 
@@ -444,23 +456,27 @@ class approximate_dynamic_program :
 
 
     def simulate_forward(self, QN):
-        stop  = QN.next_event(Fast=True, STOP_LEARNER=False)
-        stop  = None
-        while stop == None :
-            stop  = QN.next_event(Fast=True, STOP_LEARNER=True)
+        QN.next_event()
+        event = QN.next_event_type()
+        while not (event == 2 and isinstance(QN.queues[0].departures[0], qt.LearningAgent) ):
+            QN.next_event()
+            event = QN.next_event_type()
         return
 
 
 
     ## time weighted updating
-    def update_theta(self, v, B, basis, value, value_est ) :
-        lam = 0.95
-        x   = np.mat(basis[0,:]).T
-        gam = lam + x.T * B * x
-        H   = B / gam
-        B   = (B - B * x * x.T * B / gam) / lam
-        ips = value_est[0] - value[0]
-        return np.squeeze(np.asarray(np.mat(v).T - ips * H * x)), B
+    def update_theta(self, aStruct, n, m) :
+        A   = aStruct.A
+        z   = aStruct.z
+        Phi = aStruct.basis[n,m,0,:]
+        n   = aStruct.n
+        c   = aStruct.values[n,m,0]
+
+        aStruct.A     = A + (n+1) * dot(Phi, Phi.T)
+        aStruct.z     = z + (n+1) * c * Phi
+        aStruct.beta  = dot(pinv(A), z)
+        return aStruct
 
 
     def update_theta2(self, v, B, basis, value, value_est ) :
@@ -489,7 +505,24 @@ class approximate_dynamic_program :
 
 
     def basis_function2(self, S, QN, RETURN_PATH=False) :
-        return 2
+
+        for v in QN.g.vertices() :
+            e  = QN.g.edge(v, v)
+            sojourn  = self.expected_sojourn(QN.g.edge_index[e], QN, S)
+            QN.g.ep['edge_times'][e] = sojourn
+
+        origin  = QN.g.vertex(S[0][0])
+        destin  = QN.g.vertex(S[0][1])
+        answer  = gt.shortest_path(QN.g, origin, destin, weights=QN.g.ep['edge_times'])[1]
+
+        if RETURN_PATH :
+            an  = answer
+        else :
+            an  = 0
+            an  = 1
+            for e in answer :
+                an += self.time2cost( QN.g.ep['edge_times'][e] )
+        return an
 
 
     def basis_function3(self, S, QN, PRE_SET=False) :
@@ -502,7 +535,7 @@ class approximate_dynamic_program :
 
 
     def _update_graph(self, state, QN, target=None ) :
-        QN.reset_colors(('all','basic'))
+        QN.update_graph_colors()
 
         v_props = set()
         for key in QN.g.vertex_properties.keys() :
@@ -510,8 +543,8 @@ class approximate_dynamic_program :
 
         HAS_LIGHT = 'light' in v_props
 
-        i, j    = state[0]
-        vi, vj  = QN.g.vertex(i), QN.g.vertex(j)
+        i, j  = state[0]
+        vj    = QN.g.vertex(j)
         self.edge_text       = QN.g.new_edge_property("string")
         self.vertex_text     = QN.g.new_vertex_property("string")
         self.vertex_text[vj] = QN.g.vp['name'][vj]
@@ -529,43 +562,6 @@ class approximate_dynamic_program :
                 self.edge_text[e] = str(QN.g.ep['queues'][e].nSystem)
             else :
                 self.edge_text[e] = ''
-
-        dest_color      = list(QN.colors['vertex'][2])
-        gara_color      = list(QN.colors['vertex'][1])
-        road_color      = list(QN.colors['vertex'][0])
-        ligh_color      = list(QN.colors['vertex'][3])
-        dest_color[-1]  = 1.25
-        gara_color[-1]  = 1.25
-        road_color[-1]  = 0.5
-        ligh_color[-1]  = 1.25
-        pen_width       = 1.2
-
-        for v in QN.g.vertices() :
-            QN.g.vp['vertex_pen_width'][v]  = pen_width
-            if v == vj or v == vi :
-                if v == vi :
-                    QN.g.vp['vertex_pen_width'][v]  = 1.8
-                    QN.g.vp['vertex_color'][v]      = [0.941, 0.502, 0.502, 1.0]
-                continue
-            if QN.g.vp['destination'][v] :
-                QN.g.vp['vertex_color'][v]  = dest_color
-            elif QN.g.vp['vType'][v] == 1 :
-                QN.g.vp['vertex_color'][v]  = gara_color
-            elif HAS_LIGHT and QN.g.vp['vType'][v] == 3 :
-                QN.g.vp['vertex_color'][v]  = ligh_color
-            else :
-                QN.g.vp['vertex_color'][v]  = road_color
-
-            if QN.g.vp['vType'][v] == 1 :
-                QN.g.vp['vertex_t_color'][v]    = [0.0, 0.0, 0.0, 1.0]
-                QN.g.vp['state'][v]             = QN.g.ep['queues'][QN.g.edge(v,v)].nSystem
-            else :
-                QN.g.vp['vertex_t_color'][v]    = [0.0, 0.0, 0.0, 0.0]
-
-            halo_alpha                  = 1/self.parking_penalty[int(v), int(vj)]
-            QN.g.vp['halo'][v]          = QN.g.vp['vType'][v] == 1
-            QN.g.vp['halo_color'][v]    = [0.0, 0.502, 0.502, 0.15]
-            #QN.g.vp['halo_color'][v]    = [0.0, 1.0, 0.0, halo_alpha/2]
 
         if target != None :
             target  = QN.g.vertex(target)
@@ -625,18 +621,42 @@ class approximate_dynamic_program :
                 vertex_size=QN.g.vp['vertex_size'])
 
 
+    def exchange_information(self, node) :
+        issns = set()
+
+        for ei in self.in_edges[node] :
+            for n in self.locations[ei] :
+                issns.add(n)
+
+        if len(issns) > 1 :
+            A = np.zeros( (self.nFeatures, self.nFeatures) )
+            z = np.zeros( self.nFeatures )
+            for n in issns :
+                aStruct = self.agent_varriables[n]
+                A  += aStruct.A
+                z  += aStruct.z
+            k = len(issns) - 1
+            for n in issns :
+                aStruct = self.agent_varriables[n]
+                aStruct.A  = A
+                aStruct.z  = z
+                aStruct.n += k
+                self.agent_varriables[n] = aStruct
 
 
 
 class AgentStruct() :
 
     def __init__(self, issn, nF=1, N=1, M=1, T=1, agent=None) :
-        self.obj    = [agent]
+        self.agent  = [agent]
         self.issn   = issn
         self.tau    = 0                 # Keeps track of iteration number in ADP
         self.setup_adp(nF, N, M, T)
 
     def setup_adp(self, nFeatures, N, M, T) :
+        self.A      = np.zeros( (nFeatures, nFeatures) )
+        self.z      = np.zeros( nFeatures )
+        self.n      = 0
         self.beta   = np.ones( nFeatures )
         self.Bmat   = np.mat( np.eye( nFeatures ) ) / 8
         self.values = zeros( (N,M,T+1) )

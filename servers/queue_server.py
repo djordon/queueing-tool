@@ -1,10 +1,10 @@
 from numpy.random           import uniform
-from numpy                  import ones, zeros, infty, log
+from numpy                  import infty, log
 from heapq                  import heappush, heappop
-from collections            import deque
 from .. agents.queue_agents import Agent, SmartAgent, LearningAgent, ResourceAgent
 
-import numpy                as np
+import numpy       as np
+import collections
 import copy
 
 
@@ -43,11 +43,11 @@ class QueueServer :
         self.active     = active
         self.next_ct    = 0
 
-        self.color_dict = {'edge_normal'   : np.array([0.8, 0.8, 0.8, 0.5]),
-                           'vertex_normal' : np.array([1.0, 1.0, 1.0, 1.0]),
-                           'vertex_pen'    : np.array([0.0, 0.5, 1.0, 1.0]) }
+        self.colors     = {'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
+                           'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
+                           'vertex_pen'    : [0.0, 0.5, 1.0, 1.0] }
 
-        self.queue      = deque()
+        self.queue      = collections.deque()
         self.arrivals   = []
         self.departures = []
         inftyAgent      = Agent(0, 1)
@@ -88,7 +88,7 @@ class QueueServer :
 
 
     def networking(self, network_size) :
-        self.net_data = -1 * ones((network_size, 3))
+        self.net_data = -1 * np.ones((network_size, 3))
 
 
     def initialize(self, add_arrival=True) :
@@ -98,34 +98,15 @@ class QueueServer :
 
     ## Needs updating
     def set_nServers(self, n) :
-        self.nServers = n
+        if n > 0 :
+            self.nServers = n
+        else :
+            print("nServers must be positive, tried to set to %s.\n%s" % (n, str(self)) )
 
 
     def nQueued(self) :
         n = 0 if self.nServers == infty else self.nSystem - self.nServers
         return max([n, 0])
-
-
-    def travel_stats(self) :
-        ans = zeros(4)
-        for agent in self.arrivals :
-            if isinstance(agent, SmartAgent) : ans[3]  += 1
-            if agent != infty :
-                ans[0] += agent.rest_t[1]
-                ans[1] += agent.trip_t[1]
-                ans[2] += agent.trips
-        for agent,j in self.departures :
-            if isinstance(agent, SmartAgent) : ans[3]  += 1
-            if agent != infty :
-                ans[0] += agent.rest_t[1]
-                ans[1] += agent.trip_t[1]
-                ans[2] += agent.trips
-        for agent in self.queue :
-            if isinstance(agent, SmartAgent) : ans[3]  += 1
-            ans[0] += agent.rest_t[1]
-            ans[1] += agent.trip_t[1]
-            ans[2] += agent.trips
-        return ans
 
 
     def _add_arrival(self, *args) :
@@ -136,7 +117,7 @@ class QueueServer :
             if self.local_t >= self.next_ct :
                 self.nTotal  += 1
                 self.next_ct  = self.fArrival(self.local_t)
-                new_arrival   = self.AgentClass(self.nArrivals+1, self.net_data.shape[0])
+                new_arrival   = self.AgentClass(self.nArrivals+1, len(self.net_data) )
                 new_arrival.set_arrival( self.next_ct )
                 heappush(self.arrivals, new_arrival)
 
@@ -203,7 +184,7 @@ class QueueServer :
             new_depart.queue_action(self, 'departure')
 
             if self.nSystem == 0 : 
-                self.networking(self.net_data.shape[0])
+                self.networking( len(self.net_data) )
 
         if self.arrivals[0].time < self.departures[0].time :
             self.time = self.arrivals[0].time
@@ -213,17 +194,17 @@ class QueueServer :
         return new_depart
 
 
-    def color(self, which='') :
+    def current_color(self, which='') :
         if which == 'edge' :
             nSy = self.nSystem
             cap = self.nServers
             tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
-            color    = self.color_dict['edge_normal'] * tmp / 0.9
+            color    = [ i * tmp / 0.9 for i in self.colors['edge_normal'] ]
             color[3] = 0.0
   
         elif which == 'pen' :
-            color = self.color_dict['vertex_pen']
+            color = self.colors['vertex_pen']
 
         else :
             nSy = self.nSystem
@@ -231,10 +212,10 @@ class QueueServer :
             tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
             if self.issn[0] == self.issn[1] :
-                color    = self.color_dict['vertex_normal'] * tmp / 0.9
+                color    = [ i * tmp / 0.9 for i in self.colors['vertex_normal'] ]
                 color[3] = 1.0
             else :
-                color    = self.color_dict['edge_normal'] * tmp / 0.9
+                color    = [ i * tmp / 0.9 for i in self.colors['edge_normal'] ]
                 color[3] = 0.5
 
         return color
@@ -247,7 +228,7 @@ class QueueServer :
         self.local_t    = 0
         self.time  = infty
         self.next_ct    = 0
-        self.queue      = deque()
+        self.queue      = collections.deque()
         self.arrivals   = []
         self.departures = []
         inftyAgent      = Agent(0, 1)
@@ -256,7 +237,7 @@ class QueueServer :
         heappush(self.arrivals, inftyAgent)
         heappush(self.departures, inftyAgent)
 
-        self.networking(self.net_data.shape[0])
+        self.networking( len(self.net_data) )
 
 
     def __deepcopy__(self, memo) :
@@ -274,6 +255,7 @@ class QueueServer :
         new_server.arrivals     = copy.deepcopy(self.arrivals)
         new_server.departures   = copy.deepcopy(self.departures)
         new_server.net_data     = copy.deepcopy(self.net_data)
+        new_server.AgentClass   = copy.deepcopy(self.AgentClass)
         return new_server
 
 
@@ -287,9 +269,9 @@ class LossQueue(QueueServer) :
 
         QueueServer.__init__(self, nServers, issn, active, net_size, fArrival, fDepart, AgentClass=AgentClass)
 
-        self.color_dict = { 'edge_normal'   : np.array([0.7, 0.7, 0.7, 0.50]),
-                            'vertex_normal' : np.array([1.0, 1.0, 1.0, 1.0]),
-                            'vertex_pen'    : np.array([0.133, 0.545, 0.133, 1.0]) }
+        self.colors     = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
+                            'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
+                            'vertex_pen'    : [0.133, 0.545, 0.133, 1.0] }
         self.nBlocked   = 0
         self.queue_cap  = queue_cap
 
@@ -357,6 +339,7 @@ class LossQueue(QueueServer) :
         new_server.arrivals     = copy.deepcopy(self.arrivals)
         new_server.departures   = copy.deepcopy(self.departures)
         new_server.net_data     = copy.deepcopy(self.net_data)
+        new_server.AgentClass   = copy.deepcopy(self.AgentClass)
         return new_server
 
 
@@ -393,9 +376,9 @@ class ResourceQueue(LossQueue) :
             fArrival=lambda t : t - log(uniform()), fDepart=lambda t : t, 
             fDepart_mu=lambda t : 0, AgentClass=ResourceAgent, queue_cap=0)
 
-        self.color_dict   = { 'edge_normal'   : np.array([0.7, 0.7, 0.7, 0.50]),
-                              'vertex_normal' : np.array([1.0, 1.0, 1.0, 1.0]),
-                              'vertex_pen'    : np.array([0.0, 0.235, 0.718, 1.0]) }
+        self.colors = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
+                        'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
+                        'vertex_pen'    : [0.0, 0.235, 0.718, 1.0] }
         self.max_servers  = max_servers
         self.over_max     = 0
         self.nBlocked     = 0
@@ -450,27 +433,27 @@ class ResourceQueue(LossQueue) :
             return LossQueue.next_event(self)
 
 
-    def color(self, which='') :
+    def current_color(self, which='') :
         if which == 'edge' :
             nSy = self.nServers
             cap = self.max_servers
             tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
-            color    = self.color_dict['edge_normal'] * tmp / 0.9
+            color    = [ i * tmp / 0.9 for i in self.colors['edge_normal'] ]
             color[3] = 0.0
   
         elif which == 'pen' :
-            color = self.color_dict['vertex_pen']
+            color = self.colors['vertex_pen']
         else :
             nSy = self.nServers
             cap = self.max_servers
             tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
             if self.issn[0] == self.issn[1] :
-                color    = self.color_dict['vertex_normal'] * tmp / 0.9
+                color    = [ i * tmp / 0.9 for i in self.colors['vertex_normal'] ]
                 color[3] = 1.0
             else :
-                color    = self.color_dict['edge_normal'] * tmp / 0.9
+                color    = [ i * tmp / 0.9 for i in self.colors['edge_normal'] ]
                 color[3] = 0.5
 
         return color

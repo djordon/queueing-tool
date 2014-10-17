@@ -1,5 +1,5 @@
 from numpy.random   import uniform, randint, choice
-from numpy          import ones, zeros, logical_or, argmax
+from numpy          import logical_or
 
 import numpy as np
 import copy
@@ -22,8 +22,8 @@ class Agent :
         self.arr_ser  = [0, 0]
         self.od       = [0, 0]
 
-        self.stats    = zeros((net_size, 3), np.int32 )
-        self.net_data = ones((net_size, 3)) * -1
+        self.stats    = np.zeros((net_size, 3), np.int32 )
+        self.net_data = np.ones((net_size, 3)) * -1
 
     def __repr__(self) :
         return "Agent. issn: %s, time: %s" % (self.issn, self.time)
