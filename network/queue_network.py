@@ -499,7 +499,7 @@ class QueueNetwork :
 
     def append_departure(self, qi, agent, t) :
 
-        q   = self.edge2queue[qi] if isinstance(qi, int) else qi
+        q   = self.edge2queue[qi]
         old = q.time
         q.append_departure(agent, t)
 

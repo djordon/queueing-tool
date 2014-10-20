@@ -292,7 +292,7 @@ class approximate_dynamic_program :
             agent.queue_action(q)
 
             self.agent_variables[aissn].agent = [agent]
-            self.Qn.append_departure(q, agent, self.Qn.t)
+            self.Qn.append_departure(ei, agent, self.Qn.t)
             self.parked[self.agent_cap+count] = False
             count  += 1
 
