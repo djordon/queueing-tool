@@ -180,12 +180,12 @@ class LearningAgent(SmartAgent) :
 
 
     def desired_destination(self, *info) :
-        network, queue = info[:2]
-        return network.g.edge(queue[1], self.dest)
+        return self.dest
 
 
     def set_dest(self, net=None, dest=None) :
         self.dest = int(dest)
+
 
 
 class ResourceAgent(Agent) :

@@ -76,9 +76,9 @@ class approximate_dynamic_program :
         Qn  = qt.QueueNetwork(nVertices=net_size, graph_type="periodic", seed=seed)
         Qn.agent_cap = agent_cap
         for q in [Qn.g.ep['queues'][e] for e in Qn.g.edges()] :
-            q.xArrival    = lambda x : x - log(uniform()) / 1
-            q.xDepart     = lambda x : x - log(uniform()) / 3
-            q.xDepart_mu  = lambda x : 1/3 
+            q.fArrival    = lambda x : x - log(uniform()) / 1
+            q.fDepart     = lambda x : x - log(uniform()) / 3
+            q.fDepart_mu  = lambda x : 1/3 
 
         tmp0    = Qn.g.vp['vType'].a
         self.ce = np.arange( Qn.nV )[tmp0==min(tmp0)] # Creation edge
@@ -96,15 +96,15 @@ class approximate_dynamic_program :
         for v in Qn.g.vertices() :
             if Qn.g.vp['vType'][v] not in (1,2) :
                 for e in v.in_edges() :
-                    Qn.g.ep['queues'][e].xArrival   = lambda x : x - log(uniform()) / 8
-                    Qn.g.ep['queues'][e].xDepart    = lambda x : x - log(uniform()) / 3
-                    Qn.g.ep['queues'][e].xDepart_mu = lambda x : 1/3
+                    Qn.g.ep['queues'][e].fArrival   = lambda x : x - log(uniform()) / 8
+                    Qn.g.ep['queues'][e].fDepart    = lambda x : x - log(uniform()) / 3
+                    Qn.g.ep['queues'][e].fDepart_mu = lambda x : 1/3
 
         for e in Qn.g.edges() :
             if Qn.g.ep['eType'][e] == 1 :
                 Qn.g.ep['queues'][e].set_nServers(garage_cap[ct])
-                Qn.g.ep['queues'][e].xDepart    = lambda x : x - log(uniform()) / 0.5
-                Qn.g.ep['queues'][e].xDepart_mu = lambda x : 2
+                Qn.g.ep['queues'][e].fDepart    = lambda x : x - log(uniform()) / 0.5
+                Qn.g.ep['queues'][e].fDepart_mu = lambda x : 2
                 ct += 1
 
         return Qn
@@ -128,7 +128,7 @@ class approximate_dynamic_program :
             kk  = max((S[ei+1] - QN.edge2queue[ei].nServers, 0)) + 1
 
         for k in range(kk) :
-            exp_s   += QN.edge2queue[ei].xDepart_mu(exp_s)
+            exp_s   += QN.edge2queue[ei].fDepart_mu(exp_s)
 
         return exp_s - QN.t
 
@@ -147,7 +147,7 @@ class approximate_dynamic_program :
             dum_t         = QN.t
 
             while dum_t <= exp_t :
-                dum_t          += QN.g.ep['queues'][e].xDepart_mu(dum_t)
+                dum_t          += QN.g.ep['queues'][e].fDepart_mu(dum_t)
                 exp_depart[e]  += 1
 
             if exp_depart[e] > state[QN.g.edge_index[e]+1] :
@@ -270,8 +270,9 @@ class approximate_dynamic_program :
         N, M, T = self.parameters['N'], self.parameters['M'], self.parameters['T']
         np.random.shuffle(self.ce)
 
-        starting_qs = list(self.ce[:(self.Qn.nV // 3)])
+        starting_qs = self.ce[:(self.Qn.nV // 3)].tolist()
         starting_qs.extend( orig )
+        starting_qs = np.unique(starting_qs).tolist()
 
         self.Qn.reset()
         self.Qn.initialize(queues=starting_qs)
@@ -322,7 +323,7 @@ class approximate_dynamic_program :
         gamma   = self.parameters['gamma']
 
         cost        = zeros(1 + self.nE)
-        target_node = zeros(1 + self.nE, int)
+        target_edge = zeros(1 + self.nE, int)
         value_es    = zeros(1 + self.nE)
         obj_func    = zeros(1 + self.nE)
         basis_es    = np.mat(zeros( (self.nFeatures, 1 + self.nE) ))
@@ -348,7 +349,7 @@ class approximate_dynamic_program :
                     state   = [aStruct.agent[0].od]
 
                     if verbose :
-                        print("Frame: %s, %s, %s, %s" % (issn,n,m,aStruct.costs[n,m,tau-1],np.sum(QN.nAgents)) )
+                        print("Frame: %s, %s, %s, %s" % (issn, n, m, aStruct.costs[n,m,tau-1]) )
 
                     if not complete_info :
                         data  = aStruct.agent[0].net_data[:, 1] * aStruct.agent[0].net_data[:, 2]
@@ -364,7 +365,7 @@ class approximate_dynamic_program :
                     ct  = 0
 
                     for ei in QN.adjacency[ state[0][0] ] :
-                        if QN.edges2queue[ei].issn[0] == QN.edges2queue[ei].issn[1] :
+                        if QN.edge2queue[ei].issn[0] == QN.edge2queue[ei].issn[1] :
                             continue
 
                         ct   += 1
@@ -372,18 +373,19 @@ class approximate_dynamic_program :
                         v, b  = self.value_function(Sa, aStruct.beta, QN)
 
                         obj_func[ct]    = v * gamma + self.expected_sojourn(ei, QN, state)
-                        target_node[ct] = int(e.target())
+                        target_edge[ct] = ei
                         value_es[ct]    = v
                         basis_es[:, ct] = b
                         if verbose :
-                            print( "One step cost: %s\nNum in queue %s: %s, %s" 
-                            % (obj_func[ct] - v * gamma, int(e.target()), QN.edge2queue[ei].nSystem) )
+                            print( "One step cost: %s\nNum in queue %s: %s" 
+                            % (obj_func[ct] - v * gamma, ei, QN.edge2queue[ei].nSystem) )
 
                     
                     old_t   = QN.t
                     policy  = np.argmin( obj_func[:ct+1] )
                     aStruct.v_est[n,m,tau]    = value_es[policy]
                     aStruct.basis[n,m,tau,:]  = array( basis_es[:, policy].T )
+                    target_node = QN.edge2queue[target_edge[policy]].issn[1]
 
                     if policy == 0 :
                         if verbose :
@@ -404,19 +406,19 @@ class approximate_dynamic_program :
                     if save_frames :
                         self._update_graph(state, QN)
                         self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-0.png' % (agent.issn,n,m,tau), QN)
-                        self._update_graph(state, QN, target_node[policy])
+                        self._update_graph(state, QN, target_node)
                         self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-1.png' % (agent.issn,n,m,tau), QN)
 
                     for ei in self.in_edges[ state[0][0] ] :
                         self.locations[ei].remove( aStruct.issn )
 
-                    for ei in self.in_edges[ target_node[policy] ] :
+                    for ei in self.in_edges[ target_node ] :
                         self.locations[ei].add( aStruct.issn )
 
-                    self.exchange_information( target_node[policy] ) 
+                    self.exchange_information( target_node ) 
 
-                    aStruct.agent[0].dest  = target_node[policy]
-                    aStruct.agent[0].od[0] = target_node[policy]
+                    aStruct.agent[0].dest  = target_edge[policy]
+                    aStruct.agent[0].od[0] = target_node
 
                     self.simulate_forward(QN)
 

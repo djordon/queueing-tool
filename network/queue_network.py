@@ -208,6 +208,14 @@ class QueueNetwork :
         halo.a              = False
         state.a             = 0
 
+        if 'shortest_path' in vertex_props :
+            shortest_path = np.ones( (self.nV, self.nV), int)
+
+            for v in g.vertices() :
+                shortest_path[int(v), :] = g.vp['shortest_path'][v].a
+
+            self.shortest_path = shortest_path
+
         if calc_shortest_path and 'shortest_path' not in vertex_props :
             shortest_path = np.ones( (self.nV, self.nV), int)
             spath         = np.ones( (self.nV, self.nV), int) * -1
@@ -268,7 +276,7 @@ class QueueNetwork :
         self.g  = g
 
 
-    def active_graph(self, nVertices=250, pDest=None, pGarage=None) :
+    def active_graph(self, nVertices=100, pDest=None, pGarage=None) :
 
         points  = np.random.random((nVertices, 2)) * 2
         radii   = [(4 + k) / 200 for k in range(560)]
@@ -378,6 +386,7 @@ class QueueNetwork :
 
         for vi in queues :
             for e in self.g.vertex(vi).out_edges() :
+                initialized = False
                 if e.source() == e.target() :
                     self.g.ep['queues'][e].initialize()
                     initialized = True
@@ -500,15 +509,14 @@ class QueueNetwork :
     def append_departure(self, qi, agent, t) :
 
         q     = self.edge2queue[qi]
-        qtime = q.time
         q.append_departure(agent, t)
 
         if q.issn[2] not in self._queues :
             if q.time < infty :
                 self._queues.add(q.issn[2])
-                bisectSort(self.queues, q, len(self.queues))
-        elif q.time < qtime :
-            oneSort( self.queues, qtime, len(self.queues))
+                self.queues.append(q)
+
+        self.queues.sort()
 
 
     def next_event_type(self) :
@@ -544,7 +552,7 @@ class QueueNetwork :
                 q2.active = False
 
             if q2.departures[0].time <= q2.arrivals[0].time :
-                print("WHOA! THIS NEEDS CHANGING!")
+                print("WHOA! THIS NEEDS CHANGING! %s %s" % (q2.departures[0].time, q2.arrivals[0].time) )
 
             q2.next_event()
 
@@ -641,7 +649,7 @@ class QueueNetwork :
 
 
     def copy(self) :
-        net               = QueueNetwork(0)
+        net               = QueueNetwork()
         net.t             = copy.deepcopy(self.t)
         net.agent_cap     = copy.deepcopy(self.agent_cap)
         net.nV            = copy.deepcopy(self.nV)

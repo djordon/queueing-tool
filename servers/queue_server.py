@@ -84,7 +84,7 @@ class QueueServer :
 
 
     def blocked(self) :
-        pass
+        return 0
 
 
     def networking(self, network_size) :
@@ -96,7 +96,7 @@ class QueueServer :
         if add_arrival :
             self._add_arrival()
 
-    ## Needs updating
+
     def set_nServers(self, n) :
         if n > 0 :
             self.nServers = n
@@ -155,6 +155,11 @@ class QueueServer :
             heappush(self.departures, agent)
         else :
             self.queue.append(agent)
+
+        if self.arrivals[0].time < self.departures[0].time :
+            self.time = self.arrivals[0].time
+        else :
+            self.time = self.departures[0].time
 
 
     def next_event(self) :
@@ -255,7 +260,10 @@ class QueueServer :
         new_server.arrivals     = copy.deepcopy(self.arrivals)
         new_server.departures   = copy.deepcopy(self.departures)
         new_server.net_data     = copy.deepcopy(self.net_data)
-        new_server.AgentClass   = copy.deepcopy(self.AgentClass)
+        new_server.AgentClass   = self.AgentClass
+        new_server.fArrival     = self.fArrival
+        new_server.fDepart      = self.fDepart 
+        new_server.fDepart_mu   = self.fDepart_mu
         return new_server
 
 
@@ -339,7 +347,10 @@ class LossQueue(QueueServer) :
         new_server.arrivals     = copy.deepcopy(self.arrivals)
         new_server.departures   = copy.deepcopy(self.departures)
         new_server.net_data     = copy.deepcopy(self.net_data)
-        new_server.AgentClass   = copy.deepcopy(self.AgentClass)
+        new_server.AgentClass   = self.AgentClass
+        new_server.fArrival     = self.fArrival
+        new_server.fDepart      = self.fDepart 
+        new_server.fDepart_mu   = self.fDepart_mu
         return new_server
 
 

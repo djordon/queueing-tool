@@ -10,7 +10,6 @@ import cProfile
 import pickle
 
 np.set_printoptions(precision=3,suppress=True,threshold=2000)
-directory   = './'
 g   = gt.load_graph('pitt_network.xml', fmt='xml')
 pit = qt.QueueNetwork( g )
 a   = adp.approximate_dynamic_program(pit.g)
@@ -26,7 +25,7 @@ a.Qn.agent_cap  = 1000
 a.agent_cap     = 1000
 
 
-node_dict = {'fcq' : [], 'des' : [], 'arc' : [], 'dest_arc' : []}
+node_dict = {'fcq' : [], 'des' : [], 'arc' : []}
 for v in a.Qn.g.vertices() :
     if a.Qn.g.vp['vType'][v] == 1 :
         node_dict['fcq'].append(int(v))
@@ -35,7 +34,7 @@ for v in a.Qn.g.vertices() :
     else :
         node_dict['arc'].append(int(v))
 
-nLearners   = 3
+nLearners   = 1
 dest        = list( np.random.choice(node_dict['des'], nLearners) )
 orig        = list( np.random.choice(node_dict['arc'], nLearners) )
 print((orig, dest))
