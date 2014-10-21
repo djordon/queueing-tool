@@ -35,7 +35,7 @@ from gi.repository  import Gtk, Gdk, GdkPixbuf, GObject
 
 class approximate_dynamic_program :
 
-    def __init__(self, Qn=None, seed=None ) :
+    def __init__(self, g=None, seed=None ) :
 
         self.parameters         = {'N': 10, 'M':10, 'T': 40, 'gamma':0.95}
         self.t                  = 0
@@ -49,10 +49,11 @@ class approximate_dynamic_program :
         self.parked             = {}
         self.dir                = {'frames' : './figures/frames/'}
 
-        if Qn == None :
+        if g == None :
             self.Qn = self.activate_network(agent_cap=self.agent_cap, seed=seed)
-        elif isinstance(Qn, gt.Graph) :
-            self.Qn = qt.QueueNetwork(Qn)
+        elif isinstance(g, gt.Graph) :
+            self.Qn = qt.QueueNetwork(g)
+            self.nE = self.Qn.nE
             tmp0    = self.Qn.g.vp['destination'].a + self.Qn.g.vp['garage'].a
             self.ce = np.arange( self.Qn.nV )[tmp0==min(tmp0)]
 
@@ -269,7 +270,7 @@ class approximate_dynamic_program :
         N, M, T = self.parameters['N'], self.parameters['M'], self.parameters['T']
         np.random.shuffle(self.ce)
 
-        starting_qs = self.ce[:(Qn.nV // 3)]
+        starting_qs = list(self.ce[:(self.Qn.nV // 3)])
         starting_qs.extend( orig )
 
         self.Qn.reset()
@@ -347,7 +348,7 @@ class approximate_dynamic_program :
                     state   = [aStruct.agent[0].od]
 
                     if verbose :
-                        print( "Frame: %s, %s, %s, %s" % (issn,n,m,aStruct.costs[n,m,tau-1],np.sum(QN.nAgents)]) )
+                        print("Frame: %s, %s, %s, %s" % (issn,n,m,aStruct.costs[n,m,tau-1],np.sum(QN.nAgents)) )
 
                     if not complete_info :
                         data  = aStruct.agent[0].net_data[:, 1] * aStruct.agent[0].net_data[:, 2]
@@ -435,7 +436,7 @@ class approximate_dynamic_program :
                     agent.beta_history[n,m,:]   = agent.beta
                     agent.value_history[n,m,:]  = agent.values[n,m,0], agent.v_est[n,m,0]
                     if verbose :
-                        print( array([agent.issn, agent.values[n,m,0], agent.v_est[n,m,0]) )
+                        print( array([agent.issn, agent.values[n,m,0], agent.v_est[n,m,0]]) )
                         print("Agent : %s, Weights : %s" % (agent.issn, agent.beta))
 
 

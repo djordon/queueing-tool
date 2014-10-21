@@ -169,9 +169,9 @@ class QueueNetwork :
                 queues[e] = qs.QueueServer(20, issn=qissn, net_size=self.nE)#, AgentClass=ResourceAgent)
                 edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
                 if g.ep['eType'][e] == 2 :
-                    g.ep['queues'][e].colors['vertex_pen'] = self.colors['vertex_pen'][2]
+                    queues[e].colors['vertex_pen'] = self.colors['vertex_pen'][2]
                 elif g.ep['eType'][e] == 3 :
-                    g.ep['queues'][e].colors['vertex_pen'] = self.colors['vertex_pen'][3]
+                    queues[e].colors['vertex_pen'] = self.colors['vertex_pen'][3]
 
             if qissn[0] == qissn[1] :
                 edge_color[e]   = [0, 0, 0, 0]
@@ -405,7 +405,7 @@ class QueueNetwork :
         for e in self.g.edges() :
             self.g.ep['edge_color'][e]    = self.colors['edge_normal']
         for v in self.g.vertices() :
-            self.g.vp['vertex_color'][v]  = self.colors['vertex_normal']
+            self.g.vp['vertex_color'][v]  = self.colors['vertex'][0]
             self.g.vp['halo_color'][v]    = self.colors['halo_normal']
             self.g.vp['halo'][v]          = False
             self.g.vp['state'][v]         = 0
@@ -499,15 +499,16 @@ class QueueNetwork :
 
     def append_departure(self, qi, agent, t) :
 
-        q   = self.edge2queue[qi]
-        old = q.time
+        q     = self.edge2queue[qi]
+        qtime = q.time
         q.append_departure(agent, t)
 
         if q.issn[2] not in self._queues :
             if q.time < infty :
-                onesort(self.queues, q, len(self.queues))
-        elif q.time < old :
-            zerosort( self.queues, len(self.queues))
+                self._queues.add(q.issn[2])
+                bisectSort(self.queues, q, len(self.queues))
+        elif q.time < qtime :
+            oneSort( self.queues, qtime, len(self.queues))
 
 
     def next_event_type(self) :

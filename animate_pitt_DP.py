@@ -1,7 +1,9 @@
+from numpy          import log
+from numpy.random   import uniform
 import numpy            as np
 import graph_tool.all   as gt
 import queueing_tool    as qt
-import adp
+import adp_v2           as adp
 import copy
 import datetime
 import cProfile
@@ -16,24 +18,28 @@ vs  = [a.Qn.g.vertex(202), a.Qn.g.vertex(453), a.Qn.g.vertex(255),
        a.Qn.g.vertex(449), a.Qn.g.vertex(218), a.Qn.g.vertex(72),
        a.Qn.g.vertex(126), a.Qn.g.vertex(326)]
 
-for v in vs :
-    for e in v.in_edges() :
-        a.Qn.g.ep['queues'][e].active       = True
-        a.Qn.g.ep['queues'][e].active_p     = 0
-        a.Qn.g.ep['queues'][e].xArrival     = lambda x : qt.exponential_rv( 2, x )
-        a.Qn.g.ep['queues'][e].xDepart      = lambda x : qt.exponential_rv( 3, x )
-        a.Qn.g.ep['queues'][e].xDepart_mu   = lambda x : 1/3
-        a.Qn.g.ep['queues'][e].add_arrival()
-        break
+vs  = [202, 453, 255, 449, 218, 72, 126, 326]
 
+
+a.Qn.initialize(queues=vs)
 a.Qn.agent_cap  = 1000
 a.agent_cap     = 1000
 
+
+node_dict = {'fcq' : [], 'des' : [], 'arc' : [], 'dest_arc' : []}
+for v in a.Qn.g.vertices() :
+    if a.Qn.g.vp['vType'][v] == 1 :
+        node_dict['fcq'].append(int(v))
+    elif a.Qn.g.vp['vType'][v] == 2 :
+        node_dict['des'].append(int(v))
+    else :
+        node_dict['arc'].append(int(v))
+
 nLearners   = 3
-dest        = list( np.random.choice(a.Qn.g.gp['node_index']['destination'], nLearners) )
-orig        = list( np.random.choice(a.Qn.g.gp['node_index']['road'], nLearners) )
+dest        = list( np.random.choice(node_dict['des'], nLearners) )
+orig        = list( np.random.choice(node_dict['arc'], nLearners) )
 print((orig, dest))
-a.approximate_policy_iteration(orig, dest, save_frames=False)
+a.approximate_policy_iteration(orig, dest, save_frames=False, verbose=True)
 
 """
 orig, dest  = [], []

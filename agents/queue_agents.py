@@ -184,6 +184,9 @@ class LearningAgent(SmartAgent) :
         return network.g.edge(queue[1], self.dest)
 
 
+    def set_dest(self, net=None, dest=None) :
+        self.dest = int(dest)
+
 
 class ResourceAgent(Agent) :
     def __init__(self, issn, net_size) :
