@@ -4,10 +4,13 @@ import copy
 
 from numpy                  import infty
 from gi.repository          import Gtk, GObject
-from .. agents.queue_agents import LearningAgent, ResourceAgent
+from .. agents.queue_agents import ResourceAgent
 
 from .. servers import queue_server as qs
 from .sorting   import oneBisectSort, bisectSort, oneSort, twoSort
+
+
+# Graph creation should be handled elsewhere
 
 # Garages changed to FCQ (finite capacity queue)
 # each edge and vertex has an eType and vType respectively now. 
@@ -119,20 +122,29 @@ class QueueNetwork :
             dest_count  = 0
             for v in g.vertices() :
                 if has_garage and g.vp['garage'][v] :
+                    e = g.edge(v,v)
+                    if isinstance(e, gt.Edge) :
+                        eType[e]  = 1
                     vType[v]    = 1
                     fcq_count  += 1
                 if has_destin and g.vp['destination'][v] :
+                    e = g.edge(v,v)
+                    if isinstance(e, gt.Edge) :
+                        eType[e]  = 2
                     vType[v]    = 2
                     dest_count += 1
                 if has_light and g.vp['light'][v] :
-                    vType[v]    = 3
+                    e = g.edge(v,v)
+                    if isinstance(e, gt.Edge) :
+                        eType[e]  = 3
+                    vType[v]  = 3
 
             for e in g.edges() :
                 if has_egarage and g.ep['garage'][e] :
                     eType[e]    = 1
                 if has_edestin and g.ep['destination'][e] :
                     eType[e]    = 2
-                if has_elight  and g.ep['light'][e] :
+                if has_elight and g.ep['light'][e] :
                     eType[e]    = 3
 
             g.vp['vType']   = vType
@@ -195,6 +207,9 @@ class QueueNetwork :
             if isinstance(e, gt.Edge) :
                 vertex_pen_color[v] = queues[e].current_color('pen')
                 vertex_color[v]     = queues[e].current_color()
+            else :
+                vertex_pen_color[v] = [0.0, 0.5, 1.0, 1.0]
+                vertex_color[v]     = [1.0, 1.0, 1.0, 1.0]
 
         one = np.ones( (self.nV, 4) )
         vertex_t_color.set_2d_array( (one * self.colors['text_normal']).T, range(self.nV) )
@@ -506,10 +521,28 @@ class QueueNetwork :
             ep['edge_color'][e] = ep['queues'][e].current_color()
 
 
-    def append_departure(self, qi, agent, t) :
+    def append_departure(self, ei, agent, t) :
 
-        q     = self.edge2queue[qi]
+        q   = self.edge2queue[ei]
         q.append_departure(agent, t)
+
+        if q.issn[2] not in self._queues :
+            if q.time < infty :
+                self._queues.add(q.issn[2])
+                self.queues.append(q)
+
+        self.queues.sort()
+
+
+    def add_arrival(self, ei, agent, t=None) :
+
+        q = self.edge2queue[ei]
+
+        if t == None :
+            t = q.time + 1 if q.time < infty else self.queues[0].time + 1
+
+        agent.set_arrival(t)
+        q._add_arrival(agent)
 
         if q.issn[2] not in self._queues :
             if q.time < infty :
@@ -664,14 +697,15 @@ class QueueNetwork :
         net.nAgents       = copy.deepcopy(self.nAgents)
         net.colors        = copy.deepcopy(self.colors)
         net.adjacency     = copy.deepcopy(self.adjacency)
-        net.edge2queue    = copy.deepcopy(self.edge2queue)
-        net.queues        = copy.deepcopy(self.queues)
         net._queues       = copy.deepcopy(self._queues)
-        net.edges         = [e for e in net.g.edges()]
         queues            = net.g.new_edge_property("python::object")
 
         for e in net.g.edges() :
             queues[e]   = copy.deepcopy( net.g.ep['queues'][e] )
 
         net.g.ep['queues']  = queues
+
+        net.edge2queue = [queues[e] for e in self.g.edges()]
+        net.queues     = [queues[e] for e in self.g.edges() if net.g.edge_index[e] in net._queues]
+        net.queues.sort()
         return net

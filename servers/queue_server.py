@@ -1,4 +1,4 @@
-from numpy.random           import uniform
+from numpy.random           import uniform, exponential
 from numpy                  import infty, log
 from heapq                  import heappush, heappop
 from .. agents.queue_agents import Agent, SmartAgent, LearningAgent, ResourceAgent
@@ -9,16 +9,16 @@ import copy
 
 
 def arrival(rate, rate_max, t) :
-    t   = t - log(uniform()) / rate_max
+    t   = t + exponential(rate_max)
     while rate_max * uniform() > rate(t) :
-        t   = t - log(uniform()) / rate_max
+        t   = t + exponential(rate_max)
     return t
 
 
 def departure(rate, rate_max, t) :
-    t   = t - log(uniform()) / rate_max
+    t   = t + exponential(rate_max)
     while rate_max * uniform() > rate(t) :
-        t   = t - log(uniform()) / rate_max
+        t   = t + exponential(rate_max)
     return t
 
 
@@ -26,9 +26,9 @@ def departure(rate, rate_max, t) :
 class QueueServer :
 
     def __init__(self, nServers=1, issn=(0,0,0), active=False, net_size=1,
-            fArrival=lambda x : x - log(uniform()) / 1, 
-            fDepart =lambda x : x - log(uniform()) / 1.1,
-            fDepart_mu=lambda x : 1/1.1, AgentClass=Agent) :
+            fArrival=lambda x : x + exponential(1), 
+            fDepart =lambda x : x + exponential(0.95),
+            fDepart_mu=lambda x : 0.95, AgentClass=Agent) :
 
         self.issn       = issn
         self.nServers   = nServers
@@ -260,6 +260,7 @@ class QueueServer :
         new_server.arrivals     = copy.deepcopy(self.arrivals)
         new_server.departures   = copy.deepcopy(self.departures)
         new_server.net_data     = copy.deepcopy(self.net_data)
+        new_server.colors       = copy.deepcopy(self.colors)
         new_server.AgentClass   = self.AgentClass
         new_server.fArrival     = self.fArrival
         new_server.fDepart      = self.fDepart 
@@ -271,8 +272,8 @@ class QueueServer :
 class LossQueue(QueueServer) :
 
     def __init__(self, nServers=1, issn=0, active=False, net_size=1, 
-            fArrival=lambda x : x - log(uniform()) / 1, 
-            fDepart =lambda x : x - log(uniform()) / 1.1, fDepart_mu=lambda x : 1/1.1,
+            fArrival=lambda x : x + exponential(1), 
+            fDepart =lambda x : x + exponential(0.95), fDepart_mu=lambda x : 0.95,
             AgentClass=Agent, queue_cap=0) :
 
         QueueServer.__init__(self, nServers, issn, active, net_size, fArrival, fDepart, AgentClass=AgentClass)
@@ -347,6 +348,7 @@ class LossQueue(QueueServer) :
         new_server.arrivals     = copy.deepcopy(self.arrivals)
         new_server.departures   = copy.deepcopy(self.departures)
         new_server.net_data     = copy.deepcopy(self.net_data)
+        new_server.colors       = copy.deepcopy(self.colors)
         new_server.AgentClass   = self.AgentClass
         new_server.fArrival     = self.fArrival
         new_server.fDepart      = self.fDepart 
@@ -358,9 +360,11 @@ class LossQueue(QueueServer) :
 class MarkovianQueue(QueueServer) :
 
     def __init__(self, nServers=1, issn=0, active=False, net_size=1, aRate=1, dRate=1.1) :
+        aMean = 1 / aRate
+        dMean = 1 / dRate
         QueueServer.__init__(self, nServers, issn, active, net_size,
-            lambda t : t - log(uniform()) / aRate,
-            lambda t : t - log(uniform()) / dRate, lambda t : 1 / dRate, Agent) 
+            lambda x : x + exponential(aMean),
+            lambda x : x + exponential(dMean), lambda t : dMean, Agent) 
 
         self.rates  = [aRate, dRate]
 
@@ -372,11 +376,13 @@ class MarkovianQueue(QueueServer) :
 
 
     def change_rates(aRate=None, dRate=None) :
+        aMean = 1 / aRate
+        dMean = 1 / dRate
         if aRate != None :
-            self.fArrival   = lambda t : t - log(uniform()) / aRate
+            self.fArrival   = lambda x : x + exponential(aMean)
         if dRate != None :    
-            self.fDepart    = lambda t : t - log(uniform()) / dRate
-            self.fDepart_mu = lambda t : 1 / aRate
+            self.fDepart    = lambda x : x + exponential(dMean)
+            self.fDepart_mu = lambda t : dMean
 
 
 
@@ -384,8 +390,8 @@ class ResourceQueue(LossQueue) :
 
     def __init__(self, nServers=1, issn=0, active=False, net_size=1, max_servers=10) :
         LossQueue.__init__(self, nServers, issn, active, net_size, 
-            fArrival=lambda t : t - log(uniform()), fDepart=lambda t : t, 
-            fDepart_mu=lambda t : 0, AgentClass=ResourceAgent, queue_cap=0)
+            fArrival=lambda x : x + exponential(1), fDepart=lambda x : x, 
+            fDepart_mu=lambda x : 0, AgentClass=ResourceAgent, queue_cap=0)
 
         self.colors = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
                         'vertex_normal' : [1.0, 1.0, 1.0, 1.0],

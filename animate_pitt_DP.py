@@ -20,7 +20,7 @@ vs  = [a.Qn.g.vertex(202), a.Qn.g.vertex(453), a.Qn.g.vertex(255),
 vs  = [202, 453, 255, 449, 218, 72, 126, 326]
 
 
-a.Qn.initialize(queues=vs)
+#a.Qn.initialize(queues=vs)
 a.Qn.agent_cap  = 1000
 a.agent_cap     = 1000
 
@@ -38,7 +38,7 @@ nLearners   = 1
 dest        = list( np.random.choice(node_dict['des'], nLearners) )
 orig        = list( np.random.choice(node_dict['arc'], nLearners) )
 print((orig, dest))
-a.approximate_policy_iteration(orig, dest, save_frames=False, verbose=True)
+a.approximate_policy_iteration(orig, dest, save_frames=True, verbose=True)
 
 """
 orig, dest  = [], []
@@ -231,13 +231,13 @@ import numpy            as np
 import graph_tool.all   as gt
 import queueing_tool    as qt
 import cProfile
-pit = qt.QueueNetwork(nVertices=50, seed=13)
-pit.initialize(nActive=25)
-pit.agent_cap = 1000
+pit = qt.QueueNetwork(nVertices=500, seed=13)
+pit.initialize(nActive=200)
+pit.agent_cap = 2000
 pit.simulate(40)
-%timeit -n3 pit.simulate(20)
+%timeit -n3 pit.simulate(25)
 pr  = cProfile.Profile()
 pr.enable()
-pit.simulate(20)
+pit.simulate(25)
 pr.disable()
 pr.print_stats(sort='cumtime')

@@ -11,10 +11,13 @@ import os
 from numpy.random   import uniform, multinomial
 from numpy.linalg   import pinv
 from numpy          import size, ones, zeros, array, ndarray, transpose, vstack, arange
-from numpy          import logical_and, logical_or, logical_not, infty, log
-from heapq          import heappush, heappop
+from numpy          import logical_and, logical_or, logical_not, infty, log, dot
 from collections    import deque
 from gi.repository  import Gtk, Gdk, GdkPixbuf, GObject
+
+## Agent struct needs to be able to keep track of time.
+
+## Graph coloring should respect QueueNetwork's design.
 
 ## Incorporate expected_sojourn calculation into QueueNetwork, perhaps by doing the 
 ## calculation at every, departure event. Find out how much this will slow things down
@@ -37,7 +40,7 @@ class approximate_dynamic_program :
 
     def __init__(self, g=None, seed=None ) :
 
-        self.parameters         = {'N': 10, 'M':10, 'T': 40, 'gamma':0.95}
+        self.parameters         = {'N': 10, 'M':10, 'T': 25, 'gamma':0.95}
         self.t                  = 0
         self.animate            = False
         self.agent_cap          = 50
@@ -96,14 +99,14 @@ class approximate_dynamic_program :
         for v in Qn.g.vertices() :
             if Qn.g.vp['vType'][v] not in (1,2) :
                 for e in v.in_edges() :
-                    Qn.g.ep['queues'][e].fArrival   = lambda x : x - log(uniform()) / 8
-                    Qn.g.ep['queues'][e].fDepart    = lambda x : x - log(uniform()) / 3
-                    Qn.g.ep['queues'][e].fDepart_mu = lambda x : 1/3
+                    Qn.g.ep['queues'][e].fArrival   = lambda x : x + exponential(0.125)
+                    Qn.g.ep['queues'][e].fDepart    = lambda x : x + exponential(0.333)
+                    Qn.g.ep['queues'][e].fDepart_mu = lambda x : 0.333
 
         for e in Qn.g.edges() :
             if Qn.g.ep['eType'][e] == 1 :
                 Qn.g.ep['queues'][e].set_nServers(garage_cap[ct])
-                Qn.g.ep['queues'][e].fDepart    = lambda x : x - log(uniform()) / 0.5
+                Qn.g.ep['queues'][e].fDepart    = lambda x : x + exponential(2)
                 Qn.g.ep['queues'][e].fDepart_mu = lambda x : 2
                 ct += 1
 
@@ -288,13 +291,14 @@ class approximate_dynamic_program :
                 self.locations[ei].add( aissn )
 
             q = self.Qn.edge2queue[ei]
+            t = q.time + 1 if q.time < infty else self.Qn.queues[0].time + 1
             agent.od  = [orig[i], dest[i]]
             agent.set_type(1)
             agent.set_dest(dest=dest[i])
-            agent.queue_action(q)
 
             self.agent_variables[aissn].agent = [agent]
-            self.Qn.append_departure(ei, agent, self.Qn.t)
+            self.Qn.add_arrival(ei, agent, t)
+            #self.Qn.append_departure(ei, agent, time)
             self.parked[self.agent_cap+count] = False
             count  += 1
 
@@ -405,9 +409,9 @@ class approximate_dynamic_program :
 
                     if save_frames :
                         self._update_graph(state, QN)
-                        self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-0.png' % (agent.issn,n,m,tau), QN)
+                        self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-0.png' % (aStruct.issn,n,m,tau), QN)
                         self._update_graph(state, QN, target_node)
-                        self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-1.png' % (agent.issn,n,m,tau), QN)
+                        self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-1.png' % (aStruct.issn,n,m,tau), QN)
 
                     for ei in self.in_edges[ state[0][0] ] :
                         self.locations[ei].remove( aStruct.issn )
@@ -509,8 +513,7 @@ class approximate_dynamic_program :
 
     def basis_function2(self, S, QN, RETURN_PATH=False) :
 
-        for v in QN.g.vertices() :
-            e  = QN.g.edge(v, v)
+        for e in QN.g.edges() :
             sojourn  = self.expected_sojourn(QN.g.edge_index[e], QN, S)
             QN.g.ep['edge_times'][e] = sojourn
 
