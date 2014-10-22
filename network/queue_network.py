@@ -1,16 +1,12 @@
-import numpy                as np
-import graph_tool.all       as gt
+import numpy            as np
+import graph_tool.all   as gt
 import copy
 
-from numpy                  import infty
-from gi.repository          import Gtk, GObject
-from .. agents.queue_agents import ResourceAgent
+from numpy              import infty
+from gi.repository      import Gtk, GObject
+from .. generation      import generate_random_graph, prepare_graph
 
-from .. servers import queue_server as qs
-from .sorting   import oneBisectSort, bisectSort, oneSort, twoSort
-
-
-# Graph creation should be handled elsewhere
+from .sorting           import oneBisectSort, bisectSort, oneSort, twoSort
 
 # Garages changed to FCQ (finite capacity queue)
 # each edge and vertex has an eType and vType respectively now. 
@@ -21,14 +17,11 @@ from .sorting   import oneBisectSort, bisectSort, oneSort, twoSort
 
 class QueueNetwork :
 
-    def __init__(self, g=None, nVertices=100, pDest=None, pFCQ=None, seed=None, graph_type="osm", calcpath=False) :
+    def __init__(self, g=None, nVertices=100, pDest=10, pFCQ=1, seed=None, graph_type="osm", calcpath=False) :
         self.nEvents    = 0
         self.t          = 0
         self.to_animate = False
-        self.undirected = False
-        self.nAgents    = np.array([0])
         self.agent_cap  = 100
-        self.fcq_count  = 0
         self.prev_issn  = None
         self.colors     =  {'edge_departure'   : [0, 0, 0, 1], 
                             'edge_normal'      : [0.7, 0.7, 0.7, 0.50],
@@ -53,342 +46,24 @@ class QueueNetwork :
             gt.seed_rng(seed)
 
         if g == None :
-            self.active_graph(nVertices, pDest, pFCQ)
+            g = generate_random_graph(nVertices)
+            g = prepare_graph(g, colors=self.colors, graph_type=None)
         elif isinstance(g, str) or isinstance(g, gt.Graph) :
-            self.set_graph(g, graph_type, calcpath)
+            g = prepare_graph(g, colors=self.colors, graph_type=graph_type)
         else :
             raise Exception("Not sure which graph type was passed")
 
         def edge_index(e) :
-            return self.g.edge_index[e]
+            return g.edge_index[e]
 
-        self.adjacency  = [ [i for i in map(edge_index, list(v.out_edges()))] for v in self.g.vertices()]
-        self.edge2queue = [self.g.ep['queues'][e] for e in self.g.edges()]
-        self.queues     = [self.g.ep['queues'][e] for e in self.g.edges()]
-
-
-    def set_graph(self, g, graph_type=None, calc_shortest_path=False) :
-        if isinstance(g, str) :
-            g = gt.load_graph(g, fmt='xml')
-        elif not isinstance(g, gt.Graph) :
-            raise Exception("Need to supply a graph when initializing")
-
-        g.reindex_edges()
-        vertex_t_color    = g.new_vertex_property("vector<double>")
-        vertex_pen_color  = g.new_vertex_property("vector<double>")
-        vertex_color      = g.new_vertex_property("vector<double>")
-        halo_color        = g.new_vertex_property("vector<double>")
-        vertex_t_pos      = g.new_vertex_property("double")
-        vertex_t_size     = g.new_vertex_property("double")
-        halo              = g.new_vertex_property("bool")
-        state             = g.new_vertex_property("int")
-        vertex_type       = g.new_vertex_property("int")
-        vertex_halo_size  = g.new_vertex_property("double")
-        vertex_pen_width  = g.new_vertex_property("double")
-        vertex_size       = g.new_vertex_property("double")
-
-        control           = g.new_edge_property("vector<double>")
-        edge_color        = g.new_edge_property("vector<double>")
-        edge_t_color      = g.new_edge_property("vector<double>")
-        edge_width        = g.new_edge_property("double")
-        arrow_width       = g.new_edge_property("double")
-        edge_length       = g.new_edge_property("double")
-        edge_times        = g.new_edge_property("double")
-        edge_t_size       = g.new_edge_property("double")
-        edge_t_distance   = g.new_edge_property("double")
-        edge_t_parallel   = g.new_edge_property("bool")
-        edge_state        = g.new_edge_property("int")
-        queues            = g.new_edge_property("python::object")
-
-        vertex_props = set()
-        for key in g.vertex_properties.keys() :
-            vertex_props = vertex_props.union([key])
-
-        edge_props = set()
-        for key in g.edge_properties.keys() :
-            edge_props = edge_props.union([key])
-
-        has_garage  = 'garage' in vertex_props
-        has_destin  = 'destination' in vertex_props
-        has_light   = 'light' in vertex_props
-        has_egarage = 'garage' in edge_props
-        has_edestin = 'destination' in edge_props
-        has_elight  = 'light' in edge_props
-
-        if graph_type == 'osm' :
-            vType   = g.new_vertex_property("int")
-            eType   = g.new_edge_property("int")
-            fcq_count   = 0
-            dest_count  = 0
-            for v in g.vertices() :
-                if has_garage and g.vp['garage'][v] :
-                    e = g.edge(v,v)
-                    if isinstance(e, gt.Edge) :
-                        eType[e]  = 1
-                    vType[v]    = 1
-                    fcq_count  += 1
-                if has_destin and g.vp['destination'][v] :
-                    e = g.edge(v,v)
-                    if isinstance(e, gt.Edge) :
-                        eType[e]  = 2
-                    vType[v]    = 2
-                    dest_count += 1
-                if has_light and g.vp['light'][v] :
-                    e = g.edge(v,v)
-                    if isinstance(e, gt.Edge) :
-                        eType[e]  = 3
-                    vType[v]  = 3
-
-            for e in g.edges() :
-                if has_egarage and g.ep['garage'][e] :
-                    eType[e]    = 1
-                if has_edestin and g.ep['destination'][e] :
-                    eType[e]    = 2
-                if has_elight and g.ep['light'][e] :
-                    eType[e]    = 3
-
-            g.vp['vType']   = vType
-            g.ep['eType']   = eType
-            self.dest_count = dest_count
-            self.fcq_count  = fcq_count
-
-        if 'pos' not in vertex_props :
-            g.vp['pos'] = gt.sfdp_layout(g, epsilon=1e-2, cooling_step=0.95)
-
-        self.nV       = g.num_vertices()
-        self.nE       = g.num_edges()
-        self.nAgents  = np.array([0 for k in range(self.nE)])
-
-        has_length    = 'edge_length' in edge_props
-        has_lanes     = 'lanes' in vertex_props
-        has_cap       = 'cap' in vertex_props
-
-        for e in g.edges() :
-            qissn = (int(e.source()), int(e.target()), g.edge_index[e])
-            if g.ep['eType'][e] == 1 : #qs.LossQueue(cap, issn=qissn, net_size=self.nE)
-                cap       = g.vp['cap'][e.target()] if has_cap else 4
-                #if qissn[0] == qissn[1] :
-                #    queues[e] = qs.ResourceQueue(20000, issn=qissn, net_size=self.nE)
-                #else :
-                queues[e] = qs.LossQueue(20, issn=qissn, net_size=self.nE)#, AgentClass=ResourceAgent)
-                edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
-            else : #qs.QueueServer(lanes, issn=qissn, net_size=self.nE)
-                lanes     = g.vp['lanes'][e.target()] if has_lanes else 8
-                lanes     = lanes if lanes > 10 else max([lanes // 2, 1])
-                #if qissn[0] == qissn[1] :
-                #    queues[e] = qs.ResourceQueue(20000, issn=qissn, net_size=self.nE)
-                #else :
-                queues[e] = qs.QueueServer(20, issn=qissn, net_size=self.nE)#, AgentClass=ResourceAgent)
-                edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
-                if g.ep['eType'][e] == 2 :
-                    queues[e].colors['vertex_pen'] = self.colors['vertex_pen'][2]
-                elif g.ep['eType'][e] == 3 :
-                    queues[e].colors['vertex_pen'] = self.colors['vertex_pen'][3]
-
-            if qissn[0] == qissn[1] :
-                edge_color[e]   = [0, 0, 0, 0]
-            else :
-                control[e]      = [0, 0, 0, 0]
-                edge_color[e]   = self.colors['edge_normal']
-
-        one = np.ones( (self.nE, 4) )
-        edge_t_color.set_2d_array( (one * [0, 0, 0, 1]).T, range(self.nE) )
-
-        edge_width.a  = 1.25
-        arrow_width.a = 8
-        edge_state.a  = 0
-        edge_times.a  = 1
-        edge_t_size.a = 8
-        edge_t_distance.a = 8
-        edge_t_parallel.a = False
-
-        for v in g.vertices() :
-            e = g.edge(v, v)
-            if isinstance(e, gt.Edge) :
-                vertex_pen_color[v] = queues[e].current_color('pen')
-                vertex_color[v]     = queues[e].current_color()
-            else :
-                vertex_pen_color[v] = [0.0, 0.5, 1.0, 1.0]
-                vertex_color[v]     = [1.0, 1.0, 1.0, 1.0]
-
-        one = np.ones( (self.nV, 4) )
-        vertex_t_color.set_2d_array( (one * self.colors['text_normal']).T, range(self.nV) )
-        halo_color.set_2d_array( (one * self.colors['halo_normal']).T, range(self.nV) )
-
-        vertex_t_pos.a      = 0 * np.pi / 4
-        vertex_t_size.a     = 8
-        vertex_halo_size.a  = 1.3
-        vertex_pen_width.a  = 0.8
-        vertex_size.a       = 7
-        halo.a              = False
-        state.a             = 0
-
-        if 'shortest_path' in vertex_props :
-            shortest_path = np.ones( (self.nV, self.nV), int)
-
-            for v in g.vertices() :
-                shortest_path[int(v), :] = g.vp['shortest_path'][v].a
-
-            self.shortest_path = shortest_path
-
-        if calc_shortest_path and 'shortest_path' not in vertex_props :
-            shortest_path = np.ones( (self.nV, self.nV), int)
-            spath         = np.ones( (self.nV, self.nV), int) * -1
-
-            for v in g.vertices() :
-                vi  = int(v)
-                for u in g.vertices() :
-                    ui  = int(u)
-                    if ui == vi or spath[vi, ui] != -1 :
-                        continue
-
-                    path  = gt.shortest_path(g, v, u, weights=edge_length)[0]
-                    path  = [int(z) for z in path]
-                    spath[path[:-1], path[-1]] = path[1:]
-
-                    for j in range(1,len(path)-1) :
-                        pa  = path[:-j]
-                        spath[pa[:-1], pa[-1]] = pa[1:]
-
-                    if self.undirected :
-                        path.reverse()
-                        spath[path[:-1], path[-1]] = path[1:]
-
-                        for j in range(1, len(path)-1) :
-                            pa  = path[:-j]
-                            spath[pa[:-1], pa[-1]] = pa[1:]
-
-                shortest_path[vi, :] = spath[vi, :]
-
-            self.shortest_path = shortest_path
-
-        g.vp['vertex_t_color']   = vertex_t_color
-        g.vp['vertex_pen_color'] = vertex_pen_color
-        g.vp['vertex_color']     = vertex_color
-        g.vp['halo_color']       = halo_color
-        g.vp['vertex_t_pos']     = vertex_t_pos
-        g.vp['vertex_t_size']    = vertex_t_size
-        g.vp['halo']             = halo
-        g.vp['state']            = state
-        g.vp['vertex_type']      = vertex_type 
-        g.vp['vertex_halo_size'] = vertex_halo_size
-        g.vp['vertex_pen_width'] = vertex_pen_width
-        g.vp['vertex_size']      = vertex_size
-
-        g.ep['edge_t_size']      = edge_t_size
-        g.ep['edge_t_distance']  = edge_t_distance
-        g.ep['edge_t_parallel']  = edge_t_parallel
-        g.ep['edge_t_color']     = edge_t_color
-        g.ep['state']            = edge_state
-        g.ep['control']          = control
-        g.ep['edge_color']       = edge_color
-        g.ep['edge_width']       = edge_width
-        g.ep['edge_length']      = edge_length
-        g.ep['arrow_width']      = arrow_width
-        g.ep['edge_times']       = edge_times
-        g.ep['queues']           = queues
+        self.adjacency  = [ [i for i in map(edge_index, list(v.out_edges()))] for v in g.vertices()]
+        self.edge2queue = [g.ep['queues'][e] for e in g.edges()]
+        self.queues     = [g.ep['queues'][e] for e in g.edges()]
+        self.nAgents    = np.array([0 for k in range(g.num_edges())])
 
         self.g  = g
-
-
-    def active_graph(self, nVertices=100, pDest=None, pGarage=None) :
-
-        points  = np.random.random((nVertices, 2)) * 2
-        radii   = [(4 + k) / 200 for k in range(560)]
-
-        for r in radii :
-            g, pos  = gt.geometric_graph(points, r, [(0,2), (0,2)])
-            comp, a = gt.label_components(g)
-            if max(comp.a) == 0 :
-                break
-
-        pos       = gt.sfdp_layout(g, epsilon=1e-2, cooling_step=0.95)
-        pos_array = np.array([pos[v] for v in g.vertices()])
-        pos_array = pos_array / (100*(np.max(pos_array,0) - np.min(pos_array,0)))
-
-        for v in g.vertices() :
-            pos[v]  = pos_array[int(v), :]
-
-        g.vp['pos']     = pos
-        self.undirected = True
-
-        g = self.set_special_nodes(g, pDest, pGarage)
-        self.set_graph(g)
-
-
-
-    def set_special_nodes(self, g, pDest=None, pFCQ=None) :
-        if pDest == None :
-            pDest = 0.1
-        if pFCQ == None :
-            pFCQ = 1
-        pDest = pDest * 100
-
-        def calculate_distance(latlon1, latlon2) :
-            lat1, lon1  = latlon1
-            lat2, lon2  = latlon2
-            R     = 6371          # radius of the earth in kilometers
-            dlon  = lon2 - lon1
-            dlat  = lat2 - lat1
-            a     = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * (np.sin(dlon/2))**2
-            c     = 2 * np.pi * R * np.arctan2( np.sqrt(a), np.sqrt(1-a) ) / 180
-            return c
-
-        pagerank    = gt.pagerank(g)
-        tmp         = np.array(pagerank.a)
-        tmp.sort()
-        nDests      = int(np.ceil(g.num_vertices()/pDest))
-        dests       = np.where(pagerank.a >= tmp[-nDests])[0]
-
-        dest_pos    = np.array([g.vp['pos'][g.vertex(k)] for k in dests])
-        nFCQ        = int(pFCQ * np.size(dests))
-        min_g_dist  = np.ones(nFCQ) * infty
-        ind_g_dist  = np.ones(nFCQ, int)
-
-        r, theta    = np.random.random(nFCQ) / 500, np.random.random(nFCQ) * 360
-        xy_pos      = np.array([r * np.cos(theta), r * np.sin(theta)]).transpose()
-        g_pos       = xy_pos + dest_pos[ np.array( np.mod(np.arange(nFCQ), nDests), int) ]
-
-        for v in g.vertices() :
-            if int(v) not in dests :
-                tmp = np.array([calculate_distance(g.vp['pos'][v], g_pos[k, :]) for k in range(nFCQ)])
-                min_g_dist = np.min((tmp, min_g_dist), 0)
-                ind_g_dist[min_g_dist == tmp] = int(v)
-
-        ind_g_dist  = np.unique(ind_g_dist)
-        fcqs        = ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )]
-
-        if not g.is_directed() :
-            g.set_directed(True)
-
-            g2  = g.copy()
-            for e in g2.edges() :
-                e1  = g.add_edge(source=int(e.target()), target=int(e.source()))
-
-        vType   = g.new_vertex_property("int")
-        eType   = g.new_edge_property("int")
-        elength = g.new_edge_property("double")
-
-        for v in g.vertices() :
-            if int(v) in dests :
-                vType[v] = 2
-            if int(v) in fcqs :
-                vType[v] = 1
-
-        for e in g.edges() :
-            latlon1     = g.vp['pos'][e.target()]
-            latlon2     = g.vp['pos'][e.source()]
-            elength[e]  = np.round(calculate_distance(latlon1, latlon2), 3)
-
-        for v in g.vertices() :
-            e = g.add_edge(source=v, target=v)
-            if vType[v] == 1 :
-                eType[e] = 1
-
-        g.vp['vType'] = vType
-        g.ep['eType'] = eType
-        g.ep['edge_length'] = elength
-        return g
+        self.nV = g.num_vertices()
+        self.nE = g.num_edges()
 
 
     def initialize(self, nActive=1, queues=None) :
@@ -537,7 +212,6 @@ class QueueNetwork :
     def add_arrival(self, ei, agent, t=None) :
 
         q = self.edge2queue[ei]
-
         if t == None :
             t = q.time + 1 if q.time < infty else self.queues[0].time + 1
 
@@ -689,8 +363,6 @@ class QueueNetwork :
         net.nE            = copy.deepcopy(self.nE)
         net.to_animate    = False
         net.g             = self.g.copy()
-        net.fcq_count     = copy.deepcopy(self.fcq_count)
-        net.dest_count    = copy.deepcopy(self.dest_count)
         net.shortest_path = copy.deepcopy(self.shortest_path)
         net.prev_issn     = copy.deepcopy(self.prev_issn)
         net.nEvents       = copy.deepcopy(self.nEvents)
@@ -709,3 +381,47 @@ class QueueNetwork :
         net.queues     = [queues[e] for e in self.g.edges() if net.g.edge_index[e] in net._queues]
         net.queues.sort()
         return net
+
+
+def calculate_shortest_path(g) :
+    nV  = g.num_vertices()
+    vertex_props = set()
+    for key in g.vertex_properties.keys() :
+        vertex_props = vertex_props.union([key])
+
+    if 'shortest_path' in vertex_props :
+        shortest_path = np.ones( (nV, nV), int)
+
+        for v in g.vertices() :
+            shortest_path[int(v), :] = g.vp['shortest_path'][v].a
+
+    if 'shortest_path' not in vertex_props :
+        shortest_path = np.ones( (nV, nV), int)
+        spath         = np.ones( (nV, nV), int) * -1
+
+        for v in g.vertices() :
+            vi  = int(v)
+            for u in g.vertices() :
+                ui  = int(u)
+                if ui == vi or spath[vi, ui] != -1 :
+                    continue
+
+                path  = gt.shortest_path(g, v, u, weights=edge_length)[0]
+                path  = [int(z) for z in path]
+                spath[path[:-1], path[-1]] = path[1:]
+
+                for j in range(1,len(path)-1) :
+                    pa  = path[:-j]
+                    spath[pa[:-1], pa[-1]] = pa[1:]
+
+                if not g.is_directed() :
+                    path.reverse()
+                    spath[path[:-1], path[-1]] = path[1:]
+
+                    for j in range(1, len(path)-1) :
+                        pa  = path[:-j]
+                        spath[pa[:-1], pa[-1]] = pa[1:]
+
+            shortest_path[vi, :] = spath[vi, :]
+
+    return shortest_path
