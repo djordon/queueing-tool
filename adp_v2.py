@@ -15,10 +15,6 @@ from numpy          import logical_and, logical_or, logical_not, infty, log, dot
 from collections    import deque
 from gi.repository  import Gtk, Gdk, GdkPixbuf, GObject
 
-## Agent struct needs to be able to keep track of time.
-
-## Graph coloring should respect QueueNetwork's design.
-
 ## Incorporate expected_sojourn calculation into QueueNetwork, perhaps by doing the 
 ## calculation at every, departure event. Find out how much this will slow things down
 
@@ -38,8 +34,7 @@ from gi.repository  import Gtk, Gdk, GdkPixbuf, GObject
 
 class approximate_dynamic_program :
 
-    def __init__(self, g=None, seed=None ) :
-
+    def __init__(self, g=None, seed=None) :
         self.parameters         = {'N': 10, 'M':10, 'T': 25, 'gamma':0.95}
         self.t                  = 0
         self.animate            = False
@@ -51,23 +46,30 @@ class approximate_dynamic_program :
         self.agent_variables    = {}
         self.parked             = {}
         self.dir                = {'frames' : './figures/frames/'}
+        self.nInteractions      = 0
 
         if g == None :
             self.Qn = self.activate_network(agent_cap=self.agent_cap, seed=seed)
-        elif isinstance(g, gt.Graph) :
-            self.Qn = qt.QueueNetwork(g)
+        elif isinstance(g, gt.Graph) or isinstance(g, str) :
+            self.Qn = qt.QueueNetwork(g, calcpath=True, seed=seed)
             self.nE = self.Qn.nE
             tmp0    = self.Qn.g.vp['destination'].a + self.Qn.g.vp['garage'].a
             self.ce = np.arange( self.Qn.nV )[tmp0==min(tmp0)]
 
+        self.node_dict = {'fcq' : [], 'des' : [], 'arc' : []}
+        for v in self.Qn.g.vertices() :
+            if self.Qn.g.vp['vType'][v] == 1 :
+                self.node_dict['fcq'].append(int(v))
+            elif self.Qn.g.vp['vType'][v] == 2 :
+                self.node_dict['des'].append(int(v))
+            else :
+                self.node_dict['arc'].append(int(v))
 
         def edge_index(e) :
             return self.Qn.g.edge_index[e]
 
-        self.in_edges     = [ [i for i in map(edge_index, list(v.out_edges()))] for v in self.Qn.g.vertices() ]
-        self.locations    = { self.Qn.g.edge_index[e] : set() for e in self.Qn.g.edges() }
-        self.edge_text    = self.Qn.g.new_edge_property("string")
-        self.vertex_text  = self.Qn.g.new_vertex_property("string")
+        self.in_edges   = [ [i for i in map(edge_index, list(v.out_edges()))] for v in self.Qn.g.vertices() ]
+        self.locations  = { self.Qn.g.edge_index[e] : set() for e in self.Qn.g.edges() }
         self.calculate_parking_penalty2()
 
 
@@ -76,7 +78,7 @@ class approximate_dynamic_program :
 
 
     def activate_network(self, agent_cap, net_size=150, seed=None) :
-        Qn  = qt.QueueNetwork(nVertices=net_size, graph_type="periodic", seed=seed)
+        Qn  = qt.QueueNetwork(nVertices=net_size, graph_type='periodic', seed=seed)
         Qn.agent_cap = agent_cap
         for q in [Qn.g.ep['queues'][e] for e in Qn.g.edges()] :
             q.fArrival    = lambda x : x - log(uniform()) / 1
@@ -121,7 +123,6 @@ class approximate_dynamic_program :
         return l
 
     ## Calculates it incorrectly, fix
-    ## if time2cost was a different function, make sure to apply it here
     def expected_sojourn(self, ei, QN, S=None, time2cost=True) : 
         exp_s   = copy.deepcopy(QN.t)
 
@@ -243,7 +244,7 @@ class approximate_dynamic_program :
         pp[pp>1000] = 1000
 
         for v in self.Qn.g.vertices() :
-            if self.Qn.g.vp['vType'][v] != 1 :
+            if self.Qn.g.vp['vType'][v] not in [1, 2] :
                 pp[int(v), :] = 8000
 
         self.parking_penalty  = np.abs(pp)
@@ -338,7 +339,7 @@ class approximate_dynamic_program :
 
 
         for n in range(N) :
-            self.random_state(orig, dest, (10,20) )
+            self.random_state(orig, dest, (30,50) )
 
             if verbose :
                 print( sum(self.Qn.nAgents) )
@@ -353,7 +354,7 @@ class approximate_dynamic_program :
                     state   = [aStruct.agent[0].od]
 
                     if verbose :
-                        print("Frame: %s, %s, %s, %s" % (issn, n, m, aStruct.costs[n,m,tau-1]) )
+                        print("Frame: %s, %s, %s, %s" % (issn, n, m, tau) )
 
                     if not complete_info :
                         data  = aStruct.agent[0].net_data[:, 1] * aStruct.agent[0].net_data[:, 2]
@@ -385,8 +386,8 @@ class approximate_dynamic_program :
                             % (obj_func[ct] - v * gamma, ei, QN.edge2queue[ei].nSystem) )
 
                     
-                    old_t   = QN.t
                     policy  = np.argmin( obj_func[:ct+1] )
+                    aStruct.t[n,m,tau]        = QN.t
                     aStruct.v_est[n,m,tau]    = value_es[policy]
                     aStruct.basis[n,m,tau,:]  = array( basis_es[:, policy].T )
                     target_node = QN.edge2queue[target_edge[policy]].issn[1]
@@ -423,22 +424,21 @@ class approximate_dynamic_program :
 
                     aStruct.agent[0].dest  = target_edge[policy]
                     aStruct.agent[0].od[0] = target_node
+                    aStruct.tau  += 1
 
                     self.simulate_forward(QN)
 
-                    aStruct.costs[n,m,tau]  = self.time2cost(QN.t - old_t)
-                    aStruct.tau  += 1
-
-                    if verbose :
-                        print( "Options: %s\nRealized cost: %s" % (obj_func[:ct+1], aStruct.costs[n,m,tau-1]) )
+                    if verbose and tau > 0 :
+                        print( "Options: %s\nRealized cost: %s" % (obj_func[:ct+1], aStruct.t[n,m,tau] - aStruct.t[n,m,tau-1]) )
 
                 for agent in self.agent_variables.values() :
-                    for t in range(T-1, -1,-1) :
-                        agent.values[n,m,t] = agent.costs[n,m,t] + gamma * agent.values[n,m,t+1]
+                    for t in range(agent.tau - 1, 0, -1) :
+                        agent.costs[n,m,t-1]  = self.time2cost(agent.t[n,m,t] - agent.t[n,m,t-1])
+                        agent.values[n,m,t-1] = agent.costs[n,m,t-1] + gamma * agent.values[n,m,t]
 
-                    agent = self.update_theta(agent, n, m)
+                    agent = self.update_beta(agent, n, m)
 
-                    agent.tau   = 0
+                    agent.tau = 0
                     agent.beta_history[n,m,:]   = agent.beta
                     agent.value_history[n,m,:]  = agent.values[n,m,0], agent.v_est[n,m,0]
                     if verbose :
@@ -473,15 +473,15 @@ class approximate_dynamic_program :
 
 
     ## time weighted updating
-    def update_theta(self, aStruct, n, m) :
+    def update_beta(self, aStruct, n, m) :
         A   = aStruct.A
         z   = aStruct.z
         Phi = aStruct.basis[n,m,0,:]
-        n   = aStruct.n
+        nn  = aStruct.n
         c   = aStruct.values[n,m,0]
 
-        aStruct.A     = A + (n+1) * dot(Phi, Phi.T)
-        aStruct.z     = z + (n+1) * c * Phi
+        aStruct.A     = A + (nn+1) * dot(Phi, Phi.T)
+        aStruct.z     = z + (nn+1) * c * Phi
         aStruct.beta  = dot(pinv(A), z)
         return aStruct
 
@@ -532,42 +532,51 @@ class approximate_dynamic_program :
 
 
     def basis_function3(self, S, QN, PRE_SET=False) :
-        return 3
+
+        indices = np.argsort( self.dist[S[0][1], self.node_dict['fcq']] )
+        garages = [self.node_dict['fcq'][k] for k in indices][:4]
+
+        if not PRE_SET :
+            for e in QN.g.edges() :
+                if e.source() != e.target() :
+                    QN.g.ep['edge_times'][e] = self.expected_sojourn(QN.g.edge_index[e], QN, S)
+
+        an  = zeros( len(garages) )
+        ct  = 0
+        origin  = QN.g.vertex(S[0][0])
+
+        for g in garages:
+            destin  = QN.g.vertex(g)
+            answer  = gt.shortest_path(QN.g, origin, destin, weights=QN.g.ep['edge_times'])[1]
+            for e in answer :
+                an[ct] += self.time2cost(QN.g.ep['edge_times'][e])
+            an[ct] += self.parking_value(g, S[0][1], S, QN)
+            ct     += 1
+
+        return min(an)
 
 
     def basis_function4(self, S, QN) :
-        return 4
-
+        destination = QN.g.vertex(S[0][1]) 
+        for v in QN.g.vertex(S[0][0]).out_neighbours():
+            if v == destination :
+                return 0
+        v   = [self.parking_value(g, S[0][1], S, QN) for g in self.node_dict['fcq']]
+        ans = np.min(v) 
+        return ans
 
 
     def _update_graph(self, state, QN, target=None ) :
         QN.update_graph_colors()
 
-        v_props = set()
-        for key in QN.g.vertex_properties.keys() :
-            v_props = v_props.union( [key] )
-
-        HAS_LIGHT = 'light' in v_props
-
         i, j  = state[0]
         vj    = QN.g.vertex(j)
-        self.edge_text       = QN.g.new_edge_property("string")
-        self.vertex_text     = QN.g.new_vertex_property("string")
-        self.vertex_text[vj] = QN.g.vp['name'][vj]
 
-        for e in QN.g.edges() :
-            QN.g.ep['edge_width'][e]  = 1.25
-            QN.g.ep['arrow_width'][e] = 4
-            if e.target() != e.source() :
-                QN.g.ep['edge_color'][e]    = [0.5, 0.5, 0.5, 0.45]
-                QN.g.ep['edge_t_color'][e]  = [0.0, 0.0, 0.0, 0.45]
-            else :
-                QN.g.ep['edge_color'][e]    = [0.5, 0.5, 0.5, 0.0]
-                QN.g.ep['edge_t_color'][e]  = [0.0, 0.0, 0.0, 0.0]
-            if QN.g.ep['queues'][e].nSystem > 0 :
-                self.edge_text[e] = str(QN.g.ep['queues'][e].nSystem)
-            else :
-                self.edge_text[e] = ''
+        #for e in QN.g.edges() :
+        #    if QN.g.ep['queues'][e].nSystem > 0 :
+        #        QN.g.ep['text'][e] = str(QN.g.ep['queues'][e].nSystem)
+        #    else :
+        #        QN.g.ep['text'][e] = ''
 
         if target != None :
             target  = QN.g.vertex(target)
@@ -575,19 +584,19 @@ class approximate_dynamic_program :
             QN.g.vp['halo_color'][target]   = [1.0, 1.0, 0.0, 0.5]
             QN.g.vp['halo'][vj]             = True
 
-        for e in QN.g.vertex(state[0][1]).all_edges() :
-            if QN.g.vp['vType'][e.target()] == 1 :
-                QN.g.ep['edge_color'][e]    = [0.0, 0.5, 1.0, 1.0]
-                QN.g.ep['edge_t_color'][e]  = [0.0, 0.0, 0.0, 1.0]
+        #for e in QN.g.vertex(state[0][1]).all_edges() :
+        #    if QN.g.vp['vType'][e.target()] == 1 :
+        #        QN.g.ep['edge_color'][e]    = [0.0, 0.5, 1.0, 1.0]
+        #        QN.g.ep['edge_t_color'][e]  = [0.0, 0.0, 0.0, 1.0]
 
-        a           = i
-        edge_list   = []
+        a     = i
+        eList = []
         while a != j :
             a0  = QN.shortest_path[a, int(j)]
-            edge_list.append( QN.g.edge(a, a0) )
+            eList.append( QN.g.edge(a, a0) )
             a   = a0
 
-        for e in edge_list :
+        for e in eList :
             QN.g.ep['edge_color'][e]    = [0.094, 0.180, 0.275, 1.0]
             QN.g.ep['edge_t_color'][e]  = [0.0, 0.0, 0.0, 1.0]
             QN.g.ep['edge_width'][e]    = 4
@@ -601,30 +610,8 @@ class approximate_dynamic_program :
             QN.g.ep['arrow_width'][e]   = 9
 
 
-
     def save_frame(self, filename, QN) :
-        gt.graph_draw(QN.g, QN.g.vp['pos'], 
-                output_size=(1200, 1200), output=filename,
-                bg_color=[1,1,1,1],#QN.colors['bg_color'],
-                edge_color=QN.g.ep['edge_color'],
-                edge_control_points=QN.g.ep['control'],
-                edge_marker_size=QN.g.ep['arrow_width'],
-                edge_pen_width=QN.g.ep['edge_width'],
-                edge_text=self.edge_text,
-                edge_font_size=QN.g.ep['edge_t_size'],
-                edge_text_distance=QN.g.ep['edge_t_distance'],
-                edge_text_parallel=QN.g.ep['edge_t_parallel'],
-                edge_text_color=QN.g.ep['edge_t_color'],
-                vertex_fill_color=QN.g.vp['vertex_color'],
-                vertex_halo=QN.g.vp['halo'],
-                vertex_halo_color=QN.g.vp['halo_color'],
-                vertex_halo_size=QN.g.vp['vertex_halo_size'],
-                vertex_pen_width=QN.g.vp['vertex_pen_width'],
-                vertex_text=self.vertex_text,
-                vertex_text_position=QN.g.vp['vertex_t_pos'],
-                vertex_text_color=QN.g.vp['vertex_t_color'],
-                vertex_font_size=QN.g.vp['vertex_t_size'],
-                vertex_size=QN.g.vp['vertex_size'])
+        QN.draw(output=filename, update_colors=False)
 
 
     def exchange_information(self, node) :
@@ -635,19 +622,20 @@ class approximate_dynamic_program :
                 issns.add(n)
 
         if len(issns) > 1 :
+            self.nInteractions += 1
             A = np.zeros( (self.nFeatures, self.nFeatures) )
             z = np.zeros( self.nFeatures )
             for n in issns :
-                aStruct = self.agent_varriables[n]
+                aStruct = self.agent_variables[n]
                 A  += aStruct.A
                 z  += aStruct.z
             k = len(issns) - 1
             for n in issns :
-                aStruct = self.agent_varriables[n]
+                aStruct = self.agent_variables[n]
                 aStruct.A  = A
                 aStruct.z  = z
                 aStruct.n += k
-                self.agent_varriables[n] = aStruct
+                self.agent_variables[n] = aStruct
 
 
 
@@ -660,7 +648,8 @@ class AgentStruct() :
         self.setup_adp(nF, N, M, T)
 
     def setup_adp(self, nFeatures, N, M, T) :
-        self.A      = np.zeros( (nFeatures, nFeatures) )
+        self.t      = np.zeros( (N,M,T) )
+        self.A      = np.ones( (nFeatures, nFeatures) ) / 100
         self.z      = np.zeros( nFeatures )
         self.n      = 0
         self.beta   = np.ones( nFeatures )

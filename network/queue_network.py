@@ -33,13 +33,11 @@ class QueueNetwork :
                                              1 : [0.133, 0.545, 0.133, 1.0],  # garages aka fcq
                                              2 : [0.282, 0.239, 0.545, 1.0],  # destination
                                              3 : [1.0, 0.135, 0.0, 1.0]},     # light
-                            'vertex_arrival'   : [0.4, 0.8, 0.4, 0.75], 
-                            'vertex_departure' : [0.4, 0.8, 0.4, 0.75],
                             'halo_normal'      : [0, 0, 0, 0],
                             'halo_arrival'     : [0.1, 0.8, 0.8, 0.25],
                             'halo_departure'   : [0.9, 0.9, 0.9, 0.25],
                             'text_normal'      : [1, 1, 1, 0.5],
-                            'bg_color'         : [1.95, 1.95, 1.95, 1.0]}
+                            'bg_color'         : [1.0, 1.0, 1.0, 1.0]}
 
         if isinstance(seed, int) :
             np.random.seed(seed)
@@ -53,6 +51,8 @@ class QueueNetwork :
         else :
             raise Exception("Not sure which graph type was passed")
 
+        self.shortest_path = calculate_shortest_path(g) if calcpath else 0
+
         def edge_index(e) :
             return g.edge_index[e]
 
@@ -64,6 +64,10 @@ class QueueNetwork :
         self.g  = g
         self.nV = g.num_vertices()
         self.nE = g.num_edges()
+
+
+    def __repr__(self) :
+        return 'QueueNetwork. # nodes: %s, edges: %s, agents: %s' % (self.nV, self.nE, np.sum(self.nAgents))
 
 
     def initialize(self, nActive=1, queues=None) :
@@ -91,30 +95,15 @@ class QueueNetwork :
         self._queues = set([q.issn[2] for q in self.queues])
 
 
-    def __repr__(self) :
-        return 'QueueNetwork. # nodes: %s, edges: %s, agents: %s' % (self.nV, self.nE, np.sum(self.nAgents))
-
-
     def blocked(self) :
         ans = [q.lossed() for q in self.queues]
         return ans
 
 
-    def reset_colors(self) :
-        for e in self.g.edges() :
-            self.g.ep['edge_color'][e]    = self.colors['edge_normal']
-        for v in self.g.vertices() :
-            self.g.vp['vertex_color'][v]  = self.colors['vertex'][0]
-            self.g.vp['halo_color'][v]    = self.colors['halo_normal']
-            self.g.vp['halo'][v]          = False
-            self.g.vp['state'][v]         = 0
-
-
-    def draw(self, output=None, update_colors=True) :
+    def draw(self, output=None, outSize=(750, 750), update_colors=True) :
         if update_colors :
             self.update_graph_colors()
 
-        outSize = (750, 750)
         kwargs  = {'output_size': outSize , 'output' : output} if output != None else {'geometry' : outSize}
 
         ans = gt.graph_draw(self.g, pos=self.g.vp['pos'],
@@ -124,6 +113,7 @@ class QueueNetwork :
                     edge_marker_size=self.g.ep['arrow_width'],
                     edge_pen_width=self.g.ep['edge_width'],
                     edge_font_size=self.g.ep['edge_t_size'],
+                    edge_text=self.g.ep['text'],
                     edge_text_distance=self.g.ep['edge_t_distance'],
                     edge_text_parallel=self.g.ep['edge_t_parallel'],
                     edge_text_color=self.g.ep['edge_t_color'],
@@ -133,7 +123,7 @@ class QueueNetwork :
                     vertex_halo_color=self.g.vp['halo_color'],
                     vertex_halo_size=self.g.vp['vertex_halo_size'],
                     vertex_pen_width=self.g.vp['vertex_pen_width'],
-                    #vertex_text=self.g.vp['state'],
+                    vertex_text=self.g.vp['text'],
                     vertex_text_position=self.g.vp['vertex_t_pos'],
                     vertex_font_size=self.g.vp['vertex_t_size'],
                     vertex_size=self.g.vp['vertex_size'],
@@ -144,12 +134,8 @@ class QueueNetwork :
         ep  = self.g.ep
         vp  = self.g.vp
         for e in self.g.edges() :
-            nSy = ep['queues'][e].nSystem
-            ep['state'][e] = nSy
-
             if e.target() == e.source() :
                 v = e.target()
-                vp['state'][v] = nSy
                 vp['vertex_color'][v] = ep['queues'][e].current_color()
                 ep['edge_color'][e]   = ep['queues'][e].current_color('edge')
             else :
@@ -166,27 +152,19 @@ class QueueNetwork :
         if self.prev_issn != None :
             pe  = self.g.edge(self.prev_issn[0], self.prev_issn[1])
             pv  = self.g.vertex(self.prev_issn[1])
-            nSy = ep['queues'][pe].nSystem
-
-            ep['state'][pe] = nSy
 
             if pe.target() == pe.source() :
                 ep['edge_color'][pe]   = ep['queues'][pe].current_color('edge')
                 vp['vertex_color'][pv] = ep['queues'][pe].current_color()
                 vp['halo_color'][pv]   = self.colors['halo_normal']
                 vp['halo'][pv]  = False
-                vp['state'][pv] = nSy
             else :
                 ep['edge_color'][pe] = ep['queues'][e].current_color()
-
-        nSy = ep['queues'][e].nSystem
-        ep['state'][e] = nSy
 
         if e.target() == e.source() :
             ep['edge_color'][e]   = ep['queues'][e].current_color('edge')
             vp['vertex_color'][v] = ep['queues'][e].current_color()
             vp['halo'][v]  = True
-            vp['state'][v] = nSy
 
             if ad == 'arrival' :
                 vp['halo_color'][v] = self.colors['halo_arrival']
@@ -197,20 +175,17 @@ class QueueNetwork :
 
 
     def append_departure(self, ei, agent, t) :
-
         q   = self.edge2queue[ei]
         q.append_departure(agent, t)
 
-        if q.issn[2] not in self._queues :
-            if q.time < infty :
-                self._queues.add(q.issn[2])
-                self.queues.append(q)
+        if q.issn[2] not in self._queues and q.time < infty :
+            self._queues.add(q.issn[2])
+            self.queues.append(q)
 
         self.queues.sort()
 
 
     def add_arrival(self, ei, agent, t=None) :
-
         q = self.edge2queue[ei]
         if t == None :
             t = q.time + 1 if q.time < infty else self.queues[0].time + 1
@@ -218,10 +193,9 @@ class QueueNetwork :
         agent.set_arrival(t)
         q._add_arrival(agent)
 
-        if q.issn[2] not in self._queues :
-            if q.time < infty :
-                self._queues.add(q.issn[2])
-                self.queues.append(q)
+        if q.issn[2] not in self._queues and q.time < infty :
+            self._queues.add(q.issn[2])
+            self.queues.append(q)
 
         self.queues.sort()
 
@@ -230,7 +204,7 @@ class QueueNetwork :
         return self.queues[0].next_event_type()
 
 
-    def next_event(self, Slow=False) :
+    def next_event(self, slow=False) :
         q = self.queues.pop(0)
         t = q.time
         j = q.issn[2]
@@ -251,7 +225,7 @@ class QueueNetwork :
             q2._add_arrival(agent)
             self.nAgents[q2.issn[2]] = q2.nTotal
 
-            if Slow :
+            if slow :
                 self._update_graph_colors(ad='departure', qissn=q.issn)
                 self.prev_issn = q.issn
 
@@ -263,7 +237,7 @@ class QueueNetwork :
 
             q2.next_event()
 
-            if Slow :
+            if slow :
                 self._update_graph_colors(ad='arrival', qissn=q2.issn)
                 self.prev_issn = q2.issn
 
@@ -295,7 +269,7 @@ class QueueNetwork :
             self.nAgents[j] = q.nTotal
             self.nEvents   += 1
 
-            if Slow :
+            if slow :
                 self._update_graph(ad='arrival', qissn=q.issn)
                 self.prev_issn  = q.issn
 
@@ -316,18 +290,18 @@ class QueueNetwork :
                 edge_control_points=self.g.ep['control'],
                 edge_marker_size=self.g.ep['arrow_width'],
                 edge_pen_width=self.g.ep['edge_width'],
-                #edge_text=self.g.ep['state'],
+                edge_text=self.g.ep['text'],
                 edge_font_size=self.g.ep['edge_t_size'],
-                #edge_text_distance=self.g.ep['edge_t_distance'],
-                #edge_text_parallel=self.g.ep['edge_t_parallel'],
-                #edge_text_color=self.g.ep['edge_t_color'],
+                edge_text_distance=self.g.ep['edge_t_distance'],
+                edge_text_parallel=self.g.ep['edge_t_parallel'],
+                edge_text_color=self.g.ep['edge_t_color'],
                 vertex_color=self.g.vp['vertex_pen_color'],
                 vertex_fill_color=self.g.vp['vertex_color'],
                 vertex_halo=self.g.vp['halo'],
                 vertex_halo_color=self.g.vp['halo_color'],
                 vertex_halo_size=self.g.vp['vertex_halo_size'],
                 vertex_pen_width=self.g.vp['vertex_pen_width'],
-                #vertex_text=self.g.vp['state'],
+                vertex_text=self.g.vp['text'],
                 vertex_text_position=self.g.vp['vertex_t_pos'],
                 vertex_font_size=self.g.vp['vertex_t_size'],
                 vertex_size=self.g.vp['vertex_size'])
@@ -342,7 +316,17 @@ class QueueNetwork :
     def simulate(self, T=25) :
         now = self.t
         while self.t < now + T :
-            self.next_event(Slow=False)
+            self.next_event(slow=False)
+
+
+    def reset_colors(self) :
+        for e in self.g.edges() :
+            self.g.ep['edge_color'][e]    = self.colors['edge_normal']
+        for v in self.g.vertices() :
+            self.g.vp['vertex_color'][v]  = self.colors['vertex'][0]
+            self.g.vp['halo_color'][v]    = self.colors['halo_normal']
+            self.g.vp['halo'][v]          = False
+            self.g.vp['text'][v]          = ''
 
 
     def reset(self) :

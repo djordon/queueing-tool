@@ -164,14 +164,29 @@ class QueueServer :
 
     def next_event(self) :
         if self.arrivals[0].time < self.departures[0].time :
-            new_arrival   = heappop(self.arrivals)
-            self.local_t  = new_arrival.time
+            arrival       = heappop(self.arrivals)
+            self.local_t  = arrival.time
 
             if self.active :
                 self._add_arrival()
 
-            self.append_departure(new_arrival, self.local_t)
-            new_depart = None
+            self.nSystem       += 1
+            self.nArrivals     += 1
+            arrival.arr_ser[0]  = arrival.time
+
+            self.extract_information(arrival)
+
+            if self.nSystem <= self.nServers :
+                arrival.arr_ser[1]    = arrival.time
+                arrival.set_departure(self.fDepart(arrival.time))
+                heappush(self.departures, arrival)
+            else :
+                self.queue.append(arrival)
+
+            if self.arrivals[0].time < self.departures[0].time :
+                self.time = self.arrivals[0].time
+            else :
+                self.time = self.departures[0].time
                 
         elif self.departures[0].time < infty :
             new_depart      = heappop(self.departures)
@@ -191,12 +206,12 @@ class QueueServer :
             if self.nSystem == 0 : 
                 self.networking( len(self.net_data) )
 
-        if self.arrivals[0].time < self.departures[0].time :
-            self.time = self.arrivals[0].time
-        else :
-            self.time = self.departures[0].time
+            if self.arrivals[0].time < self.departures[0].time :
+                self.time = self.arrivals[0].time
+            else :
+                self.time = self.departures[0].time
 
-        return new_depart
+            return new_depart
 
 
     def current_color(self, which='') :

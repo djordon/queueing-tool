@@ -14,11 +14,7 @@ def prepare_graph(g, colors, graph_type=None) :
     vertex_pen_color  = g.new_vertex_property("vector<double>")
     vertex_color      = g.new_vertex_property("vector<double>")
     halo_color        = g.new_vertex_property("vector<double>")
-    vertex_t_pos      = g.new_vertex_property("double")
     vertex_t_size     = g.new_vertex_property("double")
-    halo              = g.new_vertex_property("bool")
-    state             = g.new_vertex_property("int")
-    vertex_type       = g.new_vertex_property("int")
     vertex_halo_size  = g.new_vertex_property("double")
     vertex_pen_width  = g.new_vertex_property("double")
     vertex_size       = g.new_vertex_property("double")
@@ -33,8 +29,6 @@ def prepare_graph(g, colors, graph_type=None) :
     edge_t_size       = g.new_edge_property("double")
     edge_t_distance   = g.new_edge_property("double")
     edge_t_parallel   = g.new_edge_property("bool")
-    edge_state        = g.new_edge_property("int")
-    queues            = g.new_edge_property("python::object")
 
     vertex_props = set()
     for key in g.vertex_properties.keys() :
@@ -89,47 +83,18 @@ def prepare_graph(g, colors, graph_type=None) :
     nE  = g.num_edges()
 
     has_length  = 'edge_length' in edge_props
-    has_lanes   = 'lanes' in vertex_props
-    has_cap     = 'cap' in vertex_props
+    kwargs      = {'has_lanes' : 'lanes' in vertex_props, 'has_cap' : 'cap' in vertex_props }
+    queues      = set_queues(g, colors, graph_type, **kwargs)
 
     for e in g.edges() :
-        qissn = (int(e.source()), int(e.target()), g.edge_index[e])
-        if g.ep['eType'][e] == 1 : #qs.LossQueue(cap, issn=qissn, net_size=nE)
-            cap       = g.vp['cap'][e.target()] if has_cap else 4
-            #if qissn[0] == qissn[1] :
-            #    queues[e] = qs.ResourceQueue(20000, issn=qissn, net_size=nE)
-            #else :
-            queues[e] = qs.LossQueue(20, issn=qissn, net_size=nE)#, AgentClass=ResourceAgent)
-            edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
-        else : #qs.QueueServer(lanes, issn=qissn, net_size=nE)
-            lanes     = g.vp['lanes'][e.target()] if has_lanes else 8
-            lanes     = lanes if lanes > 10 else max([lanes // 2, 1])
-            #if qissn[0] == qissn[1] :
-            #    queues[e] = qs.ResourceQueue(20000, issn=qissn, net_size=nE)
-            #else :
-            queues[e] = qs.QueueServer(20, issn=qissn, net_size=nE)#, AgentClass=ResourceAgent)
-            edge_length[e]  = g.ep['edge_length'][e] if has_length else 1 ## Needs editing
-            if g.ep['eType'][e] == 2 :
-                queues[e].colors['vertex_pen'] = colors['vertex_pen'][2]
-            elif g.ep['eType'][e] == 3 :
-                queues[e].colors['vertex_pen'] = colors['vertex_pen'][3]
-
-        if qissn[0] == qissn[1] :
-            edge_color[e]   = [0, 0, 0, 0]
+        p2  = np.array(g.vp['pos'][e.target()])
+        p1  = np.array(g.vp['pos'][e.source()])
+        edge_length[e]  = g.ep['edge_length'][e] if has_length else np.linalg.norm(p1 - p2)
+        if e.target() == e.source() :
+            edge_color[e] = [0, 0, 0, 0]
         else :
-            control[e]      = [0, 0, 0, 0]
-            edge_color[e]   = colors['edge_normal']
-
-    one = np.ones( (nE, 4) )
-    edge_t_color.set_2d_array( (one * [0, 0, 0, 1]).T, range(nE) )
-
-    edge_width.a  = 1.25
-    arrow_width.a = 8
-    edge_state.a  = 0
-    edge_times.a  = 1
-    edge_t_size.a = 8
-    edge_t_distance.a = 8
-    edge_t_parallel.a = False
+            control[e]    = [0, 0, 0, 0]
+            edge_color[e] = colors['edge_normal']
 
     for v in g.vertices() :
         e = g.edge(v, v)
@@ -140,36 +105,41 @@ def prepare_graph(g, colors, graph_type=None) :
             vertex_pen_color[v] = [0.0, 0.5, 1.0, 1.0]
             vertex_color[v]     = [1.0, 1.0, 1.0, 1.0]
 
+    one = np.ones( (nE, 4) )
+    edge_t_color.set_2d_array( (one * [0, 0, 0, 1]).T, range(nE) )
+
+    edge_width.a  = 1.25
+    arrow_width.a = 8
+    edge_times.a  = 1
+    edge_t_size.a = 8
+    edge_t_distance.a = 8
+
     one = np.ones( (nV, 4) )
     vertex_t_color.set_2d_array( (one * colors['text_normal']).T, range(nV) )
     halo_color.set_2d_array( (one * colors['halo_normal']).T, range(nV) )
 
-    vertex_t_pos.a      = 0 * np.pi / 4
     vertex_t_size.a     = 8
     vertex_halo_size.a  = 1.3
-    vertex_pen_width.a  = 1.2
+    vertex_pen_width.a  = 1.1
     vertex_size.a       = 8
-    halo.a              = False
-    state.a             = 0
 
     g.vp['vertex_t_color']   = vertex_t_color
     g.vp['vertex_pen_color'] = vertex_pen_color
     g.vp['vertex_color']     = vertex_color
     g.vp['halo_color']       = halo_color
-    g.vp['vertex_t_pos']     = vertex_t_pos
+    g.vp['vertex_t_pos']     = g.new_vertex_property("double")
     g.vp['vertex_t_size']    = vertex_t_size
-    g.vp['halo']             = halo
-    g.vp['state']            = state
-    g.vp['vertex_type']      = vertex_type 
     g.vp['vertex_halo_size'] = vertex_halo_size
     g.vp['vertex_pen_width'] = vertex_pen_width
     g.vp['vertex_size']      = vertex_size
+    g.vp['text']             = g.new_vertex_property("string")
+    g.vp['halo']             = g.new_vertex_property("bool")
 
     g.ep['edge_t_size']      = edge_t_size
     g.ep['edge_t_distance']  = edge_t_distance
-    g.ep['edge_t_parallel']  = edge_t_parallel
+    g.ep['edge_t_parallel']  = g.new_edge_property("bool")
     g.ep['edge_t_color']     = edge_t_color
-    g.ep['state']            = edge_state
+    g.ep['text']             = g.new_edge_property("string")
     g.ep['control']          = control
     g.ep['edge_color']       = edge_color
     g.ep['edge_width']       = edge_width
@@ -178,4 +148,30 @@ def prepare_graph(g, colors, graph_type=None) :
     g.ep['edge_times']       = edge_times
     g.ep['queues']           = queues
     return g
+
+
+def set_queues(g, colors, graph_type, **kwargs) :
+    queues    = g.new_edge_property("python::object")
+    has_cap   = kwargs['has_cap']
+    has_lanes = kwargs['has_lanes']
+
+    for e in g.edges() :
+        qissn = (int(e.source()), int(e.target()), g.edge_index[e])
+        if g.ep['eType'][e] == 1 :
+            cap       = max(g.vp['cap'][e.target()] // 10, 4) if has_cap else 4
+            queues[e] = qs.LossQueue(cap, issn=qissn, net_size=g.num_edges() )
+        elif g.ep['eType'][e] == 2 :
+            cap       = 8 if has_cap else 4
+            queues[e] = qs.LossQueue(cap, issn=qissn, net_size=g.num_edges() )
+        else : 
+            lanes     = g.vp['lanes'][e.target()] if has_lanes else 8
+            lanes     = lanes if lanes > 10 else max(lanes // 2, 1)
+            queues[e] = qs.QueueServer(lanes, issn=qissn, net_size=g.num_edges()  )
+
+            if g.ep['eType'][e] == 2 :
+                queues[e].colors['vertex_pen'] = colors['vertex_pen'][2]
+            elif g.ep['eType'][e] == 3 :
+                queues[e].colors['vertex_pen'] = colors['vertex_pen'][3]
+
+    return queues
 

@@ -10,35 +10,27 @@ import cProfile
 import pickle
 
 np.set_printoptions(precision=3,suppress=True,threshold=2000)
-g   = gt.load_graph('pitt_network.xml', fmt='xml')
-pit = qt.QueueNetwork( g )
-a   = adp.approximate_dynamic_program(pit.g)
+
+a   = adp.approximate_dynamic_program('pitt_network.xml')
 vs  = [a.Qn.g.vertex(202), a.Qn.g.vertex(453), a.Qn.g.vertex(255),
        a.Qn.g.vertex(449), a.Qn.g.vertex(218), a.Qn.g.vertex(72),
        a.Qn.g.vertex(126), a.Qn.g.vertex(326)]
 
 vs  = [202, 453, 255, 449, 218, 72, 126, 326]
 
-
 #a.Qn.initialize(queues=vs)
-a.Qn.agent_cap  = 1000
-a.agent_cap     = 1000
+a.Qn.agent_cap  = 2000
+a.agent_cap     = 2000
 
-
-node_dict = {'fcq' : [], 'des' : [], 'arc' : []}
-for v in a.Qn.g.vertices() :
-    if a.Qn.g.vp['vType'][v] == 1 :
-        node_dict['fcq'].append(int(v))
-    elif a.Qn.g.vp['vType'][v] == 2 :
-        node_dict['des'].append(int(v))
-    else :
-        node_dict['arc'].append(int(v))
-
-nLearners   = 1
-dest        = list( np.random.choice(node_dict['des'], nLearners) )
-orig        = list( np.random.choice(node_dict['arc'], nLearners) )
-print((orig, dest))
+nLearners   = 10
+dest        = list( np.random.choice(a.node_dict['des'], nLearners) )
+orig        = list( np.random.choice(a.node_dict['arc'], nLearners) )
+a.parameters['T'] = 25 * nLearners
+a.parameters['M'] = 10
+a.parameters['N'] = 1
 a.approximate_policy_iteration(orig, dest, save_frames=True, verbose=True)
+
+
 
 """
 orig, dest  = [], []
