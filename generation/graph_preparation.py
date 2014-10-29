@@ -168,10 +168,10 @@ def set_queues(g, colors, graph_type, **kwargs) :
             lanes     = lanes if lanes > 10 else max(lanes // 2, 1)
             queues[e] = qs.QueueServer(lanes, issn=qissn, net_size=g.num_edges()  )
 
-            if g.ep['eType'][e] == 2 :
-                queues[e].colors['vertex_pen'] = colors['vertex_pen'][2]
-            elif g.ep['eType'][e] == 3 :
-                queues[e].colors['vertex_pen'] = colors['vertex_pen'][3]
+        if g.ep['eType'][e] == 2 :
+            queues[e].colors['vertex_pen'] = colors['vertex_pen'][2]
+        elif g.ep['eType'][e] == 3 :
+            queues[e].colors['vertex_pen'] = colors['vertex_pen'][3]
 
     return queues
 

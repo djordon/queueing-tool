@@ -25,48 +25,15 @@ a.agent_cap     = 2000
 nLearners   = 10
 dest        = list( np.random.choice(a.node_dict['des'], nLearners) )
 orig        = list( np.random.choice(a.node_dict['arc'], nLearners) )
-a.parameters['T'] = 25 * nLearners
+a.parameters['T'] = 35 * nLearners
 a.parameters['M'] = 10
 a.parameters['N'] = 1
-a.approximate_policy_iteration(orig, dest, save_frames=True, verbose=True)
+a.approximate_policy_iteration(orig, dest, save_frames=False, verbose=False)
+print( (a.after - a.before).seconds / 60 )
 
 
 
 """
-orig, dest  = [], []
-dist        = copy.deepcopy( a.dist )
-
-for p in range( dist.shape[0] ) :
-    pairs = np.argwhere(dist == dist.max()-p )
-    for i,j in pairs :
-        if a.Qn.g.vp['destination'].a[j] :
-            orig.append(int(i))
-            dest.append(int(j))
-            #dist[int(i),int(j)] = 0
-            break
-    if len(orig) == nLearners :
-        break
-
-print(orig)
-#print( (a.Qn.g.gp['node_index']['destination'], a.Qn.g.gp['node_index']['garage']) )
-
-#orig, dest  = [344], [21]
-a.approximate_policy_iteration(orig, dest, save_frames=True)
-"""
-
-"""
-
-        node_dict = {'fcq' : [], 'des' : [], 'arc' : [], 'dest_arc' : []}
-        for v in g.vertices() :
-            if g.vp['vType'][v] == 1 :
-                node_dict['fcq'].append(int(v))
-            elif g.vp['vType'][v] == 2 :
-                node_dict['des'].append(int(v))
-            else :
-                node_dict['arc'].append(int(v))
-        node_dict['dest_arc'] = copy.copy(node_dict['des'])
-        node_dict['dest_arc'].extend(node_dict['arc'])
-
 ### QueueServer code
 
     def travel_stats(self) :
@@ -92,11 +59,9 @@ a.approximate_policy_iteration(orig, dest, save_frames=True)
             ans[1] += agent.trip_t[1]
             ans[2] += agent.trips
         return ans
-"""
 
-
-"""
 ## QueueNetwork code
+
     def agent_stats(self) :
         ans     = np.zeros(7)
         rested  = 0
@@ -170,61 +135,15 @@ a.approximate_policy_iteration(orig, dest, save_frames=True)
 #pickle.dump(a.agent_variables, open(loc+"theta_data_"+dat+".p", "wb") )
 
 
-"""
+
 import numpy            as np
 import graph_tool.all   as gt
 import queueing_tool    as qt
 import cProfile
 import os
 data_dir  = os.path.expanduser('~') + '/math/data/graphs/'
-g   = gt.load_graph(data_dir+'pitt_network.xml', fmt='xml')
-pit = qt.QueueNetwork(g, seed=10)
-pit.initialize(nActive=5)
-pit.agent_cap = 1000
-pr  = cProfile.Profile()
-pr.enable()
-pit.simulate(90)
-pr.disable()
-pr.print_stats(sort='time')
-
-cProfile.run('a.Qn.simulate()')
-"""
-
-
-
-
-import numpy            as np
-import graph_tool.all   as gt
-import queueing_tool    as qt
-import cProfile
-pit = qt.QueueNetwork(nVertices=50, seed=12)
-pit.initialize(nActive=50)
-pit.agent_cap = 10000
-pit.simulate(150)
-pit.draw()
-
-
-import numpy            as np
-import graph_tool.all   as gt
-import queueing_tool    as qt
-import cProfile
-pit = qt.QueueNetwork(nVertices=50, seed=12)
-pit.initialize(nActive=50)
-pit.agent_cap = 10000
-pr  = cProfile.Profile()
-pr.enable()
-pit.simulate(50)
-pr.disable()
-pr.print_stats(sort='time')
-
-
-
-import numpy            as np
-import graph_tool.all   as gt
-import queueing_tool    as qt
-import cProfile
-pit = qt.QueueNetwork(nVertices=500, seed=13)
-pit.initialize(nActive=200)
+pit = qt.QueueNetwork(nVertices=50, seed=13)
+pit.initialize(nActive=25)
 pit.agent_cap = 2000
 pit.simulate(40)
 %timeit -n3 pit.simulate(20)
@@ -233,3 +152,4 @@ pr.enable()
 pit.simulate(20)
 pr.disable()
 pr.print_stats(sort='cumtime')
+cProfile.run('pit.simulate(20)')

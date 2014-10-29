@@ -18,26 +18,27 @@ from .sorting           import oneBisectSort, bisectSort, oneSort, twoSort
 class QueueNetwork :
 
     def __init__(self, g=None, nVertices=100, pDest=10, pFCQ=1, seed=None, graph_type="osm", calcpath=False) :
-        self.nEvents    = 0
-        self.t          = 0
-        self.to_animate = False
-        self.agent_cap  = 100
-        self.prev_issn  = None
-        self.colors     =  {'edge_departure'   : [0, 0, 0, 1], 
-                            'edge_normal'      : [0.7, 0.7, 0.7, 0.50],
-                            'vertex' :     { 0 : [0.9, 0.9, 0.9, 1.0],        # normal
-                                             1 : [0.9, 0.9, 0.9, 1.0],        # garages aka fcq
-                                             2 : [0.9, 0.9, 0.9, 1.0],        # destination
-                                             3 : [0.9, 0.9, 0.9, 1.0]},       # light
-                            'vertex_pen' : { 0 : [0.0, 0.5, 1.0, 1.0],        # normal vertex
-                                             1 : [0.133, 0.545, 0.133, 1.0],  # garages aka fcq
-                                             2 : [0.282, 0.239, 0.545, 1.0],  # destination
-                                             3 : [1.0, 0.135, 0.0, 1.0]},     # light
-                            'halo_normal'      : [0, 0, 0, 0],
-                            'halo_arrival'     : [0.1, 0.8, 0.8, 0.25],
-                            'halo_departure'   : [0.9, 0.9, 0.9, 0.25],
-                            'text_normal'      : [1, 1, 1, 0.5],
-                            'bg_color'         : [1.0, 1.0, 1.0, 1.0]}
+        self.nEvents      = 0
+        self.t            = 0
+        self.to_animate   = False
+        self.initialized  = False
+        self.agent_cap    = 100
+        self.prev_issn    = None
+        self.colors       =  {'edge_departure'   : [0, 0, 0, 1], 
+                              'edge_normal'      : [0.7, 0.7, 0.7, 0.50],
+                              'vertex' :     { 0 : [0.9, 0.9, 0.9, 1.0],        # normal
+                                               1 : [0.9, 0.9, 0.9, 1.0],        # garages aka fcq
+                                               2 : [0.9, 0.9, 0.9, 1.0],        # destination
+                                               3 : [0.9, 0.9, 0.9, 1.0]},       # light
+                              'vertex_pen' : { 0 : [0.0, 0.5, 1.0, 1.0],        # normal vertex
+                                               1 : [0.133, 0.545, 0.133, 1.0],  # garages aka fcq
+                                               2 : [0.282, 0.239, 0.545, 1.0],  # destination
+                                               3 : [1.0, 0.135, 0.0, 1.0]},     # light
+                              'halo_normal'      : [0, 0, 0, 0],
+                              'halo_arrival'     : [0.1, 0.8, 0.8, 0.25],
+                              'halo_departure'   : [0.9, 0.9, 0.9, 0.25],
+                              'text_normal'      : [1, 1, 1, 0.5],
+                              'bg_color'         : [1.0, 1.0, 1.0, 1.0]}
 
         if isinstance(seed, int) :
             np.random.seed(seed)
@@ -49,7 +50,7 @@ class QueueNetwork :
         elif isinstance(g, str) or isinstance(g, gt.Graph) :
             g = prepare_graph(g, colors=self.colors, graph_type=graph_type)
         else :
-            raise Exception("Not sure which graph type was passed")
+            raise Exception("A proper graph (or graph location) was not given.")
 
         self.shortest_path = calculate_shortest_path(g) if calcpath else 0
 
@@ -58,8 +59,7 @@ class QueueNetwork :
 
         self.adjacency  = [ [i for i in map(edge_index, list(v.out_edges()))] for v in g.vertices()]
         self.edge2queue = [g.ep['queues'][e] for e in g.edges()]
-        self.queues     = [g.ep['queues'][e] for e in g.edges()]
-        self.nAgents    = np.array([0 for k in range(g.num_edges())])
+        self.nAgents    = np.zeros( g.num_edges() )
 
         self.g  = g
         self.nV = g.num_vertices()
@@ -71,7 +71,6 @@ class QueueNetwork :
 
 
     def initialize(self, nActive=1, queues=None) :
-        self.g.reindex_edges()
         initialized = False
         if queues == None :
             queues = np.arange(self.nV)  
@@ -88,11 +87,13 @@ class QueueNetwork :
             if not initialized :
                 self.g.ep['queues'][e].initialize()
 
+        self.queues = [self.g.ep['queues'][e] for e in self.g.edges()]
         self.queues.sort()
         while self.queues[-1].time == infty :
             self.queues.pop()
 
-        self._queues = set([q.issn[2] for q in self.queues])
+        self._queues      = set([q.issn[2] for q in self.queues])
+        self.initialized  = True
 
 
     def blocked(self) :
@@ -100,11 +101,11 @@ class QueueNetwork :
         return ans
 
 
-    def draw(self, output=None, outSize=(750, 750), update_colors=True) :
+    def draw(self, outSize=(750, 750), output=None, update_colors=True) :
         if update_colors :
             self.update_graph_colors()
 
-        kwargs  = {'output_size': outSize , 'output' : output} if output != None else {'geometry' : outSize}
+        kwargs = {'output_size': outSize , 'output' : output} if output != None else {'geometry' : outSize}
 
         ans = gt.graph_draw(self.g, pos=self.g.vp['pos'],
                     bg_color=self.colors['bg_color'],
@@ -126,8 +127,7 @@ class QueueNetwork :
                     vertex_text=self.g.vp['text'],
                     vertex_text_position=self.g.vp['vertex_t_pos'],
                     vertex_font_size=self.g.vp['vertex_t_size'],
-                    vertex_size=self.g.vp['vertex_size'],
-                    **kwargs)
+                    vertex_size=self.g.vp['vertex_size'], **kwargs)
 
 
     def update_graph_colors(self) :
@@ -204,7 +204,7 @@ class QueueNetwork :
         return self.queues[0].next_event_type()
 
 
-    def next_event(self, slow=False) :
+    def _next_event(self, slow=True) :
         q = self.queues.pop(0)
         t = q.time
         j = q.issn[2]
@@ -244,9 +244,9 @@ class QueueNetwork :
             if q.time < infty :
                 if q2.issn[2] in self._queues :
                     if q2.time < q2t :
-                        oneBisectSort(self.queues, q, q2t, len(self.queues) )
+                        oneBisectSort(self.queues, q, q2t, len(self.queues))
                     else :
-                        bisectSort(self.queues, q, len(self.queues) )
+                        bisectSort(self.queues, q, len(self.queues))
                 elif q2.time < infty :
                     self._queues.add(q2.issn[2])
                     twoSort(self.queues, q, q2, len(self.queues))
@@ -270,7 +270,7 @@ class QueueNetwork :
             self.nEvents   += 1
 
             if slow :
-                self._update_graph(ad='arrival', qissn=q.issn)
+                self._update_graph_colors(ad='arrival', qissn=q.issn)
                 self.prev_issn  = q.issn
 
             if q.time < infty :
@@ -282,9 +282,13 @@ class QueueNetwork :
             return True
 
 
-    def animation(self) :
+    def animation(self, outSize=(750, 750)) :
+        if not self.initialized :
+            raise Exception("Network has not been initialized. Call 'initialize()' first.")
+
         self.to_animate = True
-        self.win = gt.GraphWindow(self.g, self.g.vp['pos'], geometry=(750, 750),
+        self.update_graph_colors()
+        self.win = gt.GraphWindow(self.g, self.g.vp['pos'], geometry=outSize,
                 bg_color=self.colors['bg_color'],
                 edge_color=self.g.ep['edge_color'],
                 edge_control_points=self.g.ep['control'],
@@ -306,17 +310,23 @@ class QueueNetwork :
                 vertex_font_size=self.g.vp['vertex_t_size'],
                 vertex_size=self.g.vp['vertex_size'])
 
-        cid = GObject.idle_add(self.next_event)
+        cid = GObject.idle_add(self._next_event)
         self.win.connect("delete_event", Gtk.main_quit)
         self.win.show_all()
         Gtk.main()
         self.to_animate = False
 
 
-    def simulate(self, T=25) :
-        now = self.t
-        while self.t < now + T :
-            self.next_event(slow=False)
+    def simulate(self, T=25, N=None) :
+        if not self.initialized :
+            raise Exception("Network has not been initialized. Call 'initialize()' first.")
+        if N == None :
+            now = self.t
+            while self.t < now + T :
+                self._next_event(slow=False)
+        elif isinstance(N, int) :
+            for k in range(N) :
+                self._next_event(slow=False)
 
 
     def reset_colors(self) :
@@ -330,10 +340,11 @@ class QueueNetwork :
 
 
     def reset(self) :
-        self.t          = 0
-        self.nEvents    = 0
-        self.nAgents    = np.array([0 for k in range( self.nE )])
-        self.to_animate = False
+        self.t            = 0
+        self.nEvents      = 0
+        self.nAgents      = np.zeros(self.nE)
+        self.to_animate   = False
+        self.initialized  = False
         self.reset_colors()
         for e in self.g.edges() :
             self.g.ep['queues'][e].reset()
@@ -348,6 +359,7 @@ class QueueNetwork :
         net.to_animate    = False
         net.g             = self.g.copy()
         net.shortest_path = copy.deepcopy(self.shortest_path)
+        net.initialized   = copy.deepcopy(self.initialized)
         net.prev_issn     = copy.deepcopy(self.prev_issn)
         net.nEvents       = copy.deepcopy(self.nEvents)
         net.nAgents       = copy.deepcopy(self.nAgents)
@@ -361,8 +373,8 @@ class QueueNetwork :
 
         net.g.ep['queues']  = queues
 
-        net.edge2queue = [queues[e] for e in self.g.edges()]
-        net.queues     = [queues[e] for e in self.g.edges() if net.g.edge_index[e] in net._queues]
+        net.edge2queue = [queues[e] for e in net.g.edges()]
+        net.queues     = [queues[e] for e in net.g.edges() if net.g.edge_index[e] in net._queues]
         net.queues.sort()
         return net
 

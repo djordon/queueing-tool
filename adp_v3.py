@@ -41,7 +41,6 @@ class approximate_dynamic_program :
         self.agent_cap          = 50
         self.dist               = None
         self.parking_penalty    = None
-        self.nFeatures          = 5
         self.beta               = 0.5 * ones( self.nFeatures )
         self.agent_variables    = {}
         self.parked             = {}
@@ -65,10 +64,15 @@ class approximate_dynamic_program :
             else :
                 self.node_dict['arc'].append(int(v))
 
+        self.nGar       = min( [len(self.node_dict['fcq']), 4] )
+        self.nFeatures  = 3 * self.nGar + 4
+        self.basis_vec  = zeros(self.nFeatures)
+
         def edge_index(e) :
             return self.Qn.g.edge_index[e]
 
         self.in_edges   = [ [i for i in map(edge_index, list(v.in_edges()))] for v in self.Qn.g.vertices() ]
+        self.all_edges  = [ [i for i in map(edge_index, list(v.all_edges()))] for v in self.Qn.g.vertices() ]
         self.locations  = { self.Qn.g.edge_index[e] : set() for e in self.Qn.g.edges() }
         self.calculate_parking_penalty2()
 
@@ -283,7 +287,6 @@ class approximate_dynamic_program :
         self.Qn.simulate( np.random.randint(H[0], H[1]) )
 
         count   = 1
-
         for i in range(len(orig)) :
             aissn = self.agent_cap + count
             agent = qt.LearningAgent(aissn, self.Qn.nE)
@@ -299,7 +302,6 @@ class approximate_dynamic_program :
 
             self.agent_variables[aissn].agent = [agent]
             self.Qn.add_arrival(ei, agent, t)
-            #self.Qn.append_departure(ei, agent, time)
             self.parked[self.agent_cap+count] = False
             count  += 1
 
@@ -328,15 +330,14 @@ class approximate_dynamic_program :
         N, M, T = self.parameters['N'], self.parameters['M'], self.parameters['T']
         gamma   = self.parameters['gamma']
 
-        cost        = zeros(1 + self.nE)
-        value_es    = zeros(1 + self.nE)
-        obj_func    = zeros(1 + self.nE)
-        basis_es    = np.mat(zeros( (self.nFeatures, 1 + self.nE) ))
-        for_state   = [0 for k in range(self.Qn.nE)]
+        cost      = zeros(1 + self.nE)
+        value_es  = zeros(1 + self.nE)
+        obj_func  = zeros(1 + self.nE)
+        basis_es  = np.mat(zeros( (self.nFeatures, 1 + self.nE) ))
+        for_state = [0 for k in range(self.Qn.nE)]
 
         if verbose :
             print(self.parking_penalty[:, dest[0]])
-
 
         for n in range(N) :
             self.random_state(orig, dest, (30,50) )
@@ -427,25 +428,24 @@ class approximate_dynamic_program :
                     if verbose and tau > 0 :
                         print( "Options: %s\nRealized cost: %s" % (obj_func[:ct+1], aStruct.t[n,m,tau] - aStruct.t[n,m,tau-1]) )
 
-                for agent in self.agent_variables.values() :
+                for aStruct in self.agent_variables.values() :
                     for t in range(agent.tau - 1, 0, -1) :
-                        agent.costs[n,m,t-1]  = self.time2cost(agent.t[n,m,t] - agent.t[n,m,t-1])
-                        agent.values[n,m,t-1] = agent.costs[n,m,t-1] + gamma * agent.values[n,m,t]
+                        aStruct.costs[n,m,t-1]  = self.time2cost(aStruct.t[n,m,t] - aStruct.t[n,m,t-1])
+                        aStruct.values[n,m,t-1] = aStruct.costs[n,m,t-1] + gamma * aStruct.values[n,m,t]
 
-                    agent = self.update_beta(agent, n, m)
+                    aStruct = self.update_beta(aStruct, n, m)
 
-                    agent.tau = 0
-                    agent.beta_history[n,m,:]   = agent.beta
-                    agent.value_history[n,m,:]  = agent.values[n,m,0], agent.v_est[n,m,0]
+                    aStruct.tau = 0
+                    aStruct.beta_history[n,m,:]   = aStruct.beta
+                    aStruct.value_history[n,m,:]  = aStruct.values[n,m,0], aStruct.v_est[n,m,0]
                     if verbose :
-                        print( array([agent.issn, agent.values[n,m,0], agent.v_est[n,m,0]]) )
-                        print("Agent : %s, Weights : %s" % (agent.issn, agent.beta))
+                        print( array([aStruct.issn, aStruct.values[n,m,0], aStruct.v_est[n,m,0]]) )
+                        print("Agent : %s, Weights : %s" % (aStruct.issn, aStruct.beta))
 
         self.after = datetime.datetime.today()
 
 
     def post_decision_state(self, state, ei, QN) :
-        # S: stands for state, a: stands for action edge
         S     = copy.deepcopy(state)
         k     = S[0][0] + 1
         a     = ei + 1
@@ -468,8 +468,6 @@ class approximate_dynamic_program :
         return
 
 
-
-    ## time weighted updating
     def update_beta(self, aStruct, n, m) :
         A   = aStruct.A
         z   = aStruct.z
@@ -483,24 +481,13 @@ class approximate_dynamic_program :
         return aStruct
 
 
-    def update_theta2(self, v, B, basis, value, value_est ) :
-        lam = 0.95
-        ans = zeros( v.shape )
-        for j in range(value_est.shape[0]) :
-            if value_est[j] == 0:
-                break
-        for k in range(j) :
-            ans += basis[k,:] * ( value[k] - np.sum(value_est[k:]) )
-        return v - lam * ans, B
-
-
-    def value_function(self, state, theta, QN) :
+    def value_function_old(self, state, beta, QN) :
         value    = zeros(self.nFeatures)
-        value[0] = theta[0]
-        value[1] = theta[1] * self.basis_function1(state, QN)
-        value[2] = theta[2] * self.basis_function2(state, QN)
-        value[3] = theta[3] * self.basis_function3(state, QN)
-        value[4] = theta[4] * self.basis_function4(state, QN)
+        value[0] = beta[0]
+        value[1] = beta[1] * self.basis_function1(state, QN)
+        value[2] = beta[2] * self.basis_function2(state, QN)
+        value[3] = beta[3] * self.basis_function3(state, QN)
+        value[4] = beta[4] * self.basis_function4(state, QN)
         return sum(value), np.mat(value).T
 
 
@@ -508,59 +495,39 @@ class approximate_dynamic_program :
         return self.dist[ S[0][0], S[0][1] ]
 
 
-    def basis_function2(self, S, QN, RETURN_PATH=False) :
-
-        for e in QN.g.edges() :
-            sojourn  = self.expected_sojourn(QN.g.edge_index[e], QN, S)
-            QN.g.ep['edge_times'][e] = sojourn
-
-        origin  = QN.g.vertex(S[0][0])
-        destin  = QN.g.vertex(S[0][1])
-        answer  = gt.shortest_path(QN.g, origin, destin, weights=QN.g.ep['edge_times'])[1]
-
-        if RETURN_PATH :
-            an  = answer
-        else :
-            an  = 0
-            an  = 1
-            for e in answer :
-                an += self.time2cost( QN.g.ep['edge_times'][e] )
-        return an
-
-
-    def basis_function3(self, S, QN, PRE_SET=False) :
-
+    def value_function(self, S, beta, QN) :
         indices = np.argsort( self.dist[S[0][1], self.node_dict['fcq']] )
-        garages = [self.node_dict['fcq'][k] for k in indices][:4]
+        garages = [self.node_dict['fcq'][k] for k in indices][:self.nGar]
+        c_dists = self.dist[S[0][0], self.node_dict['fcq']][garages]
+        g_dists = self.dist[S[0][1], self.node_dict['fcq']][garages]
+        
+        val  = zeros(self.nFeatures)
+        ej   = QN.g.edge_index[ QN.g.edge(S[0][1], S[0][1]) ]
+        nSer = QN.edge2queue[ej].nServers
+        nSys = QN.edge2queue[ej].nSystem
 
-        if not PRE_SET :
-            for e in QN.g.edges() :
-                if e.source() != e.target() :
-                    QN.g.ep['edge_times'][e] = self.expected_sojourn(QN.g.edge_index[e], QN, S)
+        p    = 1 / (1 + nSer - nSys)
+        l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[S[0][1]] if ei != S[0][1]]) / np.sum(QN.nAgents)
 
-        an  = zeros( len(garages) )
-        ct  = 0
-        origin  = QN.g.vertex(S[0][0])
+        self.basis[-4] = p
+        self.basis[-3] = l
+        self.basis[-2] = l * p
+        self.basis[-1] = 1
 
-        for g in garages:
-            destin  = QN.g.vertex(g)
-            answer  = gt.shortest_path(QN.g, origin, destin, weights=QN.g.ep['edge_times'])[1]
-            for e in answer :
-                an[ct] += self.time2cost(QN.g.ep['edge_times'][e])
-            an[ct] += self.parking_value(g, S[0][1], S, QN)
-            ct     += 1
+        for k in range(self.nGar) :
+            g    = garages[k]
+            gd   = g_dists[k] + 1
+            cd   = c_dists[k] + 1
+            nSer = QN.edge2queue[g].nServers
+            nSys = QN.edge2queue[g].nSystem
+            p    = 1 / (1 + nSer - nSys)
+            l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[g] if ei != g]) / np.sum(QN.nAgents)
+            self.basis[3*k]    = cd * gd * p
+            self.basis[3*k+1]  = cd * gd * l
+            self.basis[3*k+2]  = cd * gd * l * p
 
-        return min(an)
-
-
-    def basis_function4(self, S, QN) :
-        destination = QN.g.vertex(S[0][1]) 
-        for v in QN.g.vertex(S[0][0]).out_neighbours():
-            if v == destination :
-                return 0
-        v   = [self.parking_value(g, S[0][1], S, QN) for g in self.node_dict['fcq']]
-        ans = np.min(v) 
-        return ans
+        self.basis = self.basis * beta
+        return sum(self.basis), np.mat(self.basis).T
 
 
     def _update_graph(self, state, QN, target=None ) :
@@ -583,11 +550,6 @@ class approximate_dynamic_program :
             QN.g.vp['halo'][target]         = True 
             QN.g.vp['halo_color'][target]   = [1.0, 0.5, 0.0, 0.5]
             QN.g.vp['halo'][vj]             = True
-
-        #for e in QN.g.vertex(state[0][1]).all_edges() :
-        #    if QN.g.vp['vType'][e.target()] == 1 :
-        #        QN.g.ep['edge_color'][e]    = [0.0, 0.5, 1.0, 1.0]
-        #        QN.g.ep['edge_t_color'][e]  = [0.0, 0.0, 0.0, 1.0]
 
         a     = i
         eList = []

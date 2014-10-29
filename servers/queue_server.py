@@ -45,7 +45,7 @@ class QueueServer :
 
         self.colors     = {'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
                            'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
-                           'vertex_pen'    : [0.0, 0.5, 1.0, 1.0] }
+                           'vertex_pen'    : [0.0, 0.5, 1.0, 1.0]}
 
         self.queue      = collections.deque()
         self.arrivals   = []
@@ -216,12 +216,7 @@ class QueueServer :
 
     def current_color(self, which='') :
         if which == 'edge' :
-            nSy = self.nSystem
-            cap = self.nServers
-            tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
-
-            color    = [ i * tmp / 0.9 for i in self.colors['edge_normal'] ]
-            color[3] = 0.0
+            color = [0, 0, 0, 0]
   
         elif which == 'pen' :
             color = self.colors['vertex_pen']
@@ -236,7 +231,7 @@ class QueueServer :
                 color[3] = 1.0
             else :
                 color    = [ i * tmp / 0.9 for i in self.colors['edge_normal'] ]
-                color[3] = 0.5
+                color[3] = 0.7 - tmp / 1.8
 
         return color
 
@@ -246,7 +241,7 @@ class QueueServer :
         self.nSystem    = 0
         self.nTotal     = 0
         self.local_t    = 0
-        self.time  = infty
+        self.time       = infty
         self.next_ct    = 0
         self.queue      = collections.deque()
         self.arrivals   = []
