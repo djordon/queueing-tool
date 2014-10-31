@@ -3,7 +3,7 @@ from numpy.random   import uniform
 import numpy            as np
 import graph_tool.all   as gt
 import queueing_tool    as qt
-import adp_v2           as adp
+import adp_v3           as adp
 import copy
 import datetime
 import cProfile
@@ -22,13 +22,11 @@ vs  = [202, 453, 255, 449, 218, 72, 126, 326]
 a.Qn.agent_cap  = 2000
 a.agent_cap     = 2000
 
-nLearners   = 10
-dest        = list( np.random.choice(a.node_dict['des'], nLearners) )
-orig        = list( np.random.choice(a.node_dict['arc'], nLearners) )
-a.parameters['T'] = 35 * nLearners
-a.parameters['M'] = 10
+nLearners   = 5
+a.parameters['T'] = 40
+a.parameters['M'] = 11
 a.parameters['N'] = 1
-a.approximate_policy_iteration(orig, dest, save_frames=False, verbose=False)
+a.approximate_policy_iteration(nLearners, save_frames=True, verbose=True)
 print( (a.after - a.before).seconds / 60 )
 
 
