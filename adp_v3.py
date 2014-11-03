@@ -374,7 +374,7 @@ class approximate_dynamic_program :
                     else :
                         state.extend( QN.nAgents )
 
-                    obj_func[0] = self.parking_value(state[0][0], state[0][1], state, QN)
+                    obj_func[0] = self.parking_penalty[state[0][0], state[0][1]]
                     if QN.g.vp['vType'].a[ state[0][0] ] in [1, 2] :
                         nServers = QN.g.ep['queues'][QN.g.edge(state[0][0], state[0][0])].nServers
                         if state[state[0][0]+1] == nServers :
@@ -394,11 +394,9 @@ class approximate_dynamic_program :
                         basis_es[:, ct] = b
                         edges[ct]       = ei
                         if verbose :
-                            print( "Value function: %s\nNum in queue %s: %s" 
-                            % (v, ei, QN.edge2queue[ei].nSystem) )
+                            print( "Value function: %s\nNum in queue %s: %s" % (v, ei, QN.edge2queue[ei].nSystem) )
 
-                    
-                    if np.random.uniform() < 0.15 and m < 100 :
+                    if n > 0 and np.random.uniform() < 0.15 and m < 100 :
                         if obj_func[0] < 1000 :
                             policy = np.random.randint(0, ct+1)
                         else :  
@@ -424,13 +422,14 @@ class approximate_dynamic_program :
                         self._update_graph(state, QN, target_node)
                         self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-1.png' % (aStruct.issn,n,m,tau), QN)
 
-                    for ei in self.in_edges[ state[0][0] ] :
-                        self.locations[ei].remove( aStruct.issn )
+                    if n > 0 :
+                        for ei in self.in_edges[ state[0][0] ] :
+                            self.locations[ei].remove( aStruct.issn )
 
-                    for ei in self.in_edges[ target_node ] :
-                        self.locations[ei].add( aStruct.issn )
+                        for ei in self.in_edges[ target_node ] :
+                            self.locations[ei].add( aStruct.issn )
 
-                    self.exchange_information( target_node ) 
+                        self.exchange_information( target_node ) 
 
                     aStruct.agent[0].dest  = edges[policy]
                     aStruct.agent[0].od[0] = target_node
@@ -446,11 +445,14 @@ class approximate_dynamic_program :
                         print( "Options: %s\nPolicy, edge: %s, %s" % (obj_func[:ct+1], policy, edges[policy]) )
 
                 for aStruct in self.agent_variables.values() :
-                    for t in range(aStruct.tau - 1, -1, -1) :
+                    for t in range(T - 1, -1, -1) :
                         aStruct.values[n,m,t] = aStruct.costs[n,m,t] + gamma * aStruct.values[n,m,t+1]
 
                     print([n, m, aStruct.values[n,m,0]])
-                    aStruct = self.update_beta(aStruct, n, m)
+                    if n > 0 :
+                        self.update_beta(aStruct, n, m)
+                    elif n == 0 and m == M - 1 :
+                        self.initial_update(aStruct)
 
                     aStruct.tau = 0
                     aStruct.beta_history[n,m,:]   = aStruct.beta
@@ -466,7 +468,7 @@ class approximate_dynamic_program :
                 nnn = min(nn)
                 for aStruct in self.agent_variables.values() :
                     aStruct.n = aStruct.n // nnn
-
+            
         self.after = datetime.datetime.today()
 
 
@@ -516,6 +518,15 @@ class approximate_dynamic_program :
                 self.agent_variables[issn].n = n
 
 
+    def initial_update(self, struct) :
+        y   = aStruct.values[0, :, 0]
+        X   = aStruct.basis[0,:,0,:]
+        A   = dot(X.T, X)
+
+        aStruct.A     = A
+        aStruct.beta  = dot(pinv(A), dot(X.T, y))
+
+
     def update_beta(self, aStruct, n, m) :
         A   = aStruct.A
         z   = aStruct.z
@@ -525,7 +536,6 @@ class approximate_dynamic_program :
         aStruct.A     = A + np.outer(Phi, Phi)
         aStruct.z     = z + c * Phi
         aStruct.beta  = dot(pinv(aStruct.A), aStruct.z)
-        return aStruct
 
 
     def value_function(self, S, beta, QN) :
@@ -607,7 +617,6 @@ class AgentStruct() :
         self.z      = np.zeros(nF)
         self.n      = 1
         self.beta   = np.ones(nF) / nF # np.array([0.34, 0.013, 0.006, 0.351, 0.006, 0.003, 0.607, 0.011, 0.011, 0.285, 0.044, 0.001, 0.35, 0.003, 0.0, 0.351])
-        self.Bmat   = np.mat( np.eye(nF) ) / 8
         self.values = zeros( (N,M,T+1) )
         self.v_est  = zeros( (N,M,T) )
         self.costs  = zeros( (N,M,T+1) )

@@ -144,7 +144,6 @@ class QueueNetwork :
                 ep['edge_color'][e]   = ep['queues'][e].current_color()
 
 
-
     def _update_graph_colors(self, ad, qissn) :
         e   = self.g.edge(qissn[0], qissn[1])
         v   = e.target()
@@ -190,7 +189,7 @@ class QueueNetwork :
     def add_arrival(self, ei, agent, t=None) :
         q = self.edge2queue[ei]
         if t == None :
-            t = q.time + 1 if q.time < infty else self.queues[0].time + 1
+            t = q.time + 1 if q.time < infty else self.queues[-1].time + 1
 
         agent.set_arrival(t)
         q._add_arrival(agent)

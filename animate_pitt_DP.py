@@ -12,7 +12,7 @@ import pickle
 np.set_printoptions(precision=3,suppress=True,threshold=2000)
 
 #a   = adp.approximate_dynamic_program('pitt_network.xml')
-a   = adp.approximate_dynamic_program(nVertices=125, seed=14)
+a   = adp.approximate_dynamic_program(nVertices=75, seed=14)
 
 #vs  = [202, 453, 255, 449, 218, 72, 126, 326]
 
@@ -21,7 +21,7 @@ a.agent_cap       = 1000
 
 nLearners         = 10
 a.parameters['T'] = 30
-a.parameters['M'] = 200
+a.parameters['M'] = 100
 a.parameters['N'] = 5
 a.approximate_policy_iteration(nLearners, save_frames=True, verbose=False)
 print( (a.after - a.before).seconds / 60 )

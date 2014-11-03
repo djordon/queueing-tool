@@ -1,9 +1,7 @@
-from .agents      import *
-from .servers     import *
+from .queues      import *
 from .network     import *
 from .generation  import *
-from . import agents
-from . import servers
+from . import queues
 from . import network
 from . import generation
 
@@ -17,9 +15,8 @@ __all__ = []
 #__all__.extend(['__author__', '__copyright__', '__license__', '__URL__', '__version__'])
 
 
-__all__.extend( agents.__all__ )
-__all__.extend( servers.__all__ )
+__all__.extend( queues.__all__ )
 __all__.extend( network.__all__ )
 __all__.extend( generation.__all__ )
 
-del agents, servers, network, generation
+del queues, network, generation

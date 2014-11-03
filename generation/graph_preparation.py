@@ -1,7 +1,7 @@
 import graph_tool.all as gt
 import numpy          as np
 
-from .. servers       import queue_server as qs
+from .. import queues as qs 
 
 def prepare_graph(g, colors, graph_type=None) :
     if isinstance(g, str) :
