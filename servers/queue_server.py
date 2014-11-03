@@ -390,7 +390,7 @@ class InfoQueue(QueueServer) :
 
     def next_event(self) :
         if self.arrivals[0].time < self.departures[0].time :
-            self.extract_information(agent)
+            self.extract_information(self.arrivals[0])
 
         QueueServer.next_event(self)
 
