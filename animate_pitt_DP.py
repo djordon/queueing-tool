@@ -11,22 +11,19 @@ import pickle
 
 np.set_printoptions(precision=3,suppress=True,threshold=2000)
 
-a   = adp.approximate_dynamic_program('pitt_network.xml')
-vs  = [a.Qn.g.vertex(202), a.Qn.g.vertex(453), a.Qn.g.vertex(255),
-       a.Qn.g.vertex(449), a.Qn.g.vertex(218), a.Qn.g.vertex(72),
-       a.Qn.g.vertex(126), a.Qn.g.vertex(326)]
+#a   = adp.approximate_dynamic_program('pitt_network.xml')
+a   = adp.approximate_dynamic_program(nVertices=125, seed=14)
 
-vs  = [202, 453, 255, 449, 218, 72, 126, 326]
+#vs  = [202, 453, 255, 449, 218, 72, 126, 326]
 
-#a.Qn.initialize(queues=vs)
-a.Qn.agent_cap  = 2000
-a.agent_cap     = 2000
+a.Qn.agent_cap    = 1000
+a.agent_cap       = 1000
 
-nLearners   = 5
-a.parameters['T'] = 40
-a.parameters['M'] = 11
-a.parameters['N'] = 1
-a.approximate_policy_iteration(nLearners, save_frames=True, verbose=True)
+nLearners         = 10
+a.parameters['T'] = 30
+a.parameters['M'] = 200
+a.parameters['N'] = 5
+a.approximate_policy_iteration(nLearners, save_frames=True, verbose=False)
 print( (a.after - a.before).seconds / 60 )
 
 

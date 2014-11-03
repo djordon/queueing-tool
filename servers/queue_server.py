@@ -1,7 +1,7 @@
 from numpy.random           import uniform, exponential
 from numpy                  import infty, log
 from heapq                  import heappush, heappop
-from .. agents.queue_agents import Agent, SmartAgent, LearningAgent, ResourceAgent
+from .. agents.queue_agents import Agent, InfoAgent, LearningAgent, ResourceAgent
 
 import numpy       as np
 import collections
@@ -25,10 +25,8 @@ def departure(rate, rate_max, t) :
 
 class QueueServer :
 
-    def __init__(self, nServers=1, issn=(0,0,0), active=False, net_size=1,
-            fArrival=lambda x : x + exponential(1), 
-            fDepart =lambda x : x + exponential(0.95),
-            fDepart_mu=lambda x : 0.95, AgentClass=Agent) :
+    def __init__(self, nServers=1, issn=(0,0,0), active=False, fArrival=lambda x : x + exponential(1), 
+            fDepart =lambda x : x + exponential(0.95), AgentClass=Agent) :
 
         self.issn       = issn
         self.nServers   = nServers
@@ -58,9 +56,6 @@ class QueueServer :
 
         self.fArrival   = fArrival
         self.fDepart    = fDepart
-        self.fDepart_mu = fDepart_mu # returns the mean of the departure distribution at time t
-
-        self.networking(net_size)
 
     def __repr__(self) :
         tmp = "QueueServer: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
@@ -85,10 +80,6 @@ class QueueServer :
 
     def blocked(self) :
         return 0
-
-
-    def networking(self, network_size) :
-        self.net_data = -1 * np.ones((network_size, 3))
 
 
     def initialize(self, add_arrival=True) :
@@ -117,7 +108,7 @@ class QueueServer :
             if self.local_t >= self.next_ct :
                 self.nTotal  += 1
                 self.next_ct  = self.fArrival(self.local_t)
-                new_arrival   = self.AgentClass(self.nArrivals+1, len(self.net_data) )
+                new_arrival   = self.AgentClass(self.nArrivals+1)
                 new_arrival.set_arrival( self.next_ct )
                 heappush(self.arrivals, new_arrival)
 
@@ -136,18 +127,10 @@ class QueueServer :
             return 0
 
 
-    def extract_information(self, agent) :
-        if isinstance(agent, SmartAgent) :
-            a = self.net_data[:, 0] < agent.net_data[:, 0]
-            self.net_data[a, :] = agent.net_data[a, :]
-
-
     def append_departure(self, agent, t) :
         self.nSystem       += 1
         self.nArrivals     += 1
         agent.arr_ser[0]    = t
-
-        self.extract_information(agent)
 
         if self.nSystem <= self.nServers :
             agent.arr_ser[1]    = t
@@ -173,8 +156,6 @@ class QueueServer :
             self.nSystem       += 1
             self.nArrivals     += 1
             arrival.arr_ser[0]  = arrival.time
-
-            self.extract_information(arrival)
 
             if self.nSystem <= self.nServers :
                 arrival.arr_ser[1]    = arrival.time
@@ -202,9 +183,6 @@ class QueueServer :
                 heappush(self.departures, agent)
 
             new_depart.queue_action(self, 'departure')
-
-            if self.nSystem == 0 : 
-                self.networking( len(self.net_data) )
 
             if self.arrivals[0].time < self.departures[0].time :
                 self.time = self.arrivals[0].time
@@ -236,7 +214,7 @@ class QueueServer :
         return color
 
 
-    def reset(self) :
+    def clear(self) :
         self.nArrivals  = 0
         self.nSystem    = 0
         self.nTotal     = 0
@@ -252,41 +230,20 @@ class QueueServer :
         heappush(self.arrivals, inftyAgent)
         heappush(self.departures, inftyAgent)
 
-        self.networking( len(self.net_data) )
-
 
     def __deepcopy__(self, memo) :
-        new_server              = QueueServer()
-        new_server.issn         = copy.deepcopy(self.issn)
-        new_server.nArrivals    = copy.deepcopy(self.nArrivals)
-        new_server.nDeparts     = copy.deepcopy(self.nDeparts)
-        new_server.nSystem      = copy.deepcopy(self.nSystem)
-        new_server.nTotal       = copy.deepcopy(self.nTotal)
-        new_server.nServers     = copy.deepcopy(self.nServers)
-        new_server.local_t      = copy.deepcopy(self.local_t)
-        new_server.time         = copy.deepcopy(self.time)
-        new_server.next_ct      = copy.deepcopy(self.next_ct)
-        new_server.queue        = copy.deepcopy(self.queue)
-        new_server.arrivals     = copy.deepcopy(self.arrivals)
-        new_server.departures   = copy.deepcopy(self.departures)
-        new_server.net_data     = copy.deepcopy(self.net_data)
-        new_server.colors       = copy.deepcopy(self.colors)
-        new_server.AgentClass   = self.AgentClass
-        new_server.fArrival     = self.fArrival
-        new_server.fDepart      = self.fDepart 
-        new_server.fDepart_mu   = self.fDepart_mu
+        new_server          = self.__class__()
+        new_server.__dict__ = copy.deepcopy(self.__dict__, memo)
         return new_server
 
 
 
 class LossQueue(QueueServer) :
 
-    def __init__(self, nServers=1, issn=0, active=False, net_size=1, 
-            fArrival=lambda x : x + exponential(1), 
-            fDepart =lambda x : x + exponential(0.95), fDepart_mu=lambda x : 0.95,
-            AgentClass=Agent, queue_cap=0) :
+    def __init__(self, nServers=1, issn=0, active=False, fArrival=lambda x : x + exponential(1), 
+            fDepart =lambda x : x + exponential(0.95), AgentClass=Agent, queue_cap=0) :
 
-        QueueServer.__init__(self, nServers, issn, active, net_size, fArrival, fDepart, AgentClass=AgentClass)
+        QueueServer.__init__(self, nServers, issn, active, fArrival, fDepart, AgentClass)
 
         self.colors     = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
                             'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
@@ -324,7 +281,6 @@ class LossQueue(QueueServer) :
 
                 new_arrival.arr_ser[0]  = self.local_t
                 new_arrival.arr_ser[1]  = self.local_t
-                self.extract_information(new_arrival)
 
                 heappush(self.departures, new_arrival)
 
@@ -337,44 +293,19 @@ class LossQueue(QueueServer) :
             return QueueServer.next_event(self)
 
 
-    def reset(self) :
-        QueueServer.reset(self)
+    def clear(self) :
+        QueueServer.clear(self)
         self.nBlocked  = 0
-
-
-    def __deepcopy__(self, memo) :
-        new_server              = LossQueue()
-        new_server.issn         = copy.deepcopy(self.issn)
-        new_server.nArrivals    = copy.deepcopy(self.nArrivals)
-        new_server.nDeparts     = copy.deepcopy(self.nDeparts)
-        new_server.nSystem      = copy.deepcopy(self.nSystem)
-        new_server.nTotal       = copy.deepcopy(self.nTotal)
-        new_server.nBlocked     = copy.deepcopy(self.nBlocked)
-        new_server.nServers     = copy.deepcopy(self.nServers)
-        new_server.local_t      = copy.deepcopy(self.local_t)
-        new_server.time         = copy.deepcopy(self.time)
-        new_server.next_ct      = copy.deepcopy(self.next_ct)
-        new_server.queue        = copy.deepcopy(self.queue)
-        new_server.arrivals     = copy.deepcopy(self.arrivals)
-        new_server.departures   = copy.deepcopy(self.departures)
-        new_server.net_data     = copy.deepcopy(self.net_data)
-        new_server.colors       = copy.deepcopy(self.colors)
-        new_server.AgentClass   = self.AgentClass
-        new_server.fArrival     = self.fArrival
-        new_server.fDepart      = self.fDepart 
-        new_server.fDepart_mu   = self.fDepart_mu
-        return new_server
 
 
 
 class MarkovianQueue(QueueServer) :
 
-    def __init__(self, nServers=1, issn=0, active=False, net_size=1, aRate=1, dRate=1.1) :
+    def __init__(self, nServers=1, issn=(0,0,0), active=False, aRate=1, dRate=1.1, AgentClass=Agent) :
         aMean = 1 / aRate
         dMean = 1 / dRate
-        QueueServer.__init__(self, nServers, issn, active, net_size,
-            lambda x : x + exponential(aMean),
-            lambda x : x + exponential(dMean), lambda t : dMean, Agent) 
+        QueueServer.__init__(self, nServers, issn, active, lambda x : x + exponential(aMean),
+            lambda x : x + exponential(dMean), AgentClass)
 
         self.rates  = [aRate, dRate]
 
@@ -385,27 +316,101 @@ class MarkovianQueue(QueueServer) :
         return tmp
 
 
-    def change_rates(aRate=None, dRate=None) :
-        aMean = 1 / aRate
-        dMean = 1 / dRate
+    def change_rates(self, aRate=None, dRate=None) :
         if aRate != None :
-            self.fArrival   = lambda x : x + exponential(aMean)
-        if dRate != None :    
-            self.fDepart    = lambda x : x + exponential(dMean)
-            self.fDepart_mu = lambda t : dMean
+            aMean = 1 / aRate
+            self.rates[0] = aRate
+            self.fArrival = lambda x : x + exponential(aMean)
+        if dRate != None :
+            dMean = 1 / dRate
+            self.rates[1] = dRate
+            self.fDepart  = lambda x : x + exponential(dMean)
+
+
+
+class InfoQueue(QueueServer) :
+
+    def __init__(self, nServers=1, issn=(0,0,0), active=False, net_size=1,
+            fArrival=lambda x : x + exponential(1), fDepart =lambda x : x + exponential(0.95),
+            AgentClass=Agent) :
+        QueueServer.__init__(self, nServers, issn, active, fArrival, fDepart, fDepart_mu, AgentClass)
+
+        self.colors = {'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
+                       'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
+                       'vertex_pen'    : [0.0, 0.5, 1.0, 1.0]}
+
+        self.networking(net_size)
+
+    def __repr__(self) :
+        tmp = "InfoQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
+            %  (self.issn[2], self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
+        return tmp
+
+    def __repr__(self) :
+        tmp = "InfoQueue: %s. servers: %s, max servers: %s, arrivals: %s, departures: %s, next time: %s" \
+            %  (self.issn[2], self.nServers, self.max_servers, self.nArrivals, self.nDeparts, np.round(self.time, 3))
+        return tmp
+
+    def __str__(self) :
+        return "InfoQueue"
+
+
+    def networking(self, network_size) :
+        self.net_data = -1 * np.ones((network_size, 3))
+
+
+    def extract_information(self, agent) :
+        if isinstance(agent, SmartAgent) :
+            a = self.net_data[:, 0] < agent.net_data[:, 0]
+            self.net_data[a, :] = agent.net_data[a, :]
+
+
+    def _add_arrival(self, *args) :
+        if len(args) > 0 :
+            self.nTotal += 1
+            heappush(self.arrivals, args[0])
+        else : 
+            if self.local_t >= self.next_ct :
+                self.nTotal  += 1
+                self.next_ct  = self.fArrival(self.local_t)
+                new_arrival   = self.AgentClass(self.nArrivals+1, len(self.net_data) )
+                new_arrival.set_arrival( self.next_ct )
+                heappush(self.arrivals, new_arrival)
+
+        if self.arrivals[0].time < self.departures[0].time :
+            self.time = self.arrivals[0].time
+        else :
+            self.time = self.departures[0].time
+
+
+    def append_departure(self, agent, t) :
+        self.extract_information(agent)
+        QueueServer.append_departure(self, agent, t)
+
+
+    def next_event(self) :
+        if self.arrivals[0].time < self.departures[0].time :
+            self.extract_information(agent)
+
+        QueueServer.next_event(self)
+
+
+    def clear(self) :
+        QueueServer.clear(self)
+        self.networking( len(self.net_data) )
 
 
 
 class ResourceQueue(LossQueue) :
 
-    def __init__(self, nServers=1, issn=0, active=False, net_size=1, max_servers=10) :
-        LossQueue.__init__(self, nServers, issn, active, net_size, 
-            fArrival=lambda x : x + exponential(1), fDepart=lambda x : x, 
-            fDepart_mu=lambda x : 0, AgentClass=ResourceAgent, queue_cap=0)
+    def __init__(self, nServers=1, issn=0, active=False, max_servers=10) :
+        LossQueue.__init__(self, nServers, issn, active, fArrival=lambda x : x + exponential(1), 
+                            fDepart=lambda x : x, AgentClass=ResourceAgent, queue_cap=0)
 
         self.colors = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
                         'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
                         'vertex_pen'    : [0.0, 0.235, 0.718, 1.0] }
+
         self.max_servers  = max_servers
         self.over_max     = 0
         self.nBlocked     = 0
@@ -486,9 +491,8 @@ class ResourceQueue(LossQueue) :
         return color
 
 
-    def reset(self) :
-        QueueServer.reset(self)
+    def clear(self) :
+        QueueServer.clear(self)
         self.nBlocked  = 0
-        self.over_max = 0
-
+        self.over_max  = 0
 

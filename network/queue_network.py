@@ -78,14 +78,16 @@ class QueueNetwork :
             queues = queues[:nActive]
 
         for vi in queues :
-            for e in self.g.vertex(vi).out_edges() :
-                initialized = False
-                if e.source() == e.target() :
-                    self.g.ep['queues'][e].initialize()
-                    initialized = True
-                    break
-            if not initialized :
+            initialized = False
+            v = self.g.vertex(vi)
+            e = self.g.edge(v, v)
+            if isinstance(e, gt.Edge) :
                 self.g.ep['queues'][e].initialize()
+                initialized = True
+            else :
+                for e in v.all_edges() :
+                    self.g.ep['queues'][e].initialize()
+                    break
 
         self.queues = [self.g.ep['queues'][e] for e in self.g.edges()]
         self.queues.sort()
@@ -339,7 +341,7 @@ class QueueNetwork :
             self.g.vp['text'][v]          = ''
 
 
-    def reset(self) :
+    def clear(self) :
         self.t            = 0
         self.nEvents      = 0
         self.nAgents      = np.zeros(self.nE)
@@ -347,22 +349,22 @@ class QueueNetwork :
         self.initialized  = False
         self.reset_colors()
         for e in self.g.edges() :
-            self.g.ep['queues'][e].reset()
+            self.g.ep['queues'][e].clear()
 
 
     def copy(self) :
         net               = QueueNetwork()
-        net.t             = copy.deepcopy(self.t)
-        net.agent_cap     = copy.deepcopy(self.agent_cap)
-        net.nV            = copy.deepcopy(self.nV)
-        net.nE            = copy.deepcopy(self.nE)
+        net.t             = copy.copy(self.t)
+        net.agent_cap     = copy.copy(self.agent_cap)
+        net.nV            = copy.copy(self.nV)
+        net.nE            = copy.copy(self.nE)
+        net.initialized   = copy.copy(self.initialized)
+        net.prev_issn     = copy.copy(self.prev_issn)
+        net.nAgents       = copy.copy(self.nAgents)
         net.to_animate    = False
         net.g             = self.g.copy()
         net.shortest_path = copy.deepcopy(self.shortest_path)
-        net.initialized   = copy.deepcopy(self.initialized)
-        net.prev_issn     = copy.deepcopy(self.prev_issn)
         net.nEvents       = copy.deepcopy(self.nEvents)
-        net.nAgents       = copy.deepcopy(self.nAgents)
         net.colors        = copy.deepcopy(self.colors)
         net.adjacency     = copy.deepcopy(self.adjacency)
         net._queues       = copy.deepcopy(self._queues)
@@ -402,7 +404,7 @@ def calculate_shortest_path(g) :
                 if ui == vi or spath[vi, ui] != -1 :
                     continue
 
-                path  = gt.shortest_path(g, v, u, weights=edge_length)[0]
+                path  = gt.shortest_path(g, v, u, weights=g.ep['edge_length'])[0]
                 path  = [int(z) for z in path]
                 spath[path[:-1], path[-1]] = path[1:]
 

@@ -34,7 +34,7 @@ from gi.repository  import Gtk, Gdk, GdkPixbuf, GObject
 
 class approximate_dynamic_program :
 
-    def __init__(self, g=None, seed=None) :
+    def __init__(self, g=None, nVertices=125, seed=None) :
         self.parameters         = {'N': 10, 'M':10, 'T': 25, 'gamma':0.975}
         self.t                  = 0
         self.animate            = False
@@ -47,12 +47,13 @@ class approximate_dynamic_program :
         self.nInteractions      = 0
 
         if g == None :
-            self.Qn = self.activate_network(agent_cap=self.agent_cap, seed=seed)
+            #self.Qn = self.activate_network(agent_cap=self.agent_cap, seed=seed)
+            self.Qn = qt.QueueNetwork(nVertices=nVertices, calcpath=True, seed=seed)
         elif isinstance(g, gt.Graph) or isinstance(g, str) :
             self.Qn = qt.QueueNetwork(g, calcpath=True, seed=seed)
-            self.nE = self.Qn.nE
-            tmp0    = self.Qn.g.vp['destination'].a + self.Qn.g.vp['garage'].a
-            self.ce = np.arange( self.Qn.nV )[tmp0==min(tmp0)]
+
+        self.nE = self.Qn.nE
+        self.ce = np.arange( self.Qn.nV )[self.Qn.g.vp['vType'].a==0]
 
         self.node_dict = {'fcq' : [], 'des' : [], 'arc' : []}
         for v in self.Qn.g.vertices() :
@@ -210,9 +211,9 @@ class approximate_dynamic_program :
                 if self.Qn.g.vp['vType'][self.Qn.g.vertex(k)] != 1 :
                     dist[k, j] = 8000
                 else :
-                    dist[k, j] = min((0.5 * np.exp(1.5 * dist[k, j]) - 2, 1000))
+                    dist[k, j] = min((np.exp(1.5 * dist[k, j]) - 1, 1000))
 
-        self.parking_penalty  = np.abs(dist)
+        self.parking_penalty  = np.abs(dist) * 10
         self.full_penalty     = 10
 
 
@@ -225,7 +226,7 @@ class approximate_dynamic_program :
         dist    = zeros((self.Qn.nV, self.Qn.nV))
 
         if 'dist' not in v_props :        
-            dist    = zeros((self.Qn.nV, self.Qn.nV))
+            dist  = zeros((self.Qn.nV, self.Qn.nV))
             for ve in self.Qn.g.vertices() :
                 for we in self.Qn.g.vertices() :
                     v,w  = int(ve), int(we)
@@ -238,20 +239,20 @@ class approximate_dynamic_program :
                         for j in range(i+1, len(path)):
                             dist[path[i], path[j]] = sum(elen[i:j])
 
-            dist       += np.transpose( dist ) 
+            dist += np.transpose( dist ) 
         else :
             for v in self.Qn.g.vertices() :
                 dist[int(v),:] = self.Qn.g.vp['dist'][v].a
 
-        self.dist   = dist
-        pp          = 0.5 * np.exp(1.5 * dist) - 2
-        pp[pp>1000] = 1000
+        self.dist   = dist * 10
+        pp          = np.exp(6 * dist) - 1
+        pp[pp>100]  = 100
 
         for v in self.Qn.g.vertices() :
             if self.Qn.g.vp['vType'][v] not in [1, 2] :
-                pp[int(v), :] = 8000
+                pp[int(v), :] = 800
 
-        self.parking_penalty  = np.abs(pp)
+        self.parking_penalty  = np.abs(pp) * 10
         self.full_penalty     = 10
 
 
@@ -281,14 +282,14 @@ class approximate_dynamic_program :
         starting_qs.extend( orig )
         starting_qs = np.unique(starting_qs).tolist()
 
-        self.Qn.reset()
+        self.Qn.clear()
         self.Qn.initialize(queues=starting_qs)
         self.Qn.simulate( np.random.randint(H[0], H[1]) )
 
         count   = 1
         for i in range(nLearners) :
             aissn = self.agent_cap + count
-            agent = qt.LearningAgent(aissn, self.Qn.nE)
+            agent = qt.LearningAgent(aissn)
 
             for ei in self.in_edges[ orig[i] ] :
                 self.locations[ei].add( aissn )
@@ -346,8 +347,8 @@ class approximate_dynamic_program :
                 QN  = self.Qn.copy()
 
                 finished = np.zeros(nLearners, bool)
-                while not finished.all() :
 
+                while not finished.all() :
                     issn    = QN.queues[0].departures[0].issn
                     aStruct = self.agent_variables[issn]
                     tau     = aStruct.tau
@@ -417,7 +418,7 @@ class approximate_dynamic_program :
                         aStruct.costs[n, m, tau]  = obj_func[0]
                         aStruct.parked[n, m]      = True
 
-                    if save_frames and m > 108:
+                    if save_frames and m == M - 1 :
                         self._update_graph(state, QN)
                         self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-0.png' % (aStruct.issn,n,m,tau), QN)
                         self._update_graph(state, QN, target_node)
@@ -438,21 +439,17 @@ class approximate_dynamic_program :
                     self.simulate_forward(QN)
 
                     finished[issn - self.agent_cap - 1] = aStruct.tau >= T
-
-                    if verbose and tau == T and policy != 0:
-                        print( (tau, T) )
-                        aStruct.costs[n, m, tau-1] = 100
+                    if tau + 1 == T and policy != 0:
+                        aStruct.costs[n, m, tau] = 100
 
                     if verbose and tau > 0 :
                         print( "Options: %s\nPolicy, edge: %s, %s" % (obj_func[:ct+1], policy, edges[policy]) )
 
                 for aStruct in self.agent_variables.values() :
-                    print( (aStruct.tau) )
-                    for t in range(aStruct.tau - 1, 0, -1) :
-                        #aStruct.costs[n,m,t-1]  = self.time2cost(aStruct.t[n,m,t] - aStruct.t[n,m,t-1])
-                        aStruct.values[n,m,t-1] = aStruct.costs[n,m,t-1] + gamma * aStruct.values[n,m,t]
+                    for t in range(aStruct.tau - 1, -1, -1) :
+                        aStruct.values[n,m,t] = aStruct.costs[n,m,t] + gamma * aStruct.values[n,m,t+1]
 
-                    print(aStruct.values[n,m,0])
+                    print([n, m, aStruct.values[n,m,0]])
                     aStruct = self.update_beta(aStruct, n, m)
 
                     aStruct.tau = 0
@@ -461,6 +458,14 @@ class approximate_dynamic_program :
                     if verbose :
                         print( array([aStruct.issn, aStruct.values[n,m,0], aStruct.v_est[n,m,0]]) )
                         print("Agent : %s, Weights : %s" % (aStruct.issn, aStruct.beta))
+
+                nn  = []
+                for aStruct in self.agent_variables.values() :
+                    nn.append(aStruct.n)
+
+                nnn = min(nn)
+                for aStruct in self.agent_variables.values() :
+                    aStruct.n = aStruct.n // nnn
 
         self.after = datetime.datetime.today()
 
@@ -481,18 +486,44 @@ class approximate_dynamic_program :
         while not (event == 2 and isinstance(QN.queues[0].departures[0], qt.LearningAgent) ):
             QN.simulate(N=1)
             event = QN.next_event_type()
-        return
+
+
+    def exchange_information(self, node) :
+        issns = set()
+
+        for ei in self.in_edges[node] :
+            for n in self.locations[ei] :
+                issns.add(n)
+
+        if len(issns) > 1 :
+            self.nInteractions += 1
+            A = np.zeros( (self.nFeatures, self.nFeatures) )
+            z = np.zeros( self.nFeatures )
+            n = 0
+            p = 0
+            for issn in issns :
+                n  += self.agent_variables[issn].n
+
+            for issn in issns :
+                aStruct = self.agent_variables[issn]
+                p   = aStruct.n / n
+                A  += aStruct.A * p
+                z  += aStruct.z * p
+
+            for issn in issns :
+                self.agent_variables[issn].A = A
+                self.agent_variables[issn].z = z
+                self.agent_variables[issn].n = n
 
 
     def update_beta(self, aStruct, n, m) :
         A   = aStruct.A
         z   = aStruct.z
         Phi = aStruct.basis[n,m,0,:]
-        nn  = aStruct.n
         c   = aStruct.values[n,m,0]
 
-        aStruct.A     = A + (nn+1) * np.outer(Phi, Phi)
-        aStruct.z     = z + (nn+1) * c * Phi
+        aStruct.A     = A + np.outer(Phi, Phi)
+        aStruct.z     = z + c * Phi
         aStruct.beta  = dot(pinv(aStruct.A), aStruct.z)
         return aStruct
 
@@ -510,26 +541,26 @@ class approximate_dynamic_program :
 
         p    = 1 / (1 + max(nSer - nSys, 0))
         l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[S[0][1]] if ei != S[0][1]]) / np.sum(QN.nAgents)
+        cd   = self.dist[S[0][0], S[0][1]]
 
-        self.basis[-4] = p
-        self.basis[-3] = l
-        self.basis[-2] = l * p
+        self.basis[-4] = cd * p * self.full_penalty
+        self.basis[-3] = cd * l
+        self.basis[-2] = cd * l * p * self.full_penalty
         self.basis[-1] = 1
 
         for k in range(self.nGar) :
             g    = garages[k]
-            gd   = g_dists[k] + 1
-            cd   = c_dists[k] + 1
+            gd   = g_dists[k]
+            cd   = c_dists[k]
             nSer = QN.edge2queue[g].nServers
             nSys = QN.edge2queue[g].nSystem
             p    = 1 / (1 + max(nSer - nSys, 0))
             l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[g] if ei != g]) / np.sum(QN.nAgents)
-            self.basis[3*k]    = cd * gd * p
-            self.basis[3*k+1]  = cd * gd * l
-            self.basis[3*k+2]  = cd * gd * l * p
+            self.basis[3*k]    = cd * gd * p * self.full_penalty + self.parking_penalty[g, S[0][1]]
+            self.basis[3*k+1]  = cd * gd * l + self.parking_penalty[g, S[0][1]]
+            self.basis[3*k+2]  = cd * gd * l * p * self.full_penalty + self.parking_penalty[g, S[0][1]]
 
-        self.basis = self.basis * beta
-        return sum(self.basis), np.mat(self.basis).T
+        return np.dot(self.basis, beta), np.mat(self.basis).T
 
 
     def _update_graph(self, state, QN, target=None ) :
@@ -540,12 +571,6 @@ class approximate_dynamic_program :
 
         i, j  = state[0]
         vj    = QN.g.vertex(j)
-
-        #for e in QN.g.edges() :
-        #    if QN.g.ep['queues'][e].nSystem > 0 :
-        #        QN.g.ep['text'][e] = str(QN.g.ep['queues'][e].nSystem)
-        #    else :
-        #        QN.g.ep['text'][e] = ''
 
         if target != None :
             target  = QN.g.vertex(target)
@@ -562,37 +587,12 @@ class approximate_dynamic_program :
 
         for e in eList :
             QN.g.ep['edge_color'][e]    = [0.094, 0.180, 0.275, 1.0]
-            #QN.g.ep['edge_t_color'][e]  = [0.0, 0.0, 0.0, 1.0]
             QN.g.ep['edge_width'][e]    = 4
             QN.g.ep['arrow_width'][e]   = 9
 
 
     def save_frame(self, filename, QN) :
         QN.draw(output=filename, update_colors=False)
-
-
-    def exchange_information(self, node) :
-        issns = set()
-
-        for ei in self.in_edges[node] :
-            for n in self.locations[ei] :
-                issns.add(n)
-
-        if len(issns) > 1 :
-            self.nInteractions += 1
-            A = np.zeros( (self.nFeatures, self.nFeatures) )
-            z = np.zeros( self.nFeatures )
-            for n in issns :
-                aStruct = self.agent_variables[n]
-                A  += aStruct.A
-                z  += aStruct.z
-            k = len(issns) - 1
-            for n in issns :
-                aStruct = self.agent_variables[n]
-                aStruct.A  = A
-                aStruct.z  = z
-                aStruct.n += k
-                self.agent_variables[n] = aStruct
 
 
 
@@ -605,8 +605,8 @@ class AgentStruct() :
         self.t      = np.zeros( (N,M,T) )
         self.A      = np.eye(nF) * 2
         self.z      = np.zeros(nF)
-        self.n      = 0
-        self.beta   = np.ones(nF)
+        self.n      = 1
+        self.beta   = np.ones(nF) / nF # np.array([0.34, 0.013, 0.006, 0.351, 0.006, 0.003, 0.607, 0.011, 0.011, 0.285, 0.044, 0.001, 0.35, 0.003, 0.0, 0.351])
         self.Bmat   = np.mat( np.eye(nF) ) / 8
         self.values = zeros( (N,M,T+1) )
         self.v_est  = zeros( (N,M,T) )
@@ -619,7 +619,6 @@ class AgentStruct() :
         self.beta_history   = zeros( (N, M, nF) )
         self.value_history  = zeros( (N, M, 2) )
 
-# np.array([0.34, 0.013, 0.006, 0.351, 0.006, 0.003, 0.607, 0.011, 0.011, 0.285, 0.044, 0.001, 0.35, 0.003, 0.0, 0.351]) #
-
+# np.array([0.34, 0.013, 0.006, 0.351, 0.006, 0.003, 0.607, 0.011, 0.011, 0.285, 0.044, 0.001, 0.35, 0.003, 0.0, 0.351])
 
 

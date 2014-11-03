@@ -278,7 +278,7 @@ class approximate_dynamic_program :
         starting_qs.extend( orig )
         starting_qs = np.unique(starting_qs).tolist()
 
-        self.Qn.reset()
+        self.Qn.clear()
         self.Qn.initialize(queues=starting_qs)
         self.Qn.simulate( np.random.randint(H[0], H[1]) )
 

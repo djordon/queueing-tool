@@ -99,3 +99,4 @@ def set_special_nodes(g, pDest, pFCQ) :
     g.ep['eType'] = eType
     g.ep['edge_length'] = elength
     return g
+

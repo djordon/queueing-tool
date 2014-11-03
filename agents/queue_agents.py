@@ -9,7 +9,7 @@ np.set_printoptions(precision=3, suppress=True, threshold=2000)
 
 class Agent :
 
-    def __init__(self, issn, net_size) :
+    def __init__(self, issn, *args) :
         self.issn     = issn
         self.time     = 0                                     # agents arrival or departure time
         self.dest     = None
@@ -21,9 +21,7 @@ class Agent :
         self.trip_t   = [0, 0]
         self.arr_ser  = [0, 0]
         self.od       = [0, 0]
-
-        self.stats    = np.zeros((net_size, 3), np.int32 )
-        self.net_data = np.ones((net_size, 3)) * -1
+        self.blocked  = 0
 
     def __repr__(self) :
         return "Agent. issn: %s, time: %s" % (self.issn, self.time)
@@ -61,9 +59,8 @@ class Agent :
         self.rest_t[1] += self.time - self.rest_t[0]
 
 
-    def add_loss(self, qissn, *args, **kwargs) :
-        # This qissn[2] is the edge_index of the server
-        self.stats[qissn[2], 2] += 1 
+    def add_loss(self, *args, **kwargs) :
+        self.blocked   += 1 
 
 
     def desired_destination(self, *info) :
@@ -83,31 +80,27 @@ class Agent :
 
 
     def __deepcopy__(self, memo) :
-        new_agent             = self.__class__(self.issn, self.net_data.shape[0])
-        new_agent.issn        = copy.deepcopy(self.issn)
-        new_agent.time        = copy.deepcopy(self.time)
-        new_agent.stats       = copy.deepcopy(self.stats)
-        new_agent.dest        = copy.deepcopy(self.dest)
-        new_agent.old_dest    = copy.deepcopy(self.old_dest)
-        new_agent.resting     = copy.deepcopy(self.resting)
-        new_agent.trips       = copy.deepcopy(self.trips)
-        new_agent.rest_t      = copy.deepcopy(self.rest_t)
-        new_agent.trip_t      = copy.deepcopy(self.trip_t)
-        new_agent.type        = copy.deepcopy(self.type)
-        new_agent.net_data    = copy.deepcopy(self.net_data)
-        new_agent.arr_ser     = copy.deepcopy(self.arr_ser)
-        new_agent.od          = copy.deepcopy(self.od)
+        new_agent           = self.__class__(self.issn)
+        new_agent.__dict__  = copy.deepcopy(self.__dict__, memo)
         return new_agent
 
 
 
-class SmartAgent(Agent) :
+class InfoAgent(Agent) :
 
     def __init__(self, issn, net_size) :
         Agent.__init__(self, issn, net_size)
 
+        self.stats    = np.zeros((net_size, 3), np.int32 )
+        self.net_data = np.ones((net_size, 3)) * -1
+
     def __repr__(self) :
-        return "SmartAgent. issn: %s, time: %s" % (self.issn, self.time)
+        return "InfoAgent. issn: %s, time: %s" % (self.issn, self.time)
+
+
+    def add_loss(self, qissn, *args, **kwargs) : # Needs some work
+        # This qissn[2] is the edge_index of the server
+        self.stats[qissn[2], 2] += 1 
 
 
     def get_beliefs(self) :
@@ -145,7 +138,7 @@ class SmartAgent(Agent) :
         elif self.dest == None :
             self.trip_t[0]  = network.t
             self._set_dest(net = network)
-            while self.dest == qissn[1] : #int(e.target()) :
+            while self.dest == qissn[1] :
                 self._set_dest(net = network)
         
         z   = network.shortest_path[qissn[1], self.dest]
@@ -154,22 +147,29 @@ class SmartAgent(Agent) :
 
 
     def queue_action(self, queue, *args, **kwargs) :
-        ### update information
-        a = logical_or(self.net_data[:, 0] < queue.net_data[:, 0], self.net_data[:, 0] == -1)
-        self.net_data[a, :] = queue.net_data[a, :]
+        if str(queue) == "InfoQueue" :
+            ### update information
+            a = logical_or(self.net_data[:, 0] < queue.net_data[:, 0], self.net_data[:, 0] == -1)
+            self.net_data[a, :] = queue.net_data[a, :]
 
-        ### stamp this information
-        n   = queue.issn[2]    # This is the edge_index of the server
-        self.stats[n, 0]    = self.stats[n, 0] + (self.arr_ser[1] - self.arr_ser[0])
-        self.stats[n, 1]   += 1 if (self.arr_ser[1] - self.arr_ser[0]) > 0 else 0
-        self.net_data[n, :] = queue.local_t, queue.nServers, queue.nSystem / queue.nServers
+            ### stamp this information
+            n   = queue.issn[2]    # This is the edge_index of the server
+            self.stats[n, 0]    = self.stats[n, 0] + (self.arr_ser[1] - self.arr_ser[0])
+            self.stats[n, 1]   += 1 if (self.arr_ser[1] - self.arr_ser[0]) > 0 else 0
+            self.net_data[n, :] = queue.local_t, queue.nServers, queue.nSystem / queue.nServers
+
+
+    def __deepcopy__(self, memo) :
+        new_agent           = self.__class__(self.issn, self.net_data.shape[0])
+        new_agent.__dict__  = copy.deepcopy(self.__dict__, memo)
+        return new_agent
 
 
 
-class LearningAgent(SmartAgent) :
+class LearningAgent(Agent) :
 
-    def __init__(self, issn, net_size) :
-        Agent.__init__(self, issn, net_size)
+    def __init__(self, issn) :
+        Agent.__init__(self, issn)
 
     def __repr__(self) :
         return "LearningAgent. issn: %s, time: %s" % (self.issn, self.time)
@@ -205,20 +205,11 @@ class ResourceAgent(Agent) :
         if self.had_resource :
             z = network.g.edge(qissn[0], qissn[1])
         else :
-            #n = v.out_degree()
             v = network.g.vertex(qissn[1])
             d = randint(0, v.out_degree())
             z = list(v.out_edges())[d]
 
         return z
-
-
-    def set_arrival(self, t) :
-        self.time = t
-
-
-    def set_departure(self, t) :
-        self.time = t
 
 
     def queue_action(self, queue, *args, **kwargs) :

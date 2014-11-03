@@ -159,14 +159,14 @@ def set_queues(g, colors, graph_type, **kwargs) :
         qissn = (int(e.source()), int(e.target()), g.edge_index[e])
         if g.ep['eType'][e] == 1 :
             cap       = max(g.vp['cap'][e.target()] // 10, 4) if has_cap else 4
-            queues[e] = qs.LossQueue(cap, issn=qissn, net_size=g.num_edges() )
+            queues[e] = qs.LossQueue(cap, issn=qissn)
         elif g.ep['eType'][e] == 2 :
             cap       = 8 if has_cap else 4
-            queues[e] = qs.LossQueue(cap, issn=qissn, net_size=g.num_edges() )
+            queues[e] = qs.LossQueue(cap, issn=qissn)
         else : 
             lanes     = g.vp['lanes'][e.target()] if has_lanes else 8
             lanes     = lanes if lanes > 10 else max(lanes // 2, 1)
-            queues[e] = qs.QueueServer(lanes, issn=qissn, net_size=g.num_edges()  )
+            queues[e] = qs.QueueServer(lanes, issn=qissn)
 
         if g.ep['eType'][e] == 2 :
             queues[e].colors['vertex_pen'] = colors['vertex_pen'][2]
