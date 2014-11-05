@@ -21,7 +21,7 @@ a.agent_cap       = 1000
 
 nLearners         = 10
 a.parameters['T'] = 30
-a.parameters['M'] = 100
+a.parameters['M'] = 50
 a.parameters['N'] = 5
 a.approximate_policy_iteration(nLearners, save_frames=True, verbose=False)
 print( (a.after - a.before).seconds / 60 )

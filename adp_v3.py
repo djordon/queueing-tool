@@ -64,8 +64,8 @@ class approximate_dynamic_program :
             else :
                 self.node_dict['arc'].append(int(v))
 
-        self.nGar       = min( [len(self.node_dict['fcq']), 4] )
-        self.nFeatures  = 3 * self.nGar + 4
+        self.nGar       = min( [len(self.node_dict['fcq']), 2] )
+        self.nFeatures  = 2 * self.nGar + 3
         self.beta       = 0.5 * ones(self.nFeatures)
         self.basis      = zeros(self.nFeatures)
 
@@ -245,14 +245,14 @@ class approximate_dynamic_program :
                 dist[int(v),:] = self.Qn.g.vp['dist'][v].a
 
         self.dist   = dist * 10
-        pp          = np.exp(6 * dist) - 1
+        pp          = np.exp(3 * dist) - 1
         pp[pp>100]  = 100
 
         for v in self.Qn.g.vertices() :
             if self.Qn.g.vp['vType'][v] not in [1, 2] :
                 pp[int(v), :] = 800
 
-        self.parking_penalty  = np.abs(pp) * 10
+        self.parking_penalty  = pp
         self.full_penalty     = 10
 
 
@@ -396,7 +396,7 @@ class approximate_dynamic_program :
                         if verbose :
                             print( "Value function: %s\nNum in queue %s: %s" % (v, ei, QN.edge2queue[ei].nSystem) )
 
-                    if n > 0 and np.random.uniform() < 0.15 and m < 100 :
+                    if 3 > n >= 0 and np.random.uniform() < 0.2 and m < M - 1 :
                         if obj_func[0] < 1000 :
                             policy = np.random.randint(0, ct+1)
                         else :  
@@ -518,7 +518,7 @@ class approximate_dynamic_program :
                 self.agent_variables[issn].n = n
 
 
-    def initial_update(self, struct) :
+    def initial_update(self, aStruct) :
         y   = aStruct.values[0, :, 0]
         X   = aStruct.basis[0,:,0,:]
         A   = dot(X.T, X)
@@ -550,12 +550,13 @@ class approximate_dynamic_program :
         nSys = QN.edge2queue[ej].nSystem
 
         p    = 1 / (1 + max(nSer - nSys, 0))
-        l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[S[0][1]] if ei != S[0][1]]) / np.sum(QN.nAgents)
+        l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[S[0][1]] if ei != S[0][1]]) / len(self.in_edges[S[0][1]])
         cd   = self.dist[S[0][0], S[0][1]]
+        penl = self.full_penalty * 1.0 / ( 1.0 + np.exp(-40*(min(l,1)-19/20)) )
+        pen  = self.full_penalty * 1.0 / ( 1.0 + np.exp(-40*(p-19/20)) )
 
-        self.basis[-4] = cd * p * self.full_penalty
-        self.basis[-3] = cd * l
-        self.basis[-2] = cd * l * p * self.full_penalty
+        self.basis[-3] = cd + pen
+        self.basis[-2] = cd + penl
         self.basis[-1] = 1
 
         for k in range(self.nGar) :
@@ -565,10 +566,11 @@ class approximate_dynamic_program :
             nSer = QN.edge2queue[g].nServers
             nSys = QN.edge2queue[g].nSystem
             p    = 1 / (1 + max(nSer - nSys, 0))
-            l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[g] if ei != g]) / np.sum(QN.nAgents)
-            self.basis[3*k]    = cd * gd * p * self.full_penalty + self.parking_penalty[g, S[0][1]]
-            self.basis[3*k+1]  = cd * gd * l + self.parking_penalty[g, S[0][1]]
-            self.basis[3*k+2]  = cd * gd * l * p * self.full_penalty + self.parking_penalty[g, S[0][1]]
+            l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[g] if ei != g]) / len(self.in_edges[S[0][1]])
+            pen  = self.full_penalty / ( 1.0 + np.exp(-40*(p-19/20)) )
+            penl = self.full_penalty / ( 1.0 + np.exp(-40*(min(l,1)-19/20)) )
+            self.basis[2*k]    = cd + gd + pen + self.parking_penalty[g, S[0][1]]
+            self.basis[2*k+1]  = cd + gd + penl + self.parking_penalty[g, S[0][1]]
 
         return np.dot(self.basis, beta), np.mat(self.basis).T
 
@@ -616,7 +618,7 @@ class AgentStruct() :
         self.A      = np.eye(nF) * 2
         self.z      = np.zeros(nF)
         self.n      = 1
-        self.beta   = np.ones(nF) / nF # np.array([0.34, 0.013, 0.006, 0.351, 0.006, 0.003, 0.607, 0.011, 0.011, 0.285, 0.044, 0.001, 0.35, 0.003, 0.0, 0.351])
+        self.beta   = 0.5 * np.ones(nF) / nF
         self.values = zeros( (N,M,T+1) )
         self.v_est  = zeros( (N,M,T) )
         self.costs  = zeros( (N,M,T+1) )
@@ -628,6 +630,5 @@ class AgentStruct() :
         self.beta_history   = zeros( (N, M, nF) )
         self.value_history  = zeros( (N, M, 2) )
 
-# np.array([0.34, 0.013, 0.006, 0.351, 0.006, 0.003, 0.607, 0.011, 0.011, 0.285, 0.044, 0.001, 0.35, 0.003, 0.0, 0.351])
 
 

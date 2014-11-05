@@ -382,19 +382,18 @@ class QueueNetwork :
 
 def calculate_shortest_path(g) :
     nV  = g.num_vertices()
-    vertex_props = set()
+    vertex_props  = set()
+    shortest_path = np.ones( (nV, nV), int)
+
     for key in g.vertex_properties.keys() :
         vertex_props = vertex_props.union([key])
 
     if 'shortest_path' in vertex_props :
-        shortest_path = np.ones( (nV, nV), int)
-
         for v in g.vertices() :
             shortest_path[int(v), :] = g.vp['shortest_path'][v].a
 
-    if 'shortest_path' not in vertex_props :
-        shortest_path = np.ones( (nV, nV), int)
-        spath         = np.ones( (nV, nV), int) * -1
+    else :
+        spath = np.ones( (nV, nV), int) * -1
 
         for v in g.vertices() :
             vi  = int(v)
