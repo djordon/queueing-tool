@@ -12,14 +12,14 @@ import pickle
 np.set_printoptions(precision=3,suppress=True,threshold=2000)
 
 #a   = adp.approximate_dynamic_program('pitt_network.xml')
-a   = adp.approximate_dynamic_program(nVertices=75, seed=14)
+a   = adp.approximate_dynamic_program(nVertices=15, seed=15)
 
 #vs  = [202, 453, 255, 449, 218, 72, 126, 326]
 
-a.Qn.agent_cap    = 1000
-a.agent_cap       = 1000
+a.Qn.agent_cap    = 100
+a.agent_cap       = 100
 
-nLearners         = 10
+nLearners         = 1
 a.parameters['T'] = 30
 a.parameters['M'] = 50
 a.parameters['N'] = 5

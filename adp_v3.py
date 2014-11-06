@@ -35,7 +35,7 @@ from gi.repository  import Gtk, Gdk, GdkPixbuf, GObject
 class approximate_dynamic_program :
 
     def __init__(self, g=None, nVertices=125, seed=None) :
-        self.parameters         = {'N': 10, 'M':10, 'T': 25, 'gamma':0.975}
+        self.parameters         = {'N': 10, 'M':10, 'T': 25, 'gamma':1.0}
         self.t                  = 0
         self.animate            = False
         self.agent_cap          = 50
@@ -250,7 +250,7 @@ class approximate_dynamic_program :
 
         for v in self.Qn.g.vertices() :
             if self.Qn.g.vp['vType'][v] not in [1, 2] :
-                pp[int(v), :] = 800
+                pp[int(v), :] = 8000
 
         self.parking_penalty  = pp
         self.full_penalty     = 10
@@ -321,7 +321,7 @@ class approximate_dynamic_program :
 
 
     # algorithm from pg 405 of Powell 2011
-    # theta update from pg 349 of Powell 2011
+    # theta update from pg 350 of Powell 2011
 
     def approximate_policy_iteration(self, nLearners, complete_info=True, save_frames=False, verbose=False) :
         self.before = datetime.datetime.today()
@@ -387,7 +387,7 @@ class approximate_dynamic_program :
 
                         ct   += 1
                         Sa    = self.post_decision_state(state, ei, QN)
-                        v, b  = self.value_function(Sa, aStruct.beta, QN)
+                        v, b  = self.value_function(Sa, aStruct.beta[tau], QN)
 
                         obj_func[ct]    = v * gamma
                         value_es[ct]    = v
@@ -455,11 +455,12 @@ class approximate_dynamic_program :
                         self.initial_update(aStruct)
 
                     aStruct.tau = 0
-                    aStruct.beta_history[n,m,:]   = aStruct.beta
-                    aStruct.value_history[n,m,:]  = aStruct.values[n,m,0], aStruct.v_est[n,m,0]
+                    aStruct.beta_history[n,m,:,:] = aStruct.beta
+                    aStruct.value_history[n,m,:,0]  = aStruct.values[n,m,:T]
+                    aStruct.value_history[n,m,:,1]  = aStruct.v_est[n,m,:]
                     if verbose :
-                        print( array([aStruct.issn, aStruct.values[n,m,0], aStruct.v_est[n,m,0]]) )
-                        print("Agent : %s, Weights : %s" % (aStruct.issn, aStruct.beta))
+                        print( array([aStruct.issn, aStruct.values[n,m,0,0], aStruct.v_est[n,m,0,0]]) )
+                        print("Agent : %s, Weights : %s" % (aStruct.issn, aStruct.beta[0]))
 
                 nn  = []
                 for aStruct in self.agent_variables.values() :
@@ -498,44 +499,54 @@ class approximate_dynamic_program :
                 issns.add(n)
 
         if len(issns) > 1 :
-            self.nInteractions += 1
-            A = np.zeros( (self.nFeatures, self.nFeatures) )
-            z = np.zeros( self.nFeatures )
+            T = self.parameters['T']
             n = 0
-            p = 0
             for issn in issns :
                 n  += self.agent_variables[issn].n
 
-            for issn in issns :
-                aStruct = self.agent_variables[issn]
-                p   = aStruct.n / n
-                A  += aStruct.A * p
-                z  += aStruct.z * p
+            for t in range(T) :
+                self.nInteractions += 1
+                A = np.zeros( (self.nFeatures, self.nFeatures) )
+                z = np.zeros( self.nFeatures )
+                p = 0
+
+                for issn in issns :
+                    aStruct = self.agent_variables[issn]
+                    p   = aStruct.n / n
+                    A  += aStruct.A[t] * p
+                    z  += aStruct.z[t] * p
+
+                for issn in issns :
+                    self.agent_variables[issn].A[t] = A
+                    self.agent_variables[issn].z[t] = z
 
             for issn in issns :
-                self.agent_variables[issn].A = A
-                self.agent_variables[issn].z = z
                 self.agent_variables[issn].n = n
 
 
     def initial_update(self, aStruct) :
-        y   = aStruct.values[0, :, 0]
-        X   = aStruct.basis[0,:,0,:]
-        A   = dot(X.T, X)
+        T   = self.parameters['T']
+        for t in range(T) :
+            y   = aStruct.values[0, :, t]
+            X   = aStruct.basis[0,:,t,:]
+            A   = dot(X.T, X)
 
-        aStruct.A     = A
-        aStruct.beta  = dot(pinv(A), dot(X.T, y))
+            aStruct.A[t]    = A
+            aStruct.z[t]    = dot(X.T, y)
+            aStruct.beta[t] = dot(pinv(A), aStruct.z)
 
 
     def update_beta(self, aStruct, n, m) :
-        A   = aStruct.A
-        z   = aStruct.z
-        Phi = aStruct.basis[n,m,0,:]
-        c   = aStruct.values[n,m,0]
+        T   = self.parameters['T']
+        for t in range(T) :
+            A   = aStruct.A[t]
+            z   = aStruct.z[t]
+            Phi = aStruct.basis[n,m,t,:]
+            c   = aStruct.values[n,m,t]
 
-        aStruct.A     = A + np.outer(Phi, Phi)
-        aStruct.z     = z + c * Phi
-        aStruct.beta  = dot(pinv(aStruct.A), aStruct.z)
+            aStruct.A[t]    = A + np.outer(Phi, Phi)
+            aStruct.z[t]    = z + c * Phi
+            aStruct.beta[t] = dot(pinv(aStruct.A[t]), aStruct.z[t])
 
 
     def value_function(self, S, beta, QN) :
@@ -544,7 +555,6 @@ class approximate_dynamic_program :
         c_dists = self.dist[S[0][0], garages]
         g_dists = self.dist[S[0][1], garages]
         
-        val  = zeros(self.nFeatures)
         ej   = QN.g.edge_index[ QN.g.edge(S[0][1], S[0][1]) ]
         nSer = QN.edge2queue[ej].nServers
         nSys = QN.edge2queue[ej].nSystem
@@ -561,7 +571,6 @@ class approximate_dynamic_program :
 
         for k in range(self.nGar) :
             g    = garages[k]
-            gd   = g_dists[k]
             cd   = c_dists[k]
             nSer = QN.edge2queue[g].nServers
             nSys = QN.edge2queue[g].nSystem
@@ -569,8 +578,8 @@ class approximate_dynamic_program :
             l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[g] if ei != g]) / len(self.in_edges[S[0][1]])
             pen  = self.full_penalty / ( 1.0 + np.exp(-40*(p-19/20)) )
             penl = self.full_penalty / ( 1.0 + np.exp(-40*(min(l,1)-19/20)) )
-            self.basis[2*k]    = cd + gd + pen + self.parking_penalty[g, S[0][1]]
-            self.basis[2*k+1]  = cd + gd + penl + self.parking_penalty[g, S[0][1]]
+            self.basis[2*k]    = cd + pen + self.parking_penalty[g, S[0][1]]
+            self.basis[2*k+1]  = cd + penl + self.parking_penalty[g, S[0][1]]
 
         return np.dot(self.basis, beta), np.mat(self.basis).T
 
@@ -615,10 +624,10 @@ class AgentStruct() :
         self.issn   = issn
         self.tau    = 0                 # Keeps track of iteration number in ADP
         self.t      = np.zeros( (N,M,T) )
-        self.A      = np.eye(nF) * 2
-        self.z      = np.zeros(nF)
+        self.A      = np.ones( (T, nF, nF) ) * 2
+        self.z      = np.zeros( (T, nF) )
         self.n      = 1
-        self.beta   = 0.5 * np.ones(nF) / nF
+        self.beta   = 0.5 * np.ones( (T, nF) ) / nF
         self.values = zeros( (N,M,T+1) )
         self.v_est  = zeros( (N,M,T) )
         self.costs  = zeros( (N,M,T+1) )
@@ -627,8 +636,8 @@ class AgentStruct() :
 
         self.scale_vector   = zeros(nF)
         self.beta_cov       = np.eye(nF) * 2
-        self.beta_history   = zeros( (N, M, nF) )
-        self.value_history  = zeros( (N, M, 2) )
+        self.beta_history   = zeros( (N, M, T, nF) )
+        self.value_history  = zeros( (N, M, T, 2) )
 
 
 
