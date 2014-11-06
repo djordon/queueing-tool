@@ -32,10 +32,32 @@ from gi.repository  import Gtk, Gdk, GdkPixbuf, GObject
 # that is 'closest' to the destination
 
 
+class LearningAgent(qt.Agent) :
+
+    def __init__(self, issn) :
+        qt.Agent.__init__(self, issn)
+
+    def __repr__(self) :
+        return "LearningAgent. issn: %s, time: %s" % (self.issn, self.time)
+
+
+    def get_beliefs(self) :
+        return self.net_data[:, 2]
+
+
+    def desired_destination(self, *info) :
+        return self.dest
+
+
+    def set_dest(self, net=None, dest=None) :
+        self.dest = int(dest)
+
+
+
 class approximate_dynamic_program :
 
     def __init__(self, g=None, nVertices=125, seed=None) :
-        self.parameters         = {'N': 10, 'M':10, 'T': 25, 'gamma':1.0}
+        self.parameters         = {'N': 10, 'M':10, 'T': 25, 'gamma': 0.975}
         self.t                  = 0
         self.animate            = False
         self.agent_cap          = 50
@@ -64,8 +86,8 @@ class approximate_dynamic_program :
             else :
                 self.node_dict['arc'].append(int(v))
 
-        self.nGar       = min( [len(self.node_dict['fcq']), 2] )
-        self.nFeatures  = 2 * self.nGar + 3
+        self.nGar       = min( [len(self.node_dict['fcq']), 6] )
+        self.nFeatures  = 3 * (self.nGar + 1) + 1
         self.beta       = 0.5 * ones(self.nFeatures)
         self.basis      = zeros(self.nFeatures)
 
@@ -245,12 +267,12 @@ class approximate_dynamic_program :
                 dist[int(v),:] = self.Qn.g.vp['dist'][v].a
 
         self.dist   = dist * 10
-        pp          = np.exp(3 * dist) - 1
+        pp          = np.exp(3 * dist) - 0.95
         pp[pp>100]  = 100
 
         for v in self.Qn.g.vertices() :
             if self.Qn.g.vp['vType'][v] not in [1, 2] :
-                pp[int(v), :] = 8000
+                pp[int(v), :] = np.infty
 
         self.parking_penalty  = pp
         self.full_penalty     = 10
@@ -289,7 +311,7 @@ class approximate_dynamic_program :
         count   = 1
         for i in range(nLearners) :
             aissn = self.agent_cap + count
-            agent = qt.LearningAgent(aissn)
+            agent = LearningAgent(aissn)
 
             for ei in self.in_edges[ orig[i] ] :
                 self.locations[ei].add( aissn )
@@ -305,7 +327,7 @@ class approximate_dynamic_program :
             self.parked[self.agent_cap+count] = False
             count  += 1
 
-        if not isinstance(self.Qn.queues[0].departures[0], qt.LearningAgent) :
+        if not isinstance(self.Qn.queues[0].departures[0], LearningAgent) :
             self.simulate_forward( self.Qn )
 
         return
@@ -397,7 +419,7 @@ class approximate_dynamic_program :
                             print( "Value function: %s\nNum in queue %s: %s" % (v, ei, QN.edge2queue[ei].nSystem) )
 
                     if 3 > n >= 0 and np.random.uniform() < 0.2 and m < M - 1 :
-                        if obj_func[0] < 1000 :
+                        if obj_func[0] < np.infty :
                             policy = np.random.randint(0, ct+1)
                         else :  
                             policy = np.random.randint(1, ct+1)
@@ -448,7 +470,7 @@ class approximate_dynamic_program :
                     for t in range(T - 1, -1, -1) :
                         aStruct.values[n,m,t] = aStruct.costs[n,m,t] + gamma * aStruct.values[n,m,t+1]
 
-                    print([n, m, aStruct.values[n,m,0]])
+                    print([n, m, np.argmax(aStruct.values[n,m,:]), max(aStruct.values[n,m,:])])
                     if n > 0 :
                         self.update_beta(aStruct, n, m)
                     elif n == 0 and m == M - 1 :
@@ -486,7 +508,7 @@ class approximate_dynamic_program :
     def simulate_forward(self, QN):
         QN.simulate(N=1)
         event = QN.next_event_type()
-        while not (event == 2 and isinstance(QN.queues[0].departures[0], qt.LearningAgent) ):
+        while not (event == 2 and isinstance(QN.queues[0].departures[0], LearningAgent) ):
             QN.simulate(N=1)
             event = QN.next_event_type()
 
@@ -533,7 +555,7 @@ class approximate_dynamic_program :
 
             aStruct.A[t]    = A
             aStruct.z[t]    = dot(X.T, y)
-            aStruct.beta[t] = dot(pinv(A), aStruct.z)
+            aStruct.beta[t] = dot(pinv(A), aStruct.z[t])
 
 
     def update_beta(self, aStruct, n, m) :
@@ -562,11 +584,12 @@ class approximate_dynamic_program :
         p    = 1 / (1 + max(nSer - nSys, 0))
         l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[S[0][1]] if ei != S[0][1]]) / len(self.in_edges[S[0][1]])
         cd   = self.dist[S[0][0], S[0][1]]
-        penl = self.full_penalty * 1.0 / ( 1.0 + np.exp(-40*(min(l,1)-19/20)) )
-        pen  = self.full_penalty * 1.0 / ( 1.0 + np.exp(-40*(p-19/20)) )
+        penl = self.full_penalty / ( 1.0 + np.exp(-40*(min(l,1)-19/20)) )
+        pen  = self.full_penalty / ( 1.0 + np.exp(-40*(p-19/20)) )
 
-        self.basis[-3] = cd + pen
-        self.basis[-2] = cd + penl
+        self.basis[-4] = cd + pen + self.parking_penalty[S[0][1], S[0][1]]
+        self.basis[-3] = pen + self.parking_penalty[S[0][1], S[0][1]]
+        self.basis[-2] = cd
         self.basis[-1] = 1
 
         for k in range(self.nGar) :
@@ -578,8 +601,10 @@ class approximate_dynamic_program :
             l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[g] if ei != g]) / len(self.in_edges[S[0][1]])
             pen  = self.full_penalty / ( 1.0 + np.exp(-40*(p-19/20)) )
             penl = self.full_penalty / ( 1.0 + np.exp(-40*(min(l,1)-19/20)) )
-            self.basis[2*k]    = cd + pen + self.parking_penalty[g, S[0][1]]
-            self.basis[2*k+1]  = cd + penl + self.parking_penalty[g, S[0][1]]
+            self.basis[3*k]   = cd + pen + self.parking_penalty[S[0][1], S[0][1]]
+            self.basis[3*k+1] = pen + self.parking_penalty[g, S[0][1]]
+            self.basis[3*k+2] = cd  
+
 
         return np.dot(self.basis, beta), np.mat(self.basis).T
 
@@ -596,7 +621,7 @@ class approximate_dynamic_program :
         if target != None :
             target  = QN.g.vertex(target)
             QN.g.vp['halo'][target]         = True 
-            QN.g.vp['halo_color'][target]   = [1.0, 0.5, 0.0, 0.5]
+            QN.g.vp['halo_color'][target]   = [0.7, 0.1, 0.1, 1.0]
             QN.g.vp['halo'][vj]             = True
 
         a     = i
@@ -623,11 +648,11 @@ class AgentStruct() :
         self.agent  = [agent]
         self.issn   = issn
         self.tau    = 0                 # Keeps track of iteration number in ADP
-        self.t      = np.zeros( (N,M,T) )
-        self.A      = np.ones( (T, nF, nF) ) * 2
-        self.z      = np.zeros( (T, nF) )
+        self.t      = zeros( (N,M,T) )
+        self.A      = ones( (T, nF, nF) )
+        self.z      = zeros( (T, nF) )
         self.n      = 1
-        self.beta   = 0.5 * np.ones( (T, nF) ) / nF
+        self.beta   = 0.01 * ones( (T, nF) ) / nF
         self.values = zeros( (N,M,T+1) )
         self.v_est  = zeros( (N,M,T) )
         self.costs  = zeros( (N,M,T+1) )
@@ -638,6 +663,12 @@ class AgentStruct() :
         self.beta_cov       = np.eye(nF) * 2
         self.beta_history   = zeros( (N, M, T, nF) )
         self.value_history  = zeros( (N, M, T, 2) )
+
+        for t in range(T) :
+            self.A[t] = np.eye(nF)
+
+        #for k in range(1, nF, 2) :
+        #    self.beta[:, k] = 2 / (nF-1)
 
 
 
