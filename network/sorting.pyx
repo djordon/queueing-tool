@@ -6,68 +6,72 @@ cimport cython
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def oneSort(list a, np.float64_t t, Py_ssize_t n) :
-    cdef Py_ssize_t ppos, pos, b
+    cdef Py_ssize_t pos, top, bot
     cdef object q
-    b     = 0
-    pos   = n - 1
-    ppos  = n - 1
+    top = n - 1
+    bot = 0
+    pos = 0
 
-    if t < a[pos].time :
+    if t < a[bot].time :
         while True :
-            pos  = ppos
-            ppos = (pos + b) >> 1
-            if b == ppos :
-                pos = b
+            pos = (top + bot) >> 1
+            if bot == pos :
                 break
-            if t > a[ppos].time :
-                b    = ppos
-                ppos = pos
+            if t < a[pos].time :
+                bot = pos
+            else :
+                top = pos
 
-    q     = a.pop(pos)
-    ppos  = n - 2
-    pos   = n - 2
-    b     = 0
-
-    if q.time < a[pos].time :
-        while True :
-            pos  = ppos
-            ppos = (pos + b) >> 1
-            if b == ppos :
-                pos = b
-                break
-            if q.time > a[ppos].time :
-                b    = ppos
-                ppos = pos
-
-    if q.time < a[pos].time :
-        a.insert(pos, q)
+        q = a.pop(top)
     else :
-        a.insert(pos+1, q)
+        q = a.pop(0)
+
+    top = n - 2
+    bot = 0
+    pos = 0
+
+    if q.time < a[bot].time :
+        while True :
+            pos = (top + bot) >> 1
+            if bot == pos :
+                break
+            if q.time < a[pos].time :
+                bot = pos
+            else :
+                top = pos
+
+        if q.time < a[top].time :
+            a.insert(top+1, q)
+        else :
+            a.insert(top, q)
+    else :
+        a.insert(0, q)
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def bisectSort(list a, object q, Py_ssize_t n) :
-    cdef Py_ssize_t ppos, pos, b
-    b     = 0
-    pos   = n - 1
-    ppos  = n - 1
+    cdef Py_ssize_t pos, top, bot
+    top = n - 1
+    bot = 0
+    pos = 0
 
-    if q.time < a[pos].time :
+    if q.time < a[bot].time :
         while True :
-            pos  = ppos
-            ppos = (pos + b) >> 1
-            if b == ppos :
-                pos = b
+            pos = (top + bot) >> 1
+            if bot == pos :
                 break
-            if q.time > a[ppos].time :
-                b    = ppos
-                ppos = pos
+            if q.time < a[pos].time :
+                bot = pos
+            else :
+                top = pos
 
-    if q.time < a[pos].time :
-        a.insert(pos, q)
+        if q.time < a[top].time :
+            a.insert(top+1, q)
+        else :
+            a.insert(top, q)
     else :
-        a.insert(pos+1, q)
+        a.insert(0, q)
 
 
 @cython.boundscheck(False)

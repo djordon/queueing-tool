@@ -94,6 +94,7 @@ class QueueNetwork :
         while self.queues[-1].time == infty :
             self.queues.pop()
 
+        self.queues.sort(reverse=True)
         self._queues      = set([q.issn[2] for q in self.queues])
         self.initialized  = True
 
@@ -183,7 +184,7 @@ class QueueNetwork :
             self._queues.add(q.issn[2])
             self.queues.append(q)
 
-        self.queues.sort()
+        self.queues.sort(reverse=True)
 
 
     def add_arrival(self, ei, agent, t=None) :
@@ -198,7 +199,7 @@ class QueueNetwork :
             self._queues.add(q.issn[2])
             self.queues.append(q)
 
-        self.queues.sort()
+        self.queues.sort(reverse=True)
 
 
     def next_event_type(self) :
@@ -206,7 +207,7 @@ class QueueNetwork :
 
 
     def _next_event(self, slow=True) :
-        q = self.queues.pop(0)
+        q = self.queues.pop()
         t = q.time
         j = q.issn[2]
 
@@ -232,9 +233,6 @@ class QueueNetwork :
 
             if q2.active and np.sum(self.nAgents) > self.agent_cap - 1 :
                 q2.active = False
-
-            if q2.departures[0].time <= q2.arrivals[0].time :
-                print("WHOA! THIS NEEDS CHANGING! %s %s" % (q2.departures[0].time, q2.arrivals[0].time) )
 
             q2.next_event()
 
@@ -376,7 +374,7 @@ class QueueNetwork :
 
         net.edge2queue = [queues[e] for e in net.g.edges()]
         net.queues     = [queues[e] for e in net.g.edges() if net.g.edge_index[e] in net._queues]
-        net.queues.sort()
+        net.queues.sort(reverse=True)
         return net
 
 
