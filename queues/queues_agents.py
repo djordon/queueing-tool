@@ -96,7 +96,18 @@ class Agent :
 
     def __deepcopy__(self, memo) :
         new_agent           = self.__class__()
-        new_agent.__dict__  = copy.deepcopy(self.__dict__, memo)
+        new_agent.issn      = copy.copy(self.issn)
+        new_agent.time      = copy.copy(self.time)
+        new_agent.dest      = copy.copy(self.dest)
+        new_agent.old_dest  = copy.copy(self.old_dest)
+        new_agent.resting   = copy.copy(self.resting)
+        new_agent.trips     = copy.copy(self.trips)
+        new_agent.type      = copy.copy(self.type)
+        new_agent.blocked   = copy.copy(self.blocked)
+        new_agent.rest_t    = copy.deepcopy(self.rest_t)
+        new_agent.trip_t    = copy.deepcopy(self.trip_t)
+        new_agent.arr_ser   = copy.deepcopy(self.arr_ser)
+        new_agent.od        = copy.deepcopy(self.od)
         return new_agent
 
 
@@ -310,8 +321,24 @@ class QueueServer :
 
 
     def __deepcopy__(self, memo) :
-        new_server          = self.__class__()
-        new_server.__dict__ = copy.deepcopy(self.__dict__, memo)
+        new_server            = self.__class__()
+        new_server.issn       = copy.copy(self.issn)
+        new_server.nServers   = copy.copy(self.nServers)
+        new_server.nArrivals  = copy.copy(self.nArrivals)
+        new_server.nDeparts   = copy.copy(self.nDeparts)
+        new_server.nSystem    = copy.copy(self.nSystem)
+        new_server.nTotal     = copy.copy(self.nTotal)
+        new_server.local_t    = copy.copy(self.local_t)
+        new_server.time       = copy.copy(self.time)
+        new_server.active     = copy.copy(self.active)
+        new_server.next_ct    = copy.copy(self.next_ct)
+        new_server.colors     = copy.deepcopy(self.colors)
+        new_server.queue      = copy.deepcopy(self.queue, memo)
+        new_server.arrivals   = copy.deepcopy(self.arrivals, memo)
+        new_server.departures = copy.deepcopy(self.departures, memo)
+        new_server.fArrival   = self.fArrival
+        new_server.fDepart    = self.fDepart
+        new_server.AgentClass = self.AgentClass
         return new_server
 
 
@@ -319,15 +346,15 @@ class QueueServer :
 class LossQueue(QueueServer) :
 
     def __init__(self, nServers=1, issn=(0,0,0), active=False, fArrival=lambda x : x + exponential(1), 
-            fDepart =lambda x : x + exponential(0.95), AgentClass=Agent, queue_cap=0) :
+            fDepart =lambda x : x + exponential(0.95), AgentClass=Agent, qbuffer=0) :
 
         QueueServer.__init__(self, nServers, issn, active, fArrival, fDepart, AgentClass)
 
         self.colors     = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
                             'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
                             'vertex_pen'    : [0.133, 0.545, 0.133, 1.0] }
-        self.nBlocked   = 0
-        self.queue_cap  = queue_cap
+        self.nBlocked = 0
+        self.buffer   = qbuffer
 
 
     def __repr__(self) :
@@ -342,7 +369,7 @@ class LossQueue(QueueServer) :
 
     def next_event(self) :
         if self.arrivals[0].time < self.departures[0].time :
-            if self.nSystem < self.nServers + self.queue_cap :
+            if self.nSystem < self.nServers + self.buffer :
                 self.arrivals[0].set_rest()
 
                 QueueServer.next_event(self)
@@ -377,8 +404,9 @@ class LossQueue(QueueServer) :
 
 
     def __deepcopy__(self, memo) :
-        new_server          = self.__class__()
-        new_server.__dict__ = copy.deepcopy(self.__dict__, memo)
+        new_server          = QueueServer.__deepcopy__(self, memo)
+        new_server.nBlocked = copy.copy(self.nBlocked)
+        new_server.buffer   = copy.copy(self.buffer)
         return new_server
 
 
@@ -410,3 +438,8 @@ class MarkovianQueue(QueueServer) :
             self.rates[1] = dRate
             self.fDepart  = lambda x : x + exponential(dMean)
 
+
+    def __deepcopy__(self, memo) :
+        new_server        = QueueServer.__deepcopy__(self, memo)
+        new_server.rates  = copy.copy(self.rates)
+        return new_server

@@ -40,12 +40,19 @@ class ResourceAgent(Agent) :
                     self.has_resource = True
 
 
+    def __deepcopy__(self, memo) :
+        new_agent               = Agent.__deepcopy__(self, memo)
+        new_agent.has_resource  = copy.deepcopy(self.has_resource)
+        new_agent.had_resource  = copy.deepcopy(self.had_resource)
+        return new_agent
+
+
 
 class ResourceQueue(LossQueue) :
 
     def __init__(self, nServers=10, issn=0, active=False, fArrival=lambda x : x + exponential(1), 
-                    fDepart=lambda x : x, AgentClass=ResourceAgent, queue_cap=0) :
-        LossQueue.__init__(self, nServers, issn, active, fArrival, fDepart, AgentClass, queue_cap)
+                    fDepart=lambda x : x, AgentClass=ResourceAgent, qbuffer=0) :
+        LossQueue.__init__(self, nServers, issn, active, fArrival, fDepart, AgentClass, qbuffer)
 
         self.colors = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
                         'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
@@ -53,7 +60,6 @@ class ResourceQueue(LossQueue) :
 
         self.max_servers  = nServers
         self.over_max     = 0
-        self.nBlocked     = 0
 
 
     def __repr__(self) :
@@ -134,6 +140,13 @@ class ResourceQueue(LossQueue) :
         self.over_max  = 0
 
 
+    def __deepcopy__(self, memo) :
+        new_server              = LossQueue.__deepcopy__(self, memo)
+        new_server.max_servers  = copy.copy(self.max_servers)
+        new_server.over_max     = copy.copy(self.over_max)
+        return new_server
+
+
 
 class InfoAgent(Agent) :
 
@@ -208,18 +221,19 @@ class InfoAgent(Agent) :
 
 
     def __deepcopy__(self, memo) :
-        new_agent           = self.__class__(self.issn, self.net_data.shape[0])
-        new_agent.__dict__  = copy.deepcopy(self.__dict__, memo)
+        new_agent          = Agent.__deepcopy__(self, memo)
+        new_agent.stats    = copy.deepcopy(self.stats)
+        new_agent.net_data = copy.deepcopy(self.net_data)
         return new_agent
 
 
 
-class InfoQueue(QueueServer) :
+class InfoQueue(LossQueue) :
 
     def __init__(self, nServers=1, issn=(0,0,0), active=False, net_size=1,
             fArrival=lambda x : x + exponential(1), fDepart =lambda x : x + exponential(0.95),
-            AgentClass=InfoAgent) :
-        QueueServer.__init__(self, nServers, issn, active, fArrival, fDepart, fDepart_mu, AgentClass)
+            AgentClass=InfoAgent, qbuffer=np.infty) :
+        LossQueue.__init__(self, nServers, issn, active, fArrival, fDepart, fDepart_mu, AgentClass, qbuffer)
 
         self.colors = {'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
                        'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
@@ -268,17 +282,22 @@ class InfoQueue(QueueServer) :
 
     def append_departure(self, agent, t) :
         self.extract_information(agent)
-        QueueServer.append_departure(self, agent, t)
+        LossQueue.append_departure(self, agent, t)
 
 
     def next_event(self) :
         if self.arrivals[0].time < self.departures[0].time :
             self.extract_information(self.arrivals[0])
 
-        QueueServer.next_event(self)
+        LossQueue.next_event(self)
 
 
     def clear(self) :
-        QueueServer.clear(self)
+        LossQueue.clear(self)
         self.networking( len(self.net_data) )
 
+
+    def __deepcopy__(self, memo) :
+        new_server          = LossQueue.__deepcopy__(self, memo)
+        new_server.net_data = copy.copy(self.net_data)
+        return new_server
