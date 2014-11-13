@@ -24,7 +24,7 @@ def departure(rate, rate_max, t) :
 
 class Agent :
 
-    def __init__(self, issn, *args) :
+    def __init__(self, issn=0, *args) :
         self.issn     = issn
         self.time     = 0                                     # agents arrival or departure time
         self.dest     = None
@@ -95,7 +95,7 @@ class Agent :
 
 
     def __deepcopy__(self, memo) :
-        new_agent           = self.__class__(self.issn)
+        new_agent           = self.__class__()
         new_agent.__dict__  = copy.deepcopy(self.__dict__, memo)
         return new_agent
 
@@ -318,7 +318,7 @@ class QueueServer :
 
 class LossQueue(QueueServer) :
 
-    def __init__(self, nServers=1, issn=0, active=False, fArrival=lambda x : x + exponential(1), 
+    def __init__(self, nServers=1, issn=(0,0,0), active=False, fArrival=lambda x : x + exponential(1), 
             fDepart =lambda x : x + exponential(0.95), AgentClass=Agent, queue_cap=0) :
 
         QueueServer.__init__(self, nServers, issn, active, fArrival, fDepart, AgentClass)
@@ -374,6 +374,12 @@ class LossQueue(QueueServer) :
     def clear(self) :
         QueueServer.clear(self)
         self.nBlocked  = 0
+
+
+    def __deepcopy__(self, memo) :
+        new_server          = self.__class__()
+        new_server.__dict__ = copy.deepcopy(self.__dict__, memo)
+        return new_server
 
 
 

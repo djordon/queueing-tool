@@ -3,7 +3,7 @@ from numpy.random   import uniform
 import numpy            as np
 import graph_tool.all   as gt
 import queueing_tool    as qt
-import adp_v3           as adp
+import adp_v4           as adp
 import copy
 import datetime
 import cProfile
@@ -16,8 +16,8 @@ a   = adp.approximate_dynamic_program(nVertices=100)#, seed=15)
 
 #vs  = [202, 453, 255, 449, 218, 72, 126, 326]
 
-a.Qn.agent_cap    = 1000
-a.agent_cap       = 1000
+a.Qn.agent_cap    = 2000
+a.agent_cap       = 2000
 
 nLearners         = 1
 a.parameters['T'] = 30
@@ -146,10 +146,10 @@ pit = qt.QueueNetwork(nVertices=500, seed=13)
 pit.initialize(nActive=200)
 pit.agent_cap = 10000
 pit.simulate(80)
-%timeit -n3 pit.simulate(N=50000)
+%timeit -n3 pit.simulate(n=50000)
 pr  = cProfile.Profile()
 pr.enable()
-pit.simulate(N=50000)
+pit.simulate(n=50000)
 pr.disable()
 pr.print_stats(sort='cumtime')
 cProfile.run('pit.simulate(20)')

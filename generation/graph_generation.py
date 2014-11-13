@@ -12,7 +12,7 @@ def calculate_distance(latlon1, latlon2) :
     return c
 
 
-def generate_random_graph(nVertices=250, pDest=10, pFCQ=1) :
+def generate_random_graph(nVertices=250, pDest=0.1, pFCQ=1) :
     g = random_graph(nVertices)
     g = set_special_nodes(g, pDest, pFCQ)
     return g
@@ -44,7 +44,7 @@ def set_special_nodes(g, pDest, pFCQ) :
         
     pagerank    = gt.pagerank(g)
     tmp         = np.sort( np.array(pagerank.a) )
-    nDests      = int(np.ceil(g.num_vertices()/pDest))
+    nDests      = int(np.ceil(g.num_vertices() * pDest))
     dests       = np.where(pagerank.a >= tmp[-nDests])[0]
     
     dest_pos    = np.array([g.vp['pos'][g.vertex(k)] for k in dests])

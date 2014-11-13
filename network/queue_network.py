@@ -15,9 +15,11 @@ from .sorting           import oneBisectSort, bisectSort, oneSort, twoSort
 #   Other queues, like the old destination queues, have a type of 2 or higher;
 #       by default destination queues have a type of 2
 
+# Need to check that queues is nonempty before running _next_event
+
 class QueueNetwork :
 
-    def __init__(self, g=None, nVertices=100, pDest=10, pFCQ=1, seed=None, graph_type="osm", calcpath=False) :
+    def __init__(self, g=None, nVertices=100, pDest=0.1, pFCQ=1, seed=None, graph_type="osm", calcpath=False) :
         self.nEvents      = 0
         self.t            = 0
         self.to_animate   = False
@@ -45,7 +47,7 @@ class QueueNetwork :
             gt.seed_rng(seed)
 
         if g == None :
-            g = generate_random_graph(nVertices)
+            g = generate_random_graph(nVertices, pDest, pFCQ)
             g = prepare_graph(g, colors=self.colors, graph_type=None)
         elif isinstance(g, str) or isinstance(g, gt.Graph) :
             g = prepare_graph(g, colors=self.colors, graph_type=graph_type)
@@ -234,6 +236,9 @@ class QueueNetwork :
             if q2.active and np.sum(self.nAgents) > self.agent_cap - 1 :
                 q2.active = False
 
+            if q2.departures[0].time <= q2.arrivals[0].time :
+                print("WHOA! THIS NEEDS CHANGING! %s %s" % (q2.departures[0].time, q2.arrivals[0].time) )
+
             q2.next_event()
 
             if slow :
@@ -316,15 +321,15 @@ class QueueNetwork :
         self.to_animate = False
 
 
-    def simulate(self, T=25, N=None) :
+    def simulate(self, t=25, n=None) :
         if not self.initialized :
             raise Exception("Network has not been initialized. Call 'initialize()' first.")
-        if N == None :
+        if n == None :
             now = self.t
-            while self.t < now + T :
+            while self.t < now + t :
                 self._next_event(slow=False)
-        elif isinstance(N, int) :
-            for k in range(N) :
+        elif isinstance(n, int) :
+            for k in range(n) :
                 self._next_event(slow=False)
 
 
@@ -368,7 +373,7 @@ class QueueNetwork :
         queues            = net.g.new_edge_property("python::object")
 
         for e in net.g.edges() :
-            queues[e]   = copy.deepcopy( net.g.ep['queues'][e] )
+            queues[e]   = copy.deepcopy( self.g.ep['queues'][e] )
 
         net.g.ep['queues']  = queues
 
@@ -417,5 +422,8 @@ def calculate_shortest_path(g) :
                         spath[pa[:-1], pa[-1]] = pa[1:]
 
             shortest_path[vi, :] = spath[vi, :]
+
+        r = np.arange(nV)
+        shortest_path[r, r] = r
 
     return shortest_path

@@ -34,7 +34,7 @@ from gi.repository  import Gtk, Gdk, GdkPixbuf, GObject
 
 class LearningAgent(qt.Agent) :
 
-    def __init__(self, issn) :
+    def __init__(self, issn=0) :
         qt.Agent.__init__(self, issn)
 
     def __repr__(self) :
@@ -70,30 +70,33 @@ class approximate_dynamic_program :
 
         if g == None :
             #self.Qn = self.activate_network(agent_cap=self.agent_cap, seed=seed)
-            self.Qn = qt.QueueNetwork(nVertices=nVertices, calcpath=True, seed=seed)
+            self.Qn = qt.QueueNetwork(nVertices=nVertices, calcpath=True, pDest=0.05, seed=seed)
         elif isinstance(g, gt.Graph) or isinstance(g, str) :
-            self.Qn = qt.QueueNetwork(g, calcpath=True, seed=seed)
+            self.Qn = qt.QueueNetwork(g, calcpath=True, pDest=0.05, seed=seed)
 
         self.nE = self.Qn.nE
         self.ce = np.arange( self.Qn.nV )[self.Qn.g.vp['vType'].a==0]
 
         self.node_dict = {'fcq' : [], 'des' : [], 'arc' : [], 'fcq-des' : []}
+        self.edge2node = {self.Qn.g.edge_index[e] : int(e.target()) for e in self.Qn.g.edges()}
         for v in self.Qn.g.vertices() :
-            e = self.Qn.g.edge(v,v)
+            vi  = int(v)
+            e   = self.Qn.g.edge(v, v)
             if self.Qn.g.vp['vType'][v] == 1 :
-                self.node_dict['fcq'].append(int(v))
+                self.node_dict['fcq'].append(vi)
                 if isinstance(e, gt.Edge) :
-                    self.node_dict['fcq-des'].append( self.Qn.g.edge_index[e] )
+                    ei = self.Qn.g.edge_index[e]
+                    self.node_dict['fcq-des'].append(ei)
             elif self.Qn.g.vp['vType'][v] == 2 :
-                self.node_dict['des'].append(int(v))
+                self.node_dict['des'].append(vi)
                 if isinstance(e, gt.Edge) :
-                    self.node_dict['fcq-des'].append( self.Qn.g.edge_index[e] )
+                    ei = self.Qn.g.edge_index[e]
+                    self.node_dict['fcq-des'].append(ei)
             else :
-                self.node_dict['arc'].append(int(v))
+                self.node_dict['arc'].append(vi)
 
-        self.nGar       = min( [len(self.node_dict['fcq']), 6] )
-        self.nFeatures  = 3 * (self.nGar + 1) + 1
-        self.beta       = 0.5 * ones(self.nFeatures)
+        self.nFeatures  = 4
+        self.beta       = ones(self.nFeatures)
         self.basis      = zeros(self.nFeatures)
 
         def edge_index(e) :
@@ -300,7 +303,7 @@ class approximate_dynamic_program :
     def random_state(self, nLearners, H=(25, 75) ) :
 
         dest  = list( np.random.choice(self.node_dict['des'], nLearners) )
-        orig  = list( np.random.choice(self.node_dict['arc'], nLearners) )
+        orig  = [np.argmax( self.dist[:, d] ) for d in dest] #list( np.random.choice(self.node_dict['arc'], nLearners) )
 
         N, M, T = self.parameters['N'], self.parameters['M'], self.parameters['T']
         np.random.shuffle(self.ce)
@@ -313,26 +316,24 @@ class approximate_dynamic_program :
         self.Qn.initialize(queues=starting_qs)
         self.Qn.simulate( np.random.randint(H[0], H[1]) )
 
-        count   = 1
         for i in range(nLearners) :
-            aissn = self.agent_cap + count
+            aissn = self.agent_cap + i + 1
             agent = LearningAgent(aissn)
 
             for ei in self.in_edges[ orig[i] ] :
                 self.locations[ei].add( aissn )
 
             q = self.Qn.edge2queue[ei]
-            t = q.time + 1 if q.time < infty else self.Qn.queues[0].time + 1
+            t = q.time + 1 if q.time < infty else self.Qn.queues[-1].time + 1
             agent.od  = [orig[i], dest[i]]
             agent.set_type(1)
             agent.set_dest(dest=dest[i])
 
             self.agent_variables[aissn].agent = [agent]
             self.Qn.add_arrival(ei, agent, t)
-            self.parked[self.agent_cap+count] = False
-            count  += 1
+            self.parked[aissn] = False
 
-        if not isinstance(self.Qn.queues[0].departures[0], LearningAgent) :
+        if not isinstance(self.Qn.queues[-1].departures[0], LearningAgent) :
             self.simulate_forward( self.Qn )
 
         return
@@ -356,12 +357,13 @@ class approximate_dynamic_program :
 
         N, M, T = self.parameters['N'], self.parameters['M'], self.parameters['T']
         gamma   = self.parameters['gamma']
+        nFCQs   = len(self.node_dict['fcq-des'])
 
-        cost      = zeros(1 + self.nE)
-        value_es  = zeros(1 + self.nE)
-        obj_func  = zeros(1 + self.nE)
-        edges     = zeros(1 + self.nE, int)
-        basis_es  = np.mat(zeros( (self.nFeatures, 1 + self.nE) ))
+        cost      = zeros(1 + nFCQs)
+        value_es  = zeros(1 + nFCQs)
+        obj_func  = zeros(1 + nFCQs)
+        edges     = zeros(1 + nFCQs, int)
+        basis_es  = np.mat(zeros( (self.nFeatures, 1 + nFCQs) ))
         for_state = [0 for k in range(self.Qn.nE)]
 
         for n in range(N) :
@@ -372,21 +374,23 @@ class approximate_dynamic_program :
 
             for m in range(M) :
                 QN  = self.Qn.copy()
+                loc = copy.deepcopy( self.locations )
 
                 finished = np.zeros(nLearners, bool)
 
                 while not finished.all() :
-                    issn    = QN.queues[0].departures[0].issn
+                    agent   = QN.queues[-1].departures[0]
+                    issn    = agent.issn
                     aStruct = self.agent_variables[issn]
                     tau     = aStruct.tau
-                    state   = [aStruct.agent[0].od]
+                    state   = [agent.od]
 
                     if finished[issn - self.agent_cap - 1] :
                         self.simulate_forward(QN)
                         continue
 
                     if aStruct.parked[n, m] :
-                        self.exchange_information( aStruct.agent[0].od[0] ) 
+                        self.exchange_information( agent.od[0] ) 
                         self.simulate_forward(QN)
                         aStruct.tau  += 1
                         finished[issn - self.agent_cap - 1] = aStruct.tau >= T
@@ -396,70 +400,68 @@ class approximate_dynamic_program :
                         print("Frame: %s, %s, %s, %s" % (issn, n, m, tau) )
 
                     if not complete_info :
-                        data  = aStruct.agent[0].net_data[:, 1] * aStruct.agent[0].net_data[:, 2]
+                        data  = agent.net_data[:, 1] * agent.net_data[:, 2]
                         state.extend( data )
                     else :
                         state.extend( QN.nAgents )
 
                     obj_func[0] = self.parking_penalty[state[0][0], state[0][1]]
                     if QN.g.vp['vType'].a[ state[0][0] ] in [1, 2] :
-                        nServers = QN.g.ep['queues'][QN.g.edge(state[0][0], state[0][0])].nServers
-                        if state[state[0][0]+1] == nServers :
+                        ei = QN.g.edge_index[QN.g.edge(state[0][0], state[0][0])]
+                        edges[0] = ei
+                        nServers = QN.edge2queue[ei].nServers
+                        if state[ei+1] == nServers :
                             obj_func[0] += self.full_penalty 
-                    ct  = 0
 
-                    for ei in self.adjacency[ state[0][0] ] :
-                        if QN.edge2queue[ei].issn[0] == QN.edge2queue[ei].issn[1] :
-                            continue
+                    for k in range(1, nFCQs + 1) :
+                        ei    = self.node_dict['fcq-des'][k-1]
+                        v, b  = self.value_function(state, ei, aStruct.beta[tau], QN)
 
-                        ct   += 1
-                        Sa    = self.post_decision_state(state, ei, QN)
-                        v, b  = self.value_function(Sa, aStruct.beta[tau], QN)
-
-                        obj_func[ct]    = v * gamma
-                        value_es[ct]    = v
-                        basis_es[:, ct] = b
-                        edges[ct]       = ei
+                        obj_func[k]   = v * gamma
+                        value_es[k]   = v
+                        basis_es[:,k] = b
+                        edges[k]      = ei
                         if verbose :
                             print( "Value function: %s\nNum in queue %s: %s" % (v, ei, QN.edge2queue[ei].nSystem) )
 
-                    if 3 > n >= 0 and np.random.uniform() < 0.2 and m < M - 1 :
+                    if 3 > n >= 0 and np.random.uniform() < 0.2 and m < M - 1 and False :
                         if obj_func[0] < np.infty :
-                            policy = np.random.randint(0, ct+1)
+                            policy = np.random.randint(0, nFCQs + 1)
                         else :  
-                            policy = np.random.randint(1, ct+1)
+                            policy = np.random.randint(1, nFCQs + 1)
                     else :
-                        policy  = np.argmin( obj_func[:ct+1] )
+                        policy  = np.argmin( obj_func )
 
                     aStruct.t[n,m,tau]        = QN.t
                     aStruct.v_est[n,m,tau]    = value_es[policy]
                     aStruct.basis[n,m,tau,:]  = array( basis_es[:, policy].T )
-                    target_node = QN.edge2queue[ edges[policy] ].issn[1]
+                    target_node = self.edge2node[ edges[policy] ]
+                    next_node   = QN.shortest_path[state[0][0], target_node]
 
                     if policy == 0 :
                         if verbose :
-                            print( "Options: %s\nParked!" % (obj_func[:ct+1]) )
+                            print( "Options: %s\nParked!" % (obj_func) )
 
                         aStruct.costs[n, m, tau]  = obj_func[0]
                         aStruct.parked[n, m]      = True
 
                     if save_frames and m == M - 1 :
                         self._update_graph(state, QN)
-                        self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-0.png' % (aStruct.issn,n,m,tau), QN)
-                        self._update_graph(state, QN, target_node)
-                        self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-1.png' % (aStruct.issn,n,m,tau), QN)
+                        self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-0.png' % (issn,n,m,tau), QN)
+                        self._update_graph(state, QN, next_node)
+                        self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-1.png' % (issn,n,m,tau), QN)
 
                     if n > 0 :
                         for ei in self.in_edges[ state[0][0] ] :
-                            self.locations[ei].remove( aStruct.issn )
+                            loc[ei].remove( issn )
 
-                        for ei in self.in_edges[ target_node ] :
-                            self.locations[ei].add( aStruct.issn )
+                        for ei in self.in_edges[ next_node ] :
+                            loc[ei].add( issn )
 
-                        self.exchange_information( target_node ) 
+                        self.exchange_information( next_node ) 
 
-                    aStruct.agent[0].dest  = edges[policy]
-                    aStruct.agent[0].od[0] = target_node
+                    agent.dest  = edges[policy]
+                    agent.od[0] = next_node
                     aStruct.tau  += 1
 
                     self.simulate_forward(QN)
@@ -482,7 +484,7 @@ class approximate_dynamic_program :
                         self.initial_update(aStruct)
 
                     aStruct.tau = 0
-                    aStruct.beta_history[n,m,:,:] = aStruct.beta
+                    aStruct.beta_history[n,m,:,:]   = aStruct.beta
                     aStruct.value_history[n,m,:,0]  = aStruct.values[n,m,:T]
                     aStruct.value_history[n,m,:,1]  = aStruct.v_est[n,m,:]
                     if verbose :
@@ -511,10 +513,10 @@ class approximate_dynamic_program :
 
 
     def simulate_forward(self, QN):
-        QN.simulate(N=1)
+        QN.simulate(n=1)
         event = QN.next_event_type()
         while not (event == 2 and isinstance(QN.queues[-1].departures[0], LearningAgent) ):
-            QN.simulate(N=1)
+            QN.simulate(n=1)
             event = QN.next_event_type()
 
 
@@ -576,40 +578,22 @@ class approximate_dynamic_program :
             aStruct.beta[t] = dot(pinv(aStruct.A[t]), aStruct.z[t])
 
 
-    def value_function(self, S, beta, QN) :
-        indices = np.argsort( self.dist[S[0][1], self.node_dict['fcq']] )
-        garages = [self.node_dict['fcq'][k] for k in indices][:self.nGar]
-        c_dists = self.dist[S[0][0], garages]
-        g_dists = self.dist[S[0][1], garages]
+    def value_function(self, S, e, beta, QN) :
+        v     = self.edge2node[e]
+        cost  = self.parking_penalty[v, S[0][1]]
         
-        ej   = QN.g.edge_index[ QN.g.edge(S[0][1], S[0][1]) ]
-        nSer = QN.edge2queue[ej].nServers
-        nSys = QN.edge2queue[ej].nSystem
+        nSer  = QN.edge2queue[e].nServers
+        nSys  = QN.edge2queue[e].nSystem
 
         p    = 1 / (1 + max(nSer - nSys, 0))
-        l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[S[0][1]] if ei != S[0][1]]) / len(self.in_edges[S[0][1]])
-        cd   = self.dist[S[0][0], S[0][1]]
+        l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[v] if ei != e]) / len(self.in_edges[v])
         penl = self.full_penalty / ( 1.0 + np.exp(-40*(min(l,1)-19/20)) )
         pen  = self.full_penalty / ( 1.0 + np.exp(-40*(p-19/20)) )
 
-        self.basis[-4] = cd + pen + self.parking_penalty[S[0][1], S[0][1]]
-        self.basis[-3] = pen + self.parking_penalty[S[0][1], S[0][1]]
-        self.basis[-2] = cd
-        self.basis[-1] = 1
-
-        for k in range(self.nGar) :
-            g    = garages[k]
-            cd   = c_dists[k]
-            nSer = QN.edge2queue[g].nServers
-            nSys = QN.edge2queue[g].nSystem
-            p    = 1 / (1 + max(nSer - nSys, 0))
-            l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[g] if ei != g]) / len(self.in_edges[S[0][1]])
-            pen  = self.full_penalty / ( 1.0 + np.exp(-40*(p-19/20)) )
-            penl = self.full_penalty / ( 1.0 + np.exp(-40*(min(l,1)-19/20)) )
-            self.basis[3*k]   = cd + pen + self.parking_penalty[S[0][1], S[0][1]]
-            self.basis[3*k+1] = pen + self.parking_penalty[g, S[0][1]]
-            self.basis[3*k+2] = cd  
-
+        self.basis[0] = 1
+        self.basis[1] = cost
+        self.basis[2] = pen
+        self.basis[3] = penl
 
         return np.dot(self.basis, beta), np.mat(self.basis).T
 
@@ -621,13 +605,11 @@ class approximate_dynamic_program :
         QN.g.vp['halo'].a        = False
 
         i, j  = state[0]
-        vj    = QN.g.vertex(j)
 
         if target != None :
             target  = QN.g.vertex(target)
             QN.g.vp['halo'][target]         = True 
             QN.g.vp['halo_color'][target]   = [0.7, 0.1, 0.1, 1.0]
-            QN.g.vp['halo'][vj]             = True
 
         a     = i
         eList = []
@@ -657,7 +639,7 @@ class AgentStruct() :
         self.A      = ones( (T, nF, nF) )
         self.z      = zeros( (T, nF) )
         self.n      = 1
-        self.beta   = 0.01 * ones( (T, nF) ) / nF
+        self.beta   = ones( (T, nF) )
         self.values = zeros( (N,M,T+1) )
         self.v_est  = zeros( (N,M,T) )
         self.costs  = zeros( (N,M,T+1) )
