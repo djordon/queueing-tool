@@ -289,8 +289,8 @@ class approximate_dynamic_program :
     def parking_value(self, origin, destination, S, QN) :
         e   = QN.g.edge(origin, origin)
         if isinstance(e, gt.Edge) :
-            cap = QN.g.ep['queues'][e].nServers
             ei  = QN.g.edge_index[e]
+            cap = QN.edge2queue[ei].nServers
             r   = S[ei+1] / cap
             p   = 1.0 / ( 1.0 + np.exp(-40*(r-19/20)) )
             ans = self.parking_penalty[origin, destination] + p * self.full_penalty

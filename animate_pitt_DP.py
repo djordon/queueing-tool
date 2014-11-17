@@ -21,12 +21,19 @@ a.agent_cap       = 2000
 
 nLearners         = 1
 a.parameters['T'] = 30
-a.parameters['M'] = 50
-a.parameters['N'] = 15
+a.parameters['M'] = 10
+a.parameters['N'] = 2
 a.approximate_policy_iteration(nLearners, save_frames=True, verbose=False)
 print( (a.after - a.before).seconds / 60 )
 
 
+
+
+pr  = cProfile.Profile()
+pr.enable()
+a.approximate_policy_iteration(nLearners, save_frames=False, verbose=False)
+pr.disable()
+pr.print_stats(sort='cumtime')
 
 """
 ### QueueServer code

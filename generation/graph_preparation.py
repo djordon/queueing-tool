@@ -99,8 +99,8 @@ def prepare_graph(g, colors, graph_type=None) :
     for v in g.vertices() :
         e = g.edge(v, v)
         if isinstance(e, gt.Edge) :
-            vertex_pen_color[v] = queues[e].current_color('pen')
-            vertex_color[v]     = queues[e].current_color()
+            vertex_pen_color[v] = queues[g.edge_index[e]].current_color('pen')
+            vertex_color[v]     = queues[g.edge_index[e]].current_color()
         else :
             vertex_pen_color[v] = [0.0, 0.5, 1.0, 1.0]
             vertex_color[v]     = [1.0, 1.0, 1.0, 1.0]
@@ -146,32 +146,31 @@ def prepare_graph(g, colors, graph_type=None) :
     g.ep['edge_length']      = edge_length
     g.ep['arrow_width']      = arrow_width
     g.ep['edge_times']       = edge_times
-    g.ep['queues']           = queues
-    return g
+    return g, queues
 
 
 def set_queues(g, colors, graph_type, **kwargs) :
-    queues    = g.new_edge_property("python::object")
+    queues    = [0 for k in range(g.num_edges())]
     has_cap   = kwargs['has_cap']
     has_lanes = kwargs['has_lanes']
 
     for e in g.edges() :
         qissn = (int(e.source()), int(e.target()), g.edge_index[e])
         if g.ep['eType'][e] == 1 :
-            cap       = max(g.vp['cap'][e.target()] // 10, 4) if has_cap else 4
-            queues[e] = qs.LossQueue(cap, issn=qissn)
+            cap   = max(g.vp['cap'][e.target()] // 10, 4) if has_cap else 4
+            queues[qissn[2]] = qs.LossQueue(cap, issn=qissn)
         elif g.ep['eType'][e] == 2 :
-            cap       = 8 if has_cap else 4
-            queues[e] = qs.LossQueue(cap, issn=qissn)
+            cap   = 8 if has_cap else 4
+            queues[qissn[2]] = qs.LossQueue(cap, issn=qissn)
         else : 
-            lanes     = g.vp['lanes'][e.target()] if has_lanes else 8
-            lanes     = lanes if lanes > 10 else max(lanes // 2, 1)
-            queues[e] = qs.QueueServer(lanes, issn=qissn)
+            lanes = g.vp['lanes'][e.target()] if has_lanes else 8
+            lanes = lanes if lanes > 10 else max(lanes // 2, 1)
+            queues[qissn[2]] = qs.QueueServer(lanes, issn=qissn)
 
         if g.ep['eType'][e] == 2 :
-            queues[e].colors['vertex_pen'] = colors['vertex_pen'][2]
+            queues[qissn[2]].colors['vertex_pen'] = colors['vertex_pen'][2]
         elif g.ep['eType'][e] == 3 :
-            queues[e].colors['vertex_pen'] = colors['vertex_pen'][3]
+            queues[qissn[2]].colors['vertex_pen'] = colors['vertex_pen'][3]
 
     return queues
 
