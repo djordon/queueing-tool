@@ -8,7 +8,7 @@ import time
 import copy
 import os
 
-from numpy.random   import uniform, multinomial
+from numpy.random   import uniform, multinomial, exponential
 from numpy.linalg   import pinv
 from numpy          import size, ones, zeros, array, ndarray, transpose, vstack, arange
 from numpy          import logical_and, logical_or, logical_not, infty, log, dot
@@ -56,11 +56,11 @@ class LearningAgent(qt.Agent) :
 
 class approximate_dynamic_program :
 
-    def __init__(self, g=None, nVertices=125, seed=None) :
+    def __init__(self, g=None, nVertices=125, seed=None, agent_cap=1000) :
         self.parameters         = {'N': 10, 'M':10, 'T': 25, 'gamma': 0.975}
         self.t                  = 0
         self.animate            = False
-        self.agent_cap          = 50
+        self.agent_cap          = agent_cap
         self.dist               = None
         self.parking_penalty    = None
         self.agent_variables    = {}
@@ -69,16 +69,13 @@ class approximate_dynamic_program :
         self.nInteractions      = 0
 
         if g == None :
-            #self.Qn = self.activate_network(agent_cap=self.agent_cap, seed=seed)
-            self.Qn = qt.QueueNetwork(nVertices=nVertices, calcpath=True, pDest=0.05, seed=seed)
+            self.Qn = qt.QueueNetwork(nVertices=nVertices, calcpath=False, pDest=0.1, seed=seed)
+            self.modify_network()
         elif isinstance(g, gt.Graph) or isinstance(g, str) :
-            self.Qn = qt.QueueNetwork(g, calcpath=True, pDest=0.05, seed=seed)
+            self.Qn = qt.QueueNetwork(g, calcpath=False, pDest=0.05, seed=seed)
 
-        self.nE = self.Qn.nE
-        self.ce = np.arange( self.Qn.nV )[self.Qn.g.vp['vType'].a==0]
-
+        self.ce        = np.arange( self.Qn.nE )[self.Qn.g.ep['eType'].a==0]
         self.node_dict = {'fcq' : [], 'des' : [], 'arc' : [], 'fcq-des' : []}
-        self.edge2node = {self.Qn.g.edge_index[e] : int(e.target()) for e in self.Qn.g.edges()}
         for v in self.Qn.g.vertices() :
             vi  = int(v)
             e   = self.Qn.g.edge(v, v)
@@ -102,9 +99,11 @@ class approximate_dynamic_program :
         def edge_index(e) :
             return self.Qn.g.edge_index[e]
 
-        self.in_edges   = [ [i for i in map(edge_index, list(v.in_edges()))] for v in self.Qn.g.vertices() ]
+        self.edge2node  = {edge_index(e) : int(e.target()) for e in self.Qn.g.edges()}
+        self.node2edge  = {int(e.target()) : edge_index(e) for e in self.Qn.g.edges() if e.target() == e.source() }
         self.all_edges  = [ [i for i in map(edge_index, list(v.all_edges()))] for v in self.Qn.g.vertices() ]
         self.locations  = { self.Qn.g.edge_index[e] : set() for e in self.Qn.g.edges() }
+        self.Qn.agent_cap = self.agent_cap
         self.calculate_parking_penalty2()
 
 
@@ -112,42 +111,21 @@ class approximate_dynamic_program :
         return 'whatever'
 
 
-    def activate_network(self, agent_cap, net_size=150, seed=None) :
-        Qn  = qt.QueueNetwork(nVertices=net_size, graph_type='periodic', seed=seed)
-        Qn.agent_cap = agent_cap
-        for q in [Qn.g.ep['queues'][e] for e in Qn.g.edges()] :
-            q.fArrival    = lambda x : x + exponential(1.0)
-            q.fDepart     = lambda x : x + exponential(0.333)
-            q.fDepart_mu  = lambda x : 1/3 
-
-        tmp0    = Qn.g.vp['vType'].a
-        self.ce = np.arange( Qn.nV )[tmp0==min(tmp0)] # Creation edge
-        Qn.initialize(queues=self.ce)
-        
-        garage_cap  = int( np.ceil( agent_cap / (1.5 * Qn.fcq_count) ) )
-        garage_sum  = [[] for k in range(Qn.nV)]
-
-        garage_cap  = np.random.uniform(0, 1, Qn.garage_count) / Qn.garage_count
-        garage_cap  = np.floor( garage_cap * agent_cap * 8 )
-        garage_cap  = [max([int(k),2]) for k in garage_cap]
-        ct          = 0
-        print( (garage_cap, sum(garage_cap), agent_cap) )
-
-        for v in Qn.g.vertices() :
-            if Qn.g.vp['vType'][v] not in (1,2) :
-                for e in v.in_edges() :
-                    Qn.g.ep['queues'][e].fArrival   = lambda x : x + exponential(0.125)
-                    Qn.g.ep['queues'][e].fDepart    = lambda x : x + exponential(0.333)
-                    Qn.g.ep['queues'][e].fDepart_mu = lambda x : 0.333
-
-        for e in Qn.g.edges() :
-            if Qn.g.ep['eType'][e] == 1 :
-                Qn.g.ep['queues'][e].set_nServers(garage_cap[ct])
-                Qn.g.ep['queues'][e].fDepart    = lambda x : x + exponential(2)
-                Qn.g.ep['queues'][e].fDepart_mu = lambda x : 2
-                ct += 1
-
-        return Qn
+    def modify_network(self) :
+        ep  = self.Qn.g.ep
+        vp  = self.Qn.g.vp
+        n   = sum( vp['vType'].a == 1 )
+        m   = sum( vp['vType'].a == 2 )
+        for q in self.Qn.edge2queue :
+            if q.issn[0] == q.issn[1] :
+                if vp['vType'].a[q.issn[0]] == 1 :
+                    q.fArrival  = lambda x : x + exponential(1.0)
+                    q.fDepart   = lambda x : x + exponential(1.333)
+                    q.nServers  = max(self.agent_cap // (50 * n), 1)
+                elif vp['vType'].a[q.issn[0]] == 2 :
+                    q.fArrival  = lambda x : x + exponential(1.0)
+                    q.fDepart   = lambda x : x + exponential(1.333)
+                    q.nServers  = max(self.agent_cap // (125 * m), 1)
 
 
     def time2cost(self, t) :
@@ -253,14 +231,17 @@ class approximate_dynamic_program :
         for key in self.Qn.g.vertex_properties.keys() :
             v_props = v_props.union([key])
 
-        dist    = zeros((self.Qn.nV, self.Qn.nV))
+        nV    = self.Qn.nV
+        dist  = zeros((nV, nV))
+        short = np.ones( (nV, nV), int)
+        spath = np.ones( (nV, nV), int)
 
         if 'dist' not in v_props :        
-            dist  = zeros((self.Qn.nV, self.Qn.nV))
+            dist  = zeros((nV, nV))
             for ve in self.Qn.g.vertices() :
                 for we in self.Qn.g.vertices() :
                     v,w  = int(ve), int(we)
-                    if v == w or dist[w, v] != 0 or dist[v, w] != 0 :
+                    if v == w or dist[v, w] != 0 :
                         continue
                     tmp     = gt.shortest_path(self.Qn.g, ve, we, weights=self.Qn.g.ep['edge_length'])
                     path    = [int(v) for v in tmp[0]]
@@ -269,7 +250,25 @@ class approximate_dynamic_program :
                         for j in range(i+1, len(path)):
                             dist[path[i], path[j]] = sum(elen[i:j])
 
-            dist += np.transpose( dist ) 
+                    spath[path[:-1], path[-1]] = path[1:]
+
+                    for j in range(1,len(path)-1) :
+                        pa  = path[:-j]
+                        spath[pa[:-1], pa[-1]] = pa[1:]
+
+                    if not self.Qn.g.is_directed() :
+                        path.reverse()
+                        spath[path[:-1], path[-1]] = path[1:]
+
+                        for j in range(1, len(path)-1) :
+                            pa  = path[:-j]
+                            spath[pa[:-1], pa[-1]] = pa[1:]
+
+                short[v, :] = spath[v, :]
+
+            r = np.arange(nV)
+            short[r, r] = r
+            self.Qn.shortest_path = short
         else :
             for v in self.Qn.g.vertices() :
                 dist[int(v),:] = self.Qn.g.vp['dist'][v].a
@@ -309,7 +308,7 @@ class approximate_dynamic_program :
         np.random.shuffle(self.ce)
 
         starting_qs = self.ce[:(self.Qn.nV // 3)].tolist()
-        starting_qs.extend( orig )
+        starting_qs.extend( [self.Qn.in_edges[k][-1] for k in orig] )
         starting_qs = np.unique(starting_qs).tolist()
 
         self.Qn.clear()
@@ -320,23 +319,20 @@ class approximate_dynamic_program :
             aissn = self.agent_cap + i + 1
             agent = LearningAgent(aissn)
 
-            for ei in self.in_edges[ orig[i] ] :
+            for ei in self.Qn.in_edges[ orig[i] ] :
                 self.locations[ei].add( aissn )
 
             q = self.Qn.edge2queue[ei]
             t = q.time + 1 if q.time < infty else self.Qn.queues[-1].time + 1
             agent.od  = [orig[i], dest[i]]
             agent.set_type(1)
-            agent.set_dest(dest=dest[i])
 
-            self.agent_variables[aissn].agent = [agent]
+            self.agent_variables[aissn].agent = agent
             self.Qn.add_arrival(ei, agent, t)
             self.parked[aissn] = False
 
-        if not isinstance(self.Qn.queues[-1].departures[0], LearningAgent) :
+        if not isinstance(self.Qn.queues[-1].departures[0], LearningAgent) and nLearners > 0 :
             self.simulate_forward( self.Qn )
-
-        return
 
 
     def _setup_adp(self, nLearners, save_frames=False) :
@@ -435,8 +431,7 @@ class approximate_dynamic_program :
                     aStruct.t[n,m,tau]        = QN.t
                     aStruct.v_est[n,m,tau]    = value_es[policy]
                     aStruct.basis[n,m,tau,:]  = array( basis_es[:, policy].T )
-                    target_node = self.edge2node[ edges[policy] ]
-                    next_node   = QN.shortest_path[state[0][0], target_node]
+                    next_node   = QN.shortest_path[ state[0][0], self.edge2node[edges[policy]] ]
 
                     if policy == 0 :
                         if verbose :
@@ -452,20 +447,19 @@ class approximate_dynamic_program :
                         self.save_frame(self.dir['frames']+'sirs_%s_%s_%s_%s-1.png' % (issn,n,m,tau), QN)
 
                     if n > 0 :
-                        for ei in self.in_edges[ state[0][0] ] :
+                        for ei in self.Qn.in_edges[ state[0][0] ] :
                             loc[ei].remove( issn )
 
-                        for ei in self.in_edges[ next_node ] :
+                        for ei in self.Qn.in_edges[ next_node ] :
                             loc[ei].add( issn )
 
                         self.exchange_information( next_node ) 
 
-                    agent.dest  = edges[policy]
-                    agent.od[0] = next_node
-                    aStruct.tau  += 1
+                    agent.dest   = QN.g.edge_index[ QN.g.edge(agent.od[0], next_node) ]
+                    agent.od[0]  = next_node
+                    aStruct.tau += 1
 
                     self.simulate_forward(QN)
-
                     finished[issn - self.agent_cap - 1] = aStruct.tau >= T
                     if tau + 1 == T and policy != 0:
                         aStruct.costs[n, m, tau] = 100
@@ -512,7 +506,7 @@ class approximate_dynamic_program :
         return S
 
 
-    def simulate_forward(self, QN):
+    def simulate_forward(self, QN) :
         QN.simulate(n=1)
         event = QN.next_event_type()
         while not (event == 2 and isinstance(QN.queues[-1].departures[0], LearningAgent) ):
@@ -523,7 +517,7 @@ class approximate_dynamic_program :
     def exchange_information(self, node) :
         issns = set()
 
-        for ei in self.in_edges[node] :
+        for ei in self.Qn.in_edges[node] :
             for n in self.locations[ei] :
                 issns.add(n)
 
@@ -586,7 +580,7 @@ class approximate_dynamic_program :
         nSys  = QN.edge2queue[e].nSystem
 
         p    = 1 / (1 + max(nSer - nSys, 0))
-        l    = sum([QN.edge2queue[ei].nSystem for ei in self.in_edges[v] if ei != e]) / len(self.in_edges[v])
+        l    = sum([QN.edge2queue[ei].nSystem for ei in self.Qn.in_edges[v] if ei != e]) / len(self.Qn.in_edges[v])
         penl = self.full_penalty / ( 1.0 + np.exp(-40*(min(l,1)-19/20)) )
         pen  = self.full_penalty / ( 1.0 + np.exp(-40*(p-19/20)) )
 

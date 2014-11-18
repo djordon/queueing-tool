@@ -61,6 +61,7 @@ class QueueNetwork :
                 return g.edge_index[e]
 
             self.adjacency  = [ [i for i in map(edge_index, list(v.out_edges()))] for v in g.vertices()]
+            self.in_edges   = [ [i for i in map(edge_index, list(v.in_edges()))] for v in g.vertices() ]
             self.edge2queue = qs
             self.nAgents    = np.zeros( g.num_edges() )
 
@@ -76,23 +77,12 @@ class QueueNetwork :
     def initialize(self, nActive=1, queues=None) :
         initialized = False
         if queues == None :
-            queues = np.arange(self.nV)  
+            queues = np.arange(self.nE)  
             np.random.shuffle(queues)
             queues = queues[:nActive]
 
-        for vi in queues :
-            initialized = False
-            v = self.g.vertex(vi)
-            e = self.g.edge(v, v)
-            if isinstance(e, gt.Edge) :
-                ei  = self.g.edge_index[e]
-                self.edge2queue[ei].initialize()
-                initialized = True
-            else :
-                for e in v.all_edges() :
-                    ei  = self.g.edge_index[e]
-                    self.edge2queue[ei].initialize()
-                    break
+        for ei in queues :
+            self.edge2queue[ei].initialize()
 
         self.queues = [q for q in self.edge2queue]
         self.queues.sort()
@@ -141,14 +131,28 @@ class QueueNetwork :
     def update_graph_colors(self) :
         ep  = self.g.ep
         vp  = self.g.vp
+        do  = [True for v in range(self.nV)]
         for q in self.edge2queue :
             e = self.g.edge(q.issn[0], q.issn[1])
+            v = self.g.vertex(q.issn[1])
             if q.issn[0] == q.issn[1] :
-                v = self.g.vertex(q.issn[0])
                 vp['vertex_color'][v] = q.current_color()
                 ep['edge_color'][e]   = q.current_color('edge')
             else :
                 ep['edge_color'][e]   = q.current_color()
+                if do[q.issn[1]] :
+                    nSy = 0
+                    cap = 0
+                    for vi in self.in_edges[q.issn[1]] :
+                        nSy += self.edge2queue[vi].nSystem
+                        cap += self.edge2queue[vi].nServers
+
+                    tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+
+                    color    = [ i * tmp / 0.9 for i in self.colors['vertex'][0] ]
+                    color[3] = 1.0
+                    vp['vertex_color'][v] = color
+                    do[q.issn[1]] = False
 
 
     def _update_graph_colors(self, ad, qissn) :
@@ -169,7 +173,7 @@ class QueueNetwork :
             else :
                 ep['edge_color'][pe] = self.edge2queue[qissn[2]].current_color()
 
-        if e.target() == e.source() :
+        if qissn[0] == qissn[1] :
             ep['edge_color'][e]   = self.edge2queue[qissn[2]].current_color('edge')
             vp['vertex_color'][v] = self.edge2queue[qissn[2]].current_color()
             vp['halo'][v]  = True
@@ -180,6 +184,17 @@ class QueueNetwork :
                 vp['halo_color'][v] = self.colors['halo_departure']
         else :
             ep['edge_color'][e] = self.edge2queue[qissn[2]].current_color()
+            nSy = 0
+            cap = 0
+            for vi in self.in_edges[qissn[1]] :
+                nSy += self.edge2queue[vi].nSystem
+                cap += self.edge2queue[vi].nServers
+
+            tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+
+            color    = [ i * tmp / 0.9 for i in self.colors['vertex'][0] ]
+            color[3] = 1.0
+            vp['vertex_color'][v] = color
 
 
     def append_departure(self, ei, agent, t) :
@@ -209,7 +224,7 @@ class QueueNetwork :
 
 
     def next_event_type(self) :
-        return self.queues[0].next_event_type()
+        return self.queues[-1].next_event_type()
 
 
     def _next_event(self, slow=True) :
@@ -374,6 +389,7 @@ class QueueNetwork :
         net._queues       = copy.copy(self._queues)
         net.colors        = copy.deepcopy(self.colors)
         net.adjacency     = copy.deepcopy(self.adjacency)
+        net.in_edges      = copy.deepcopy(self.in_edges)
         net.edge2queue    = copy.deepcopy(self.edge2queue)
         net.queues        = [q for q in net.edge2queue if q.issn[2] in net._queues]
         net.queues.sort(reverse=True)

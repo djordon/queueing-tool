@@ -305,6 +305,7 @@ class QueueServer :
 
     def clear(self) :
         self.nArrivals  = 0
+        self.nDeparts   = 0
         self.nSystem    = 0
         self.nTotal     = 0
         self.local_t    = 0

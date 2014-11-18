@@ -71,24 +71,27 @@ def set_special_nodes(g, pDest, pFCQ) :
         for e in g2.edges() :
             e1  = g.add_edge(source=int(e.target()), target=int(e.source()))
 
-    for v in g.vertices() :
-        e = g.add_edge(source=v, target=v)
-    
-    g.reindex_edges()
     vType   = g.new_vertex_property("int")
-    eType   = g.new_edge_property("int")
-    elength = g.new_edge_property("double")
 
     for v in g.vertices() :
         if int(v) in dests :
             vType[v] = 2
+            e = g.add_edge(source=v, target=v)
         elif int(v) in fcqs :
             vType[v] = 1
-        e = g.edge(v, v)
-        if vType[v] == 1 :
-            eType[e] = 1
-        elif vType[v] == 2 :
-            eType[e] = 2
+            e = g.add_edge(source=v, target=v)
+    
+    g.reindex_edges()
+    eType   = g.new_edge_property("int")
+    elength = g.new_edge_property("double")
+
+    for v in g.vertices() :
+        if vType[v] in [1, 2] :
+            e = g.edge(v, v)
+            if vType[v] == 1 :
+                eType[e] = 1
+            else :
+                eType[e] = 2
     
     for e in g.edges() :
         latlon1     = g.vp['pos'][e.target()]

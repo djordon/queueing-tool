@@ -12,12 +12,10 @@ import pickle
 np.set_printoptions(precision=3, suppress=True, threshold=2000)
 
 #a   = adp.approximate_dynamic_program('pitt_network.xml')
-a   = adp.approximate_dynamic_program(nVertices=100)#, seed=15)
+
+a   = adp.approximate_dynamic_program(nVertices=50, agent_cap=3000)#, seed=15)
 
 #vs  = [202, 453, 255, 449, 218, 72, 126, 326]
-
-a.Qn.agent_cap    = 2000
-a.agent_cap       = 2000
 
 nLearners         = 1
 a.parameters['T'] = 30
@@ -149,8 +147,8 @@ import queueing_tool    as qt
 import cProfile
 import os
 data_dir  = os.path.expanduser('~') + '/math/data/graphs/'
-pit = qt.QueueNetwork(nVertices=500, seed=13)
-pit.initialize(nActive=200)
+pit = qt.QueueNetwork(nVertices=50, seed=13)
+pit.initialize(nActive=20)
 pit.agent_cap = 10000
 pit.simulate(80)
 %timeit -n3 pit.simulate(n=50000)
