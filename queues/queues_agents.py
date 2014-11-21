@@ -39,7 +39,7 @@ class Agent :
         self.blocked  = 0
 
     def __repr__(self) :
-        return "Agent. issn: %s, time: %s" % (self.issn, self.time)
+        return "Agent. edge: %s, time: %s" % (self.edge, self.time)
 
     def __lt__(a,b) :
         return a.time < b.time
@@ -79,10 +79,10 @@ class Agent :
 
 
     def desired_destination(self, *info) :
-        network, qissn = info[:2]
-        n   = len( network.adjacency[qissn[1]] )
+        network, qedge = info[:2]
+        n   = len( network.adjacency[qedge[1]] )
         d   = randint(0, n)
-        z   = network.adjacency[qissn[1]][d]
+        z   = network.adjacency[qedge[1]][d]
         return z
 
 
@@ -113,11 +113,25 @@ class Agent :
 
 
 class QueueServer :
-
-    def __init__(self, nServers=1, issn=(0,0,0), active=False, fArrival=lambda x : x + exponential(1), 
+    """
+    The QueueServer class is designed to operate within the QueueNetwork
+    class. Becuase of this, there are some variables that used by the
+    QueueNetwork class:
+        The edge variable is a tuple of integers with the source vertex,
+        target vertex, and edge index.
+        The colors variable is a dictionary that indicates the colors used
+        to draw the edge (or vertex if the edge points to itself).
+        The active variable dictates whether the Queue 'generates' arrivals
+        from the outside world.
+        This base class has arrival and departure functions that depend on
+        the current time and nothing else.
+        AgentClass dictates what kinds of Agents are generated when there
+        is an arrival.
+    """
+    def __init__(self, nServers=1, edge=(0,0,0), active=False, fArrival=lambda x : x + exponential(1), 
             fDepart =lambda x : x + exponential(0.95), AgentClass=Agent) :
 
-        self.issn       = issn
+        self.edge       = edge
         self.nServers   = nServers
         self.AgentClass = AgentClass
         self.nArrivals  = 0
@@ -148,7 +162,7 @@ class QueueServer :
 
     def __repr__(self) :
         tmp = "QueueServer: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.issn[2], self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
+            %  (self.edge[2], self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
         return tmp
 
     def __lt__(a,b) :
@@ -293,7 +307,7 @@ class QueueServer :
             cap = self.nServers
             tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
-            if self.issn[0] == self.issn[1] :
+            if self.edge[0] == self.edge[1] :
                 color    = [ i * tmp / 0.9 for i in self.colors['vertex_normal'] ]
                 color[3] = 1.0
             else :
@@ -323,7 +337,7 @@ class QueueServer :
 
     def __deepcopy__(self, memo) :
         new_server            = self.__class__()
-        new_server.issn       = copy.copy(self.issn)
+        new_server.edge       = copy.copy(self.edge)
         new_server.nServers   = copy.copy(self.nServers)
         new_server.nArrivals  = copy.copy(self.nArrivals)
         new_server.nDeparts   = copy.copy(self.nDeparts)
@@ -346,10 +360,10 @@ class QueueServer :
 
 class LossQueue(QueueServer) :
 
-    def __init__(self, nServers=1, issn=(0,0,0), active=False, fArrival=lambda x : x + exponential(1), 
+    def __init__(self, nServers=1, edge=(0,0,0), active=False, fArrival=lambda x : x + exponential(1), 
             fDepart =lambda x : x + exponential(0.95), AgentClass=Agent, qbuffer=0) :
 
-        QueueServer.__init__(self, nServers, issn, active, fArrival, fDepart, AgentClass)
+        QueueServer.__init__(self, nServers, edge, active, fArrival, fDepart, AgentClass)
 
         self.colors     = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
                             'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
@@ -360,7 +374,7 @@ class LossQueue(QueueServer) :
 
     def __repr__(self) :
         tmp = "LossQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.issn[2], self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
+            %  (self.edge[2], self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
         return tmp
 
 
@@ -379,7 +393,7 @@ class LossQueue(QueueServer) :
                 self.nArrivals += 1
                 self.nSystem   += 1
                 new_arrival     = heappop(self.arrivals)
-                new_arrival.add_loss(self.issn)
+                new_arrival.add_loss(self.edge)
 
                 self.local_t    = new_arrival.time
                 if self.active :
@@ -399,6 +413,28 @@ class LossQueue(QueueServer) :
             return QueueServer.next_event(self)
 
 
+    def current_color(self, which='') :
+        if which == 'edge' :
+            color = [0, 0, 0, 0]
+
+        elif which == 'pen' :
+            color = self.colors['vertex_pen']
+
+        else :
+            nSy = self.nSystem
+            cap = self.nServers
+            tmp = 0.9 - min(nSy, 0.9) if cap <= 1 else 0.9 - min(nSy / cap, 0.9)
+
+            if self.edge[0] == self.edge[1] :
+                color    = [ i * tmp / 0.9 for i in self.colors['vertex_normal'] ]
+                color[3] = 1.0
+            else :
+                color    = [ i * tmp / 0.9 for i in self.colors['edge_normal'] ]
+                color[3] = 0.7 - tmp / 1.8
+
+        return color
+
+
     def clear(self) :
         QueueServer.clear(self)
         self.nBlocked  = 0
@@ -414,17 +450,17 @@ class LossQueue(QueueServer) :
 
 class MarkovianQueue(QueueServer) :
 
-    def __init__(self, nServers=1, issn=(0,0,0), active=False, aRate=1, dRate=1.1, AgentClass=Agent) :
+    def __init__(self, nServers=1, edge=(0,0,0), active=False, aRate=1, dRate=1.1, AgentClass=Agent) :
         aMean = 1 / aRate
         dMean = 1 / dRate
-        QueueServer.__init__(self, nServers, issn, active, lambda x : x + exponential(aMean),
+        QueueServer.__init__(self, nServers, edge, active, lambda x : x + exponential(aMean),
             lambda x : x + exponential(dMean), AgentClass)
 
         self.rates  = [aRate, dRate]
 
     def __repr__(self) :
         tmp = "MarkovianQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s, rates: %s" \
-            %  (self.issn[2], self.nServers, len(self.queue), self.nArrivals, 
+            %  (self.edge[2], self.nServers, len(self.queue), self.nArrivals,
                 self.nDeparts, np.round(self.time, 3), self.rates)
         return tmp
 

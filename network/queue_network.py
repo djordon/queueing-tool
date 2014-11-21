@@ -25,7 +25,7 @@ class QueueNetwork :
         self.to_animate   = False
         self.initialized  = False
         self.agent_cap    = 100
-        self.prev_issn    = None
+        self.prev_edge    = None
         self.colors       =  {'edge_departure'   : [0, 0, 0, 1], 
                               'edge_normal'      : [0.7, 0.7, 0.7, 0.50],
                               'vertex' :     { 0 : [0.9, 0.9, 0.9, 1.0],        # normal
@@ -90,7 +90,7 @@ class QueueNetwork :
             self.queues.pop()
 
         self.queues.sort(reverse=True)
-        self._queues      = set([q.issn[2] for q in self.queues])
+        self._queues      = set([q.edge[2] for q in self.queues])
         self.initialized  = True
 
 
@@ -133,49 +133,60 @@ class QueueNetwork :
         vp  = self.g.vp
         do  = [True for v in range(self.nV)]
         for q in self.edge2queue :
-            e = self.g.edge(q.issn[0], q.issn[1])
-            v = self.g.vertex(q.issn[1])
-            if q.issn[0] == q.issn[1] :
+            e = self.g.edge(q.edge[0], q.edge[1])
+            v = self.g.vertex(q.edge[1])
+            if q.edge[0] == q.edge[1] :
                 vp['vertex_color'][v] = q.current_color()
                 ep['edge_color'][e]   = q.current_color('edge')
             else :
                 ep['edge_color'][e]   = q.current_color()
-                if do[q.issn[1]] :
+                if do[q.edge[1]] :
                     nSy = 0
                     cap = 0
-                    for vi in self.in_edges[q.issn[1]] :
+                    for vi in self.in_edges[q.edge[1]] :
                         nSy += self.edge2queue[vi].nSystem
                         cap += self.edge2queue[vi].nServers
 
                     tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
                     color    = [ i * tmp / 0.9 for i in self.colors['vertex'][0] ]
-                    color[3] = 1.0
+                    color[3] = 1.0 - tmp
                     vp['vertex_color'][v] = color
-                    do[q.issn[1]] = False
+                    do[q.edge[1]] = False
 
 
-    def _update_graph_colors(self, ad, qissn) :
-        e   = self.g.edge(qissn[0], qissn[1])
+    def _update_graph_colors(self, ad, qedge) :
+        e   = self.g.edge(qedge[0], qedge[1])
         v   = e.target()
         ep  = self.g.ep
         vp  = self.g.vp
 
-        if self.prev_issn != None :
-            pe  = self.g.edge(self.prev_issn[0], self.prev_issn[1])
-            pv  = self.g.vertex(self.prev_issn[1])
+        if self.prev_edge != None :
+            pe  = self.g.edge(self.prev_edge[0], self.prev_edge[1])
+            pv  = self.g.vertex(self.prev_edge[1])
 
             if pe.target() == pe.source() :
-                ep['edge_color'][pe]   = self.edge2queue[self.prev_issn[2]].current_color('edge')
-                vp['vertex_color'][pv] = self.edge2queue[self.prev_issn[2]].current_color()
+                ep['edge_color'][pe]   = self.edge2queue[self.prev_edge[2]].current_color('edge')
+                vp['vertex_color'][pv] = self.edge2queue[self.prev_edge[2]].current_color()
                 vp['halo_color'][pv]   = self.colors['halo_normal']
                 vp['halo'][pv]  = False
             else :
-                ep['edge_color'][pe] = self.edge2queue[qissn[2]].current_color()
+                ep['edge_color'][pe] = self.edge2queue[self.prev_edge[2]].current_color()
+                nSy = 0
+                cap = 0
+                for vi in self.in_edges[self.prev_edge[1]] :
+                    nSy += self.edge2queue[vi].nSystem
+                    cap += self.edge2queue[vi].nServers
 
-        if qissn[0] == qissn[1] :
-            ep['edge_color'][e]   = self.edge2queue[qissn[2]].current_color('edge')
-            vp['vertex_color'][v] = self.edge2queue[qissn[2]].current_color()
+                tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+
+                color    = [ i * tmp / 0.9 for i in self.colors['vertex'][0] ]
+                color[3] = 1.0 - tmp
+                vp['vertex_color'][v] = color
+
+        if qedge[0] == qedge[1] :
+            ep['edge_color'][e]   = self.edge2queue[qedge[2]].current_color('edge')
+            vp['vertex_color'][v] = self.edge2queue[qedge[2]].current_color()
             vp['halo'][v]  = True
 
             if ad == 'arrival' :
@@ -183,17 +194,17 @@ class QueueNetwork :
             elif ad == 'departure' :
                 vp['halo_color'][v] = self.colors['halo_departure']
         else :
-            ep['edge_color'][e] = self.edge2queue[qissn[2]].current_color()
+            ep['edge_color'][e] = self.edge2queue[qedge[2]].current_color()
             nSy = 0
             cap = 0
-            for vi in self.in_edges[qissn[1]] :
+            for vi in self.in_edges[qedge[1]] :
                 nSy += self.edge2queue[vi].nSystem
                 cap += self.edge2queue[vi].nServers
 
             tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
             color    = [ i * tmp / 0.9 for i in self.colors['vertex'][0] ]
-            color[3] = 1.0
+            color[3] = 1.0 - tmp
             vp['vertex_color'][v] = color
 
 
@@ -201,8 +212,8 @@ class QueueNetwork :
         q   = self.edge2queue[ei]
         q.append_departure(agent, t)
 
-        if q.issn[2] not in self._queues and q.time < infty :
-            self._queues.add(q.issn[2])
+        if q.edge[2] not in self._queues and q.time < infty :
+            self._queues.add(q.edge[2])
             self.queues.append(q)
 
         self.queues.sort(reverse=True)
@@ -216,8 +227,8 @@ class QueueNetwork :
         agent.set_arrival(t)
         q._add_arrival(agent)
 
-        if q.issn[2] not in self._queues and q.time < infty :
-            self._queues.add(q.issn[2])
+        if q.edge[2] not in self._queues and q.time < infty :
+            self._queues.add(q.edge[2])
             self.queues.append(q)
 
         self.queues.sort(reverse=True)
@@ -230,7 +241,7 @@ class QueueNetwork :
     def _next_event(self, slow=True) :
         q = self.queues.pop()
         t = q.time
-        j = q.issn[2]
+        j = q.edge[2]
 
         event  = q.next_event_type()
         self.t = t
@@ -240,17 +251,17 @@ class QueueNetwork :
             self.nAgents[j] = q.nTotal
             self.nEvents   += 1
 
-            ei  = agent.desired_destination(self, q.issn) # expects the network, and current location
+            ei  = agent.desired_destination(self, q.edge) # expects the network, and current location
             q2  = self.edge2queue[ei]
             q2t = q2.time
             agent.set_arrival(t)
 
             q2._add_arrival(agent)
-            self.nAgents[q2.issn[2]] = q2.nTotal
+            self.nAgents[q2.edge[2]] = q2.nTotal
 
             if slow :
-                self._update_graph_colors(ad='departure', qissn=q.issn)
-                self.prev_issn = q.issn
+                self._update_graph_colors(ad='departure', qedge=q.edge)
+                self.prev_edge = q.edge
 
             if q2.active and np.sum(self.nAgents) > self.agent_cap - 1 :
                 q2.active = False
@@ -261,27 +272,27 @@ class QueueNetwork :
             q2.next_event()
 
             if slow :
-                self._update_graph_colors(ad='arrival', qissn=q2.issn)
-                self.prev_issn = q2.issn
+                self._update_graph_colors(ad='arrival', qedge=q2.edge)
+                self.prev_edge = q2.edge
 
             if q.time < infty :
-                if q2.issn[2] in self._queues :
+                if q2.edge[2] in self._queues :
                     if q2.time < q2t :
                         oneBisectSort(self.queues, q, q2t, len(self.queues))
                     else :
                         bisectSort(self.queues, q, len(self.queues))
                 elif q2.time < infty :
-                    self._queues.add(q2.issn[2])
+                    self._queues.add(q2.edge[2])
                     twoSort(self.queues, q, q2, len(self.queues))
                 else :
                     bisectSort(self.queues, q, len(self.queues))
             else :
                 self._queues.remove(j)
-                if q2.issn[2] in self._queues :
+                if q2.edge[2] in self._queues :
                     if q2.time < q2t :
                         oneSort(self.queues, q2t, len(self.queues))
                 elif q2.time < infty :
-                    self._queues.add(q2.issn[2])
+                    self._queues.add(q2.edge[2])
                     bisectSort(self.queues, q2, len(self.queues))
 
         elif event == 1 : # This is an arrival
@@ -293,8 +304,8 @@ class QueueNetwork :
             self.nEvents   += 1
 
             if slow :
-                self._update_graph_colors(ad='arrival', qissn=q.issn)
-                self.prev_issn  = q.issn
+                self._update_graph_colors(ad='arrival', qedge=q.edge)
+                self.prev_edge  = q.edge
 
             if q.time < infty :
                 bisectSort(self.queues, q, len(self.queues) )
@@ -383,7 +394,7 @@ class QueueNetwork :
         net.nAgents       = copy.copy(self.nAgents)
         net.nEvents       = copy.copy(self.nEvents)
         net.initialized   = copy.copy(self.initialized)
-        net.prev_issn     = copy.copy(self.prev_issn)
+        net.prev_edge     = copy.copy(self.prev_edge)
         net.shortest_path = copy.copy(self.shortest_path)
         net.to_animate    = copy.copy(self.to_animate)
         net._queues       = copy.copy(self._queues)
@@ -391,7 +402,7 @@ class QueueNetwork :
         net.adjacency     = copy.deepcopy(self.adjacency)
         net.in_edges      = copy.deepcopy(self.in_edges)
         net.edge2queue    = copy.deepcopy(self.edge2queue)
-        net.queues        = [q for q in net.edge2queue if q.issn[2] in net._queues]
+        net.queues        = [q for q in net.edge2queue if q.edge[2] in net._queues]
         net.queues.sort(reverse=True)
         return net
 

@@ -155,22 +155,22 @@ def set_queues(g, colors, graph_type, **kwargs) :
     has_lanes = kwargs['has_lanes']
 
     for e in g.edges() :
-        qissn = (int(e.source()), int(e.target()), g.edge_index[e])
+        qedge = (int(e.source()), int(e.target()), g.edge_index[e])
         if g.ep['eType'][e] == 1 :
             cap   = max(g.vp['cap'][e.target()] // 10, 4) if has_cap else 4
-            queues[qissn[2]] = qs.LossQueue(cap, issn=qissn)
+            queues[qedge[2]] = qs.LossQueue(cap, edge=qedge)
         elif g.ep['eType'][e] == 2 :
             cap   = 8 if has_cap else 4
-            queues[qissn[2]] = qs.LossQueue(cap, issn=qissn)
+            queues[qedge[2]] = qs.LossQueue(cap, edge=qedge)
         else : 
             lanes = g.vp['lanes'][e.target()] if has_lanes else 8
             lanes = lanes if lanes > 10 else max(lanes // 2, 1)
-            queues[qissn[2]] = qs.QueueServer(lanes, issn=qissn)
+            queues[qedge[2]] = qs.QueueServer(lanes, edge=qedge)
 
         if g.ep['eType'][e] == 2 :
-            queues[qissn[2]].colors['vertex_pen'] = colors['vertex_pen'][2]
+            queues[qedge[2]].colors['vertex_pen'] = colors['vertex_pen'][2]
         elif g.ep['eType'][e] == 3 :
-            queues[qissn[2]].colors['vertex_pen'] = colors['vertex_pen'][3]
+            queues[qedge[2]].colors['vertex_pen'] = colors['vertex_pen'][3]
 
     return queues
 

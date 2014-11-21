@@ -117,12 +117,12 @@ class approximate_dynamic_program :
         n   = sum( vp['vType'].a == 1 )
         m   = sum( vp['vType'].a == 2 )
         for q in self.Qn.edge2queue :
-            if q.issn[0] == q.issn[1] :
-                if vp['vType'].a[q.issn[0]] == 1 :
+            if q.edge[0] == q.edge[1] :
+                if vp['vType'].a[q.edge[0]] == 1 :
                     q.fArrival  = lambda x : x + exponential(1.0)
                     q.fDepart   = lambda x : x + exponential(1.333)
                     q.nServers  = max(self.agent_cap // (50 * n), 1)
-                elif vp['vType'].a[q.issn[0]] == 2 :
+                elif vp['vType'].a[q.edge[0]] == 2 :
                     q.fArrival  = lambda x : x + exponential(1.0)
                     q.fDepart   = lambda x : x + exponential(1.333)
                     q.nServers  = max(self.agent_cap // (125 * m), 1)
@@ -502,7 +502,7 @@ class approximate_dynamic_program :
         a     = ei + 1
         S[k]  = S[k] - 1 if S[k] > 0 else 0
         S[a] += 1
-        S[0][0] = QN.edge2queue[ei].issn[1]
+        S[0][0] = QN.edge2queue[ei].edge[1]
         return S
 
 
