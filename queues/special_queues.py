@@ -17,14 +17,14 @@ class ResourceAgent(Agent) :
 
 
     def desired_destination(self, *info) :
-        network, qissn = info[:2]
+        network, qedge = info[:2]
 
         if self.had_resource :
-            z = qissn[2]
+            z = qedge[2]
         else :
-            n = len( network.adjacency[qissn[1]] )
+            n = len( network.adjacency[qedge[1]] )
             d = randint(0, n)
-            z = network.adjacency[qissn[1]][d]
+            z = network.adjacency[qedge[1]][d]
         return z
 
 
@@ -50,9 +50,9 @@ class ResourceAgent(Agent) :
 
 class ResourceQueue(LossQueue) :
 
-    def __init__(self, nServers=10, issn=0, active=False, fArrival=lambda x : x + exponential(1), 
+    def __init__(self, nServers=10, edge=(0,0,0), fArrival=lambda x : x + exponential(1),
                     fDepart=lambda x : x, AgentClass=ResourceAgent, qbuffer=0) :
-        LossQueue.__init__(self, nServers, issn, active, fArrival, fDepart, AgentClass, qbuffer)
+        LossQueue.__init__(self, nServers, edge, fArrival, fDepart, AgentClass, qbuffer)
 
         self.colors = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
                         'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
@@ -64,7 +64,7 @@ class ResourceQueue(LossQueue) :
 
     def __repr__(self) :
         tmp = "ResourceQueue: %s. servers: %s, max servers: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.issn[2], self.nServers, self.max_servers, self.nArrivals, self.nDeparts, np.round(self.time, 3))
+            %  (self.edge[2], self.nServers, self.max_servers, self.nArrivals, self.nDeparts, np.round(self.time, 3))
         return tmp
 
 
@@ -124,7 +124,7 @@ class ResourceQueue(LossQueue) :
             cap = self.max_servers
             tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
-            if self.issn[0] == self.issn[1] :
+            if self.edge[0] == self.edge[1] :
                 color    = [ i * tmp / 0.9 for i in self.colors['vertex_normal'] ]
                 color[3] = 1.0
             else :
@@ -160,8 +160,8 @@ class InfoAgent(Agent) :
         return "InfoAgent. issn: %s, time: %s" % (self.issn, self.time)
 
 
-    def add_loss(self, qissn, *args, **kwargs) : # qissn[2] is the edge_index of the queue
-        self.stats[qissn[2], 2] += 1 
+    def add_loss(self, qedge, *args, **kwargs) : # qedge[2] is the edge_index of the queue
+        self.stats[qedge[2], 2] += 1
 
 
     def get_beliefs(self) :
@@ -186,8 +186,8 @@ class InfoAgent(Agent) :
 
 
     def desired_destination(self, *info) :
-        network, qissn = info[:2]
-        if self.dest != None and qissn[1] == self.dest :
+        network, qedge = info[:2]
+        if self.dest != None and qedge[1] == self.dest :
             self.old_dest   = self.dest
             self.dest       = None
             self.rest_t[0]  = network.t
@@ -199,11 +199,11 @@ class InfoAgent(Agent) :
         elif self.dest == None :
             self.trip_t[0]  = network.t
             self._set_dest(net = network)
-            while self.dest == qissn[1] :
+            while self.dest == qedge[1] :
                 self._set_dest(net = network)
         
-        z   = network.shortest_path[qissn[1], self.dest]
-        z   = network.g.edge(qissn[1], z)
+        z   = network.shortest_path[qedge[1], self.dest]
+        z   = network.g.edge(qedge[1], z)
         return z
 
 
@@ -214,7 +214,7 @@ class InfoAgent(Agent) :
             self.net_data[a, :] = queue.net_data[a, :]
 
             ### stamp this information
-            n   = queue.issn[2]    # This is the edge_index of the queue
+            n   = queue.edge[2]    # This is the edge_index of the queue
             self.stats[n, 0]    = self.stats[n, 0] + (self.arr_ser[1] - self.arr_ser[0])
             self.stats[n, 1]   += 1 if (self.arr_ser[1] - self.arr_ser[0]) > 0 else 0
             self.net_data[n, :] = queue.local_t, queue.nServers, queue.nSystem / queue.nServers
@@ -230,10 +230,10 @@ class InfoAgent(Agent) :
 
 class InfoQueue(LossQueue) :
 
-    def __init__(self, nServers=1, issn=(0,0,0), active=False, net_size=1,
+    def __init__(self, nServers=1, edge=(0,0,0), net_size=1,
             fArrival=lambda x : x + exponential(1), fDepart =lambda x : x + exponential(0.95),
             AgentClass=InfoAgent, qbuffer=np.infty) :
-        LossQueue.__init__(self, nServers, issn, active, fArrival, fDepart, fDepart_mu, AgentClass, qbuffer)
+        LossQueue.__init__(self, nServers, edge, fArrival, fDepart, fDepart_mu, AgentClass, qbuffer)
 
         self.colors = {'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
                        'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
@@ -243,12 +243,12 @@ class InfoQueue(LossQueue) :
 
     def __repr__(self) :
         tmp = "InfoQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.issn[2], self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
+            %  (self.edge[2], self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
         return tmp
 
     def __repr__(self) :
         tmp = "InfoQueue: %s. servers: %s, max servers: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.issn[2], self.nServers, self.max_servers, self.nArrivals, self.nDeparts, np.round(self.time, 3))
+            %  (self.edge[2], self.nServers, self.max_servers, self.nArrivals, self.nDeparts, np.round(self.time, 3))
         return tmp
 
 
@@ -270,7 +270,7 @@ class InfoQueue(LossQueue) :
             if self.local_t >= self.next_ct :
                 self.nTotal  += 1
                 self.next_ct  = self.fArrival(self.local_t)
-                new_arrival   = self.AgentClass(self.nArrivals+1, len(self.net_data) )
+                new_arrival   = self.AgentClass(self.edge, len(self.net_data) )
                 new_arrival.set_arrival( self.next_ct )
                 heappush(self.arrivals, new_arrival)
 

@@ -112,6 +112,34 @@ class Agent :
 
 
 
+class InftyAgent :
+
+    def __init__(self) :
+        self.time = infty
+
+    def __repr__(self) :
+        return "InftyAgent"
+
+    def __lt__(a,b) :
+        return a.time < b.time
+
+    def __gt__(a,b) :
+        return a.time > b.time
+
+    def __eq__(a,b) :
+        return a.time == b.time
+
+    def __le__(a,b) :
+        return a.time <= b.time
+
+    def __ge__(a,b) :
+        return a.time >= b.time
+
+    def __deepcopy__(self, memo) :
+        return self.__class__()
+
+
+
 class QueueServer :
     """
     The QueueServer class is designed to operate within the QueueNetwork
@@ -128,7 +156,7 @@ class QueueServer :
         AgentClass dictates what kinds of Agents are generated when there
         is an arrival.
     """
-    def __init__(self, nServers=1, edge=(0,0,0), active=False, fArrival=lambda x : x + exponential(1), 
+    def __init__(self, nServers=1, edge=(0,0,0), fArrival=lambda x : x + exponential(1),
             fDepart =lambda x : x + exponential(0.95), AgentClass=Agent) :
 
         self.edge       = edge
@@ -141,7 +169,7 @@ class QueueServer :
 
         self.local_t    = 0
         self.time       = infty
-        self.active     = active
+        self.active     = False
         self.next_ct    = 0
 
         self.colors     = {'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
@@ -149,13 +177,9 @@ class QueueServer :
                            'vertex_pen'    : [0.0, 0.5, 1.0, 1.0]}
 
         self.queue      = collections.deque()
-        self.arrivals   = []
-        self.departures = []
-        inftyAgent      = AgentClass(0)
-        inftyAgent.time = infty
-
-        heappush(self.arrivals, inftyAgent)
-        heappush(self.departures, inftyAgent)
+        inftyAgent      = InftyAgent()
+        self.arrivals   = [inftyAgent]
+        self.departures = [inftyAgent]
 
         self.fArrival   = fArrival
         self.fDepart    = fDepart
@@ -195,7 +219,7 @@ class QueueServer :
         if n > 0 :
             self.nServers = n
         else :
-            print("nServers must be positive, tried to set to %s.\n%s" % (n, str(self)) )
+            raise Exception("nServers must be positive, tried to set to %s.\n%s" % (n, str(self)) )
 
 
     def nQueued(self) :
@@ -211,7 +235,7 @@ class QueueServer :
             if self.local_t >= self.next_ct :
                 self.nTotal  += 1
                 self.next_ct  = self.fArrival(self.local_t)
-                new_arrival   = self.AgentClass(self.nArrivals+1)
+                new_arrival   = self.AgentClass(self.edge)
                 new_arrival.set_arrival( self.next_ct )
                 heappush(self.arrivals, new_arrival)
 
@@ -326,13 +350,9 @@ class QueueServer :
         self.time       = infty
         self.next_ct    = 0
         self.queue      = collections.deque()
-        self.arrivals   = []
-        self.departures = []
-        inftyAgent      = self.AgentClass(0)
-        inftyAgent.time = infty
-
-        heappush(self.arrivals, inftyAgent)
-        heappush(self.departures, inftyAgent)
+        inftyAgent      = InftyAgent()
+        self.arrivals   = [inftyAgent]
+        self.departures = [inftyAgent]
 
 
     def __deepcopy__(self, memo) :
@@ -360,10 +380,10 @@ class QueueServer :
 
 class LossQueue(QueueServer) :
 
-    def __init__(self, nServers=1, edge=(0,0,0), active=False, fArrival=lambda x : x + exponential(1), 
+    def __init__(self, nServers=1, edge=(0,0,0), fArrival=lambda x : x + exponential(1),
             fDepart =lambda x : x + exponential(0.95), AgentClass=Agent, qbuffer=0) :
 
-        QueueServer.__init__(self, nServers, edge, active, fArrival, fDepart, AgentClass)
+        QueueServer.__init__(self, nServers, edge, fArrival, fDepart, AgentClass)
 
         self.colors     = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
                             'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
@@ -450,10 +470,10 @@ class LossQueue(QueueServer) :
 
 class MarkovianQueue(QueueServer) :
 
-    def __init__(self, nServers=1, edge=(0,0,0), active=False, aRate=1, dRate=1.1, AgentClass=Agent) :
+    def __init__(self, nServers=1, edge=(0,0,0), aRate=1, dRate=1.1, AgentClass=Agent) :
         aMean = 1 / aRate
         dMean = 1 / dRate
-        QueueServer.__init__(self, nServers, edge, active, lambda x : x + exponential(aMean),
+        QueueServer.__init__(self, nServers, edge, lambda x : x + exponential(aMean),
             lambda x : x + exponential(dMean), AgentClass)
 
         self.rates  = [aRate, dRate]

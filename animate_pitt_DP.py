@@ -150,7 +150,7 @@ data_dir  = os.path.expanduser('~') + '/math/data/graphs/'
 pit = qt.QueueNetwork(nVertices=50, seed=13)
 pit.initialize(nActive=20)
 pit.agent_cap = 1000
-pit.simulate(280)
+pit.simulate(80)
 %timeit -n10 pit.simulate(n=50000)
 pr  = cProfile.Profile()
 pr.enable()
