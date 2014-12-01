@@ -39,7 +39,7 @@ class Agent :
         self.blocked  = 0
 
     def __repr__(self) :
-        return "Agent. edge: %s, time: %s" % (self.edge, self.time)
+        return "Agent. edge: %s, time: %s" % (self.issn, self.time)
 
     def __lt__(a,b) :
         return a.time < b.time
@@ -209,6 +209,10 @@ class QueueServer :
         return 0
 
 
+    def at_capacity(self) :
+        return False
+
+
     def initialize(self, add_arrival=True) :
         self.active = True
         if add_arrival :
@@ -241,17 +245,6 @@ class QueueServer :
 
         if self.arrivals[0].time < self.departures[0].time :
             self.time = self.arrivals[0].time
-        else :
-            self.time = self.departures[0].time
-
-
-    def next_event_type(self) :
-        if self.arrivals[0].time < self.departures[0].time :
-            return 1
-        elif self.arrivals[0].time > self.departures[0].time :
-            return 2
-        else :
-            return 0
 
 
     def append_departure(self, agent, t) :
@@ -266,10 +259,28 @@ class QueueServer :
         else :
             self.queue.append(agent)
 
+        if self.arrivals[0].time >= self.departures[0].time :
+            self.time = self.departures[0].time
+
+
+    def delay_service(self) :
+        agent = heappop(self.departures)
+        agent.set_departure(self.fDepart(agent.time))
+        heappush(self.departures, agent)
+
         if self.arrivals[0].time < self.departures[0].time :
             self.time = self.arrivals[0].time
         else :
             self.time = self.departures[0].time
+
+
+    def next_event_type(self) :
+        if self.arrivals[0].time < self.departures[0].time :
+            return 1
+        elif self.arrivals[0].time > self.departures[0].time :
+            return 2
+        else :
+            return 0
 
 
     def next_event(self) :
@@ -400,6 +411,10 @@ class LossQueue(QueueServer) :
 
     def blocked(self) :
         return (self.nBlocked / self.nArrivals) if self.nArrivals > 0 else 0
+
+
+    def at_capacity(self) :
+        return self.nSystem >= self.nServers + self.buffer
 
 
     def next_event(self) :

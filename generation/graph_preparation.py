@@ -153,19 +153,20 @@ def set_queues(g, colors, graph_type, **kwargs) :
     queues    = [0 for k in range(g.num_edges())]
     has_cap   = kwargs['has_cap']
     has_lanes = kwargs['has_lanes']
+    congested = graph_type == 'congested'
 
     for e in g.edges() :
         qedge = (int(e.source()), int(e.target()), g.edge_index[e])
         if g.ep['eType'][e] == 1 :
-            cap   = max(g.vp['cap'][e.target()] // 10, 4) if has_cap else 4
+            cap = max(g.vp['cap'][e.target()] // 10, 4) if has_cap else 4
             queues[qedge[2]] = qs.LossQueue(cap, edge=qedge)
         elif g.ep['eType'][e] == 2 :
-            cap   = 8 if has_cap else 4
+            cap = 8 if has_cap else 4
             queues[qedge[2]] = qs.LossQueue(cap, edge=qedge)
         else : 
-            lanes = g.vp['lanes'][e.target()] if has_lanes else 8
-            lanes = lanes if lanes > 10 else max(lanes // 2, 1)
-            queues[qedge[2]] = qs.QueueServer(lanes, edge=qedge)
+            cap = g.vp['lanes'][e.target()] if has_lanes else 8
+            cap = cap if cap > 10 else max(cap // 2, 1)
+            queues[qedge[2]] = qs.LossQueue(cap, edge=qedge) if congested else qs.QueueServer(cap, edge=qedge)
 
         if g.ep['eType'][e] == 2 :
             queues[qedge[2]].colors['vertex_pen'] = colors['vertex_pen'][2]

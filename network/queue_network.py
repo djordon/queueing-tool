@@ -19,7 +19,7 @@ from .sorting           import oneBisectSort, bisectSort, oneSort, twoSort
 
 class QueueNetwork :
 
-    def __init__(self, g=None, nVertices=100, pDest=0.1, pFCQ=1, seed=None, graph_type="osm", calcpath=False) :
+    def __init__(self, g=None, nVertices=100, pDest=0.1, pFCQ=1, seed=None, graph_type=None, calcpath=False) :
         self.nEvents      = 0
         self.t            = 0
         self.to_animate   = False
@@ -49,7 +49,7 @@ class QueueNetwork :
         if graph_type != 'copy' :
             if g == None :
                 g     = generate_random_graph(nVertices, pDest, pFCQ)
-                g, qs = prepare_graph(g, colors=self.colors, graph_type=None)
+                g, qs = prepare_graph(g, colors=self.colors, graph_type=graph_type)
             elif isinstance(g, str) or isinstance(g, gt.Graph) :
                 g, qs = prepare_graph(g, colors=self.colors, graph_type=graph_type)
             else :
@@ -90,7 +90,6 @@ class QueueNetwork :
             self.queues.pop()
 
         self.queues.sort(reverse=True)
-        self._queues      = set([q.edge[2] for q in self.queues])
         self.initialized  = True
 
 
@@ -210,25 +209,25 @@ class QueueNetwork :
 
     def append_departure(self, ei, agent, t) :
         q   = self.edge2queue[ei]
+        qt  = q.time
         q.append_departure(agent, t)
 
-        if q.edge[2] not in self._queues and q.time < infty :
-            self._queues.add(q.edge[2])
+        if qt == infty and q.time < infty :
             self.queues.append(q)
 
         self.queues.sort(reverse=True)
 
 
     def add_arrival(self, ei, agent, t=None) :
-        q = self.edge2queue[ei]
+        q   = self.edge2queue[ei]
+        qt  = q.time
         if t == None :
             t = q.time + 1 if q.time < infty else self.queues[-1].time + 1
 
         agent.set_arrival(t)
         q._add_arrival(agent)
 
-        if q.edge[2] not in self._queues and q.time < infty :
-            self._queues.add(q.edge[2])
+        if qt == infty and q.time < infty :
             self.queues.append(q)
 
         self.queues.sort(reverse=True)
@@ -239,29 +238,29 @@ class QueueNetwork :
 
 
     def _next_event(self, slow=True) :
-        q = self.queues.pop()
-        t = q.time
-        j = q.edge[2]
+        q1  = self.queues.pop()
+        q1t = q1.time
+        e1  = q1.edge[2]
 
-        event  = q.next_event_type()
-        self.t = t
+        event  = q1.next_event_type()
+        self.t = q1t
 
         if event == 2 : # This is a departure
-            agent           = q.next_event()
-            self.nAgents[j] = q.nTotal
-            self.nEvents   += 1
+            agent             = q1.next_event()
+            self.nAgents[e1]  = q1.nTotal
+            self.nEvents     += 1
 
-            ei  = agent.desired_destination(self, q.edge) # expects the network, and current location
-            q2  = self.edge2queue[ei]
+            e2  = agent.desired_destination(self, q1.edge) # expects the network, and current location
+            q2  = self.edge2queue[e2]
             q2t = q2.time
-            agent.set_arrival(t)
+            agent.set_arrival(q1t)
 
             q2._add_arrival(agent)
-            self.nAgents[q2.edge[2]] = q2.nTotal
+            self.nAgents[e2] = q2.nTotal
 
             if slow :
-                self._update_graph_colors(ad='departure', qedge=q.edge)
-                self.prev_edge = q.edge
+                self._update_graph_colors(ad='departure', qedge=q1.edge)
+                self.prev_edge = q1.edge
 
             if q2.active and np.sum(self.nAgents) > self.agent_cap - 1 :
                 q2.active = False
@@ -275,40 +274,33 @@ class QueueNetwork :
                 self._update_graph_colors(ad='arrival', qedge=q2.edge)
                 self.prev_edge = q2.edge
 
-            if q.time < infty :
-                if q2.edge[2] in self._queues :
-                    if q2.time < q2t :
-                        oneBisectSort(self.queues, q, q2t, len(self.queues))
-                    else :
-                        bisectSort(self.queues, q, len(self.queues))
-                elif q2.time < infty :
-                    self._queues.add(q2.edge[2])
-                    twoSort(self.queues, q, q2, len(self.queues))
+            if q1.time < infty :
+                if q2.time < q2t < infty and e2 != e1 :
+                    oneBisectSort(self.queues, q1, q2t, len(self.queues))
+                elif q2.time < q2t and e2 != e1 :
+                    twoSort(self.queues, q1, q2, len(self.queues))
                 else :
-                    bisectSort(self.queues, q, len(self.queues))
+                    bisectSort(self.queues, q1, len(self.queues))
             else :
-                self._queues.remove(j)
-                if q2.edge[2] in self._queues :
-                    if q2.time < q2t :
-                        oneSort(self.queues, q2t, len(self.queues))
-                elif q2.time < infty :
-                    self._queues.add(q2.edge[2])
+                if q2.time < q2t < infty :
+                    oneSort(self.queues, q2t, len(self.queues))
+                elif q2.time < q2t :
                     bisectSort(self.queues, q2, len(self.queues))
 
         elif event == 1 : # This is an arrival
-            if q.active and np.sum(self.nAgents) > self.agent_cap - 1 :
-                q.active = False
+            if q1.active and np.sum(self.nAgents) > self.agent_cap - 1 :
+                q1.active = False
 
-            q.next_event()
-            self.nAgents[j] = q.nTotal
-            self.nEvents   += 1
+            q1.next_event()
+            self.nAgents[e1]  = q1.nTotal
+            self.nEvents     += 1
 
             if slow :
-                self._update_graph_colors(ad='arrival', qedge=q.edge)
-                self.prev_edge  = q.edge
+                self._update_graph_colors(ad='arrival', qedge=q1.edge)
+                self.prev_edge  = q1.edge
 
-            if q.time < infty :
-                bisectSort(self.queues, q, len(self.queues) )
+            if q1.time < infty :
+                bisectSort(self.queues, q1, len(self.queues) )
 
         if self.to_animate :
             self.win.graph.regenerate_surface(lazy=False)
@@ -397,7 +389,6 @@ class QueueNetwork :
         net.prev_edge     = copy.copy(self.prev_edge)
         net.shortest_path = copy.copy(self.shortest_path)
         net.to_animate    = copy.copy(self.to_animate)
-        net._queues       = copy.copy(self._queues)
         net.colors        = copy.deepcopy(self.colors)
         net.adjacency     = copy.deepcopy(self.adjacency)
         net.in_edges      = copy.deepcopy(self.in_edges)
@@ -405,6 +396,94 @@ class QueueNetwork :
         net.queues        = [q for q in net.edge2queue if q.edge[2] in net._queues]
         net.queues.sort(reverse=True)
         return net
+
+
+
+class CongestionNetwork(QueueNetwork) :
+
+    def __init__(self, g=None, nVertices=100, pDest=0.1, pFCQ=1, seed=None, calcpath=False) :
+        QueueNetwork.__init__(self, g, nVertices, pDest, pFCQ, seed, 'congested', calcpath)
+
+
+    def __repr__(self) :
+        return 'CongestionNetwork. # nodes: %s, edges: %s, agents: %s' % (self.nV, self.nE, np.sum(self.nAgents))
+
+
+    def _next_event(self, slow=True) :
+        q1  = self.queues.pop()
+        q1t = q1.time
+        e1  = q1.edge[2]
+
+        event  = q1.next_event_type()
+        self.t = q1t
+        self.nEvents += 1 if event else 0
+
+        if event == 2 : # This is a departure
+            e2  = q1.departures[0].desired_destination(self, q1.edge) # expects the network, and current location
+            q2  = self.edge2queue[e2]
+            q2t = q2.time
+
+            if q2.at_capacity() :
+                q2.nBlocked += 1
+                q1.departures[0].blocked += 1
+                q1.delay_service()
+            else :
+                agent = q1.next_event()
+                agent.set_arrival(q1t)
+
+                q2._add_arrival(agent)
+
+                self.nAgents[e1]  = q1.nTotal
+                self.nAgents[e2]  = q2.nTotal
+
+                if q2.active and np.sum(self.nAgents) > self.agent_cap - 1 :
+                    q2.active = False
+
+                if slow :
+                    self._update_graph_colors(ad='departure', qedge=q1.edge)
+                    self.prev_edge = q1.edge
+
+                if q2.departures[0].time <= q2.arrivals[0].time :
+                    print("WHOA! THIS NEEDS CHANGING! %s %s" % (q2.departures[0].time, q2.arrivals[0].time) )
+
+                q2.next_event()
+
+                if slow :
+                    self._update_graph_colors(ad='arrival', qedge=q2.edge)
+                    self.prev_edge = q2.edge
+
+            if q1.time < infty :
+                if q2.time < q2t < infty and e2 != e1 :
+                    oneBisectSort(self.queues, q1, q2t, len(self.queues))
+                elif q2.time < q2t and e2 != e1 :
+                    twoSort(self.queues, q1, q2, len(self.queues))
+                else :
+                    bisectSort(self.queues, q1, len(self.queues))
+            else :
+                if q2.time < q2t < infty :
+                    oneSort(self.queues, q2t, len(self.queues))
+                elif q2.time < q2t :
+                    bisectSort(self.queues, q2, len(self.queues))
+
+        elif event == 1 : # This is an arrival
+            if q1.active and np.sum(self.nAgents) > self.agent_cap - 1 :
+                q1.active = False
+
+            q1.next_event()
+            self.nAgents[e1]  = q1.nTotal
+
+            if slow :
+                self._update_graph_colors(ad='arrival', qedge=q1.edge)
+                self.prev_edge  = q1.edge
+
+            if q1.time < infty :
+                bisectSort(self.queues, q1, len(self.queues) )
+
+        if self.to_animate :
+            self.win.graph.regenerate_surface(lazy=False)
+            self.win.graph.queue_draw()
+            return True
+
 
 
 def calculate_shortest_path(g) :
