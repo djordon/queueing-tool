@@ -68,7 +68,7 @@ class approximate_dynamic_program :
         self.dir                = {'frames' : './figures/frames/'}
         self.nInteractions      = 0
 
-        if g == None :
+        if g is None :
             self.Qn = qt.QueueNetwork(nVertices=nVertices, calcpath=False, pDest=0.1, seed=seed)
             self.modify_network()
         elif isinstance(g, gt.Graph) or isinstance(g, str) :
@@ -139,7 +139,7 @@ class approximate_dynamic_program :
     def expected_sojourn(self, ei, QN, S=None, time2cost=True) : 
         exp_s   = copy.deepcopy(QN.t)
 
-        if S == None :
+        if S is None :
             kk  = max((QN.edge2queue[ei].nSystem - QN.edge2queue[ei].nServers, 0)) + 1
         else :
             kk  = max((S[ei+1] - QN.edge2queue[ei].nServers, 0)) + 1

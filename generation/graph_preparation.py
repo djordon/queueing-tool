@@ -38,14 +38,14 @@ def prepare_graph(g, colors, graph_type=None) :
     for key in g.edge_properties.keys() :
         edge_props = edge_props.union([key])
 
-    has_garage  = 'garage' in vertex_props
-    has_destin  = 'destination' in vertex_props
-    has_light   = 'light' in vertex_props
-    has_egarage = 'garage' in edge_props
-    has_edestin = 'destination' in edge_props
-    has_elight  = 'light' in edge_props
-
     if graph_type == 'osm' :
+        has_garage  = 'garage' in vertex_props
+        has_destin  = 'destination' in vertex_props
+        has_light   = 'light' in vertex_props
+        has_egarage = 'garage' in edge_props
+        has_edestin = 'destination' in edge_props
+        has_elight  = 'light' in edge_props
+
         vType   = g.new_vertex_property("int")
         eType   = g.new_edge_property("int")
         for v in g.vertices() :
@@ -90,6 +90,7 @@ def prepare_graph(g, colors, graph_type=None) :
         p2  = np.array(g.vp['pos'][e.target()])
         p1  = np.array(g.vp['pos'][e.source()])
         edge_length[e]  = g.ep['edge_length'][e] if has_length else np.linalg.norm(p1 - p2)
+        edge_t_color[e] = [0, 0, 0, 1]
         if e.target() == e.source() :
             edge_color[e] = [0, 0, 0, 0]
         else :
@@ -98,6 +99,8 @@ def prepare_graph(g, colors, graph_type=None) :
 
     for v in g.vertices() :
         e = g.edge(v, v)
+        vertex_t_color[v] = colors['text_normal']
+        halo_color[v]     = colors['halo_normal']
         if isinstance(e, gt.Edge) :
             vertex_pen_color[v] = queues[g.edge_index[e]].current_color('pen')
             vertex_color[v]     = queues[g.edge_index[e]].current_color()
@@ -105,18 +108,11 @@ def prepare_graph(g, colors, graph_type=None) :
             vertex_pen_color[v] = [0.0, 0.5, 1.0, 1.0]
             vertex_color[v]     = [1.0, 1.0, 1.0, 1.0]
 
-    one = np.ones( (nE, 4) )
-    edge_t_color.set_2d_array( (one * [0, 0, 0, 1]).T, range(nE) )
-
     edge_width.a  = 1.25
     arrow_width.a = 8
     edge_times.a  = 1
     edge_t_size.a = 8
     edge_t_distance.a = 8
-
-    one = np.ones( (nV, 4) )
-    vertex_t_color.set_2d_array( (one * colors['text_normal']).T, range(nV) )
-    halo_color.set_2d_array( (one * colors['halo_normal']).T, range(nV) )
 
     vertex_t_size.a     = 8
     vertex_halo_size.a  = 1.3
@@ -163,6 +159,8 @@ def set_queues(g, colors, graph_type, **kwargs) :
         elif g.ep['eType'][e] == 2 :
             cap = 8 if has_cap else 4
             queues[qedge[2]] = qs.LossQueue(cap, edge=qedge)
+        elif g.ep['eType'][e] == -1 :
+            queues[qedge[2]] = qs.NullQueue(1, edge=qedge)
         else : 
             cap = g.vp['lanes'][e.target()] if has_lanes else 8
             cap = cap if cap > 10 else max(cap // 2, 1)

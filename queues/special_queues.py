@@ -301,3 +301,38 @@ class InfoQueue(LossQueue) :
         new_server          = LossQueue.__deepcopy__(self, memo)
         new_server.net_data = copy.copy(self.net_data)
         return new_server
+
+
+
+class MarkovianQueue(QueueServer) :
+
+    def __init__(self, nServers=1, edge=(0,0,0), aRate=1, dRate=1.1, AgentClass=Agent) :
+        aMean = 1 / aRate
+        dMean = 1 / dRate
+        QueueServer.__init__(self, nServers, edge, lambda x : x + exponential(aMean),
+            lambda x : x + exponential(dMean), AgentClass)
+
+        self.rates  = [aRate, dRate]
+
+    def __repr__(self) :
+        tmp = "MarkovianQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s, rates: %s" \
+            %  (self.edge[2], self.nServers, len(self.queue), self.nArrivals,
+                self.nDeparts, np.round(self.time, 3), self.rates)
+        return tmp
+
+
+    def change_rates(self, aRate=None, dRate=None) :
+        if aRate != None :
+            aMean = 1 / aRate
+            self.rates[0] = aRate
+            self.fArrival = lambda x : x + exponential(aMean)
+        if dRate != None :
+            dMean = 1 / dRate
+            self.rates[1] = dRate
+            self.fDepart  = lambda x : x + exponential(dMean)
+
+
+    def __deepcopy__(self, memo) :
+        new_server        = QueueServer.__deepcopy__(self, memo)
+        new_server.rates  = copy.copy(self.rates)
+        return new_server

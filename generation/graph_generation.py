@@ -1,5 +1,6 @@
 import graph_tool.all as gt
 import numpy          as np
+import copy
 
 def calculate_distance(latlon1, latlon2) :
     lat1, lon1  = latlon1
@@ -11,6 +12,44 @@ def calculate_distance(latlon1, latlon2) :
     c     = 2 * np.pi * R * np.arctan2( np.sqrt(a), np.sqrt(1-a) ) / 180
     return c
 
+
+def adjacency2graph(adjacency, edge_types=None, edge_lengths=None) :
+
+    nV  = len(adjacency)
+    g   = gt.Graph()
+    vs  = g.add_vertex(nV)
+    for k in range(nV) :
+        adj = adjacency[k]
+        for j in adj :
+            e = g.add_edge(k, j)
+
+    if edge_types == None :
+        edge_types = copy.deepcopy(adjacency)
+        for k, adj in enumerate(adjacency) :
+            edge_types[k] = [0 for j in range(len(adj))]
+
+    if edge_lengths == None :
+        edge_lengths = copy.deepcopy(adjacency)
+        for k, adj in enumerate(adjacency) :
+            edge_lengths[k] = [1 for j in range(len(adj))]
+
+    vType   = g.new_vertex_property("int")
+    eType   = g.new_edge_property("int")
+    elength = g.new_edge_property("double")
+
+    for u, adj in enumerate(adjacency) :
+        for j, v in enumerate(adj) :
+            e = g.edge(u, v) 
+            eType[e]    = edge_types[u][j]
+            elength[e]  = edge_lengths[u][j]
+            if u == v :
+                vType[e.source()] = edge_types[u][v]
+
+    g.vp['vType'] = vType
+    g.ep['eType'] = eType
+    g.ep['edge_length'] = elength
+    return g
+    
 
 def generate_random_graph(nVertices=250, pDest=0.1, pFCQ=1) :
     g = random_graph(nVertices)

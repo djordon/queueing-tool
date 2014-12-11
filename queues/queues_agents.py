@@ -24,15 +24,13 @@ def departure(rate, rate_max, t) :
 
 class Agent :
 
-    def __init__(self, issn=0, *args) :
+    def __init__(self, issn=(0,0), *args) :
         self.issn     = issn
-        self.time     = 0                                     # agents arrival or departure time
+        self.time     = 0         # agents arrival or departure time
         self.dest     = None
         self.old_dest = None
-        self.resting  = False
         self.trips    = 0
         self.type     = 0
-        self.rest_t   = [0, 0]
         self.trip_t   = [0, 0]
         self.arr_ser  = [0, 0]
         self.od       = [0, 0]
@@ -41,19 +39,19 @@ class Agent :
     def __repr__(self) :
         return "Agent. edge: %s, time: %s" % (self.issn, self.time)
 
-    def __lt__(a,b) :
+    def __lt__(a, b) :
         return a.time < b.time
 
-    def __gt__(a,b) :
+    def __gt__(a, b) :
         return a.time > b.time
 
-    def __eq__(a,b) :
+    def __eq__(a, b) :
         return a.time == b.time
 
-    def __le__(a,b) :
+    def __le__(a, b) :
         return a.time <= b.time
 
-    def __ge__(a,b) :
+    def __ge__(a, b) :
         return a.time >= b.time
 
 
@@ -67,11 +65,6 @@ class Agent :
 
     def set_type(self, n) :
         self.type = n
-
-
-    def set_rest(self) :
-        self.resting    = False
-        self.rest_t[1] += self.time - self.rest_t[0]
 
 
     def add_loss(self, *args, **kwargs) :
@@ -100,11 +93,9 @@ class Agent :
         new_agent.time      = copy.copy(self.time)
         new_agent.dest      = copy.copy(self.dest)
         new_agent.old_dest  = copy.copy(self.old_dest)
-        new_agent.resting   = copy.copy(self.resting)
         new_agent.trips     = copy.copy(self.trips)
         new_agent.type      = copy.copy(self.type)
         new_agent.blocked   = copy.copy(self.blocked)
-        new_agent.rest_t    = copy.deepcopy(self.rest_t)
         new_agent.trip_t    = copy.deepcopy(self.trip_t)
         new_agent.arr_ser   = copy.deepcopy(self.arr_ser)
         new_agent.od        = copy.deepcopy(self.od)
@@ -120,19 +111,19 @@ class InftyAgent :
     def __repr__(self) :
         return "InftyAgent"
 
-    def __lt__(a,b) :
+    def __lt__(a, b) :
         return a.time < b.time
 
-    def __gt__(a,b) :
+    def __gt__(a, b) :
         return a.time > b.time
 
-    def __eq__(a,b) :
+    def __eq__(a, b) :
         return a.time == b.time
 
-    def __le__(a,b) :
+    def __le__(a, b) :
         return a.time <= b.time
 
-    def __ge__(a,b) :
+    def __ge__(a, b) :
         return a.time >= b.time
 
     def __deepcopy__(self, memo) :
@@ -170,6 +161,8 @@ class QueueServer :
         self.local_t    = 0
         self.time       = infty
         self.active     = False
+        self.oArrivals  = 0
+        self.cap        = infty
         self.next_ct    = 0
 
         self.colors     = {'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
@@ -189,19 +182,19 @@ class QueueServer :
             %  (self.edge[2], self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
         return tmp
 
-    def __lt__(a,b) :
+    def __lt__(a, b) :
         return a.time < b.time
 
-    def __gt__(a,b) :
+    def __gt__(a, b) :
         return a.time > b.time
 
-    def __eq__(a,b) :
+    def __eq__(a, b) :
         return a.time == b.time
 
-    def __le__(a,b) :
+    def __le__(a, b) :
         return a.time <= b.time
 
-    def __ge__(a,b) :
+    def __ge__(a, b) :
         return a.time >= b.time
 
 
@@ -237,11 +230,14 @@ class QueueServer :
             heappush(self.arrivals, args[0])
         else : 
             if self.local_t >= self.next_ct :
-                self.nTotal  += 1
-                self.next_ct  = self.fArrival(self.local_t)
-                new_arrival   = self.AgentClass(self.edge)
+                self.nTotal    += 1
+                self.next_ct    = self.fArrival(self.local_t)
+                new_arrival     = self.AgentClass( (self.edge[2], self.oArrivals) )
                 new_arrival.set_arrival( self.next_ct )
                 heappush(self.arrivals, new_arrival)
+                self.oArrivals += 1
+                if self.oArrivals >= self.cap :
+                    self.active = False
 
         if self.arrivals[0].time < self.departures[0].time :
             self.time = self.arrivals[0].time
@@ -354,6 +350,7 @@ class QueueServer :
 
     def clear(self) :
         self.nArrivals  = 0
+        self.oArrivals  = 0
         self.nDeparts   = 0
         self.nSystem    = 0
         self.nTotal     = 0
@@ -371,6 +368,8 @@ class QueueServer :
         new_server.edge       = copy.copy(self.edge)
         new_server.nServers   = copy.copy(self.nServers)
         new_server.nArrivals  = copy.copy(self.nArrivals)
+        new_server.oArrivals  = copy.copy(self.oArrivals)
+        new_server.cap        = copy.copy(self.cap)
         new_server.nDeparts   = copy.copy(self.nDeparts)
         new_server.nSystem    = copy.copy(self.nSystem)
         new_server.nTotal     = copy.copy(self.nTotal)
@@ -396,9 +395,9 @@ class LossQueue(QueueServer) :
 
         QueueServer.__init__(self, nServers, edge, fArrival, fDepart, AgentClass)
 
-        self.colors     = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
-                            'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
-                            'vertex_pen'    : [0.133, 0.545, 0.133, 1.0] }
+        self.colors   = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
+                          'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
+                          'vertex_pen'    : [0.133, 0.545, 0.133, 1.0] }
         self.nBlocked = 0
         self.buffer   = qbuffer
 
@@ -483,35 +482,49 @@ class LossQueue(QueueServer) :
 
 
 
-class MarkovianQueue(QueueServer) :
+class NullQueue(QueueServer) :
 
-    def __init__(self, nServers=1, edge=(0,0,0), aRate=1, dRate=1.1, AgentClass=Agent) :
-        aMean = 1 / aRate
-        dMean = 1 / dRate
-        QueueServer.__init__(self, nServers, edge, lambda x : x + exponential(aMean),
-            lambda x : x + exponential(dMean), AgentClass)
-
-        self.rates  = [aRate, dRate]
+    def __init__(self, servers=1, edge=(0,0,0), *args, **kwargs) :
+        QueueServer.__init__(self, 1, edge)
 
     def __repr__(self) :
-        tmp = "MarkovianQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s, rates: %s" \
-            %  (self.edge[2], self.nServers, len(self.queue), self.nArrivals,
-                self.nDeparts, np.round(self.time, 3), self.rates)
-        return tmp
+        return "NullQueue: %s." %  (self.edge[2])
 
+    def initialize(self, *args, **kwargs) :
+        pass
 
-    def change_rates(self, aRate=None, dRate=None) :
-        if aRate != None :
-            aMean = 1 / aRate
-            self.rates[0] = aRate
-            self.fArrival = lambda x : x + exponential(aMean)
-        if dRate != None :
-            dMean = 1 / dRate
-            self.rates[1] = dRate
-            self.fDepart  = lambda x : x + exponential(dMean)
+    def set_nServers(self, *args, **kwargs) :
+        pass
 
+    def nQueued(self) :
+        return 0
+
+    def _add_arrival(self, *args, **kwargs) :
+        pass
+
+    def append_departure(self, *args, **kwargs) :
+        pass
+
+    def delay_service(self) :
+        pass
+
+    def next_event_type(self) :
+        return 0
+
+    def next_event(self) :
+        pass
+
+    def current_color(self, which='') :
+        if which == 'edge' :
+            color = [0, 0, 0, 0]
+        elif which == 'pen' :
+            color = [0, 0, 0, 1]
+        else :
+            color = [1, 1, 1, 1]
+        return color
+
+    def clear(self) :
+        pass
 
     def __deepcopy__(self, memo) :
-        new_server        = QueueServer.__deepcopy__(self, memo)
-        new_server.rates  = copy.copy(self.rates)
-        return new_server
+        return self.__class__()

@@ -47,7 +47,7 @@ class QueueNetwork :
             gt.seed_rng(seed)
 
         if graph_type != 'copy' :
-            if g == None :
+            if g is None :
                 g     = generate_random_graph(nVertices, pDest, pFCQ)
                 g, qs = prepare_graph(g, colors=self.colors, graph_type=graph_type)
             elif isinstance(g, str) or isinstance(g, gt.Graph) :
@@ -75,8 +75,10 @@ class QueueNetwork :
 
 
     def initialize(self, nActive=1, queues=None) :
-        initialized = False
-        if queues == None :
+        if queues is None :
+            if nActive < 1 :
+                print("If queues is None, then nActive must be strictly positive.")
+                return
             queues = np.arange(self.nE)  
             np.random.shuffle(queues)
             queues = queues[:nActive]
@@ -102,7 +104,7 @@ class QueueNetwork :
         if update_colors :
             self.update_graph_colors()
 
-        kwargs = {'output_size': outSize , 'output' : output} if output != None else {'geometry' : outSize}
+        kwargs = {'output_size': outSize , 'output' : output} if output is not None else {'geometry' : outSize}
 
         ans = gt.graph_draw(self.g, pos=self.g.vp['pos'],
                     bg_color=self.colors['bg_color'],
@@ -160,7 +162,7 @@ class QueueNetwork :
         ep  = self.g.ep
         vp  = self.g.vp
 
-        if self.prev_edge != None :
+        if self.prev_edge is not None :
             pe  = self.g.edge(self.prev_edge[0], self.prev_edge[1])
             pv  = self.g.vertex(self.prev_edge[1])
 
@@ -221,7 +223,7 @@ class QueueNetwork :
     def add_arrival(self, ei, agent, t=None) :
         q   = self.edge2queue[ei]
         qt  = q.time
-        if t == None :
+        if t is None :
             t = q.time + 1 if q.time < infty else self.queues[-1].time + 1
 
         agent.set_arrival(t)
@@ -238,6 +240,11 @@ class QueueNetwork :
 
 
     def _next_event(self, slow=True) :
+        n   = len(self.queues)
+        if n == 0 :
+            self.t  = infty
+            return
+
         q1  = self.queues.pop()
         q1t = q1.time
         e1  = q1.edge[2]
@@ -265,7 +272,7 @@ class QueueNetwork :
             if q2.active and np.sum(self.nAgents) > self.agent_cap - 1 :
                 q2.active = False
 
-            if q2.departures[0].time <= q2.arrivals[0].time :
+            if q2.departures[0].time < q2.arrivals[0].time :
                 print("WHOA! THIS NEEDS CHANGING! %s %s" % (q2.departures[0].time, q2.arrivals[0].time) )
 
             q2.next_event()
@@ -276,16 +283,37 @@ class QueueNetwork :
 
             if q1.time < infty :
                 if q2.time < q2t < infty and e2 != e1 :
-                    oneBisectSort(self.queues, q1, q2t, len(self.queues))
+                    if n > 2 :
+                        oneBisectSort(self.queues, q1, q2t, len(self.queues))
+                    else :
+                        if q1.time < q2.time :
+                            self.queues.append(q1)
+                        else :
+                            self.queues.insert(0, q1)
                 elif q2.time < q2t and e2 != e1 :
-                    twoSort(self.queues, q1, q2, len(self.queues))
+                    if n == 1 :
+                        if q1.time < q2.time :
+                            self.queues.append(q2)
+                            self.queues.append(q1)
+                        else :
+                            self.queues.append(q1)
+                            self.queues.append(q2)
+                    else :
+                        twoSort(self.queues, q1, q2, len(self.queues))
                 else :
-                    bisectSort(self.queues, q1, len(self.queues))
+                    if n == 1 :
+                        self.queues.append(q1)
+                    else :
+                        bisectSort(self.queues, q1, len(self.queues))
             else :
                 if q2.time < q2t < infty :
-                    oneSort(self.queues, q2t, len(self.queues))
+                    if n > 2 :
+                        oneSort(self.queues, q2t, len(self.queues))
                 elif q2.time < q2t :
-                    bisectSort(self.queues, q2, len(self.queues))
+                    if n == 1 :
+                        self.queues.append(q2)
+                    else :
+                        bisectSort(self.queues, q2, len(self.queues))
 
         elif event == 1 : # This is an arrival
             if q1.active and np.sum(self.nAgents) > self.agent_cap - 1 :
@@ -300,7 +328,10 @@ class QueueNetwork :
                 self.prev_edge  = q1.edge
 
             if q1.time < infty :
-                bisectSort(self.queues, q1, len(self.queues) )
+                if n == 1 :
+                    self.queues.append(q1)
+                else :
+                    bisectSort(self.queues, q1, len(self.queues) )
 
         if self.to_animate :
             self.win.graph.regenerate_surface(lazy=False)
@@ -346,7 +377,7 @@ class QueueNetwork :
     def simulate(self, t=25, n=None) :
         if not self.initialized :
             raise Exception("Network has not been initialized. Call 'initialize()' first.")
-        if n == None :
+        if n is None :
             now = self.t
             while self.t < now + t :
                 self._next_event(slow=False)
@@ -371,6 +402,7 @@ class QueueNetwork :
         self.nAgents      = np.zeros(self.nE)
         self.to_animate   = False
         self.initialized  = False
+        self.prev_edge     = None
         self.reset_colors()
         for q in self.edge2queue :
             q.clear()
@@ -393,8 +425,14 @@ class QueueNetwork :
         net.adjacency     = copy.deepcopy(self.adjacency)
         net.in_edges      = copy.deepcopy(self.in_edges)
         net.edge2queue    = copy.deepcopy(self.edge2queue)
-        net.queues        = [q for q in net.edge2queue if q.edge[2] in net._queues]
-        net.queues.sort(reverse=True)
+
+        if net.initialized :
+            net.queues = [q for q in net.edge2queue]
+            net.queues.sort()
+            while net.queues[-1].time == infty :
+                net.queues.pop()
+
+            net.queues.sort(reverse=True)
         return net
 
 
