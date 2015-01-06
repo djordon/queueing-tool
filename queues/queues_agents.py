@@ -32,7 +32,6 @@ class Agent :
         self.trips    = 0
         self.type     = 0
         self.trip_t   = [0, 0]
-        self.arr_ser  = [0, 0]
         self.od       = [0, 0]
         self.blocked  = 0
 
@@ -97,7 +96,6 @@ class Agent :
         new_agent.type      = copy.copy(self.type)
         new_agent.blocked   = copy.copy(self.blocked)
         new_agent.trip_t    = copy.deepcopy(self.trip_t)
-        new_agent.arr_ser   = copy.deepcopy(self.arr_ser)
         new_agent.od        = copy.deepcopy(self.od)
         return new_agent
 
@@ -153,17 +151,19 @@ class QueueServer :
         self.edge       = edge
         self.nServers   = nServers
         self.AgentClass = AgentClass
-        self.nArrivals  = 0
         self.nDeparts   = 0
         self.nSystem    = 0
         self.nTotal     = 0
-
+        self.nArrivals  = [0, 0]            #  First slot: the total number of arrivals, 
+                                            # Second slot: number of arrivals from the 'outside world'.
         self.local_t    = 0
         self.time       = infty
         self.active     = False
-        self.oArrivals  = 0
         self.cap        = infty
         self.next_ct    = 0
+
+        self.keep_data  = False
+        self.data       = {}                # agent issn : [arrival t, service start t, departure t]
 
         self.colors     = {'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
                            'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
@@ -232,11 +232,13 @@ class QueueServer :
             if self.local_t >= self.next_ct :
                 self.nTotal    += 1
                 self.next_ct    = self.fArrival(self.local_t)
-                new_arrival     = self.AgentClass( (self.edge[2], self.oArrivals) )
-                new_arrival.set_arrival( self.next_ct )
+                new_arrival     = self.AgentClass( (self.edge[2], self.nArrivals[1]) )
+                new_arrival.set_arrival(self.next_ct)
+
                 heappush(self.arrivals, new_arrival)
-                self.oArrivals += 1
-                if self.oArrivals >= self.cap :
+
+                self.nArrivals[1] += 1
+                if self.nArrivals[1] >= self.cap :
                     self.active = False
 
         if self.arrivals[0].time < self.departures[0].time :
@@ -245,11 +247,9 @@ class QueueServer :
 
     def append_departure(self, agent, t) :
         self.nSystem       += 1
-        self.nArrivals     += 1
-        agent.arr_ser[0]    = t
+        self.nArrivals[0]  += 1
 
         if self.nSystem <= self.nServers :
-            agent.arr_ser[1]    = t
             agent.set_departure(self.fDepart(t))
             heappush(self.departures, agent)
         else :
@@ -273,7 +273,9 @@ class QueueServer :
     def next_event_type(self) :
         if self.arrivals[0].time < self.departures[0].time :
             return 1
-        elif self.arrivals[0].time > self.departures[0].time :
+        elif self.departures[0].time < self.arrivals[0].time :
+            return 2
+        elif self.departures[0].time < infty :
             return 2
         else :
             return 0
@@ -288,11 +290,18 @@ class QueueServer :
                 self._add_arrival()
 
             self.nSystem       += 1
-            self.nArrivals     += 1
-            arrival.arr_ser[0]  = arrival.time
+            self.nArrivals[0]  += 1
+
+            if self.keep_data :
+                if arrival.issn not in self.data :
+                    self.data[arrival.issn] = [[arrival.time, 0, 0]]
+                else :
+                    self.data[arrival.issn].append([arrival.time, 0, 0])
 
             if self.nSystem <= self.nServers :
-                arrival.arr_ser[1]    = arrival.time
+                if self.keep_data :
+                    self.data[arrival.issn][-1][1] = arrival.time
+
                 arrival.set_departure(self.fDepart(arrival.time))
                 heappush(self.departures, arrival)
             else :
@@ -310,9 +319,14 @@ class QueueServer :
             self.nTotal    -= 1
             self.nSystem   -= 1
 
+            if self.keep_data and new_depart.issn in self.data :
+                self.data[new_depart.issn][-1][2] = self.local_t
+
             if len(self.queue) > 0 :
-                agent             = self.queue.popleft()
-                agent.arr_ser[1]  = self.local_t
+                agent = self.queue.popleft()
+                if self.keep_data and agent.issn in self.data :
+                    self.data[agent.issn][-1][1] = self.local_t
+
                 agent.set_departure(self.fDepart(self.local_t))
                 heappush(self.departures, agent)
 
@@ -349,14 +363,15 @@ class QueueServer :
 
 
     def clear(self) :
-        self.nArrivals  = 0
-        self.oArrivals  = 0
+        self.nArrivals  = [0, 0]
         self.nDeparts   = 0
         self.nSystem    = 0
         self.nTotal     = 0
         self.local_t    = 0
         self.time       = infty
         self.next_ct    = 0
+        self.keep_data  = False
+        self.data       = {}
         self.queue      = collections.deque()
         inftyAgent      = InftyAgent()
         self.arrivals   = [inftyAgent]
@@ -367,8 +382,6 @@ class QueueServer :
         new_server            = self.__class__()
         new_server.edge       = copy.copy(self.edge)
         new_server.nServers   = copy.copy(self.nServers)
-        new_server.nArrivals  = copy.copy(self.nArrivals)
-        new_server.oArrivals  = copy.copy(self.oArrivals)
         new_server.cap        = copy.copy(self.cap)
         new_server.nDeparts   = copy.copy(self.nDeparts)
         new_server.nSystem    = copy.copy(self.nSystem)
@@ -377,6 +390,9 @@ class QueueServer :
         new_server.time       = copy.copy(self.time)
         new_server.active     = copy.copy(self.active)
         new_server.next_ct    = copy.copy(self.next_ct)
+        new_server.keep_data  = copy.copy(self.keep_data)
+        new_server.data       = copy.deepcopy(self.data)
+        new_server.nArrivals  = copy.deepcopy(self.nArrivals)
         new_server.colors     = copy.deepcopy(self.colors)
         new_server.queue      = copy.deepcopy(self.queue, memo)
         new_server.arrivals   = copy.deepcopy(self.arrivals, memo)
@@ -409,7 +425,7 @@ class LossQueue(QueueServer) :
 
 
     def blocked(self) :
-        return (self.nBlocked / self.nArrivals) if self.nArrivals > 0 else 0
+        return (self.nBlocked / self.nArrivals[0]) if self.nArrivals[0] > 0 else 0
 
 
     def at_capacity(self) :
@@ -419,22 +435,18 @@ class LossQueue(QueueServer) :
     def next_event(self) :
         if self.arrivals[0].time < self.departures[0].time :
             if self.nSystem < self.nServers + self.buffer :
-                self.arrivals[0].set_rest()
-
                 QueueServer.next_event(self)
             else :
-                self.nBlocked  += 1
-                self.nArrivals += 1
-                self.nSystem   += 1
-                new_arrival     = heappop(self.arrivals)
+                self.nBlocked      += 1
+                self.nArrivals[0]  += 1
+                self.nSystem       += 1
+
+                new_arrival   = heappop(self.arrivals)
                 new_arrival.add_loss(self.edge)
 
-                self.local_t    = new_arrival.time
+                self.local_t  = new_arrival.time
                 if self.active :
                     self._add_arrival()
-
-                new_arrival.arr_ser[0]  = self.local_t
-                new_arrival.arr_ser[1]  = self.local_t
 
                 heappush(self.departures, new_arrival)
 

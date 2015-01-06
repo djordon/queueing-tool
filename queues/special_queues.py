@@ -92,11 +92,11 @@ class ResourceQueue(LossQueue) :
                     QueueServer.next_event(self)
 
                 else :
-                    self.nBlocked  += 1
-                    self.nArrivals += 1
-                    self.nTotal    -= 1
-                    new_arrival     = heappop(self.arrivals)
-                    self.local_t    = new_arrival.time
+                    self.nBlocked      += 1
+                    self.nArrivals[0]  += 1
+                    self.nTotal        -= 1
+                    new_arrival         = heappop(self.arrivals)
+                    self.local_t        = new_arrival.time
                     if self.arrivals[0].time < self.departures[0].time :
                         self.time = self.arrivals[0].time
                     else :
@@ -190,9 +190,7 @@ class InfoAgent(Agent) :
         if self.dest != None and qedge[1] == self.dest :
             self.old_dest   = self.dest
             self.dest       = None
-            self.rest_t[0]  = network.t
             self.trip_t[1] += network.t - self.trip_t[0] 
-            self.resting    = True
             self.trips     += 1
             self._set_dest(net = network)
 
@@ -215,8 +213,8 @@ class InfoAgent(Agent) :
 
             ### stamp this information
             n   = queue.edge[2]    # This is the edge_index of the queue
-            self.stats[n, 0]    = self.stats[n, 0] + (self.arr_ser[1] - self.arr_ser[0])
-            self.stats[n, 1]   += 1 if (self.arr_ser[1] - self.arr_ser[0]) > 0 else 0
+            self.stats[n, 0]    = self.stats[n, 0] + (queue.data[self.issn][-1][1] - queue.data[self.issn][-1][0])
+            self.stats[n, 1]   += 1 if (queue.data[self.issn][-1][1] - queue.data[self.issn][-1][0]) > 0 else 0
             self.net_data[n, :] = queue.local_t, queue.nServers, queue.nSystem / queue.nServers
 
 
@@ -273,6 +271,10 @@ class InfoQueue(LossQueue) :
                 new_arrival   = self.AgentClass(self.edge, len(self.net_data) )
                 new_arrival.set_arrival( self.next_ct )
                 heappush(self.arrivals, new_arrival)
+
+                self.nArrivals[1] += 1
+                if self.nArrivals[1] >= self.cap :
+                    self.active = False
 
         if self.arrivals[0].time < self.departures[0].time :
             self.time = self.arrivals[0].time

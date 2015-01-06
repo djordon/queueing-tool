@@ -95,6 +95,30 @@ class QueueNetwork :
         self.initialized  = True
 
 
+    def start_bookkeeping(self, queues=None) :
+        if queues is None :
+            for q in self.edge2queue :
+                q.keep_data = True
+        else :
+            for k in queues :
+                self.edge2queue[k].keep_data = True
+
+
+    def data(self, queues=None) :
+        if queues is None :
+            data = [[] for k in range(self.nE)]
+            for k, q in enumerate(self.edge2queue) :
+                for d in q.data.values() :
+                    data[k].extend(d)
+        else :
+            data = [[] for k in range(len(queues))]
+            for k, p in enumerate(queues) :
+                for d in self.edge2queue[p].data.values() :
+                    data[k].extend(d)
+
+        return data
+
+
     def blocked(self) :
         ans = [q.lossed() for q in self.edge2queue]
         return ans
