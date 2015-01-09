@@ -5,42 +5,56 @@ import copy
 from numpy              import infty
 from gi.repository      import Gtk, GObject
 from .. generation      import generate_random_graph, prepare_graph
+from .. queues          import NullQueue, QueueServer, LossQueue
 
 from .sorting           import oneBisectSort, bisectSort, oneSort, twoSort
 
 # Garages changed to FCQ (finite capacity queue)
-# each edge and vertex has an eType and vType respectively now. 
-#   The default edge type is an arc type, which has given the number 0. 
-#   FCQs are assumed to be of type 1.
-#   Other queues, like the old destination queues, have a type of 2 or higher;
-#       by default destination queues have a type of 2
-
-# Need to check that queues is nonempty before running _next_event
+# Each edge and vertex has an eType and vType respectively. 
+#   The eType is used to specify they queue class to use, as well as
+#   the default values to create the queue with.
 
 class QueueNetwork :
 
-    def __init__(self, g=None, nVertices=100, pDest=0.1, pFCQ=1, seed=None, graph_type=None, calcpath=False) :
+    def __init__(self, g=None, nVertices=100, q_classes=None, q_args=None, q_colors=None,
+                    pDest=0.1, pFCQ=1, seed=None, graph_type=None, calcpath=False) :
         self.nEvents      = 0
         self.t            = 0
         self.to_animate   = False
         self.initialized  = False
         self.agent_cap    = 100
         self.prev_edge    = None
-        self.colors       =  {'edge_departure'   : [0, 0, 0, 1], 
-                              'edge_normal'      : [0.7, 0.7, 0.7, 0.50],
-                              'vertex' :     { 0 : [0.9, 0.9, 0.9, 1.0],        # normal
-                                               1 : [0.9, 0.9, 0.9, 1.0],        # garages aka fcq
-                                               2 : [0.9, 0.9, 0.9, 1.0],        # destination
-                                               3 : [0.9, 0.9, 0.9, 1.0]},       # light
-                              'vertex_pen' : { 0 : [0.0, 0.5, 1.0, 1.0],        # normal vertex
-                                               1 : [0.133, 0.545, 0.133, 1.0],  # garages aka fcq
-                                               2 : [0.282, 0.239, 0.545, 1.0],  # destination
-                                               3 : [1.0, 0.135, 0.0, 1.0]},     # light
-                              'halo_normal'      : [0, 0, 0, 0],
-                              'halo_arrival'     : [0.1, 0.8, 0.8, 0.25],
-                              'halo_departure'   : [0.9, 0.9, 0.9, 0.25],
-                              'text_normal'      : [1, 1, 1, 0.5],
-                              'bg_color'         : [1.0, 1.0, 1.0, 1.0]}
+        self.colors       = { 'vertex_normal'   : [0.9, 0.9, 0.9, 1.0], 
+                              'edge_departure'  : [0, 0, 0, 1], 
+                              'halo_normal'     : [0, 0, 0, 0],
+                              'halo_arrival'    : [0.1, 0.8, 0.8, 0.25],
+                              'halo_departure'  : [0.9, 0.9, 0.9, 0.25],
+                              'text_normal'     : [1, 1, 1, 0.5],
+                              'bg_color'        : [1, 1, 1, 1]}
+
+        if q_classes is None :
+            q_classes = {0 : NullQueue, 1 : QueueServer, 2 : LossQueue, 3 : LossQueue, 4 : LossQueue}
+
+        eTypes  = set(q_classes.keys())
+        if q_args is None :
+            q_args  = {k : {} for k in range(5)}
+        else :
+            for k in eTypes - set(q_args.keys()) :
+                q_args[k] = {}
+
+        if q_colors is None :
+            v_pens    = [ [0, 0.5, 1, 1], [0, 0.5, 1, 1], [0.133, 0.545, 0.133, 1],
+                          [0.282, 0.239, 0.545, 1], [1, 0.135, 0, 1] ]
+            q_colors  = {k : {'edge_normal'   : [0.7, 0.7, 0.7, 0.5],
+                              'vertex_normal' : [0.9, 0.9, 0.9, 1.0],
+                              'vertex_pen'    : v_pens[k]} for k in range(5)}
+        else :
+            for k in eTypes - set(q_colors.keys()) :
+                q_colors[k] = {}
+
+        for key, args in q_args.items() :
+            if 'colors' not in args :
+                args['colors'] = q_colors[key]
 
         if isinstance(seed, int) :
             np.random.seed(seed)
@@ -49,9 +63,9 @@ class QueueNetwork :
         if graph_type != 'copy' :
             if g is None :
                 g     = generate_random_graph(nVertices, pDest, pFCQ)
-                g, qs = prepare_graph(g, colors=self.colors, graph_type=graph_type)
+                g, qs = prepare_graph(g, self.colors, q_classes, q_args, graph_type)
             elif isinstance(g, str) or isinstance(g, gt.Graph) :
-                g, qs = prepare_graph(g, colors=self.colors, graph_type=graph_type)
+                g, qs = prepare_graph(g, self.colors, q_classes, q_args, graph_type)
             else :
                 raise Exception("A proper graph (or graph location) was not given.")
 
@@ -84,7 +98,7 @@ class QueueNetwork :
             queues = queues[:nActive]
 
         for ei in queues :
-            self.edge2queue[ei].initialize()
+            self.edge2queue[ei].set_active()
 
         self.queues = [q for q in self.edge2queue]
         self.queues.sort()
@@ -174,7 +188,7 @@ class QueueNetwork :
 
                     tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
-                    color    = [ i * tmp / 0.9 for i in self.colors['vertex'][0] ]
+                    color    = [ i * tmp / 0.9 for i in q.colors['vertex_normal'] ]
                     color[3] = 1.0 - tmp
                     vp['vertex_color'][v] = color
                     do[q.edge[1]] = False
@@ -189,14 +203,15 @@ class QueueNetwork :
         if self.prev_edge is not None :
             pe  = self.g.edge(self.prev_edge[0], self.prev_edge[1])
             pv  = self.g.vertex(self.prev_edge[1])
+            q   = self.edge2queue[self.prev_edge[2]]
 
             if pe.target() == pe.source() :
-                ep['edge_color'][pe]   = self.edge2queue[self.prev_edge[2]].current_color('edge')
-                vp['vertex_color'][pv] = self.edge2queue[self.prev_edge[2]].current_color()
+                ep['edge_color'][pe]   = q.current_color('edge')
+                vp['vertex_color'][pv] = q.current_color()
                 vp['halo_color'][pv]   = self.colors['halo_normal']
                 vp['halo'][pv]  = False
             else :
-                ep['edge_color'][pe] = self.edge2queue[self.prev_edge[2]].current_color()
+                ep['edge_color'][pe] = q.current_color()
                 nSy = 0
                 cap = 0
                 for vi in self.in_edges[self.prev_edge[1]] :
@@ -205,13 +220,14 @@ class QueueNetwork :
 
                 tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
-                color    = [ i * tmp / 0.9 for i in self.colors['vertex'][0] ]
+                color    = [ i * tmp / 0.9 for i in self.colors['vertex_normal'] ]
                 color[3] = 1.0 - tmp
                 vp['vertex_color'][v] = color
 
+        q   = self.edge2queue[qedge[2]]
         if qedge[0] == qedge[1] :
-            ep['edge_color'][e]   = self.edge2queue[qedge[2]].current_color('edge')
-            vp['vertex_color'][v] = self.edge2queue[qedge[2]].current_color()
+            ep['edge_color'][e]   = q.current_color('edge')
+            vp['vertex_color'][v] = q.current_color()
             vp['halo'][v]  = True
 
             if ad == 'arrival' :
@@ -219,7 +235,7 @@ class QueueNetwork :
             elif ad == 'departure' :
                 vp['halo_color'][v] = self.colors['halo_departure']
         else :
-            ep['edge_color'][e] = self.edge2queue[qedge[2]].current_color()
+            ep['edge_color'][e] = q.current_color()
             nSy = 0
             cap = 0
             for vi in self.in_edges[qedge[1]] :
@@ -228,7 +244,7 @@ class QueueNetwork :
 
             tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
-            color    = [ i * tmp / 0.9 for i in self.colors['vertex'][0] ]
+            color    = [ i * tmp / 0.9 for i in self.colors['vertex_normal'] ]
             color[3] = 1.0 - tmp
             vp['vertex_color'][v] = color
 
@@ -411,10 +427,10 @@ class QueueNetwork :
 
 
     def reset_colors(self) :
-        for e in self.g.edges() :
-            self.g.ep['edge_color'][e]    = self.colors['edge_normal']
-        for v in self.g.vertices() :
-            self.g.vp['vertex_color'][v]  = self.colors['vertex'][0]
+        for k, e in enumerate(self.g.edges()) :
+            self.g.ep['edge_color'][e]    = self.edge2queue[k].colors['edge_normal']
+        for k, v in enumerate(self.g.vertices()) :
+            self.g.vp['vertex_color'][v]  = self.colors['vertex_normal']
             self.g.vp['halo_color'][v]    = self.colors['halo_normal']
             self.g.vp['halo'][v]          = False
             self.g.vp['text'][v]          = ''

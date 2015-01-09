@@ -13,22 +13,50 @@ def calculate_distance(latlon1, latlon2) :
     return c
 
 
+def matrix2list(matrix) :
+    n   = len(matrix)
+    adj = [ [] for k in range(n)]
+    for k in range(n) :
+        for j in range(n) :
+            if matrix[k, j] :
+                adj[k].append(j)
+
+    return adj
+
+
+def ematrix2list(adjacency, matrix) :
+    n   = len(matrix)
+    adj = [ [] for k in range(n)]
+    for k in range(n) :
+        for j in adjacency[k] :
+            adj[k].append(int(matrix[k, j]))
+
+    return adj
+
 def adjacency2graph(adjacency, edge_types=None, edge_lengths=None) :
 
     nV  = len(adjacency)
     g   = gt.Graph()
     vs  = g.add_vertex(nV)
+
+    if not isinstance(adjacency, list) :
+        adjacency = matrix2list(adjacency)
+
     for k in range(nV) :
         adj = adjacency[k]
         for j in adj :
             e = g.add_edge(k, j)
 
-    if edge_types == None :
+    if edge_types is not None and not isinstance(edge_types, list) :
+        edge_types  = ematrix2list(adjacency, edge_types)
+
+    if edge_types is None :
         edge_types = copy.deepcopy(adjacency)
         for k, adj in enumerate(adjacency) :
-            edge_types[k] = [0 for j in range(len(adj))]
+            edge_types[k] = [1 for j in range(len(adj))]
 
-    if edge_lengths == None :
+
+    if edge_lengths is None :
         edge_lengths = copy.deepcopy(adjacency)
         for k, adj in enumerate(adjacency) :
             edge_lengths[k] = [1 for j in range(len(adj))]
@@ -43,7 +71,7 @@ def adjacency2graph(adjacency, edge_types=None, edge_lengths=None) :
             eType[e]    = edge_types[u][j]
             elength[e]  = edge_lengths[u][j]
             if u == v :
-                vType[e.source()] = edge_types[u][v]
+                vType[e.source()] = edge_types[u][j]
 
     g.vp['vType'] = vType
     g.ep['eType'] = eType

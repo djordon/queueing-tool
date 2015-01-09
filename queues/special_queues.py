@@ -51,12 +51,19 @@ class ResourceAgent(Agent) :
 class ResourceQueue(LossQueue) :
 
     def __init__(self, nServers=10, edge=(0,0,0), fArrival=lambda x : x + exponential(1),
-                    fDepart=lambda x : x, AgentClass=ResourceAgent, qbuffer=0) :
-        LossQueue.__init__(self, nServers, edge, fArrival, fDepart, AgentClass, qbuffer)
+                    fDepart=lambda x : x, AgentClass=ResourceAgent, qbuffer=0, **kwargs) :
 
-        self.colors = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
-                        'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
-                        'vertex_pen'    : [0.0, 0.235, 0.718, 1.0] }
+        default_colors  = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
+                            'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
+                            'vertex_pen'    : [0.0, 0.235, 0.718, 1.0] }
+
+        if 'colors' in kwargs :
+            for col in set(default_colors.keys()) - set(kwargs['colors'].keys()) :
+                kwargs['colors'][col] = default_colors[col]
+        else :
+            kwargs['colors'] = default_colors
+
+        LossQueue.__init__(self, nServers, edge, fArrival, fDepart, AgentClass, qbuffer, **kwargs)
 
         self.max_servers  = nServers
         self.over_max     = 0
@@ -230,12 +237,8 @@ class InfoQueue(LossQueue) :
 
     def __init__(self, nServers=1, edge=(0,0,0), net_size=1,
             fArrival=lambda x : x + exponential(1), fDepart =lambda x : x + exponential(0.95),
-            AgentClass=InfoAgent, qbuffer=np.infty) :
-        LossQueue.__init__(self, nServers, edge, fArrival, fDepart, fDepart_mu, AgentClass, qbuffer)
-
-        self.colors = {'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
-                       'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
-                       'vertex_pen'    : [0.0, 0.5, 1.0, 1.0]}
+            AgentClass=InfoAgent, qbuffer=np.infty, **kwargs) :
+        LossQueue.__init__(self, nServers, edge, fArrival, fDepart, fDepart_mu, AgentClass, qbuffer, **kwargs)
 
         self.networking(net_size)
 
@@ -308,11 +311,11 @@ class InfoQueue(LossQueue) :
 
 class MarkovianQueue(QueueServer) :
 
-    def __init__(self, nServers=1, edge=(0,0,0), aRate=1, dRate=1.1, AgentClass=Agent) :
+    def __init__(self, nServers=1, edge=(0,0,0), aRate=1, dRate=1.1, AgentClass=Agent, **kwargs) :
         aMean = 1 / aRate
         dMean = 1 / dRate
         QueueServer.__init__(self, nServers, edge, lambda x : x + exponential(aMean),
-            lambda x : x + exponential(dMean), AgentClass)
+            lambda x : x + exponential(dMean), AgentClass, **kwargs)
 
         self.rates  = [aRate, dRate]
 

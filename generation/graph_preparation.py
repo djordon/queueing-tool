@@ -1,9 +1,7 @@
 import graph_tool.all as gt
 import numpy          as np
 
-from .. import queues as qs 
-
-def prepare_graph(g, colors, graph_type=None) :
+def prepare_graph(g, g_colors, q_cls, q_arg, q_colors, graph_type=None) :
     if isinstance(g, str) :
         g = gt.load_graph(g, fmt='xml')
     elif not isinstance(g, gt.Graph) :
@@ -32,11 +30,11 @@ def prepare_graph(g, colors, graph_type=None) :
 
     vertex_props = set()
     for key in g.vertex_properties.keys() :
-        vertex_props = vertex_props.union([key])
+        vertex_props.add(key)
 
     edge_props = set()
     for key in g.edge_properties.keys() :
-        edge_props = edge_props.union([key])
+        edge_props.add(key)
 
     if graph_type == 'osm' :
         has_garage  = 'garage' in vertex_props
@@ -73,8 +71,8 @@ def prepare_graph(g, colors, graph_type=None) :
             if has_elight and g.ep['light'][e] :
                 eType[e]  = 3
 
-        g.vp['vType'] = vType
-        g.ep['eType'] = eType
+        g.vp['vType'].a = vType.a + 1
+        g.ep['eType'].a = eType.a + 1
 
     if 'pos' not in vertex_props :
         g.vp['pos'] = gt.sfdp_layout(g, epsilon=1e-2, cooling_step=0.95)
@@ -83,10 +81,9 @@ def prepare_graph(g, colors, graph_type=None) :
     nE  = g.num_edges()
 
     has_length  = 'edge_length' in edge_props
-    kwargs      = {'has_lanes' : 'lanes' in vertex_props, 'has_cap' : 'cap' in vertex_props }
-    queues      = set_queues(g, colors, graph_type, **kwargs)
+    queues      = set_queues(g, q_colors, q_cls, q_arg, 'cap' in vertex_props)
 
-    for e in g.edges() :
+    for k, e in enumerate(g.edges()) :
         p2  = np.array(g.vp['pos'][e.target()])
         p1  = np.array(g.vp['pos'][e.source()])
         edge_length[e]  = g.ep['edge_length'][e] if has_length else np.linalg.norm(p1 - p2)
@@ -95,18 +92,18 @@ def prepare_graph(g, colors, graph_type=None) :
             edge_color[e] = [0, 0, 0, 0]
         else :
             control[e]    = [0, 0, 0, 0]
-            edge_color[e] = colors['edge_normal']
+            edge_color[e] = queues[k].colors['edge_normal']
 
     for v in g.vertices() :
         e = g.edge(v, v)
-        vertex_t_color[v] = colors['text_normal']
-        halo_color[v]     = colors['halo_normal']
+        vertex_t_color[v] = g_colors['text_normal']
+        halo_color[v]     = g_colors['halo_normal']
         if isinstance(e, gt.Edge) :
             vertex_pen_color[v] = queues[g.edge_index[e]].current_color('pen')
             vertex_color[v]     = queues[g.edge_index[e]].current_color()
         else :
             vertex_pen_color[v] = [0.0, 0.5, 1.0, 1.0]
-            vertex_color[v]     = [1.0, 1.0, 1.0, 1.0]
+            vertex_color[v]     = g_colors['vertex_normal'] 
 
     edge_width.a  = 1.25
     arrow_width.a = 8
@@ -145,31 +142,17 @@ def prepare_graph(g, colors, graph_type=None) :
     return g, queues
 
 
-def set_queues(g, colors, graph_type, **kwargs) :
+def set_queues(g, colors, q_cls, q_arg, has_cap) :
     queues    = [0 for k in range(g.num_edges())]
-    has_cap   = kwargs['has_cap']
-    has_lanes = kwargs['has_lanes']
-    congested = graph_type == 'congested'
 
     for e in g.edges() :
         qedge = (int(e.source()), int(e.target()), g.edge_index[e])
-        if g.ep['eType'][e] == 1 :
-            cap = max(g.vp['cap'][e.target()] // 10, 4) if has_cap else 4
-            queues[qedge[2]] = qs.LossQueue(cap, edge=qedge)
-        elif g.ep['eType'][e] == 2 :
-            cap = 8 if has_cap else 4
-            queues[qedge[2]] = qs.LossQueue(cap, edge=qedge)
-        elif g.ep['eType'][e] == -1 :
-            queues[qedge[2]] = qs.NullQueue(1, edge=qedge)
-        else : 
-            cap = g.vp['lanes'][e.target()] if has_lanes else 8
-            cap = cap if cap > 10 else max(cap // 2, 1)
-            queues[qedge[2]] = qs.LossQueue(cap, edge=qedge) if congested else qs.QueueServer(cap, edge=qedge)
+        eType = g.ep['eType'][e]
 
-        if g.ep['eType'][e] == 2 :
-            queues[qedge[2]].colors['vertex_pen'] = colors['vertex_pen'][2]
-        elif g.ep['eType'][e] == 3 :
-            queues[qedge[2]].colors['vertex_pen'] = colors['vertex_pen'][3]
+        if has_cap and 'nServers' not in q_arg[eType] :
+            q_arg[eType]['nServers'] = max(g.vp['cap'][e.target()] // 2, 1)
+
+        queues[qedge[2]] = q_cls[eType](edge=qedge, **q_arg[eType])
+        #queues[qedge[2]].colors = colors[eType]
 
     return queues
-

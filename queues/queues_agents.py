@@ -145,12 +145,11 @@ class QueueServer :
         AgentClass dictates what kinds of Agents are generated when there
         is an arrival.
     """
-    def __init__(self, nServers=1, edge=(0,0,0), fArrival=lambda x : x + exponential(1),
-            fDepart =lambda x : x + exponential(0.95), AgentClass=Agent) :
+    def __init__(self, nServers=1, edge=(0,0,0), fArrival=lambda x: x + exponential(1), 
+                    fDepart=lambda x: x + exponential(0.95), AgentClass=Agent, **kwargs) :
 
         self.edge       = edge
         self.nServers   = nServers
-        self.AgentClass = AgentClass
         self.nDeparts   = 0
         self.nSystem    = 0
         self.nTotal     = 0
@@ -159,15 +158,8 @@ class QueueServer :
         self.local_t    = 0
         self.time       = infty
         self.active     = False
-        self.cap        = infty
         self.next_ct    = 0
-
-        self.keep_data  = False
         self.data       = {}                # agent issn : [arrival t, service start t, departure t]
-
-        self.colors     = {'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
-                           'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
-                           'vertex_pen'    : [0.0, 0.5, 1.0, 1.0]}
 
         self.queue      = collections.deque()
         inftyAgent      = InftyAgent()
@@ -176,6 +168,20 @@ class QueueServer :
 
         self.fArrival   = fArrival
         self.fDepart    = fDepart
+        self.AgentClass = AgentClass
+        self.keep_data  = kwargs['keep_data'] if 'keep_data'  in kwargs else False
+        self.cap        = kwargs['cap']       if 'cap'        in kwargs else infty
+        default_colors  = {'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
+                           'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
+                           'vertex_pen'    : [0.0, 0.5, 1.0, 1.0]} 
+
+        if 'colors' in kwargs :
+            self.colors = kwargs['colors']
+            for col in set(default_colors.keys()) - set(self.colors.keys()) :
+                self.colors[col] = default_colors[col]
+        else :
+            self.colors = default_colors
+
 
     def __repr__(self) :
         tmp = "QueueServer: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
@@ -206,7 +212,7 @@ class QueueServer :
         return False
 
 
-    def initialize(self, add_arrival=True) :
+    def set_active(self, add_arrival=True) :
         self.active = True
         if add_arrival :
             self._add_arrival()
@@ -370,7 +376,6 @@ class QueueServer :
         self.local_t    = 0
         self.time       = infty
         self.next_ct    = 0
-        self.keep_data  = False
         self.data       = {}
         self.queue      = collections.deque()
         inftyAgent      = InftyAgent()
@@ -407,13 +412,20 @@ class QueueServer :
 class LossQueue(QueueServer) :
 
     def __init__(self, nServers=1, edge=(0,0,0), fArrival=lambda x : x + exponential(1),
-            fDepart =lambda x : x + exponential(0.95), AgentClass=Agent, qbuffer=0) :
+            fDepart =lambda x : x + exponential(0.95), AgentClass=Agent, qbuffer=0, **kwargs) :
 
-        QueueServer.__init__(self, nServers, edge, fArrival, fDepart, AgentClass)
+        default_colors  = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.5],
+                            'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
+                            'vertex_pen'    : [0.133, 0.545, 0.133, 1.0]} 
 
-        self.colors   = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
-                          'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
-                          'vertex_pen'    : [0.133, 0.545, 0.133, 1.0] }
+        if 'colors' in kwargs :
+            for col in set(default_colors.keys()) - set(kwargs['colors'].keys()) :
+                kwargs['colors'][col] = default_colors[col]
+        else :
+            kwargs['colors'] = default_colors
+
+        QueueServer.__init__(self, nServers, edge, fArrival, fDepart, AgentClass, **kwargs)
+
         self.nBlocked = 0
         self.buffer   = qbuffer
 
@@ -497,7 +509,17 @@ class LossQueue(QueueServer) :
 class NullQueue(QueueServer) :
 
     def __init__(self, servers=1, edge=(0,0,0), *args, **kwargs) :
-        QueueServer.__init__(self, 1, edge)
+
+        default_colors  = { 'edge_normal'   : [0.7, 0.3, 0.3, 0.7],
+                            'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
+                            'vertex_pen'    : [0.0, 0.0, 0.0, 1.0]} 
+
+        if 'colors' in kwargs :
+            for col in set(default_colors.keys()) - set(kwargs['colors'].keys()) :
+                kwargs['colors'][col] = default_colors[col]
+        else :
+            kwargs['colors'] = default_colors
+        QueueServer.__init__(self, 1, edge, **kwargs)
 
     def __repr__(self) :
         return "NullQueue: %s." %  (self.edge[2])
@@ -528,11 +550,14 @@ class NullQueue(QueueServer) :
 
     def current_color(self, which='') :
         if which == 'edge' :
-            color = [0, 0, 0, 0]
+            color = [0, 0, 0, .5]
         elif which == 'pen' :
-            color = [0, 0, 0, 1]
+            color = self.colors['vertex_pen']
         else :
-            color = [1, 1, 1, 1]
+            if self.edge[0] == self.edge[1] :
+                color = self.colors['vertex_normal']
+            else :
+                color = self.colors['edge_normal']
         return color
 
     def clear(self) :
