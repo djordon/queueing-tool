@@ -12,7 +12,7 @@ Queueing-tool
 
 ## Installation
 
-The two packages you will need to install is `graph-tool` and `numpy`, and the hardest part is getting `graph-tool` installed. There are [precompiled packages](http://graph-tool.skewed.de/download#packages) made for Debian & Ubuntu, Gentoo, and Arch linux, and there are macport files [here](http://www.macports.org/ports.php?by=name&substr=graph-tool). There does not seem to be much support for Windows users.
+The two packages you will need to install is [`graph-tool`](http://graph-tool.skewed.de/) and [`numpy`](http://www.numpy.org/), and the hardest part is getting `graph-tool` installed. There are [precompiled packages](http://graph-tool.skewed.de/download#packages) made for Debian & Ubuntu, Gentoo, and Arch linux, and there are macport files [here](http://www.macports.org/ports.php?by=name&substr=graph-tool). There does not seem to be much support for Windows users.
 
 After you have `graph-tool` and `numpy` installed, clone this repository and open a prompt in the package directory. To install, run
 
@@ -43,24 +43,6 @@ Whenever an agent departs from a `QueueServer` the agent must decide where to go
 The [following](http://nbviewer.ipython.org/gist/djordon/975bf898c1ed2f4c8198) is an old demo showing how to set up downtown Pittsburgh's traffic network. It does not use `queueing_tool`, but details how to use [openstreetmaps.org] with `graph_tool` to create a graph for inclusion with `queueing_tool`.
 
 
-##### The MIT License (MIT)
+##### Copyright and license
 
-Copyright (c) 2014 Daniel Jordon
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Code and documentation copyright 2014-2015 Daniel Jordon. Code released under the [MIT license](https://github.com/djordon/queueing-tool/blob/master/LICENSE).
