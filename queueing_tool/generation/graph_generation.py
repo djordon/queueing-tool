@@ -33,6 +33,26 @@ def ematrix2list(adjacency, matrix) :
 
     return adj
 
+
+def adjacency2edgetype(adjacency) :
+    n   = len(adjacency)
+    ety = [ [] for k in range(n)]
+    if not isinstance(adjacency, list) :
+        adj = [ [] for k in range(n)]
+        for k in range(n) :
+            for j in range(n) :
+                if adjacency[k, j] :
+                    adj[k].append(j)
+    else :
+        adj = adjacency
+
+    for k in range(n) :
+        for j in adj[k] :
+            ety[k].append( 1 if len(adj[j]) else 0 )
+
+    return ety
+
+
 def adjacency2graph(adjacency, edge_types=None, edge_lengths=None) :
 
     nV  = len(adjacency)

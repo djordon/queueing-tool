@@ -1,0 +1,14 @@
+include README
+include VERSION
+include LICENSE
+include MANIFEST.in
+include queueing_tool/__init__.py
+include queueing_tool/network/*.py
+include queueing_tool/network/sorting.pyx
+include queueing_tool/network/sorting.c
+include queueing_tool/generation/__init__.py
+include queueing_tool/generation/graph_generation.py
+include queueing_tool/generation/graph_preparation.py
+include queueing_tool/queues/__init__.py
+include queueing_tool/queues/queues_agents.py
+include queueing_tool/queues/special_queues.py

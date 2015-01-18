@@ -145,7 +145,7 @@ class QueueServer :
         AgentClass dictates what kinds of Agents are generated when there
         is an arrival.
     """
-    def __init__(self, nServers=1, edge=(0,0,0), fArrival=lambda x: x + exponential(1), 
+    def __init__(self, nServers=1, edge=(0,0,0), fArrival=lambda x: x + exponential(1),
                     fDepart=lambda x: x + exponential(0.95), AgentClass=Agent, **kwargs) :
 
         self.edge       = edge
@@ -169,8 +169,8 @@ class QueueServer :
         self.fArrival   = fArrival
         self.fDepart    = fDepart
         self.AgentClass = AgentClass
-        self.keep_data  = kwargs['keep_data'] if 'keep_data'  in kwargs else False
-        self.cap        = kwargs['cap']       if 'cap'        in kwargs else infty
+        self.keep_data  = kwargs['keep_data']   if 'keep_data'  in kwargs else False
+        self.active_cap = kwargs['active_cap']  if 'active_cap' in kwargs else infty
         default_colors  = {'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
                            'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
                            'vertex_pen'    : [0.0, 0.5, 1.0, 1.0]} 
@@ -244,7 +244,7 @@ class QueueServer :
                 heappush(self.arrivals, new_arrival)
 
                 self.nArrivals[1] += 1
-                if self.nArrivals[1] >= self.cap :
+                if self.nArrivals[1] >= self.active_cap :
                     self.active = False
 
         if self.arrivals[0].time < self.departures[0].time :
@@ -387,7 +387,7 @@ class QueueServer :
         new_server            = self.__class__()
         new_server.edge       = copy.copy(self.edge)
         new_server.nServers   = copy.copy(self.nServers)
-        new_server.cap        = copy.copy(self.cap)
+        new_server.active_cap = copy.copy(self.active_cap)
         new_server.nDeparts   = copy.copy(self.nDeparts)
         new_server.nSystem    = copy.copy(self.nSystem)
         new_server.nTotal     = copy.copy(self.nTotal)
