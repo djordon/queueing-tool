@@ -45,7 +45,8 @@ class QueueNetwork :
         if q_colors is None :
             v_pens    = [ [0, 0.5, 1, 1], [0, 0.5, 1, 1], [0.133, 0.545, 0.133, 1],
                           [0.282, 0.239, 0.545, 1], [1, 0.135, 0, 1] ]
-            q_colors  = {k : {'edge_normal'   : [0.7, 0.7, 0.7, 0.5],
+            q_colors  = {k : {'edge_loop'     : [0, 0, 0, 0],
+                              'edge_normal'   : [0.7, 0.7, 0.7, 0.5],
                               'vertex_normal' : [0.9, 0.9, 0.9, 1.0],
                               'vertex_pen'    : v_pens[k]} for k in range(5)}
         else :
@@ -176,7 +177,7 @@ class QueueNetwork :
             v = self.g.vertex(q.edge[1])
             if q.edge[0] == q.edge[1] :
                 vp['vertex_color'][v] = q.current_color()
-                ep['edge_color'][e]   = q.current_color('edge')
+                ep['edge_color'][e]   = q.current_color('loop')
             else :
                 ep['edge_color'][e]   = q.current_color()
                 if do[q.edge[1]] :
@@ -206,7 +207,7 @@ class QueueNetwork :
             q   = self.edge2queue[self.prev_edge[2]]
 
             if pe.target() == pe.source() :
-                ep['edge_color'][pe]   = q.current_color('edge')
+                ep['edge_color'][pe]   = q.current_color('loop')
                 vp['vertex_color'][pv] = q.current_color()
                 vp['halo_color'][pv]   = self.colors['halo_normal']
                 vp['halo'][pv]  = False
@@ -226,7 +227,7 @@ class QueueNetwork :
 
         q   = self.edge2queue[qedge[2]]
         if qedge[0] == qedge[1] :
-            ep['edge_color'][e]   = q.current_color('edge')
+            ep['edge_color'][e]   = q.current_color('loop')
             vp['vertex_color'][v] = q.current_color()
             vp['halo'][v]  = True
 
@@ -385,7 +386,8 @@ class QueueNetwork :
 
         self.to_animate = True
         self.update_graph_colors()
-        self.win = gt.GraphWindow(self.g, self.g.vp['pos'], geometry=outSize,
+        self.win = gt.GraphWindow(g=self.g, pos=self.g.vp['pos'],
+                geometry=outSize,
                 bg_color=self.colors['bg_color'],
                 edge_color=self.g.ep['edge_color'],
                 edge_control_points=self.g.ep['control'],
@@ -442,7 +444,7 @@ class QueueNetwork :
         self.nAgents      = np.zeros(self.nE)
         self.to_animate   = False
         self.initialized  = False
-        self.prev_edge     = None
+        self.prev_edge    = None
         self.reset_colors()
         for q in self.edge2queue :
             q.clear()

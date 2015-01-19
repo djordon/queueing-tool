@@ -148,9 +148,10 @@ import cProfile
 import os
 data_dir  = os.path.expanduser('~') + '/math/data/graphs/'
 pit = qt.QueueNetwork(nVertices=500, seed=13)
-pit.initialize(nActive=200)
-pit.agent_cap = 10000
+pit.initialize(nActive=100)
+pit.agent_cap = 5000
 pit.simulate(80)
+
 #pit.start_bookkeeping()
 #%timeit -n10 pit.simulate(n=50000)
 pr  = cProfile.Profile()

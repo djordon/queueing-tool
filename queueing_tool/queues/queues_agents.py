@@ -171,7 +171,8 @@ class QueueServer :
         self.AgentClass = AgentClass
         self.keep_data  = kwargs['keep_data']   if 'keep_data'  in kwargs else False
         self.active_cap = kwargs['active_cap']  if 'active_cap' in kwargs else infty
-        default_colors  = {'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
+        default_colors  = {'edge_loop'     : [0, 0, 0, 0],
+                           'edge_normal'   : [0.9, 0.9, 0.9, 0.5],
                            'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
                            'vertex_pen'    : [0.0, 0.5, 1.0, 1.0]} 
 
@@ -347,8 +348,8 @@ class QueueServer :
 
 
     def current_color(self, which='') :
-        if which == 'edge' :
-            color = [0, 0, 0, 0]
+        if which == 'loop' :
+            color = self.colors['edge_loop']
   
         elif which == 'pen' :
             color = self.colors['vertex_pen']
@@ -414,7 +415,8 @@ class LossQueue(QueueServer) :
     def __init__(self, nServers=1, edge=(0,0,0), fArrival=lambda x : x + exponential(1),
             fDepart =lambda x : x + exponential(0.95), AgentClass=Agent, qbuffer=0, **kwargs) :
 
-        default_colors  = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.5],
+        default_colors  = { 'edge_loop'     : [0, 0, 0, 0],
+                            'edge_normal'   : [0.7, 0.7, 0.7, 0.5],
                             'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
                             'vertex_pen'    : [0.133, 0.545, 0.133, 1.0]} 
 
@@ -472,8 +474,8 @@ class LossQueue(QueueServer) :
 
 
     def current_color(self, which='') :
-        if which == 'edge' :
-            color = [0, 0, 0, 0]
+        if which == 'loop' :
+            color = self.colors['edge_loop']
 
         elif which == 'pen' :
             color = self.colors['vertex_pen']
@@ -510,7 +512,8 @@ class NullQueue(QueueServer) :
 
     def __init__(self, servers=1, edge=(0,0,0), *args, **kwargs) :
 
-        default_colors  = { 'edge_normal'   : [0.7, 0.3, 0.3, 0.7],
+        default_colors  = { 'edge_loop'     : [0, 0, 0, 0.5],
+                            'edge_normal'   : [0.7, 0.3, 0.3, 0.7],
                             'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
                             'vertex_pen'    : [0.0, 0.0, 0.0, 1.0]} 
 
@@ -549,8 +552,8 @@ class NullQueue(QueueServer) :
         pass
 
     def current_color(self, which='') :
-        if which == 'edge' :
-            color = [0, 0, 0, .5]
+        if which == 'loop' :
+            color = self.colors['edge_loop']
         elif which == 'pen' :
             color = self.colors['vertex_pen']
         else :

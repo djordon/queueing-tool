@@ -1,19 +1,22 @@
-from distutils.core import setup
 from distutils.extension import Extension
 import sys
 
-# With the help of this stackoverflow.com answer:
-#   http://stackoverflow.com/questions/4505747/how-should-i-structure-a-python-package-that-contains-cython-code
+try :
+    from setuptools import setup
+except ImportError :
+    from distutils.core import setup
 
-if sys.version_info[0:2] < (3, 2):
-    raise RuntimeError('Python version 3.2+ required.')
-
-try:
+try :
     from Cython.Distutils import build_ext
-except ImportError:
+except ImportError :
     use_cython = False
 else:
     use_cython = True
+
+
+
+if sys.version_info[0:2] < (3, 2):
+    raise RuntimeError('Python version 3.2+ required.')
 
 cmdclass    = {}
 ext_modules = []
@@ -28,20 +31,22 @@ else:
         Extension('queueing_tool.network.sorting', ['queueing_tool/network/sorting.c'])
     )
 
+
 with open('README', 'r') as a_file :
-    description = a_file.read()
+    long_description = a_file.read()
 
 with open('VERSION', 'r') as a_file :
     version = a_file.read()
+
 
 setup(
     name='queueing_tool',
     version=version,
     description='Queueing network simulator',
-    long_description=description,
+    long_description=long_description,
     license='MIT',
     author='Daniel Jordon',
-    author_email='dan.jordon@gmail.com',
+    author_email='dan@danjordon.com',
     url='https://github.com/djordon/queueing-tool',
     packages=['queueing_tool', 
               'queueing_tool.network', 
@@ -49,16 +54,16 @@ setup(
               'queueing_tool.generation'],
     cmdclass=cmdclass,
     ext_modules=ext_modules,
+    keywords=['queueing', 'networks', 'simulation', 'network simulation'],
     classifiers=[
-    'Development Status :: 4 - Beta',
-    'Intended Audience :: Researchers',
+    'Development Status :: 3 - Alpha',
+    'Intended Audience :: Science/Research',
     'License :: OSI Approved :: MIT License',
-    'Operating System :: POSIX',
-    'Operating System :: Unix',
-    'Operating System :: MacOS',
+    'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.2',
     'Programming Language :: Python :: 3.3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Cython',
+    'Topic :: Scientific/Engineering',
     'Topic :: Scientific/Engineering :: Mathematics']
 )

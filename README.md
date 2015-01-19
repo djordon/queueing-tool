@@ -12,15 +12,30 @@ Queueing-tool
 
 ## Installation
 
-The two packages you will need to install is [`graph-tool`](http://graph-tool.skewed.de/) and [`numpy`](http://www.numpy.org/), and the hardest part is getting `graph-tool` installed. There are [precompiled packages](http://graph-tool.skewed.de/download#packages) made for Debian & Ubuntu, Gentoo, and Arch linux, and there are macport files [here](http://www.macports.org/ports.php?by=name&substr=graph-tool). There does not seem to be much support for Windows users.
+To install, you first need to have [`graph-tool`](http://graph-tool.skewed.de/) and [`numpy`](http://www.numpy.org/) installed. There are precompiled [packages](http://graph-tool.skewed.de/download#packages) of `graph-tool` made for Debian & Ubuntu, Gentoo, and Arch linux, and there are macport files [here](http://www.macports.org/ports.php?by=name&substr=graph-tool). You only need the `python 3` version of `graph-tool` installed for `queueing-tool`. Note that there does not seem to be much support for `graph-tool` under Windows users. 
 
 After you have `graph-tool` and `numpy` installed, clone this repository and open a prompt in the package directory. To install, run
 
+
 ```bash
-python3 setup.py install
+sudo python3 setup.py install
 ```
 
-Once it is installed you can import `queueing-tool` with the following code
+#### Local installation
+
+If you only want to test out `queueing-tool`, open a prompt in the package directory and run
+
+```bash
+python3 setup.py install --home=~
+```
+The above code will install `queueing_tool` at `~/lib/python/`. If `~/lib/python` does not exists it will create it. Make sure that `~/lib/python/` is in your `PYTHONPATH`. I suggest adding the following to the end of you `.bashrc` file (your `.bashrc` file is located in your home directory)
+
+```
+PYTHONPATH=~/lib/python/:$PYTHONPATH
+export PYTHONPATH
+```
+
+Once `queueing-tool` is installed you can import it with the following
 
 ```python
 import queueing_tool as qt
