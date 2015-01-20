@@ -1,10 +1,9 @@
-from distutils.extension import Extension
 import sys
 
 try :
-    from setuptools import setup
+    from setuptools import setup, Extension
 except ImportError :
-    from distutils.core import setup
+    from distutils.core import setup, Extension
 
 try :
     from Cython.Distutils import build_ext

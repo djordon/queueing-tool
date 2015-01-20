@@ -26,16 +26,9 @@ sudo python3 setup.py install
 If you only want to test out `queueing-tool`, open a prompt in the package directory and run
 
 ```bash
-python3 setup.py install --home=~
+python3 setup.py install --user
 ```
-The above code will install `queueing_tool` at `~/lib/python/`. If `~/lib/python` does not exists it will create it. Make sure that `~/lib/python/` is in your `PYTHONPATH`. If you are not sure whether `~/lib/python/` is in your `PYTHONPATH`, I suggest adding the following to the end of you `.bashrc` file (your `.bashrc` file is located in your home directory)
-
-```
-PYTHONPATH=~/lib/python/:$PYTHONPATH
-export PYTHONPATH
-```
-
-Once `queueing-tool` is installed you can import it with the following
+The above code will install `queueing_tool` at `~/.local/lib/python3.X/`, where `X` is the latest version of python installed on your machine. If `~/.local/lib/python3.X` does not exists it will create it. Once `queueing-tool` is installed you can import it with the following
 
 ```python
 import queueing_tool as qt
