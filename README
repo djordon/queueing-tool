@@ -29,7 +29,7 @@ If you only want to test out `queueing-tool`, open a prompt in the package direc
 ```bash
 python3 setup.py install --home=~
 ```
-The above code will install `queueing_tool` at `~/lib/python/`. If `~/lib/python` does not exists it will create it. Make sure that `~/lib/python/` is in your `PYTHONPATH`. I suggest adding the following to the end of you `.bashrc` file (your `.bashrc` file is located in your home directory)
+The above code will install `queueing_tool` at `~/lib/python/`. If `~/lib/python` does not exists it will create it. Make sure that `~/lib/python/` is in your `PYTHONPATH`. If you are not sure whether `~/lib/python/` is in your `PYTHONPATH`, I suggest adding the following to the end of you `.bashrc` file (your `.bashrc` file is located in your home directory)
 
 ```
 PYTHONPATH=~/lib/python/:$PYTHONPATH
