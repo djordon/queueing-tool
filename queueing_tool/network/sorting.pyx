@@ -12,12 +12,12 @@ def oneSort(list a, np.float64_t t, Py_ssize_t n) :
     bot = 0
     pos = 0
 
-    if t < a[bot].time :
+    if t < a[bot]._time :
         while True :
             pos = (top + bot) >> 1
             if bot == pos :
                 break
-            if t < a[pos].time :
+            if t < a[pos]._time :
                 bot = pos
             else :
                 top = pos
@@ -30,17 +30,17 @@ def oneSort(list a, np.float64_t t, Py_ssize_t n) :
     bot = 0
     pos = 0
 
-    if q.time < a[bot].time :
+    if q._time < a[bot]._time :
         while True :
             pos = (top + bot) >> 1
             if bot == pos :
                 break
-            if q.time < a[pos].time :
+            if q._time < a[pos]._time :
                 bot = pos
             else :
                 top = pos
 
-        if q.time < a[top].time :
+        if q._time < a[top]._time :
             a.insert(top+1, q)
         else :
             a.insert(top, q)
@@ -56,17 +56,17 @@ def bisectSort(list a, object q, Py_ssize_t n) :
     bot = 0
     pos = 0
 
-    if q.time < a[bot].time :
+    if q._time < a[bot]._time :
         while True :
             pos = (top + bot) >> 1
             if bot == pos :
                 break
-            if q.time < a[pos].time :
+            if q._time < a[pos]._time :
                 bot = pos
             else :
                 top = pos
 
-        if q.time < a[top].time :
+        if q._time < a[top]._time :
             a.insert(top+1, q)
         else :
             a.insert(top, q)

@@ -36,16 +36,19 @@ class LearningAgent(qt.Agent) :
 
     def __init__(self, issn=0) :
         qt.Agent.__init__(self, issn)
+        self.dest     = None
+        self.old_dest = None
+        self.od       = [0, 0]
 
     def __repr__(self) :
-        return "LearningAgent. issn: %s, time: %s" % (self.issn, self.time)
+        return "LearningAgent. issn: %s, time: %s" % (self.issn, self._time)
 
 
     def get_beliefs(self) :
         return self.net_data[:, 2]
 
 
-    def desired_destination(self, *info) :
+    def desired_destination(self, network, edge) :
         return self.dest
 
 
@@ -119,12 +122,11 @@ class approximate_dynamic_program :
         for q in self.Qn.edge2queue :
             if q.edge[0] == q.edge[1] :
                 if vp['vType'].a[q.edge[0]] == 1 :
-                    q.fArrival  = lambda x : x + exponential(1.0)
-                    q.fDepart   = lambda x : x + exponential(1.333)
+                    q.arrival_f = lambda x : x + exponential(1.0)
+                    q.service_f = lambda x : x + exponential(1.333)
                     q.nServers  = max(self.agent_cap // (50 * n), 1)
                 elif vp['vType'].a[q.edge[0]] == 2 :
-                    q.fArrival  = lambda x : x + exponential(1.0)
-                    q.fDepart   = lambda x : x + exponential(1.333)
+                    q.arrival_f = lambda x : x + exponential(1.0)
                     q.nServers  = max(self.agent_cap // (125 * m), 1)
 
 
@@ -145,7 +147,7 @@ class approximate_dynamic_program :
             kk  = max((S[ei+1] - QN.edge2queue[ei].nServers, 0)) + 1
 
         for k in range(int(kk)) :
-            exp_s   += QN.edge2queue[ei].fDepart_mu(exp_s)
+            exp_s   += QN.edge2queue[ei].service_f_mu(exp_s)
 
         return exp_s - QN.t
 
@@ -164,7 +166,7 @@ class approximate_dynamic_program :
             dum_t         = QN.t
 
             while dum_t <= exp_t :
-                dum_t          += QN.g.ep['queues'][e].fDepart_mu(dum_t)
+                dum_t          += QN.g.ep['queues'][e].service_f_mu(dum_t)
                 exp_depart[e]  += 1
 
             if exp_depart[e] > state[QN.g.edge_index[e]+1] :
@@ -323,12 +325,12 @@ class approximate_dynamic_program :
                 self.locations[ei].add( aissn )
 
             q = self.Qn.edge2queue[ei]
-            t = q.time + 1 if q.time < infty else self.Qn.queues[-1].time + 1
+            t = q._time + 1 if q._time < infty else self.Qn.queues[-1]._time + 1
             agent.od  = [orig[i], dest[i]]
             agent.set_type(1)
 
             self.agent_variables[aissn].agent = agent
-            self.Qn.add_arrival(ei, agent, t)
+            self.Qn._add_arrival(ei, agent, t)
             self.parked[aissn] = False
 
         if not isinstance(self.Qn.queues[-1].departures[0], LearningAgent) and nLearners > 0 :

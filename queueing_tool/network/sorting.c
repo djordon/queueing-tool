@@ -1028,7 +1028,7 @@ static char __pyx_k_pos[] = "pos";
 static char __pyx_k_top[] = "top";
 static char __pyx_k_main[] = "__main__";
 static char __pyx_k_test[] = "__test__";
-static char __pyx_k_time[] = "time";
+static char __pyx_k_time[] = "_time";
 static char __pyx_k_numpy[] = "numpy";
 static char __pyx_k_range[] = "range";
 static char __pyx_k_import[] = "__import__";
@@ -1216,14 +1216,14 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
  *     bot = 0
  *     pos = 0             # <<<<<<<<<<<<<<
  * 
- *     if t < a[bot].time :
+ *     if t < a[bot]._time :
  */
   __pyx_v_pos = 0;
 
   /* "queueing_tool/network/sorting.pyx":15
  *     pos = 0
  * 
- *     if t < a[bot].time :             # <<<<<<<<<<<<<<
+ *     if t < a[bot]._time :             # <<<<<<<<<<<<<<
  *         while True :
  *             pos = (top + bot) >> 1
  */
@@ -1244,7 +1244,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
 
     /* "queueing_tool/network/sorting.pyx":16
  * 
- *     if t < a[bot].time :
+ *     if t < a[bot]._time :
  *         while True :             # <<<<<<<<<<<<<<
  *             pos = (top + bot) >> 1
  *             if bot == pos :
@@ -1252,7 +1252,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
     while (1) {
 
       /* "queueing_tool/network/sorting.pyx":17
- *     if t < a[bot].time :
+ *     if t < a[bot]._time :
  *         while True :
  *             pos = (top + bot) >> 1             # <<<<<<<<<<<<<<
  *             if bot == pos :
@@ -1265,7 +1265,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
  *             pos = (top + bot) >> 1
  *             if bot == pos :             # <<<<<<<<<<<<<<
  *                 break
- *             if t < a[pos].time :
+ *             if t < a[pos]._time :
  */
       __pyx_t_4 = ((__pyx_v_bot == __pyx_v_pos) != 0);
       if (__pyx_t_4) {
@@ -1274,7 +1274,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
  *             pos = (top + bot) >> 1
  *             if bot == pos :
  *                 break             # <<<<<<<<<<<<<<
- *             if t < a[pos].time :
+ *             if t < a[pos]._time :
  *                 bot = pos
  */
         goto __pyx_L5_break;
@@ -1283,7 +1283,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
       /* "queueing_tool/network/sorting.pyx":20
  *             if bot == pos :
  *                 break
- *             if t < a[pos].time :             # <<<<<<<<<<<<<<
+ *             if t < a[pos]._time :             # <<<<<<<<<<<<<<
  *                 bot = pos
  *             else :
  */
@@ -1304,7 +1304,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
 
         /* "queueing_tool/network/sorting.pyx":21
  *                 break
- *             if t < a[pos].time :
+ *             if t < a[pos]._time :
  *                 bot = pos             # <<<<<<<<<<<<<<
  *             else :
  *                 top = pos
@@ -1387,14 +1387,14 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
  *     bot = 0
  *     pos = 0             # <<<<<<<<<<<<<<
  * 
- *     if q.time < a[bot].time :
+ *     if q._time < a[bot]._time :
  */
   __pyx_v_pos = 0;
 
   /* "queueing_tool/network/sorting.pyx":33
  *     pos = 0
  * 
- *     if q.time < a[bot].time :             # <<<<<<<<<<<<<<
+ *     if q._time < a[bot]._time :             # <<<<<<<<<<<<<<
  *         while True :
  *             pos = (top + bot) >> 1
  */
@@ -1415,7 +1415,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
 
     /* "queueing_tool/network/sorting.pyx":34
  * 
- *     if q.time < a[bot].time :
+ *     if q._time < a[bot]._time :
  *         while True :             # <<<<<<<<<<<<<<
  *             pos = (top + bot) >> 1
  *             if bot == pos :
@@ -1423,7 +1423,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
     while (1) {
 
       /* "queueing_tool/network/sorting.pyx":35
- *     if q.time < a[bot].time :
+ *     if q._time < a[bot]._time :
  *         while True :
  *             pos = (top + bot) >> 1             # <<<<<<<<<<<<<<
  *             if bot == pos :
@@ -1436,7 +1436,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
  *             pos = (top + bot) >> 1
  *             if bot == pos :             # <<<<<<<<<<<<<<
  *                 break
- *             if q.time < a[pos].time :
+ *             if q._time < a[pos]._time :
  */
       __pyx_t_4 = ((__pyx_v_bot == __pyx_v_pos) != 0);
       if (__pyx_t_4) {
@@ -1445,7 +1445,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
  *             pos = (top + bot) >> 1
  *             if bot == pos :
  *                 break             # <<<<<<<<<<<<<<
- *             if q.time < a[pos].time :
+ *             if q._time < a[pos]._time :
  *                 bot = pos
  */
         goto __pyx_L10_break;
@@ -1454,7 +1454,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
       /* "queueing_tool/network/sorting.pyx":38
  *             if bot == pos :
  *                 break
- *             if q.time < a[pos].time :             # <<<<<<<<<<<<<<
+ *             if q._time < a[pos]._time :             # <<<<<<<<<<<<<<
  *                 bot = pos
  *             else :
  */
@@ -1475,7 +1475,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
 
         /* "queueing_tool/network/sorting.pyx":39
  *                 break
- *             if q.time < a[pos].time :
+ *             if q._time < a[pos]._time :
  *                 bot = pos             # <<<<<<<<<<<<<<
  *             else :
  *                 top = pos
@@ -1490,7 +1490,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
  *             else :
  *                 top = pos             # <<<<<<<<<<<<<<
  * 
- *         if q.time < a[top].time :
+ *         if q._time < a[top]._time :
  */
         __pyx_v_top = __pyx_v_pos;
       }
@@ -1501,7 +1501,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
     /* "queueing_tool/network/sorting.pyx":43
  *                 top = pos
  * 
- *         if q.time < a[top].time :             # <<<<<<<<<<<<<<
+ *         if q._time < a[top]._time :             # <<<<<<<<<<<<<<
  *             a.insert(top+1, q)
  *         else :
  */
@@ -1522,7 +1522,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_oneSort(CYTHON_UNUSE
 
       /* "queueing_tool/network/sorting.pyx":44
  * 
- *         if q.time < a[top].time :
+ *         if q._time < a[top]._time :
  *             a.insert(top+1, q)             # <<<<<<<<<<<<<<
  *         else :
  *             a.insert(top, q)
@@ -1716,14 +1716,14 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_2bisectSort(CYTHON_U
  *     bot = 0
  *     pos = 0             # <<<<<<<<<<<<<<
  * 
- *     if q.time < a[bot].time :
+ *     if q._time < a[bot]._time :
  */
   __pyx_v_pos = 0;
 
   /* "queueing_tool/network/sorting.pyx":59
  *     pos = 0
  * 
- *     if q.time < a[bot].time :             # <<<<<<<<<<<<<<
+ *     if q._time < a[bot]._time :             # <<<<<<<<<<<<<<
  *         while True :
  *             pos = (top + bot) >> 1
  */
@@ -1744,7 +1744,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_2bisectSort(CYTHON_U
 
     /* "queueing_tool/network/sorting.pyx":60
  * 
- *     if q.time < a[bot].time :
+ *     if q._time < a[bot]._time :
  *         while True :             # <<<<<<<<<<<<<<
  *             pos = (top + bot) >> 1
  *             if bot == pos :
@@ -1752,7 +1752,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_2bisectSort(CYTHON_U
     while (1) {
 
       /* "queueing_tool/network/sorting.pyx":61
- *     if q.time < a[bot].time :
+ *     if q._time < a[bot]._time :
  *         while True :
  *             pos = (top + bot) >> 1             # <<<<<<<<<<<<<<
  *             if bot == pos :
@@ -1765,7 +1765,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_2bisectSort(CYTHON_U
  *             pos = (top + bot) >> 1
  *             if bot == pos :             # <<<<<<<<<<<<<<
  *                 break
- *             if q.time < a[pos].time :
+ *             if q._time < a[pos]._time :
  */
       __pyx_t_4 = ((__pyx_v_bot == __pyx_v_pos) != 0);
       if (__pyx_t_4) {
@@ -1774,7 +1774,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_2bisectSort(CYTHON_U
  *             pos = (top + bot) >> 1
  *             if bot == pos :
  *                 break             # <<<<<<<<<<<<<<
- *             if q.time < a[pos].time :
+ *             if q._time < a[pos]._time :
  *                 bot = pos
  */
         goto __pyx_L5_break;
@@ -1783,7 +1783,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_2bisectSort(CYTHON_U
       /* "queueing_tool/network/sorting.pyx":64
  *             if bot == pos :
  *                 break
- *             if q.time < a[pos].time :             # <<<<<<<<<<<<<<
+ *             if q._time < a[pos]._time :             # <<<<<<<<<<<<<<
  *                 bot = pos
  *             else :
  */
@@ -1804,7 +1804,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_2bisectSort(CYTHON_U
 
         /* "queueing_tool/network/sorting.pyx":65
  *                 break
- *             if q.time < a[pos].time :
+ *             if q._time < a[pos]._time :
  *                 bot = pos             # <<<<<<<<<<<<<<
  *             else :
  *                 top = pos
@@ -1819,7 +1819,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_2bisectSort(CYTHON_U
  *             else :
  *                 top = pos             # <<<<<<<<<<<<<<
  * 
- *         if q.time < a[top].time :
+ *         if q._time < a[top]._time :
  */
         __pyx_v_top = __pyx_v_pos;
       }
@@ -1830,7 +1830,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_2bisectSort(CYTHON_U
     /* "queueing_tool/network/sorting.pyx":69
  *                 top = pos
  * 
- *         if q.time < a[top].time :             # <<<<<<<<<<<<<<
+ *         if q._time < a[top]._time :             # <<<<<<<<<<<<<<
  *             a.insert(top+1, q)
  *         else :
  */
@@ -1851,7 +1851,7 @@ static PyObject *__pyx_pf_13queueing_tool_7network_7sorting_2bisectSort(CYTHON_U
 
       /* "queueing_tool/network/sorting.pyx":70
  * 
- *         if q.time < a[top].time :
+ *         if q._time < a[top]._time :
  *             a.insert(top+1, q)             # <<<<<<<<<<<<<<
  *         else :
  *             a.insert(top, q)

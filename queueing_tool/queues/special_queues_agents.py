@@ -1,57 +1,87 @@
-from .queues_agents import Agent, QueueServer, LossQueue
-from numpy.random   import randint, exponential
-from heapq          import heappush, heappop
+from .queue_servers   import QueueServer, LossQueue
+from .agents          import Agent
+from numpy.random     import randint, exponential
+from heapq            import heappush, heappop
 
 import numpy as np
 import copy
 
 
 class ResourceAgent(Agent) :
+    """An agent designed to interact with the :class:`~ResourceQueue` class.
+
+    Based on the :class:`~Agent` class. Overwritten methods documented below.
+
+    When an ``ResourceAgent`` departs from a :class:`~ResourceQueue`, they take
+    a *resource* from the queue if it does not have a resource yet. It does this
+    by reducing the number of servers at that queue by one. If a ``ResourceAgent``
+    with a resource arrives at the next :class:`~ResourceQueue` (this could be the
+    same queue) the :class:`~ResourceQueue` adds a resource to that queue by adding
+    increasing the number of servers there by one; the ``ResourceAgent`` is then deleted.
+    """
     def __init__(self, issn) :
         Agent.__init__(self, issn)
-        self.has_resource = False
-        self.had_resource = False
+        self._has_resource = False
+        self._had_resource = False
 
     def __repr__(self) :
-        return "ResourceAgent. issn: %s, time: %s" % (self.issn, self.time)
-
-
-    def desired_destination(self, *info) :
-        network, qedge = info[:2]
-
-        if self.had_resource :
-            z = qedge[2]
-        else :
-            n = len( network.adjacency[qedge[1]] )
-            d = randint(0, n)
-            z = network.adjacency[qedge[1]][d]
-        return z
+        return "ResourceAgent. issn: %s, time: %s" % (self.issn, self._time)
 
 
     def queue_action(self, queue, *args, **kwargs) :
-        nServers = queue.nServers
+        """Function that specifies the interaction with a :class:`~ResourceQueue` 
+        upon departure.
+
+        Upon departure from a :class:`~ResourceQueue` (or a :class:`~QueueServer`), this
+        method is called where the ``queue`` is the :class:`~ResourceQueue` that the agent
+        is departing from. If the agent does not already have a resource then it decrements
+        the number of servers at :class:`~ResourceQueue` by one.
+
+        Parameters
+        ----------
+        queue : :class:`~QueueServer`
+            The instance of the queue that the ``ResourceAgent`` will interact with. If
+            It's not a :class:`~ResourceQueue` then it does nothing.
+        """
         if isinstance(queue, ResourceQueue) :
-            if self.has_resource :
-                self.has_resource = False
-                self.had_resource = True
+            if self._has_resource :
+                self._has_resource = False
+                self._had_resource = True
             else :
                 if queue.nServers > 0 :
-                    queue.set_nServers(nServers - 1)
-                    self.has_resource = True
+                    queue.set_nServers(queue.nServers - 1)
+                    self._has_resource = True
+                    self._had_resource = False
 
 
     def __deepcopy__(self, memo) :
         new_agent               = Agent.__deepcopy__(self, memo)
-        new_agent.has_resource  = copy.deepcopy(self.has_resource)
-        new_agent.had_resource  = copy.deepcopy(self.had_resource)
+        new_agent._has_resource = copy.deepcopy(self._has_resource)
+        new_agent._had_resource = copy.deepcopy(self._had_resource)
         return new_agent
 
 
 
 class ResourceQueue(LossQueue) :
+    """An queue designed to interact with the :class:`~ResourceAgent` class.
 
-    def __init__(self, nServers=10, edge=(0,0,0), fArrival=lambda x : x + exponential(1),
-                    fDepart=lambda x : x, AgentClass=ResourceAgent, qbuffer=0, **kwargs) :
+    Child of the :class:`~LossQueue` class.
+
+    If a :class:`~ResourceAgent` does not have a resource already it will take 
+    a *resource* from this queue when it departs. It does this by reducing the 
+    number of servers here by one. When that agent arrives to this queue with a 
+    resource it adds one to the number of servers here upon arrival.
+
+    Attributes
+    ----------
+    max_servers : int
+        The maximum number of servers that be here. This is a soft max, and it is
+        used to keep track of how often the queue will be overflowing with resources.
+    over_max : int
+        The number of times an agent has deposited a resource here when the number of 
+        servers was at ``max_servers``.
+    """
+    def __init__(self, nServers=10, AgentClass=ResourceAgent, qbuffer=0, **kwargs) :
 
         default_colors  = { 'edge_normal'   : [0.7, 0.7, 0.7, 0.50],
                             'vertex_normal' : [1.0, 1.0, 1.0, 1.0],
@@ -63,15 +93,15 @@ class ResourceQueue(LossQueue) :
         else :
             kwargs['colors'] = default_colors
 
-        LossQueue.__init__(self, nServers, edge, fArrival, fDepart, AgentClass, qbuffer, **kwargs)
+        LossQueue.__init__(self, nServers, AgentClass, qbuffer, **kwargs)
 
-        self.max_servers  = nServers
+        self.max_servers  = 2 * nServers
         self.over_max     = 0
 
 
     def __repr__(self) :
         tmp = "ResourceQueue: %s. servers: %s, max servers: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.edge[2], self.nServers, self.max_servers, self.nArrivals, self.nDeparts, np.round(self.time, 3))
+            %  (self.edge[2], self.nServers, self.max_servers, self.nArrivals, self.nDepartures, np.round(self._time, 3))
         return tmp
 
 
@@ -82,18 +112,26 @@ class ResourceQueue(LossQueue) :
 
 
     def next_event(self) :
-        if isinstance(self.arrivals[0], ResourceAgent) :
-            if self.arrivals[0].time < self.departures[0].time :
-                if self.arrivals[0].has_resource :
-                    new_arrival  = heappop(self.arrivals)
-                    self.local_t = new_arrival.time
-                    self.nTotal -= 1
+        """Simulates the queue forward one event. 
+
+        This method behaves identically to a :class:`~LossQueue` if the arriving/departing
+        agent anything other than a :class:`~ResourceAgent`. The differences are:
+            * If the agent is a :class:`~ResourceAgent` and they have a resource then 
+            it deletes it upon arrival and adds one to ``nServers``.
+            * If the :class:`~ResourceAgent` is arriving without a resource then nothing special happens
+        """
+        if isinstance(self._arrivals[0], ResourceAgent) :
+            if self._arrivals[0]._time < self._departures[0]._time :
+                if self._arrivals[0]._has_resource :
+                    new_arrival   = heappop(self._arrivals)
+                    self._local_t = new_arrival._time
+                    self.nTotal  -= 1
                     self.set_nServers(self.nServers+1)
 
-                    if self.arrivals[0].time < self.departures[0].time :
-                        self.time = self.arrivals[0].time
+                    if self._arrivals[0]._time < self._departures[0]._time :
+                        self._time = self._arrivals[0]._time
                     else :
-                        self.time = self.departures[0].time
+                        self._time = self._departures[0]._time
 
                 elif self.nSystem < self.nServers :
                     QueueServer.next_event(self)
@@ -102,21 +140,21 @@ class ResourceQueue(LossQueue) :
                     self.nBlocked      += 1
                     self.nArrivals[0]  += 1
                     self.nTotal        -= 1
-                    new_arrival         = heappop(self.arrivals)
-                    self.local_t        = new_arrival.time
-                    if self.arrivals[0].time < self.departures[0].time :
-                        self.time = self.arrivals[0].time
+                    new_arrival         = heappop(self._arrivals)
+                    self._local_t       = new_arrival._time
+                    if self._arrivals[0]._time < self._departures[0]._time :
+                        self._time = self._arrivals[0]._time
                     else :
-                        self.time = self.departures[0].time
+                        self._time = self._departures[0]._time
 
-            elif self.departures[0].time < self.arrivals[0].time :
+            elif self._departures[0]._time < self._arrivals[0]._time :
                 return QueueServer.next_event(self)
         else :
             return LossQueue.next_event(self)
 
 
-    def current_color(self, which='') :
-        if which == 'edge' :
+    def current_color(self, which=0) :
+        if which == 1 :
             nSy = self.nServers
             cap = self.max_servers
             tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
@@ -124,7 +162,7 @@ class ResourceQueue(LossQueue) :
             color    = [ i * tmp / 0.9 for i in self.colors['edge_normal'] ]
             color[3] = 0.0
   
-        elif which == 'pen' :
+        elif which == 2 :
             color = self.colors['vertex_pen']
         else :
             nSy = self.nServers
@@ -142,7 +180,7 @@ class ResourceQueue(LossQueue) :
 
 
     def clear(self) :
-        QueueServer.clear(self)
+        LossQueue.clear(self)
         self.nBlocked  = 0
         self.over_max  = 0
 
@@ -157,14 +195,14 @@ class ResourceQueue(LossQueue) :
 
 class InfoAgent(Agent) :
 
-    def __init__(self, issn, net_size) :
-        Agent.__init__(self, issn, net_size)
+    def __init__(self, issn, net_size, **kwargs) :
+        Agent.__init__(self, issn, **kwargs)
 
         self.stats    = np.zeros((net_size, 3), np.int32 )
         self.net_data = np.ones((net_size, 3)) * -1
 
     def __repr__(self) :
-        return "InfoAgent. issn: %s, time: %s" % (self.issn, self.time)
+        return "InfoAgent. issn: %s, time: %s" % (self.issn, self._time)
 
 
     def add_loss(self, qedge, *args, **kwargs) : # qedge[2] is the edge_index of the queue
@@ -192,9 +230,8 @@ class InfoAgent(Agent) :
             self.dest = dest
 
 
-    def desired_destination(self, *info) :
-        network, qedge = info[:2]
-        if self.dest != None and qedge[1] == self.dest :
+    def desired_destination(self, network, edge, **kwargs) :
+        if self.dest != None and edge[1] == self.dest :
             self.old_dest   = self.dest
             self.dest       = None
             self.trip_t[1] += network.t - self.trip_t[0] 
@@ -204,11 +241,11 @@ class InfoAgent(Agent) :
         elif self.dest == None :
             self.trip_t[0]  = network.t
             self._set_dest(net = network)
-            while self.dest == qedge[1] :
+            while self.dest == edge[1] :
                 self._set_dest(net = network)
         
-        z   = network.shortest_path[qedge[1], self.dest]
-        z   = network.g.edge(qedge[1], z)
+        z   = network.shortest_path[edge[1], self.dest]
+        z   = network.g.edge(edge[1], z)
         return z
 
 
@@ -222,7 +259,7 @@ class InfoAgent(Agent) :
             n   = queue.edge[2]    # This is the edge_index of the queue
             self.stats[n, 0]    = self.stats[n, 0] + (queue.data[self.issn][-1][1] - queue.data[self.issn][-1][0])
             self.stats[n, 1]   += 1 if (queue.data[self.issn][-1][1] - queue.data[self.issn][-1][0]) > 0 else 0
-            self.net_data[n, :] = queue.local_t, queue.nServers, queue.nSystem / queue.nServers
+            self.net_data[n, :] = queue._local_t, queue.nServers, queue.nSystem / queue.nServers
 
 
     def __deepcopy__(self, memo) :
@@ -235,21 +272,19 @@ class InfoAgent(Agent) :
 
 class InfoQueue(LossQueue) :
 
-    def __init__(self, nServers=1, edge=(0,0,0), net_size=1,
-            fArrival=lambda x : x + exponential(1), fDepart =lambda x : x + exponential(0.95),
-            AgentClass=InfoAgent, qbuffer=np.infty, **kwargs) :
-        LossQueue.__init__(self, nServers, edge, fArrival, fDepart, fDepart_mu, AgentClass, qbuffer, **kwargs)
+    def __init__(self, net_size=1, AgentClass=InfoAgent, qbuffer=np.infty, **kwargs) :
+        LossQueue.__init__(self, AgentClass, qbuffer, **kwargs)
 
         self.networking(net_size)
 
     def __repr__(self) :
         tmp = "InfoQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.edge[2], self.nServers, len(self.queue), self.nArrivals, self.nDeparts, np.round(self.time, 3))
+            %  (self.edge[2], self.nServers, len(self._queue), self.nArrivals, self.nDepartures, np.round(self._time, 3))
         return tmp
 
     def __repr__(self) :
         tmp = "InfoQueue: %s. servers: %s, max servers: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.edge[2], self.nServers, self.max_servers, self.nArrivals, self.nDeparts, np.round(self.time, 3))
+            %  (self.edge[2], self.nServers, self.max_servers, self.nArrivals, self.nDepartures, np.round(self._time, 3))
         return tmp
 
 
@@ -266,23 +301,23 @@ class InfoQueue(LossQueue) :
     def _add_arrival(self, *args) :
         if len(args) > 0 :
             self.nTotal += 1
-            heappush(self.arrivals, args[0])
+            heappush(self._arrivals, args[0])
         else : 
-            if self.local_t >= self.next_ct :
+            if self._local_t >= self._next_ct :
                 self.nTotal  += 1
-                self.next_ct  = self.fArrival(self.local_t)
+                self._next_ct = self.arrival_f(self._local_t)
                 new_arrival   = self.AgentClass(self.edge, len(self.net_data) )
-                new_arrival.set_arrival( self.next_ct )
-                heappush(self.arrivals, new_arrival)
+                new_arrival.set_arrival( self._next_ct )
+                heappush(self._arrivals, new_arrival)
 
                 self.nArrivals[1] += 1
                 if self.nArrivals[1] >= self.cap :
                     self.active = False
 
-        if self.arrivals[0].time < self.departures[0].time :
-            self.time = self.arrivals[0].time
+        if self._arrivals[0]._time < self._departures[0]._time :
+            self._time = self._arrivals[0]._time
         else :
-            self.time = self.departures[0].time
+            self._time = self._departures[0]._time
 
 
     def append_departure(self, agent, t) :
@@ -291,8 +326,8 @@ class InfoQueue(LossQueue) :
 
 
     def next_event(self) :
-        if self.arrivals[0].time < self.departures[0].time :
-            self.extract_information(self.arrivals[0])
+        if self._arrivals[0]._time < self._departures[0]._time :
+            self.extract_information(self._arrivals[0])
 
         LossQueue.next_event(self)
 
@@ -307,37 +342,3 @@ class InfoQueue(LossQueue) :
         new_server.net_data = copy.copy(self.net_data)
         return new_server
 
-
-
-class MarkovianQueue(QueueServer) :
-
-    def __init__(self, nServers=1, edge=(0,0,0), aRate=1, dRate=1.1, AgentClass=Agent, **kwargs) :
-        aMean = 1 / aRate
-        dMean = 1 / dRate
-        QueueServer.__init__(self, nServers, edge, lambda x : x + exponential(aMean),
-            lambda x : x + exponential(dMean), AgentClass, **kwargs)
-
-        self.rates  = [aRate, dRate]
-
-    def __repr__(self) :
-        tmp = "MarkovianQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s, rates: %s" \
-            %  (self.edge[2], self.nServers, len(self.queue), self.nArrivals,
-                self.nDeparts, np.round(self.time, 3), self.rates)
-        return tmp
-
-
-    def change_rates(self, aRate=None, dRate=None) :
-        if aRate != None :
-            aMean = 1 / aRate
-            self.rates[0] = aRate
-            self.fArrival = lambda x : x + exponential(aMean)
-        if dRate != None :
-            dMean = 1 / dRate
-            self.rates[1] = dRate
-            self.fDepart  = lambda x : x + exponential(dMean)
-
-
-    def __deepcopy__(self, memo) :
-        new_server        = QueueServer.__deepcopy__(self, memo)
-        new_server.rates  = copy.copy(self.rates)
-        return new_server
