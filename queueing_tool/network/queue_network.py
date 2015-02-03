@@ -86,6 +86,10 @@ class QueueNetwork :
     ...                       'halo_normal'     : [0, 0, 0, 0],
     ...                       'halo_arrival'    : [0.1, 0.8, 0.8, 0.25],
     ...                       'halo_departure'  : [0.9, 0.9, 0.9, 0.25],
+    ...                       'vertex_active'   : [0.1, 1.0, 0.5, 1.0],
+    ...                       'vertex_inactive' : [0.9, 0.9, 0.9, 0.8],
+    ...                       'edge_active'     : [0.1, 0.1, 0.1, 1.0],
+    ...                       'edge_inactive'   : [0.8, 0.8, 0.8, 0.3],
     ...                       'text_normal'     : [1, 1, 1, 0.5],
     ...                       'bg_color'        : [1, 1, 1, 1]}
     """
@@ -99,6 +103,10 @@ class QueueNetwork :
                               'halo_normal'     : [0, 0, 0, 0],
                               'halo_arrival'    : [0.1, 0.8, 0.8, 0.25],
                               'halo_departure'  : [0.9, 0.9, 0.9, 0.25],
+                              'vertex_active'   : [0.1, 1.0, 0.5, 1.0],
+                              'vertex_inactive' : [0.9, 0.9, 0.9, 0.8],
+                              'edge_active'     : [0.1, 0.1, 0.1, 1.0],
+                              'edge_inactive'   : [0.8, 0.8, 0.8, 0.3],
                               'text_normal'     : [1, 1, 1, 0.5],
                               'bg_color'        : [1, 1, 1, 1]}
 
@@ -184,10 +192,11 @@ class QueueNetwork :
     def initialize(self, nActive=1, queues=None) :
         """Prepares the ``QueueNetwork`` for simulation.
 
-        Each :class:`~queueing_tool.queues.QueueServer` in the network starts inactive, which means they do not
-        accept arrivals from outside the network, and they have no :class:`~queueing_tool.queues.Agent`
-        in their systems. Note that in order to simulate the ``QueueNetwork``, there
-        must be at least one :class:`~queueing_tool.queues.Agent` in the network. The ``initialize`` method
+        Each :class:`~queueing_tool.queues.QueueServer` in the network starts inactive, 
+        which means they do not accept arrivals from outside the network, and they have
+        no :class:`~queueing_tool.queues.Agent` in their systems. Note that in order to 
+        simulate the ``QueueNetwork``, there must be at least one 
+        :class:`~queueing_tool.queues.Agent` in the network. The ``initialize`` method
         sets queues to active, allowing agents to arrive from outside the network.
 
         Parameters
@@ -256,8 +265,8 @@ class QueueNetwork :
         Parameters
         ----------
         out_size : tuple (optional, the default is (750, 750).
-            Specifies the size of canvas. See `graph-tool <http://graph-tool.skewed.de/static/doc/index.html>`_'s
-            documentation.
+            Specifies the size of canvas. See
+            `graph-tool <http://graph-tool.skewed.de/static/doc/index.html>`_'s documentation.
         output : str (optional, the default is ``None``)
             Specifies the directory where the drawing is saved. The default is ``None``, 
             so the output is drawn using GraphViz.
@@ -265,12 +274,11 @@ class QueueNetwork :
             Specifies whether all the colors are updated.
         **kwargs : 
             Any extra parameters to pass to :func:`~graphtool.graph_tool.draw.graph_draw`.
-
         """
         if update_colors :
             self._update_all_colors()
 
-        more_kwargs = {'output_size': out_size , 'output' : output} if output is not None else {'geometry' : out_size}
+        more_kwargs = {'geometry' : out_size} if output is None else {'output_size': out_size , 'output' : output}
         kwargs.update(more_kwargs)
 
         ans = gt.graph_draw(g=self.g, pos=self.g.vp['pos'],
@@ -294,6 +302,41 @@ class QueueNetwork :
                 vertex_text_position=self.g.vp['vertex_text_position'],
                 vertex_font_size=self.g.vp['vertex_font_size'],
                 vertex_size=self.g.vp['vertex_size'], **kwargs)
+
+
+    def show_active(self) :
+        """Draws the network, highlighting active queues.
+
+        The colored vertces represent vertices that have at least one queue
+        on an in-edge that is active. Dark edges represent queues that are active,
+        light edges represent queues that are inactive.
+
+        Notes
+        -----
+        The colors are defined by the class attribute ``colors``.
+        """
+        for v in self.g.vertices() :
+            self.g.vp['vertex_color'][v] = [0, 0, 0, 0.9]
+            is_active = False
+            for e in v.in_edges() :
+                ei = self.g.edge_index[e]
+                if self.edge2queue[ei].active :
+                    is_active = True
+                    break
+            if is_active :
+                self.g.vp['vertex_fill_color'][v] = self.colors['vertex_active']
+            else :
+                self.g.vp['vertex_fill_color'][v] = self.colors['vertex_inactive']
+
+        for e in self.g.edges() :
+            ei = self.g.edge_index[e]
+            if self.edge2queue[ei].active :
+                self.g.ep['edge_color'][e] = self.colors['edge_active']
+            else :
+                self.g.ep['edge_color'][e] = self.colors['edge_inactive']
+
+        self.draw(update_colors=False)
+        self._update_all_colors()
 
 
     def _update_all_colors(self) :

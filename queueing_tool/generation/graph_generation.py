@@ -2,7 +2,7 @@ import graph_tool.all as gt
 import numpy          as np
 import copy
 
-from .graph_preparation import random_edge_types, pagerank_edge_types
+from .graph_preparation import set_types_random, set_types_pagerank
 
 def matrix2list(matrix) :
     n   = len(matrix)
@@ -92,18 +92,23 @@ def adjacency2graph(adjacency, edge_types=None, edge_lengths=None) :
 
 def generate_random_graph(nVertices=250, **kwargs) :
     g = random_graph(nVertices)
-    g = pagerank_edge_types(g, **kwargs)
+    g = set_types_random(g, **kwargs)
     return g
 
 
-def generate_random_pagerank_graph(nVertices=250, **kwargs) :
+def generate_pagerank_graph(nVertices=250, **kwargs) :
     g = random_graph(nVertices)
-    g = pagerank_edge_types(g, **kwargs)
+    g = set_types_pagerank(g, **kwargs)
     return g
 
 
-def random_graph(nVertices) :
+def random_graph(nVertices, directed=True) :
     """Creates a connected and directed random graph.
+
+    The function creates a minimally connected random graph. To do so, 
+    it places vertices randomly on the unit square and each vertex v 
+    adds an edge to all other vertices within a certain radius ``r``.
+    The radius ``r`` is taken to be as small as possible.
     """
     points  = np.random.random((nVertices, 2)) * 2
     radii   = [(4 + k) / 200 for k in range(560)]
@@ -114,7 +119,9 @@ def random_graph(nVertices) :
         if max(comp.a) == 0 :
             break
 
-    g.set_directed(True)
+    if directed :
+        g.set_directed(True)
+
     g2  = g.copy()
     for e in g2.edges() :
         e1  = g.add_edge(source=int(e.target()), target=int(e.source()))
@@ -129,3 +136,39 @@ def random_graph(nVertices) :
     
     g.vp['pos'] = pos
     return g
+
+
+
+nVertices = 30
+dist_dict = {}
+dist_list = []
+blobs     = {k : {k} for k in range(nVertices)}
+points    = np.random.random((nVertices, 2)) * 10
+
+for k in range(nVertices-1) :
+    for j in range(k+1, nVertices) :
+        d = np.linalg.norm(points[k] - points[j])
+        dist_dict[d] = (k, j)
+        dist_list.append(d)
+
+dist_list.sort()
+vert = set()
+for k, d in enumerate(dist_list) :
+    if len(vert) == nVertices - 2:
+        break
+    j, l = dist_dict[d]
+    if j in vert and l in vert :
+        continue
+    s    = blobs[j].union(blobs[l])
+    for j in s :
+        blobs[j] = s
+    vert.update( (j,l) )
+
+g, pos  = gt.geometric_graph(points, d)
+comp, a = gt.label_components(g)
+max(comp.a)
+
+g, pos  = gt.geometric_graph(points, d-0.3)
+comp, a = gt.label_components(g)
+max(comp.a)
+(1) Creating object for path '/org/freedesktop/NetworkManager/ActiveConnection/5' failed in libnm-glib.
