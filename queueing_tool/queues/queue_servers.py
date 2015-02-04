@@ -439,15 +439,11 @@ class QueueServer :
 
 
 class LossQueue(QueueServer) :
-    """A finite capacity queue.
+    """A finite capacity queue. Child of the :class:`~QueueServer` class.
 
-    Child of the :class:`~QueueServer` class.
-
-    Essentially becomes a ``QueueServer`` if the buffer/capacity is set to ``np.infty``. If the
-    buffer is some finite value, then agents that arrive to the queue are turned around and
-    sent out of the queue.
-
-    This class inherits the QueueServer class.
+    If the buffer is some finite value, then agents that arrive to the queue 
+    are turned around and sent out of the queue. Essentially becomes a 
+    ``QueueServer`` if the buffer/capacity is set to ``np.infty``.
 
     Parameters
     ----------

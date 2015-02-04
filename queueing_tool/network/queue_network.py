@@ -29,10 +29,11 @@ class QueueNetwork :
     g : graph (a :class:`~graph_tool.Graph` instance or the location of a graph)
         The graph specifies the network on which the queues sit.
     q_classes : dict (optional)
-        This allows the user to specify the type of :class:`~QueueServer` class each edge 
-        corresponds to.
+        This allows the user to specify the type of :class:`~queueing_tool.queues.QueueServer`
+        class for each edge.
     q_args : dict (optional)
-        This allows the user to specify the class arguments for each type of :class:`~QueueServer`.
+        This allows the user to specify the class arguments for each type of
+        :class:`~queueing_tool.queues.QueueServer`.
     seed : int (optional)
         An integer used to initialize ``numpy``'s and ``graph-tool``'s psuedorandom number generators.
 
@@ -71,7 +72,7 @@ class QueueNetwork :
     ------
     TypeError
         The parameter ``g`` must be either a :class:`~graph_tool.Graph`, a string or file location to a graph, 
-        or ``None``. Raises a **TypeError** otherwise.
+        or ``None``. Raises a :exc:`~TypeError` otherwise.
 
     Methods
     -------
@@ -196,8 +197,8 @@ class QueueNetwork :
         which means they do not accept arrivals from outside the network, and they have
         no :class:`~queueing_tool.queues.Agent` in their systems. Note that in order to 
         simulate the ``QueueNetwork``, there must be at least one 
-        :class:`~queueing_tool.queues.Agent` in the network. The ``initialize`` method
-        sets queues to active, allowing agents to arrive from outside the network.
+        :class:`~queueing_tool.queues.Agent` in the network. This method sets queues
+        to active, which then allows agents to arrive from outside the network.
 
         Parameters
         ----------
@@ -258,9 +259,8 @@ class QueueNetwork :
 
 
     def draw(self, out_size=(750, 750), output=None, update_colors=True, **kwargs) :
-        """Draws the network.
-
-        The coloring of the network corresponds to the number of agents at each queue.
+        """Draws the network. The coloring of the network corresponds to the 
+        number of agents at each queue.
 
         Parameters
         ----------
@@ -273,7 +273,7 @@ class QueueNetwork :
         update_colors : bool (optional, the default is ``True``).
             Specifies whether all the colors are updated.
         **kwargs : 
-            Any extra parameters to pass to :func:`~graphtool.graph_tool.draw.graph_draw`.
+            Any extra parameters to pass to :func:`~graph_tool.draw.graph_draw`.
         """
         if update_colors :
             self._update_all_colors()
@@ -562,7 +562,7 @@ class QueueNetwork :
         out_size : tuple (optional, the default is (750, 750)).
             The size of the canvas for the animation.
         **kwargs :
-            Any extra parameters to pass to :func:`~graph_tool.draw.GraphWindow`.
+            Any extra parameters are passed to :class:`~graph_tool.draw.GraphWindow`.
 
         Raises
         ------
@@ -648,14 +648,16 @@ class QueueNetwork :
 
     def clear(self) :
         """Resets the queue to its initial state.
-        ``QueueNetwork`` must be re-initialized before calling the 
-        :meth:`~queueing_tool.network.QueueNetwork.simulate` method.
 
         The attributes ``t``, ``nEvents``, ``nAgents`` are set to zero
         :meth:`~queueing_tool.network.QueueNetwork.reset_colors` is called;
         and the :class:`~queueing_tool.queues.QueueServer` method
         :meth:`~queueing_tool.queues.QueueServer.clear` is called for each
         queue in the network.
+
+        Notes
+        -----
+        ``QueueNetwork`` must be re-initialized before any simulations can run.
         """
         self.t            = 0
         self.nEvents      = 0

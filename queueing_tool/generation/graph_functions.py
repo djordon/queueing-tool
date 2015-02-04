@@ -24,7 +24,8 @@ def shortest_paths_distances(g) :
     Raises
     ------
     TypeError
-        The parameter ``g`` must be either a :class:`~graph_tool.Graph`, or a string or file location to a graph.
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object, or a 
+        :class:`~graph_tool.Graph`.
     """
     _test_graph(g)
 

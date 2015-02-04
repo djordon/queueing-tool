@@ -19,7 +19,7 @@ def _test_graph(g) :
     Raises
     ------
     TypeError
-        Raises error if ``g`` is not a string or a :class:`~graph_tool.Graph`.
+        Raises a :exc:`~TypeError` if ``g`` is not a string or a :class:`~graph_tool.Graph`.
     """
     if isinstance(g, str) :
         g = gt.load_graph(g, fmt='xml')
@@ -52,7 +52,7 @@ def osm_edge_types(g) :
     Raises
     ------
     TypeError
-        Raises error if ``g`` is not a string to a file object, or a :class:`~graph_tool.Graph`.
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object, or a :class:`~graph_tool.Graph`.
     """
     g = _test_graph(g)
 
@@ -118,7 +118,7 @@ def _calculate_distance(latlon1, latlon2) :
 
 
 def add_edge_lengths(g) :
-    """Add the ``edge_length`` **property_map** to a graph.
+    """Add add the edge lengths as a :class:`~graph_tool.PropertyMap` for the graph.
 
     Uses the ``pos`` vertex property to get the location of each vertex. These
     are then used to calculate the length of an edge between two vertices.
@@ -135,7 +135,7 @@ def add_edge_lengths(g) :
     Raises
     ------
     TypeError
-        Raises error if ``g`` is not a string to a file object, or a :class:`~graph_tool.Graph`.
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object, or a :class:`~graph_tool.Graph`.
     """
     g = _test_graph(g)
     elength   = g.new_edge_property("double")
@@ -149,7 +149,7 @@ def add_edge_lengths(g) :
     return g
 
 
-def set_types_random(g, pTypes) :
+def set_types_random(g, pTypes=None, **kwargs) :
     """Randomly sets ``eType`` (edge type) and ``vType`` (vertex type) 
     properties of the graph.
 
@@ -160,7 +160,7 @@ def set_types_random(g, pTypes) :
     Parameters
     ----------
     g : A string or a :class:`~graph_tool.Graph`.
-    pTypes : dict
+    pTypes : dict (optional)
         A dictionary of types and proportions, where the keys are the types
         and the values are the proportion of edges that are expected to be of that type.
         The values can be either proportions (that add to one) or the exact number of
@@ -176,16 +176,24 @@ def set_types_random(g, pTypes) :
     Raises
     ------
     TypeError
-        Raises error if ``g`` is not a string to a file object, or a 
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object, or a 
         :class:`~graph_tool.Graph`.
     RuntimeError
-        Raises error if the pType values: do not sum to one, or do not sum to the
+        Raises a :exc:`~RuntimeError` if the ``pType`` values do not sum to one and do not sum to the
         number of edges in the graph.
+    
+    Notes
+    -----
+    If ``pTypes`` is not explicitly specified in the arguments, then it defaults to three
+    types in the graph (types 1, 2, and 3) and sets their proportions to be 1/3 each.
     """
     g = _test_graph(g)
 
+    if pTypes is None :
+        pTypes = {k : 1/3 for k in range(1,4)}
+
     nEdges  = g.num_edges()
-    edges   = np.random.shuffle([k for k in range(nEdges)])
+    edges   = [k for k in range(nEdges)]
     cut_off = np.cumsum( list(pTypes.values()) )
 
     if np.isclose(cut_off[-1], 1) :
@@ -193,6 +201,7 @@ def set_types_random(g, pTypes) :
     elif cut_off != nEdges :
         raise RuntimeError("pTypes must sum to one, or sum to the number of edges in the graph")
 
+    np.random.shuffle(edges)
     eTypes  = {}
     for k, key in enumerate(pTypes.keys()) :
         if k == 0 :
@@ -217,14 +226,14 @@ def set_types_random(g, pTypes) :
     return add_edge_lengths(g)
 
 
-def set_types_pagerank(g, pType2=0.1, pType3=0.1) :
-    """Sets edge types 2 to the graph using `pagerank <en.wikipedia.org/wiki/PageRank>`.
+def set_types_pagerank(g, pType2=0.1, pType3=0.1, **kwargs) :
+    """Sets edge and vertex types using `pagerank <http://en.wikipedia.org/wiki/PageRank>`_.
 
     This function sets the edge and vertex types of a graph to be either 1, 2, or 3. 
     It sets the vertices to type 2 by selecting the top ``pType2 * g.num_vertices()`` 
-    vertices given by the :func:`~graph_tool.pagerank` of the graph. It then randomly
-    sets vertices close to type 2 vertices as type 3. The rest of the vertices are 
-    set to type 1 vertices.
+    vertices given by the :func:`~graph_tool.centrality.pagerank` of the graph. It 
+    then randomly sets vertices close to type 2 vertices as type 3. The rest of the 
+    vertices are set to type 1 vertices.
 
     Also, the graph is altered to make sure that all vertices that are of type 2 or 3
     have loops. These loops then have edge type corresponding to the vertex. All other 
@@ -237,6 +246,8 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1) :
         Specifies the proportion of edges that will be of type 2.
     pType3 : float (optional, the default is 0.1)
         Specifies the proportion of edges that will be of type 3.
+    **kwargs :
+        Unused.
 
     Returns
     -------
@@ -247,7 +258,7 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1) :
     Raises
     ------
     TypeError
-        Raises error if ``g`` is not a string to a file object, or a 
+        Raises :exc:`~TypeError` if ``g`` is not a string to a file object, or a 
         :class:`~graph_tool.Graph`.
     """
     g = _test_graph(g)

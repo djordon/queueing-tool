@@ -3,8 +3,12 @@ import numpy          as np
 import copy
 
 from .graph_preparation import set_types_random, set_types_pagerank
+from .union_find        import UnionFind
 
 def matrix2list(matrix) :
+    """Takes an adjacency matrix and returns an adjacency list.
+
+    """
     n   = len(matrix)
     adj = [ [] for k in range(n)]
     for k in range(n) :
@@ -16,6 +20,9 @@ def matrix2list(matrix) :
 
 
 def ematrix2list(adjacency, matrix) :
+    """Takes an adjacency matrix and returns an adjacency list.
+
+    """
     n   = len(matrix)
     adj = [ [] for k in range(n)]
     for k in range(n) :
@@ -26,6 +33,9 @@ def ematrix2list(adjacency, matrix) :
 
 
 def adjacency2edgetype(adjacency) :
+    """Takes an adjacency list and returns a list of types.
+
+    """
     n   = len(adjacency)
     ety = [ [] for k in range(n)]
     if not isinstance(adjacency, list) :
@@ -45,7 +55,9 @@ def adjacency2edgetype(adjacency) :
 
 
 def adjacency2graph(adjacency, edge_types=None, edge_lengths=None) :
+    """Takes an adjacency list and returns a graph.
 
+    """
     nV  = len(adjacency)
     g   = gt.Graph()
     vs  = g.add_vertex(nV)
@@ -91,35 +103,109 @@ def adjacency2graph(adjacency, edge_types=None, edge_lengths=None) :
     
 
 def generate_random_graph(nVertices=250, **kwargs) :
-    g = random_graph(nVertices)
+    """Creates a random graph where the edge and vertex types are selected 
+    using the :func:`~set_types_random` method.
+
+    Calls :func:`~minimal_random_graph` and then calls :func:`~set_types_random`.
+
+    Parameters
+    ----------
+    nVertices : int (optional, the default is 250)
+        The number of vertices in the graph.
+    **kwargs :
+        Any parameters to send to :func:`~minimal_random_graph` or :func:`~set_types_random`.
+
+    Returns
+    -------
+    g : :class:`~graph_tool.Graph`
+        A graph with a ``pos`` and ``vType`` vertex property and the ``eType`` and 
+        ``edge_length`` edge property.
+    """
+    g = minimal_random_graph(nVertices, **kwargs)
     g = set_types_random(g, **kwargs)
     return g
 
 
 def generate_pagerank_graph(nVertices=250, **kwargs) :
-    g = random_graph(nVertices)
+    """Creates a random graph where the edge and vertex types are selected 
+    using the :func:`~set_types_pagerank` method.
+
+    Calls :func:`~minimal_random_graph` and then calls :func:`~set_types_pagerank`.
+
+    Parameters
+    ----------
+    nVertices : int (optional, the default is 250)
+        The number of vertices in the graph.
+    **kwargs :
+        Any parameters to send to :func:`~minimal_random_graph` or :func:`~set_types_pagerank`.
+
+    Returns
+    -------
+    g : :class:`~graph_tool.Graph`
+        A graph with a ``pos`` and ``vType`` vertex property and the ``eType`` and 
+        ``edge_length`` edge property.
+    """
+    g = minimal_random_graph(nVertices, **kwargs)
     g = set_types_pagerank(g, **kwargs)
     return g
 
 
-def random_graph(nVertices, directed=True) :
-    """Creates a connected and directed random graph.
+def minimal_random_graph(nVertices, is_directed=True, sfdp=None) :
+    """Creates a connected random graph.
 
-    The function creates a minimally connected random graph. To do so, 
-    it places vertices randomly on the unit square and each vertex v 
-    adds an edge to all other vertices within a certain radius ``r``.
-    The radius ``r`` is taken to be as small as possible.
+    This function first places ``nVertices`` points in the unit square randomly
+    and selects a radius ``r``. Then for every vertex ``v`` all other vertices
+    with Euclidean distance less or equal to ``r`` are connect by an edge. The
+    ``r`` choosen is the smallest number such that the graph ends up connected
+    at the end of this process.
+
+    If the number of nodes is greater than 200 and ``sfdp`` is ``None`` (the
+    default) then the position of the nodes is altered  using ``graph-tool``'s
+    :func:`~graph_tool.draw.sfdp_layout` function (with its default arguments).
+
+    Parameters
+    ----------
+    nVertices : int
+        The number of vertices in the graph.
+    is_directed : bool (optional, the default is ``True``)
+        Specifies whether the graph is directed or not.
+    sfdp : bool or None (optional, the default is ``None``)
+        Specifies whether to run ``graph-tool``'s :func:`~graph_tool.draw.sfdp_layout` 
+        function on the created graph ``g``.
+
+    Returns
+    -------
+    g : :class:`~graph_tool.Graph`
+        A graph with a ``pos`` vertex property for the vertex positions.
     """
-    points  = np.random.random((nVertices, 2)) * 2
-    radii   = [(4 + k) / 200 for k in range(560)]
-    
-    for r in radii :
-        g, pos  = gt.geometric_graph(points, r, [(0,2), (0,2)])
+    points  = np.random.random((nVertices, 2)) * 10
+    nEdges  = nVertices * (nVertices - 1) // 2
+    edges   = []
+
+    for k in range(nVertices) :
+        for j in range(k+1, nVertices) :
+            v = points[k] - points[j]
+            edges.append( (k, j, v[0]**2 + v[1]**2) )
+
+    cluster = 2
+    mytype  = [('n1', int), ('n2', int), ('distance', float)]
+    edges   = np.array(edges, dtype=mytype)
+    edges   = np.sort(edges, order='distance')
+    unionF  = UnionFind([k for k in range(nVertices)])
+
+    for n1, n2, d in edges :
+        max_space = d
+        unionF.union(n1, n2)
+        if unionF.nClusters == cluster - 1 :
+            break
+
+    for r in [np.sqrt(max_space) * (1 + 0.1 * k) for k in range(10)] :
+        g, pos  = gt.geometric_graph(points, r)
         comp, a = gt.label_components(g)
         if max(comp.a) == 0 :
             break
 
-    if directed :
+    if is_directed :
         g.set_directed(True)
 
     g2  = g.copy()
@@ -127,48 +213,8 @@ def random_graph(nVertices, directed=True) :
         e1  = g.add_edge(source=int(e.target()), target=int(e.source()))
 
     g.reindex_edges()
-    pos       = gt.sfdp_layout(g, epsilon=1e-2, cooling_step=0.95)
-    pos_array = np.array([pos[v] for v in g.vertices()])
-    pos_array = pos_array / (100*(np.max(pos_array,0) - np.min(pos_array,0)))
-    
-    for v in g.vertices() :
-        pos[v]  = pos_array[int(v), :]
+    if (nVertices > 200 and sfdp is None) or sfdp :
+        pos = gt.sfdp_layout(g)
     
     g.vp['pos'] = pos
     return g
-
-
-
-nVertices = 30
-dist_dict = {}
-dist_list = []
-blobs     = {k : {k} for k in range(nVertices)}
-points    = np.random.random((nVertices, 2)) * 10
-
-for k in range(nVertices-1) :
-    for j in range(k+1, nVertices) :
-        d = np.linalg.norm(points[k] - points[j])
-        dist_dict[d] = (k, j)
-        dist_list.append(d)
-
-dist_list.sort()
-vert = set()
-for k, d in enumerate(dist_list) :
-    if len(vert) == nVertices - 2:
-        break
-    j, l = dist_dict[d]
-    if j in vert and l in vert :
-        continue
-    s    = blobs[j].union(blobs[l])
-    for j in s :
-        blobs[j] = s
-    vert.update( (j,l) )
-
-g, pos  = gt.geometric_graph(points, d)
-comp, a = gt.label_components(g)
-max(comp.a)
-
-g, pos  = gt.geometric_graph(points, d-0.3)
-comp, a = gt.label_components(g)
-max(comp.a)
-(1) Creating object for path '/org/freedesktop/NetworkManager/ActiveConnection/5' failed in libnm-glib.
