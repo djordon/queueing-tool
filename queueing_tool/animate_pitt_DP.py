@@ -149,7 +149,7 @@ import os
 data_dir  = os.path.expanduser('~') + '/math/data/graphs/'
 nVertices   = 300
 pDest, pFCQ = 0.1, 0.1
-g   = qt.generate_random_graph(nVertices, is_directed=False)
+g   = qt.generate_pagerank_graph(nVertices, is_directed=False)
 pit = qt.QueueNetwork(g, seed=13)
 pit.initialize(nActive=30)
 pit.agent_cap = 5000

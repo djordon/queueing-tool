@@ -82,7 +82,8 @@ class QueueNetwork :
 
     The default colors are:
 
-    >>> self.colors       = { 'vertex_normal'   : [0.9, 0.9, 0.9, 1.0], 
+    >>> self.colors       = { 'vertex_normal'   : [0.9, 0.9, 0.9, 1.0],
+    ...                       'vertex_color'    : [0.0, 0.5, 1.0, 1.0],
     ...                       'edge_departure'  : [0, 0, 0, 1], 
     ...                       'halo_normal'     : [0, 0, 0, 0],
     ...                       'halo_arrival'    : [0.1, 0.8, 0.8, 0.25],
@@ -99,8 +100,9 @@ class QueueNetwork :
         self.nEvents      = 0
         self.t            = 0
         self.agent_cap    = 1000
-        self.colors       = { 'vertex_normal'   : [0.9, 0.9, 0.9, 1.0], 
-                              'edge_departure'  : [0, 0, 0, 1], 
+        self.colors       = { 'vertex_normal'   : [0.9, 0.9, 0.9, 1.0],
+                              'vertex_color'    : [0.0, 0.5, 1.0, 1.0],
+                              'edge_departure'  : [0, 0, 0, 1],
                               'halo_normal'     : [0, 0, 0, 0],
                               'halo_arrival'    : [0.1, 0.8, 0.8, 0.25],
                               'halo_departure'  : [0.9, 0.9, 0.9, 0.25],
@@ -318,7 +320,8 @@ class QueueNetwork :
         for v in self.g.vertices() :
             self.g.vp['vertex_color'][v] = [0, 0, 0, 0.9]
             is_active = False
-            for e in v.in_edges() :
+            my_iter   = v.in_edges() if self.g.is_directed() else v.out_edges()
+            for e in my_iter :
                 ei = self.g.edge_index[e]
                 if self.edge2queue[ei].active :
                     is_active = True
@@ -347,8 +350,9 @@ class QueueNetwork :
             e = self.g.edge(q.edge[0], q.edge[1])
             v = self.g.vertex(q.edge[1])
             if q.edge[0] == q.edge[1] :
-                vp['vertex_fill_color'][v]  = q.current_color()
                 ep['edge_color'][e]         = q.current_color(1)
+                vp['vertex_color'][v]       = q.current_color(2)
+                vp['vertex_fill_color'][v]  = q.current_color()
             else :
                 ep['edge_color'][e]   = q.current_color()
                 if do[q.edge[1]] :
@@ -362,7 +366,8 @@ class QueueNetwork :
 
                     color    = [ i * tmp / 0.9 for i in q.colors['vertex_normal'] ]
                     color[3] = 1.0 - tmp
-                    vp['vertex_fill_color'][v] = color
+                    vp['vertex_fill_color'][v]  = color
+                    vp['vertex_color'][v]       = self.colors['vertex_color']
                     do[q.edge[1]] = False
 
 
@@ -379,6 +384,7 @@ class QueueNetwork :
 
             if pe.target() == pe.source() :
                 ep['edge_color'][pe]        = q.current_color(1)
+                vp['vertex_color'][pv]      = q.current_color(2)
                 vp['vertex_fill_color'][pv] = q.current_color()
                 vp['vertex_halo_color'][pv] = self.colors['halo_normal']
                 vp['vertex_halo'][pv]       = False
@@ -394,12 +400,14 @@ class QueueNetwork :
 
                 color    = [ i * tmp / 0.9 for i in self.colors['vertex_normal'] ]
                 color[3] = 1.0 - tmp
-                vp['vertex_fill_color'][v] = color
+                vp['vertex_fill_color'][pv] = color
+                vp['vertex_color'][pv]      = self.colors['vertex_color']
 
         q   = self.edge2queue[qedge[2]]
         if qedge[0] == qedge[1] :
             ep['edge_color'][e]         = q.current_color(1)
             vp['vertex_fill_color'][v]  = q.current_color()
+            vp['vertex_color'][v]       = q.current_color(2)
             vp['vertex_halo'][v]        = True
 
             if ad == 'arrival' :
@@ -419,6 +427,7 @@ class QueueNetwork :
             color    = [ i * tmp / 0.9 for i in self.colors['vertex_normal'] ]
             color[3] = 1.0 - tmp
             vp['vertex_fill_color'][v] = color
+            vp['vertex_color'][v]  = self.colors['vertex_color']
 
 
     def _add_departure(self, ei, agent, t) :

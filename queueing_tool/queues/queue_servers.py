@@ -362,7 +362,7 @@ class QueueServer :
 
             * If ``which`` is 1 the it returns the color of edges that are self loops. 
             * If ``which`` is 2 then it returns the color of the vertex pen color (defined as color/vertex_color 
-              `here <http://graph-tool.skewed.de/static/doc/draw.html#graph_tool.draw.graph_draw>`_.
+              `here <http://graph-tool.skewed.de/static/doc/draw.html#graph_tool.draw.graph_draw>`_).
             * If ``which`` is anything else, then it returns the color a shade of the 
               edge that is proportional to the number of agents in the queue.
         """

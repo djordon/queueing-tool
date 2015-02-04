@@ -373,7 +373,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
             vertex_pen_color[v] = queues[g.edge_index[e]].current_color(2)
             vertex_color[v]     = queues[g.edge_index[e]].current_color()
         else :
-            vertex_pen_color[v] = [0.0, 0.5, 1.0, 1.0]
+            vertex_pen_color[v] = g_colors['vertex_color']
             vertex_color[v]     = g_colors['vertex_normal'] 
 
     edge_width.a        = 1.25
