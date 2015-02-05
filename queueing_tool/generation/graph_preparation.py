@@ -11,7 +11,7 @@ def _test_graph(g) :
 
     Returns
     -------
-    output : :class:`~graph_tool.Graph`
+    out : :class:`~graph_tool.Graph`
         If ``g`` is a string or a file object then the output given by
         ``graph_tool.load_graph(g, fmt='xml')``, if ``g`` is aready a 
         :class:`~graph_tool.Graph` then it is returned unaltered.
@@ -45,7 +45,7 @@ def osm_edge_types(g) :
 
     Returns
     -------
-    output : :class:`~graph_tool.Graph`
+    out : :class:`~graph_tool.Graph`
         Returns the :class:`~graph_tool.Graph` ``g`` with a ``vType`` vertex property
         an ``eType`` edge property, and an ``edge_length`` edge property.
 
@@ -129,7 +129,7 @@ def add_edge_lengths(g) :
 
     Returns
     -------
-    output : :class:`~graph_tool.Graph`
+    out : :class:`~graph_tool.Graph`
         Returns the :class:`~graph_tool.Graph` ``g`` with the ``edge_length`` edge property.
 
     Raises
@@ -169,7 +169,7 @@ def set_types_random(g, pTypes=None, **kwargs) :
 
     Returns
     -------
-    output : :class:`~graph_tool.Graph`
+    out : :class:`~graph_tool.Graph`
         Returns the :class:`~graph_tool.Graph` ``g`` with a ``vType`` vertex property
         an ``eType`` edge property, and an ``edge_length`` edge property.
 
@@ -251,7 +251,7 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, **kwargs) :
 
     Returns
     -------
-    output : :class:`~graph_tool.Graph`
+    out : :class:`~graph_tool.Graph`
         Returns the :class:`~graph_tool.Graph` ``g`` with a ``vType`` vertex property
         an ``eType`` edge property, and an ``edge_length`` edge property.
 
@@ -315,30 +315,24 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, **kwargs) :
 
 
 def _prepare_graph(g, g_colors, q_cls, q_arg) :
-    """Prepare graph for QueueNetwork
-    """
+    """Prepare graph for QueueNetwork."""
     g = _test_graph(g)
 
     g.reindex_edges()
-    vertex_t_color    = g.new_vertex_property("vector<double>")
-    vertex_pen_color  = g.new_vertex_property("vector<double>")
-    vertex_color      = g.new_vertex_property("vector<double>")
-    halo_color        = g.new_vertex_property("vector<double>")
-    vertex_t_size     = g.new_vertex_property("double")
-    vertex_halo_size  = g.new_vertex_property("double")
-    vertex_pen_width  = g.new_vertex_property("double")
-    vertex_size       = g.new_vertex_property("double")
+    vertex_color        = g.new_vertex_property("vector<double>")
+    vertex_fill_color   = g.new_vertex_property("vector<double>")
+    vertex_halo_color   = g.new_vertex_property("vector<double>")
+    vertex_halo_size    = g.new_vertex_property("double")
+    vertex_pen_width    = g.new_vertex_property("double")
+    vertex_size         = g.new_vertex_property("double")
+    vertex_halo         = g.new_vertex_property("bool")
 
-    control           = g.new_edge_property("vector<double>")
-    edge_color        = g.new_edge_property("vector<double>")
-    edge_t_color      = g.new_edge_property("vector<double>")
-    edge_width        = g.new_edge_property("double")
-    arrow_width       = g.new_edge_property("double")
-    edge_length       = g.new_edge_property("double")
-    edge_times        = g.new_edge_property("double")
-    edge_t_size       = g.new_edge_property("double")
-    edge_t_distance   = g.new_edge_property("double")
-    edge_t_parallel   = g.new_edge_property("bool")
+    edge_control_points = g.new_edge_property("vector<double>")
+    edge_color          = g.new_edge_property("vector<double>")
+    edge_marker_size    = g.new_edge_property("double")
+    edge_pen_width      = g.new_edge_property("double")
+    edge_length         = g.new_edge_property("double")
+    edge_times          = g.new_edge_property("double")
 
     vertex_props = set()
     for key in g.vertex_properties.keys() :
@@ -348,7 +342,19 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
     for key in g.edge_properties.keys() :
         edge_props.add(key)
 
-    queues      = _set_queues(g, q_cls, q_arg, 'cap' in vertex_props)
+    if 'eType' not in edge_props :
+        eType   = g.new_edge_property("int")
+        eType.a = 1
+        g.ep['eType'] = eType
+
+    if 'vType' not in vertex_props :
+        vType   = g.new_vertex_property("int")
+        vType.a = 1
+        g.vp['vType'] = vType
+
+    props   = vertex_props.union(edge_props)
+    queues  = _set_queues(g, q_cls, q_arg, 'cap' in vertex_props)
+
     has_length  = 'edge_length' in edge_props
 
     if 'pos' not in vertex_props :
@@ -357,59 +363,53 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
     for k, e in enumerate(g.edges()) :
         p2  = np.array(g.vp['pos'][e.target()])
         p1  = np.array(g.vp['pos'][e.source()])
-        edge_length[e]  = g.ep['edge_length'][e] if has_length else np.linalg.norm(p1 - p2)
-        edge_t_color[e] = [0, 0, 0, 1]
+        edge_length[e] = g.ep['edge_length'][e] if has_length else np.linalg.norm(p1 - p2)
         if e.target() == e.source() :
             edge_color[e] = [0, 0, 0, 0]
         else :
-            control[e]    = [0, 0, 0, 0]
-            edge_color[e] = queues[k].colors['edge_normal']
+            edge_control_points[e]    = [0, 0, 0, 0]
+            edge_color[e] = queues[k].colors['edge_color']
 
     for v in g.vertices() :
         e = g.edge(v, v)
-        vertex_t_color[v] = g_colors['text_normal']
-        halo_color[v]     = g_colors['halo_normal']
+        vertex_halo_color[v] = g_colors['halo_normal']
         if isinstance(e, gt.Edge) :
-            vertex_pen_color[v] = queues[g.edge_index[e]].current_color(2)
-            vertex_color[v]     = queues[g.edge_index[e]].current_color()
+            vertex_color[v]       = queues[g.edge_index[e]].current_color(2)
+            vertex_fill_color[v]  = queues[g.edge_index[e]].current_color()
         else :
-            vertex_pen_color[v] = g_colors['vertex_color']
-            vertex_color[v]     = g_colors['vertex_normal'] 
+            vertex_color[v]       = g_colors['vertex_color']
+            vertex_fill_color[v]  = g_colors['vertex_normal'] 
 
-    edge_width.a        = 1.25
-    arrow_width.a       = 8
-    edge_times.a        = 1
-    edge_t_size.a       = 8
-    edge_t_distance.a   = 8
+    edge_pen_width.a      = 1.25
+    edge_marker_size.a    = 8
+    edge_times.a          = 1
 
-    vertex_t_size.a     = 8
-    vertex_halo_size.a  = 1.3
-    vertex_pen_width.a  = 1.1
-    vertex_size.a       = 8
+    vertex_halo_size.a    = 1.3
+    vertex_pen_width.a    = 1.1
+    vertex_size.a         = 8
 
-    g.vp['vertex_text_color']     = vertex_t_color
-    g.vp['vertex_color']          = vertex_pen_color
-    g.vp['vertex_fill_color']     = vertex_color
-    g.vp['vertex_halo_color']     = halo_color
-    g.vp['vertex_text_position']  = g.new_vertex_property("double")
-    g.vp['vertex_font_size']      = vertex_t_size
-    g.vp['vertex_halo_size']      = vertex_halo_size
-    g.vp['vertex_pen_width']      = vertex_pen_width
-    g.vp['vertex_size']           = vertex_size
-    g.vp['vertex_text']           = g.new_vertex_property("string")
-    g.vp['vertex_halo']           = g.new_vertex_property("bool")
+    properties = {
+        'vertex_fill_color' : vertex_fill_color,
+        'vertex_halo_color' : vertex_halo_color,
+        'vertex_halo_size' : vertex_halo_size,
+        'vertex_pen_width' : vertex_pen_width,
+        'vertex_color' : vertex_color,
+        'vertex_size' : vertex_size,
+        'vertex_halo' : vertex_halo,
+        'edge_control_points' : edge_control_points,
+        'edge_marker_size' : edge_marker_size,
+        'edge_pen_width' : edge_pen_width,
+        'edge_length' : edge_length,
+        'edge_times' : edge_times,
+        'edge_color' : edge_color}
 
-    g.ep['edge_font_size']        = edge_t_size
-    g.ep['edge_text_distance']    = edge_t_distance
-    g.ep['edge_text_parallel']    = g.new_edge_property("bool")
-    g.ep['edge_text_color']       = edge_t_color
-    g.ep['edge_text']             = g.new_edge_property("string")
-    g.ep['edge_control_points']   = control
-    g.ep['edge_color']            = edge_color
-    g.ep['edge_pen_width']        = edge_width
-    g.ep['edge_length']           = edge_length
-    g.ep['edge_marker_size']      = arrow_width
-    g.ep['edge_times']            = edge_times
+    for key, value in properties.items() :
+        if key not in props :
+            if key[:4] == 'edge' :
+                g.ep[key] = value
+            else :
+                g.vp[key] = value
+
     return g, queues
 
 

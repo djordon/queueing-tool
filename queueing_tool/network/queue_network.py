@@ -26,38 +26,40 @@ class QueueNetwork :
 
     Parameters
     ----------
-    g : graph (a :class:`~graph_tool.Graph` instance or the location of a graph)
+    g : str or :class:`~graph_tool.Graph`
         The graph specifies the network on which the queues sit.
     q_classes : dict (optional)
-        This allows the user to specify the type of :class:`~queueing_tool.queues.QueueServer`
-        class for each edge.
+        This allows the user to specify the type of
+        :class:`~queueing_tool.queues.QueueServer` class for each edge.
     q_args : dict (optional)
         This allows the user to specify the class arguments for each type of
         :class:`~queueing_tool.queues.QueueServer`.
     seed : int (optional)
-        An integer used to initialize ``numpy``'s and ``graph-tool``'s psuedorandom number generators.
+        An integer used to initialize ``numpy``'s and ``graph-tool``'s
+        psuedorandom number generators.
 
     Attributes
     ----------
     g : :class:`~graph_tool.Graph`
         The graph for the network.
     in_edges : list
-        A list of all in-edges for each vertex. Specifically, ``in_edges[v]`` returns a list 
-        edge indeces corresponding to each of the edges with the **tail** of the edge at ``v``, 
-        where ``v`` is a vertex's index.       
+        A list of all in-edges for each vertex. Specifically, ``in_edges[v]``
+        returns a list edge indeces corresponding to each of the edges with the
+        **tail** of the edge at ``v``, where ``v`` is a vertex's index.
     out_edges : list
         A list of all out-edges for each vertex.
     edge2queue : list
-        A list of queues where the ``edge2queue[k]`` returns the queue on the edge with edge index ``k``.
+        A list of queues where the ``edge2queue[k]`` returns the queue on the
+        edge with edge index ``k``.
     nAgents : :class:`~numpy.ndarray`
-        A one-dimensional array where the ``k``'th entry corresponds to the total number of agents at
-        the edge with edge index ``k``.
+        A one-dimensional array where the ``k``'th entry corresponds to the total
+        number of agents at the edge with edge index ``k``.
     nEdges : int
         The number of edges in the graph.
     nEvents : int
-        The number of that have occurred thus far. Every arrival from outside the network counts as
-        one event, but the departure of an agent from a queue and the arrival of that same agent to 
-        another queue counts as one event.
+        The number of that have occurred thus far. Every arrival from outside the
+        network counts as one event, but the departure of an agent from a queue
+        and the arrival of that same agent to another queue counts as one event.
     nVertices : int
         The number of vertices in the graph.
     time : float
@@ -71,8 +73,8 @@ class QueueNetwork :
     Raises
     ------
     TypeError
-        The parameter ``g`` must be either a :class:`~graph_tool.Graph`, a string or file location to a graph, 
-        or ``None``. Raises a :exc:`~TypeError` otherwise.
+        The parameter ``g`` must be either a :class:`~graph_tool.Graph`, a string or
+        file location to a graph, or ``None``. Raises a :exc:`~TypeError` otherwise.
 
     Methods
     -------
@@ -84,6 +86,7 @@ class QueueNetwork :
 
     >>> self.colors       = { 'vertex_normal'   : [0.9, 0.9, 0.9, 1.0],
     ...                       'vertex_color'    : [0.0, 0.5, 1.0, 1.0],
+    ...                       'vertex_type'     : [0.5, 0.5, 0.5, 1.0],
     ...                       'edge_departure'  : [0, 0, 0, 1], 
     ...                       'halo_normal'     : [0, 0, 0, 0],
     ...                       'halo_arrival'    : [0.1, 0.8, 0.8, 0.25],
@@ -92,7 +95,6 @@ class QueueNetwork :
     ...                       'vertex_inactive' : [0.9, 0.9, 0.9, 0.8],
     ...                       'edge_active'     : [0.1, 0.1, 0.1, 1.0],
     ...                       'edge_inactive'   : [0.8, 0.8, 0.8, 0.3],
-    ...                       'text_normal'     : [1, 1, 1, 0.5],
     ...                       'bg_color'        : [1, 1, 1, 1]}
     """
 
@@ -111,7 +113,6 @@ class QueueNetwork :
                               'vertex_inactive' : [0.9, 0.9, 0.9, 0.8],
                               'edge_active'     : [0.1, 0.1, 0.1, 1.0],
                               'edge_inactive'   : [0.8, 0.8, 0.8, 0.3],
-                              'text_normal'     : [1, 1, 1, 0.5],
                               'bg_color'        : [1, 1, 1, 1]}
 
         self._to_animate  = False
@@ -129,10 +130,10 @@ class QueueNetwork :
 
         v_pens    = [[0, 0.5, 1, 1], [0, 0.5, 1, 1], [0.133, 0.545, 0.133, 1],
                      [0.282, 0.239, 0.545, 1], [1, 0.135, 0, 1]]
-        q_colors  = {k : {'edge_loop'     : [0, 0, 0, 0],
-                          'edge_normal'   : [0.7, 0.7, 0.7, 0.5],
-                          'vertex_normal' : [0.9, 0.9, 0.9, 1.0],
-                          'vertex_pen'    : v_pens[k]} for k in range(5)}
+        q_colors  = {k : {'edge_loop_color'   : [0, 0, 0, 0],
+                          'edge_color'        : [0.7, 0.7, 0.7, 0.5],
+                          'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
+                          'vertex_pen_color'  : v_pens[k]} for k in range(5)}
 
         for key, args in q_args.items() :
             if 'colors' not in args :
@@ -196,12 +197,12 @@ class QueueNetwork :
     def initialize(self, nActive=1, queues=None) :
         """Prepares the ``QueueNetwork`` for simulation.
 
-        Each :class:`~queueing_tool.queues.QueueServer` in the network starts inactive, 
+        Each :class:`~queueing_tool.queues.QueueServer` in the network starts inactive,
         which means they do not accept arrivals from outside the network, and they have
-        no :class:`~queueing_tool.queues.Agent` in their systems. Note that in order to 
-        simulate the ``QueueNetwork``, there must be at least one 
-        :class:`~queueing_tool.queues.Agent` in the network. This method sets queues
-        to active, which then allows agents to arrive from outside the network.
+        no :class:`~queueing_tool.queues.Agent` in their systems. Note that in order to
+        simulate the ``QueueNetwork``, there must be at least one ``Agent`` in the
+        network. This method sets queues to active, which then allows agents to arrive
+        from outside the network.
 
         Parameters
         ----------
@@ -220,7 +221,6 @@ class QueueNetwork :
         if queues is None :
             if nActive < 1 or not isinstance(nActive, int) :
                 raise RuntimeError("If queues is None, then nActive must be a strictly positive int.")
-                return
             queues = np.arange(self.nE)  
             np.random.shuffle(queues)
             queues = queues[:nActive]
@@ -228,35 +228,135 @@ class QueueNetwork :
         for ei in queues :
             self.edge2queue[ei].set_active()
 
-        self.queues = [q for q in self.edge2queue]
-        self.queues.sort()
-        while self.queues[-1]._time == infty :
-            self.queues.pop()
+        self._queues = [q for q in self.edge2queue]
+        self._queues.sort()
+        while self._queues[-1]._time == infty :
+            self._queues.pop()
 
-        self.queues.sort(reverse=True)
+        self._queues.sort(reverse=True)
         self._initialized  = True
 
 
-    def start_bookkeeping(self, queues=None) :
-        if queues is None :
-            for q in self.edge2queue :
-                q.keep_data = True
-        else :
-            for k in queues :
-                self.edge2queue[k].keep_data = True
+    def collect_data(self, queues=None) :
+        """Tells the queues to collect data on agents.
+
+        Parameters
+        ----------
+        queues : int, list, tuple (optional)
+            An integer (or any iterable of integers) identifying the
+            :class:`~QueueServer`(s) that will start collecting data.
+            If ``queues`` is not specified then every ``QueueServer``'s
+            data will start collecting data.
+        """
+        if isinstance(queues, int) :
+            queues = [queues]
+        elif queues is None :
+            queues = range(self.nE)
+
+        for k in queues :
+            self.edge2queue[k].collect_data = True
 
 
-    def data(self, queues=None) :
-        if queues is None :
-            data = [[] for k in range(self.nE)]
-            for k, q in enumerate(self.edge2queue) :
-                for d in q.data.values() :
-                    data[k].extend(d)
-        else :
-            data = [[] for k in range(len(queues))]
-            for k, p in enumerate(queues) :
-                for d in self.edge2queue[p].data.values() :
-                    data[k].extend(d)
+    def no_collect_data(self, queues=None) :
+        """Tells the queues to stop collecting data on agents.
+
+        Parameters
+        ----------
+        queues : int, list, tuple (optional)
+            An integer (or any iterable of integers) identifying the
+            :class:`~QueueServer`(s) that will stop collecting data.
+            If ``queues`` is not specified then every ``QueueServer``'s
+            data will stop collecting data.
+        """
+        if isinstance(queues, int) :
+            queues = [queues]
+        elif queues is None :
+            queues = range(self.nE)
+
+        for k in queues :
+            self.edge2queue[k].collect_data = False
+
+
+    def data_queues(self, queues=None) :
+        """Fetches data from queues.
+
+        Parameters
+        ----------
+        queues : int, list, tuple (optional)
+            An integer (or any iterable of integers) identifying the
+            :class:`~QueueServer`(s) whose data will be retrieved. If ``queues``
+            is not specified then every ``QueueServer``'s data will be retrieved.
+
+        Returns
+        -------
+        out : :class:`~numpu.ndarray`
+            A five column numpy array of all the data. The first, second, and third
+            columns represent, respectively, the arrival, service start, and departure
+            times of an :class:`~queueing_tool.queues.Agent` at a queue. The fourth
+            column identifies how many other agents were in the queue upon arrival, 
+            and the fifth column identifies which queue this occurred at.
+        """
+        if isinstance(queues, int) :
+            queues = [queues]
+        elif queues is None :
+            queues = range(self.nE)
+
+        data = np.zeros( (1,5) )
+        for q in queues :
+            qdata = []
+            for d in self.edge2queue[q].data.values() :
+                qdata.extend(d)
+
+            dat       = np.zeros( (len(qdata), 5) )
+            dat[:,:4] = np.array(qdata)
+            dat[:, 4] = q
+            data      = np.vstack( (data, dat) )
+
+        return data[1:,:]
+
+
+    def data_agents(self, queues=None) :
+        """Fetches data from queues, and organizes it by agent.
+
+        Parameters
+        ----------
+        queues : int, list, tuple (optional)
+            An integer (or any iterable of integers) identifying the
+            :class:`~queueing_tool.queues.QueueServer`(s) whose data will be retrieved.
+            If ``queues`` is not specified then every ``QueueServer``'s data will 
+            be retrieved.
+
+        Returns
+        -------
+        out : dict
+            Returns a ``dict`` where the keys are the 
+            :class:`~queueing_tool.queues.Agent`'s ``issn`` and the values are
+            :class:`~numpu.ndarray`s for that agents data. The first, second, and third
+            columns represent, respectively, the arrival, service start, and departure
+            times of an ``Agent`` at a queue. The fourth column identifies which
+            queue this occurred at.
+        """
+        if isinstance(queues, int) :
+            queues = [queues]
+        elif queues is None :
+            queues = range(self.nE)
+
+        data = {}
+        for q in queues :
+            for issn, dat in self.edge2queue[q].data.items() :
+                datum = np.zeros( (len(dat), 5) )
+                datum[:,:4] = np.array(dat)
+                datum[:, 4] = q
+                if issn in data :
+                    data[issn] = np.vstack( (data[issn], datum) )
+                else :
+                    data[issn] = datum
+
+        dType = [('a', float), ('s', float), ('d', float), ('q', float), ('id', float)]
+        for issn, dat in data.items() :
+            datum = np.array([tuple(d) for d in dat.tolist()], dtype=dType)
+            datum = np.sort(datum, order='a')
+            data[issn] = np.array([tuple(d) for d in datum])
 
         return data
 
@@ -290,20 +390,12 @@ class QueueNetwork :
                 edge_control_points=self.g.ep['edge_control_points'],
                 edge_marker_size=self.g.ep['edge_marker_size'],
                 edge_pen_width=self.g.ep['edge_pen_width'],
-                edge_text=self.g.ep['edge_text'],
-                edge_font_size=self.g.ep['edge_font_size'],
-                edge_text_distance=self.g.ep['edge_text_distance'],
-                edge_text_parallel=self.g.ep['edge_text_parallel'],
-                edge_text_color=self.g.ep['edge_text_color'],
                 vertex_color=self.g.vp['vertex_color'],
                 vertex_fill_color=self.g.vp['vertex_fill_color'],
                 vertex_halo=self.g.vp['vertex_halo'],
                 vertex_halo_color=self.g.vp['vertex_halo_color'],
                 vertex_halo_size=self.g.vp['vertex_halo_size'],
                 vertex_pen_width=self.g.vp['vertex_pen_width'],
-                vertex_text=self.g.vp['vertex_text'],
-                vertex_text_position=self.g.vp['vertex_text_position'],
-                vertex_font_size=self.g.vp['vertex_font_size'],
                 vertex_size=self.g.vp['vertex_size'], **kwargs)
 
 
@@ -409,7 +501,7 @@ class QueueNetwork :
 
                     tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
-                    color    = [ i * tmp / 0.9 for i in q.colors['vertex_normal'] ]
+                    color    = [ i * tmp / 0.9 for i in q.colors['vertex_fill_color'] ]
                     color[3] = 1.0 - tmp
                     vp['vertex_fill_color'][v]  = color
                     vp['vertex_color'][v]       = self.colors['vertex_color']
@@ -481,38 +573,51 @@ class QueueNetwork :
         q._append_departure(agent, t)
 
         if qt == infty and q._time < infty :
-            self.queues.append(q)
+            self._queues.append(q)
 
-        self.queues.sort(reverse=True)
+        self._queues.sort(reverse=True)
 
 
     def _add_arrival(self, ei, agent, t=None) :
         q   = self.edge2queue[ei]
         qt  = q._time
         if t is None :
-            t = q._time + 1 if q._time < infty else self.queues[-1]._time + 1
+            t = q._time + 1 if q._time < infty else self._queues[-1]._time + 1
 
         agent.set_arrival(t)
         q._add_arrival(agent)
 
         if qt == infty and q._time < infty :
-            self.queues.append(q)
+            self._queues.append(q)
 
-        self.queues.sort(reverse=True)
+        self._queues.sort(reverse=True)
 
 
     def next_event_type(self) :
-        """Returns whether the next next event is either an arrival or a departure."""
-        return self.queues[-1].next_event_type()
+        """Returns whether the next event is either an arrival or a departure.
+
+        Returns
+        -------
+        out : tuple
+            Returns a 2-tuple where the first entry is an integer indicating
+            whether the next event is an arrival (a 1) or a departure (a 2),
+            and the second entry is which queue/edge this corresponds to.
+
+        Raises
+        ------
+        IndexError
+            This error is raised if there are no events scheduled.
+        """
+        return self._queues[-1].next_event_type(), self._queues[-1].edge[2]
 
 
     def _next_event(self, slow=True) :
-        n   = len(self.queues)
+        n   = len(self._queues)
         if n == 0 :
             self.t  = infty
             return
 
-        q1  = self.queues.pop()
+        q1  = self._queues.pop()
         q1t = q1._time
         e1  = q1.edge[2]
 
@@ -551,36 +656,36 @@ class QueueNetwork :
             if q1._time < infty :
                 if q2._time < q2t < infty and e2 != e1 :
                     if n > 2 :
-                        oneBisectSort(self.queues, q1, q2t, len(self.queues))
+                        oneBisectSort(self._queues, q1, q2t, n-1)
                     else :
                         if q1._time < q2._time :
-                            self.queues.append(q1)
+                            self._queues.append(q1)
                         else :
-                            self.queues.insert(0, q1)
+                            self._queues.insert(0, q1)
                 elif q2._time < q2t and e2 != e1 :
                     if n == 1 :
                         if q1._time < q2._time :
-                            self.queues.append(q2)
-                            self.queues.append(q1)
+                            self._queues.append(q2)
+                            self._queues.append(q1)
                         else :
-                            self.queues.append(q1)
-                            self.queues.append(q2)
+                            self._queues.append(q1)
+                            self._queues.append(q2)
                     else :
-                        twoSort(self.queues, q1, q2, len(self.queues))
+                        twoSort(self._queues, q1, q2, n-1)
                 else :
                     if n == 1 :
-                        self.queues.append(q1)
+                        self._queues.append(q1)
                     else :
-                        bisectSort(self.queues, q1, len(self.queues))
+                        bisectSort(self._queues, q1, n-1)
             else :
                 if q2._time < q2t < infty :
                     if n > 2 :
-                        oneSort(self.queues, q2t, len(self.queues))
+                        oneSort(self._queues, q2t, n-1)
                 elif q2._time < q2t :
                     if n == 1 :
-                        self.queues.append(q2)
+                        self._queues.append(q2)
                     else :
-                        bisectSort(self.queues, q2, len(self.queues))
+                        bisectSort(self._queues, q2, n-1)
 
         elif event == 1 : # This is an arrival
             if q1.active and np.sum(self.nAgents) > self.agent_cap - 1 :
@@ -596,9 +701,9 @@ class QueueNetwork :
 
             if q1._time < infty :
                 if n == 1 :
-                    self.queues.append(q1)
+                    self._queues.append(q1)
                 else :
-                    bisectSort(self.queues, q1, len(self.queues) )
+                    bisectSort(self._queues, q1, n-1 )
 
         if self._to_animate :
             self._window.graph.regenerate_surface(lazy=False)
@@ -636,20 +741,12 @@ class QueueNetwork :
                 edge_control_points=self.g.ep['edge_control_points'],
                 edge_marker_size=self.g.ep['edge_marker_size'],
                 edge_pen_width=self.g.ep['edge_pen_width'],
-                edge_text=self.g.ep['edge_text'],
-                edge_font_size=self.g.ep['edge_font_size'],
-                edge_text_distance=self.g.ep['edge_text_distance'],
-                edge_text_parallel=self.g.ep['edge_text_parallel'],
-                edge_text_color=self.g.ep['edge_text_color'],
                 vertex_color=self.g.vp['vertex_color'],
                 vertex_fill_color=self.g.vp['vertex_fill_color'],
                 vertex_halo=self.g.vp['vertex_halo'],
                 vertex_halo_color=self.g.vp['vertex_halo_color'],
                 vertex_halo_size=self.g.vp['vertex_halo_size'],
                 vertex_pen_width=self.g.vp['vertex_pen_width'],
-                vertex_text=self.g.vp['vertex_text'],
-                vertex_text_position=self.g.vp['vertex_text_position'],
-                vertex_font_size=self.g.vp['vertex_font_size'],
                 vertex_size=self.g.vp['vertex_size'], **kwargs)
 
         cid = GObject.idle_add(self._next_event)
@@ -724,6 +821,26 @@ class QueueNetwork :
             q.clear()
 
 
+    def clear_data(self, queues=None) :
+        """Clears data from queues.
+
+        Parameters
+        ----------
+        queues : int, list, tuple (optional)
+            An integer (or an iterable of integers) identifying the :class:`~QueueServer`
+            whose data will be cleared. If ``queues`` is not specified then all
+            ``QueueServer``'s data will be cleared.
+        """
+        queues = [queues] if isinstance(queues, int) else queues
+
+        if queues is None :
+            for q in self.edge2queue :
+                q.data = {}
+        else :
+            for k in queues :
+                self.edge2queue[k].data = {}
+
+
     def copy(self) :
         """Returns a deep copy of self."""
         net               = QueueNetwork()
@@ -756,7 +873,12 @@ class QueueNetwork :
 
 class CongestionNetwork(QueueNetwork) :
     """A network of queues that handles congestion by holding back agents.
-    
+
+    This class is identical to the :class:`~QueueNetwork` class, with the
+    only exception being how blocking is handled when an agent is blocked
+    by a :class:`~queueing_tool.queues.LossQueue`. In this network,
+    If an agent will be blocked at his desired destination then he his
+    held back at his current queue and receives an extra service there.
     """
     def __init__(self, g=None, q_classes=None, q_args=None, seed=None) :
         QueueNetwork.__init__(self, g, seed, calcpath)

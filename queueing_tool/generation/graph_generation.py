@@ -140,7 +140,7 @@ def adjacency2graph(adjacency, edge_types=None, edge_lengths=None, adjust_type=0
 
     Returns
     -------
-    output : :class:`~graph_tool.Graph`
+    out : :class:`~graph_tool.Graph`
         A :class:`~graph_tool.Graph` with the ``vType`` vertex property, and 
         ``eType`` and ``edge_length`` edge properties.
 

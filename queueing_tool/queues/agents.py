@@ -12,9 +12,10 @@ class Agent :
     Parameters
     ----------
     issn : tuple (optional, the default is (0,0))
-        A unique identifier for an agent. Is set automatically by the :class:`~QueueServer`
-        that instantiates the Agent. The first slot is the :class:`~QueueServer`'s edge index
-        and the second slot is specifies the ``Agents`` instantiation index for that queue.
+        A unique identifier for an agent. Is set automatically by the
+        :class:`~QueueServer` that instantiates the ``Agent``. The first slot 
+        is the :class:`~QueueServer`'s edge index and the second slot is 
+        specifies the ``Agent``'s instantiation number for that queue.
 
     Attributes
     ----------
@@ -73,7 +74,7 @@ class Agent :
 
         Returns
         -------
-        output : int
+        out : int
             Returns an the edge index corresponding to the agents next edge to visit
             in the network. 
         """

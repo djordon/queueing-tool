@@ -34,7 +34,7 @@ class UnionFind :
 
         Returns
         -------
-        output : int
+        out : int
             The number of elements in the set that ``s`` belongs to.
         """
         leader = self.find(s)
@@ -53,7 +53,7 @@ class UnionFind :
 
         Returns
         -------
-        output : object
+        out : object
             The leader of the set that contains ``s``.
         """
         pSet    = [s]
