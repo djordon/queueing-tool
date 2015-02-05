@@ -423,6 +423,6 @@ def _set_queues(g, q_cls, q_arg, has_cap) :
         if has_cap and 'nServers' not in q_arg[eType] :
             q_arg[eType]['nServers'] = max(g.vp['cap'][e.target()] // 2, 1)
 
-        queues[qedge[2]] = q_cls[eType](edge=qedge, **q_arg[eType])
+        queues[qedge[2]] = q_cls[eType](edge=qedge, eType=eType, **q_arg[eType])
 
     return queues

@@ -102,6 +102,7 @@ class QueueNetwork :
         self.agent_cap    = 1000
         self.colors       = { 'vertex_normal'   : [0.9, 0.9, 0.9, 1.0],
                               'vertex_color'    : [0.0, 0.5, 1.0, 1.0],
+                              'vertex_type'     : [0.5, 0.5, 0.5, 1.0],
                               'edge_departure'  : [0, 0, 0, 1],
                               'halo_normal'     : [0, 0, 0, 0],
                               'halo_arrival'    : [0.1, 0.8, 0.8, 0.25],
@@ -145,7 +146,7 @@ class QueueNetwork :
             if isinstance(g, str) or isinstance(g, gt.Graph) :
                 g, qs = _prepare_graph(g, self.colors, q_classes, q_args)
             else :
-                raise TypeError("Attribute g needs to be either a (graph-tool) Graph or the location to a graph (or None).")
+                raise TypeError("The Parameter `g` needs to be either a graph-tool Graph, a string, or None.")
 
             def edge_index(e) :
                 return g.edge_index[e]
@@ -309,7 +310,7 @@ class QueueNetwork :
     def show_active(self) :
         """Draws the network, highlighting active queues.
 
-        The colored vertces represent vertices that have at least one queue
+        The colored vertices represent vertices that have at least one queue
         on an in-edge that is active. Dark edges represent queues that are active,
         light edges represent queues that are inactive.
 
@@ -334,6 +335,50 @@ class QueueNetwork :
         for e in self.g.edges() :
             ei = self.g.edge_index[e]
             if self.edge2queue[ei].active :
+                self.g.ep['edge_color'][e] = self.colors['edge_active']
+            else :
+                self.g.ep['edge_color'][e] = self.colors['edge_inactive']
+
+        self.draw(update_colors=False)
+        self._update_all_colors()
+
+
+    def show_type(self, n) :
+        """Draws the network, highlighting queues of a certain type.
+
+        The colored vertices represent self loops of type ``n``. Dark edges represent
+        queues of type ``n``.
+
+        Parameters
+        ----------
+        n : int
+            The type of vertices and edges to be shown.
+
+        Notes
+        -----
+        The colors are defined by the class attribute ``colors``.
+        """
+        for v in self.g.vertices() :
+            is_active = False
+            edge_iter = v.in_edges() if self.g.is_directed() else v.out_edges()
+            for e in edge_iter :
+                ei = self.g.edge_index[e]
+                if self.edge2queue[ei].active :
+                    is_active = True
+                    break
+
+            e   = self.g.edge(v, v)
+            if isinstance(e, gt.Edge) and self.g.ep['eType'][e] == n :
+                ei  = self.g.edge_index[e]
+                self.g.vp['vertex_fill_color'][v] = self.colors['vertex_type']
+                self.g.vp['vertex_color'][v]      = self.edge2queue[ei].colors['vertex_pen']
+            else :
+                self.g.vp['vertex_fill_color'][v] = self.colors['vertex_inactive']
+                self.g.vp['vertex_color'][v]      = [0, 0, 0, 0.9]
+
+        for e in self.g.edges() :
+            ei = self.g.edge_index[e]
+            if self.edge2queue[ei].eType == n :
                 self.g.ep['edge_color'][e] = self.colors['edge_active']
             else :
                 self.g.ep['edge_color'][e] = self.colors['edge_inactive']

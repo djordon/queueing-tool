@@ -14,6 +14,7 @@ Networks
         .. automethod:: animate
         .. automethod:: draw
         .. automethod:: show_active
+        .. automethod:: show_type
         .. automethod:: clear
         .. automethod:: reset_colors
         .. automethod:: next_event_type

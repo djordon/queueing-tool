@@ -45,11 +45,13 @@ def poisson_random_measure(rate, rate_max, t) :
 class QueueServer :
     """The base queue-server class.
 
-    Creates an instance of a :math:`\textnormal{GI}_t/\textnormal{GI}_t/n` queue. Each of the
+    Creates an instance of a :math:`{GI}_t/{GI}_t/n` queue. Each of the
     supplied parameters are set to a corresponding class variable/attribute.
 
-    Each queue sits on an edge in a graph. When drawing the graph, the queue colors the edges and
-    the edge's target vertex.
+    Each queue sits on an edge in a graph. When drawing the graph, the queue colors 
+    the edges and the edge's target vertex. 
+
+    Note that each parameter is assigned to an attribute of the same name.
 
     Parameters
     ----------
@@ -59,7 +61,11 @@ class QueueServer :
         A tuple that identifies (uniquely) which edge this queue lies on. The
         first slot of the tuple is the source edge, the second slot is the
         target/destination edge, and the last slot is the ``edge_index`` of that
-        edge. This is automatically created when a :class:`~queueing_tool.network.QueueNetwork` is instantiated.
+        edge. This is automatically created when a 
+        :class:`~queueing_tool.network.QueueNetwork` is instantiated.
+    eType : int (optional, the default is 0)
+        The type of queue this is. Used by :class:`~queueing_tool.network.QueueNetwork`
+        when instantiating a network.
     arrival_f : function (optional, the default is ``lambda t: t + exponential(1)``)
         A function that returns the time of next arrival from outside the network.
         When this function is called, ``t`` is always taken to be the current time.
@@ -115,11 +121,12 @@ class QueueServer :
         ...                   'vertex_pen'    : [0.0, 0.5, 1.0, 1.0]}
     """
 
-    def __init__(self, nServers=1, edge=(0,0,0), arrival_f=lambda t: t + exponential(1),
-                    service_f=lambda t: t + exponential(0.9), AgentClass=Agent,
-                    keep_data=False, active_cap=infty, deactive_t=infty, colors=None, **kwargs) :
+    def __init__(self, nServers=1, edge=(0,0,0), eType=0, arrival_f=lambda t: t + exponential(1),
+                    service_f=lambda t: t + exponential(0.9), AgentClass=Agent, keep_data=False,
+                    active_cap=infty, deactive_t=infty, colors=None, **kwargs) :
 
         self.edge        = edge
+        self.eType       = eType
         self.nServers    = nServers
         self.nDepartures = 0
         self.nSystem     = 0
