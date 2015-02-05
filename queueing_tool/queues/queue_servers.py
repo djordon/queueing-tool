@@ -9,9 +9,8 @@ import copy
 
 
 def poisson_random_measure(rate, rate_max, t) :
-    """A function that returns the arrival time of the next arrival (after ``t``)
-    for a Poisson random measure (which is also known as a marked point process). 
-    This function can only simulate processes that have bounded intensity functions.
+    """A function that returns the arrival time of the next arrival for a Poisson 
+    random measure (a Poisson process is a special case of a Poisson random measure).
 
     Parameters
     ----------
@@ -30,8 +29,7 @@ def poisson_random_measure(rate, rate_max, t) :
 
     Notes
     -----
-
-    Not much to say yet. But I'll add more
+    This function can only simulate processes that have bounded intensity functions.
     """
     t   = t + exponential(rate_max)
     while rate_max * uniform() > rate(t) :
