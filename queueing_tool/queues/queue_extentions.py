@@ -120,10 +120,10 @@ class ResourceQueue(LossQueue) :
         This method behaves identically to a :class:`~LossQueue` if the 
         arriving/departing agent anything other than a :class:`~ResourceAgent`.
         The differences are:
-            * If the agent is a :class:`~ResourceAgent` and they have a resource
-            then it deletes it upon arrival and adds one to ``nServers``.
-            * If the :class:`~ResourceAgent` is arriving without a resource then
-            nothing special happens.
+        * If the agent is a :class:`~ResourceAgent` and they have a resource
+        then it deletes it upon arrival and adds one to ``nServers``.
+        * If the :class:`~ResourceAgent` is arriving without a resource then
+        nothing special happens.
         """
         if isinstance(self._arrivals[0], ResourceAgent) :
             if self._arrivals[0]._time < self._departures[0]._time :
@@ -296,8 +296,8 @@ class InfoQueue(LossQueue) :
     """A queue that stores information about the network.
 
     This queue gets information about the state of the network
-    (number of ``Agents`` at other queues and loads) from arriving
-    :class:`~InfoAgent`s. When an ``InfoAgent`` arrives, the queue
+    (number of ``Agent``'s at other queues and loads) from arriving
+    :class:`~InfoAgent`'s. When an ``InfoAgent`` arrives, the queue
     extracts all the information the agent has and replaces it's
     out network information with the agents more up-to-date information
     (if the agent has any). When an ``InfoAgent`` departs this queue,
@@ -312,6 +312,8 @@ class InfoQueue(LossQueue) :
         The class of agents that arrive from outside the network.
     qbuffer : int (optional, the default is infinity)
         The maximum length of the queue/line.
+    **kwargs :
+        Extra parameters to pass to :class:`~queueing_tool.queues.LossQueue`.
     """
     def __init__(self, net_size=1, AgentClass=InfoAgent, qbuffer=np.infty, **kwargs) :
         LossQueue.__init__(self, AgentClass, qbuffer, **kwargs)
@@ -373,7 +375,7 @@ class InfoQueue(LossQueue) :
 
     def next_event(self) :
         if self._arrivals[0]._time < self._departures[0]._time :
-            self.extract_information(self._arrivals[0])
+            self.extract_informaInfoAgention(self._arrivals[0])
 
         LossQueue.next_event(self)
 

@@ -147,14 +147,14 @@ import queueing_tool    as qt
 import cProfile
 import os
 data_dir  = os.path.expanduser('~') + '/math/data/graphs/'
-nVertices   = 300
+nVertices   = 500
 pDest, pFCQ = 0.1, 0.1
 g   = qt.generate_pagerank_graph(nVertices, is_directed=False)
 pit = qt.QueueNetwork(g, seed=13)
 pit.initialize(nActive=30)
 pit.agent_cap = 5000
 pit.simulate(t=80)
-#pit.start_bookkeeping()
+#pit.collect_data()
 #%timeit -n10 pit.simulate(n=50000)
 pr  = cProfile.Profile()
 pr.enable()

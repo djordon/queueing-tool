@@ -9,8 +9,20 @@ import copy
 
 
 def poisson_random_measure(rate, rate_max, t) :
-    """A function that returns the arrival time of the next arrival for a Poisson 
-    random measure (a Poisson process is a special case of a Poisson random measure).
+    u"""A function that returns the arrival time of the next arrival for a Poisson 
+    random measure.
+
+    Returns the time of the next arrival when the distribution of the number of 
+    arrivals between times :math:`t` and :math:`t+s` is Poisson with mean
+    
+    .. math::
+
+        \int_{t}^{t+s} dx \, r(t)
+
+    where :math:`r(t)` is the supplied ``rate`` function.
+
+    A Poisson random measure is sometimes called a nonhomogeneous Poisson process,
+    with a Poisson process is a special type of Poisson random measure.
 
     Parameters
     ----------
@@ -30,21 +42,30 @@ def poisson_random_measure(rate, rate_max, t) :
     Notes
     -----
     This function can only simulate processes that have bounded intensity functions.
+    See Chapter 6 of [1]_ for more on the mathematics behind Poisson random 
+    measures; the publisher has that chapter available online 
+    `here <http://www.springer.com/cda/content/document/cda_downloaddocument/9780387878584-c1.pdf>`_ 
+    (pdf).
+
+    References
+    ----------
+    ..  [1] Erhan Çınlar, *Probability and stochastics*, Graduate Texts in
+        Mathematics, vol. 261, Springer, New York, 2011. :doi:`10.1007/978-0-387-87859-1`
     """
-    t   = t + exponential(rate_max)
+    scale = 1 / rate_max
+    t     = t + exponential(scale)
     while rate_max * uniform() > rate(t) :
-        t   = t + exponential(rate_max)
+        t   = t + exponential(scale)
     return t
-
-
 
 
 
 class QueueServer :
     """The base queue-server class.
 
-    Creates an instance of a :math:`{GI}_t/{GI}_t/n` queue. Each of the
-    supplied parameters are set to a corresponding class variable/attribute.
+    This is a generic multi-server queue implimentation (from Queueing theory [2]_.
+    In `Kendall's notation <http://en.wikipedia.org/wiki/Kendall%27s_notation>`_,
+    this is a :math:`\\text{GI}_t/\\text{GI}_t/c/\infty/N/\\text{FIFO}` queue.
 
     Each queue sits on an edge in a graph. When drawing the graph, the queue colors 
     the edges and the edge's target vertex. 
@@ -106,18 +127,32 @@ class QueueServer :
         ``edge_color``: The normal color a non-loop edge.
         ``vertex_fill_color``: The normal fill color for a vertex. This colors the target
         vertex in the graph.
-        ``vertex_pen_color``: The color of the pen for the of the target vertex.
+        ``vertex_color``: The color of the pen for the of the target vertex.
         The defaults are:
 
 
     Notes
     -----
+    See chapter 1 of [3]_
+    (pdf `here <http://www.cs.cmu.edu/~harchol/PerformanceModeling/chpt1.pdf>`_ and 
+    `here <http://assets.cambridge.org/97811070/27503/excerpt/9781107027503_excerpt.pdf>`_)
+    for a good introduction to the theory behind the multi-server queue see 
+    or
+
     Some defaults:
 
-        >>> default_colors = {'edge_loop_color'     : [0, 0, 0, 0],
-        ...                   'edge_color'   : [0.9, 0.9, 0.9, 0.5],
+        >>> default_colors = {'edge_loop_color'   : [0, 0, 0, 0],
+        ...                   'edge_color'        : [0.9, 0.9, 0.9, 0.5],
         ...                   'vertex_fill_color' : [1.0, 1.0, 1.0, 1.0],
-        ...                   'vertex_pen_color'    : [0.0, 0.5, 1.0, 1.0]}
+        ...                   'vertex_color'      : [0.0, 0.5, 1.0, 1.0]}
+
+    References
+    ----------
+    .. [2] *Queueing Theory*, Wikipedia `<http://en.wikipedia.org/wiki/Queueing_theory>`_.
+    .. [3] Harchol-Balter, Mor. *Performance Modeling and Design of Computer 
+        Systems: Queueing Theory in Action*. Cambridge University Press, 2013. Publisher's
+        book webpage `here <http://www.cambridge.org/us/9781107027503>`_ and author's book
+        webpage `here <http://www.cs.cmu.edu/~harchol/PerformanceModeling/book.html>`_.
     """
     def __init__(self, nServers=1, edge=(0,0,0), eType=0, arrival_f=lambda t: t + exponential(1),
                     service_f=lambda t: t + exponential(0.9), AgentClass=Agent, collect_data=False,
@@ -152,7 +187,7 @@ class QueueServer :
         default_colors   = {'edge_loop_color'   : [0, 0, 0, 0],
                             'edge_color'        : [0.9, 0.9, 0.9, 0.5],
                             'vertex_fill_color' : [1.0, 1.0, 1.0, 1.0],
-                            'vertex_pen_color'  : [0.0, 0.5, 1.0, 1.0]}
+                            'vertex_color'      : [0.0, 0.5, 1.0, 1.0]}
 
         if colors is not None :
             self.colors = colors
@@ -213,7 +248,7 @@ class QueueServer :
         is positive integer. If ``n`` is not a positive integer than an
         Exception is raised.
         """
-        if not isinstance(n, int) or n <= 0 :
+        if not isinstance(n, numbers.Integral) or n <= 0 :
             raise Exception("nServers must be positive, tried to set to %s.\n%s" % (n, str(self)) )
         else :
             self.nServers = n
@@ -378,7 +413,7 @@ class QueueServer :
             color = self.colors['edge_loop_color']
   
         elif which == 2 :
-            color = self.colors['vertex_pen_color']
+            color = self.colors['vertex_color']
 
         else :
             nSy = self.nSystem
@@ -473,10 +508,10 @@ class LossQueue(QueueServer) :
     """
 
     def __init__(self, qbuffer=0, **kwargs) :
-        default_colors  = { 'edge_loop_color'     : [0, 0, 0, 0],
-                            'edge_color'   : [0.7, 0.7, 0.7, 0.5],
+        default_colors  = { 'edge_loop_color'   : [0, 0, 0, 0],
+                            'edge_color'        : [0.7, 0.7, 0.7, 0.5],
                             'vertex_fill_color' : [1.0, 1.0, 1.0, 1.0],
-                            'vertex_pen_color'    : [0.133, 0.545, 0.133, 1.0]} 
+                            'vertex_color'      : [0.133, 0.545, 0.133, 1.0]} 
 
         if 'colors' in kwargs :
             for col in set(default_colors.keys()) - set(kwargs['colors'].keys()) :
@@ -527,6 +562,12 @@ class LossQueue(QueueServer) :
                 if self.active :
                     self._add_arrival()
 
+                if self.collect_data :
+                    if arrival.issn in self.data :
+                        self.data[arrival.issn].append([arrival._time, 0, 0, len(self._queue)])
+                    else :
+                        self.data[arrival.issn] = [[arrival._time, 0, 0, len(self._queue)]]
+
                 heappush(self._departures, new_agent)
 
                 if self._arrivals[0]._time < self._departures[0]._time :
@@ -559,10 +600,10 @@ class NullQueue(QueueServer) :
     """
     def __init__(self, *args, **kwargs) :
 
-        default_colors  = { 'edge_loop_color'     : [0, 0, 0, 0.5],
-                            'edge_color'   : [0.7, 0.3, 0.3, 0.7],
+        default_colors  = { 'edge_loop_color'   : [0, 0, 0, 0],
+                            'edge_color'        : [0.7, 0.7, 0.7, 0.3],
                             'vertex_fill_color' : [1.0, 1.0, 1.0, 1.0],
-                            'vertex_pen_color'    : [0.0, 0.0, 0.0, 1.0]} 
+                            'vertex_color'      : [0.5, 0.5, 0.5, 0.5]} 
 
         if 'colors' in kwargs :
             for col in set(default_colors.keys()) - set(kwargs['colors'].keys()) :
@@ -598,11 +639,11 @@ class NullQueue(QueueServer) :
     def next_event(self) :
         pass
 
-    def current_color(self, which='') :
-        if which == 'loop' :
+    def current_color(self, which=0) :
+        if which == 1 :
             color = self.colors['edge_loop_color']
-        elif which == 'pen' :
-            color = self.colors['vertex_pen_color']
+        elif which == 2 :
+            color = self.colors['vertex_color']
         else :
             if self.edge[0] == self.edge[1] :
                 color = self.colors['vertex_fill_color']

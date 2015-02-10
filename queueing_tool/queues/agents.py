@@ -1,4 +1,4 @@
-from numpy          import infty
+from numpy          import infty, argmin
 from numpy.random   import randint
 
 class Agent :
@@ -67,10 +67,17 @@ class Agent :
 
     def desired_destination(self, network, edge) :
         """Returns the agents next destination given their current location on the
-        network. Requires and instance of the :class:`~QueueNetwork` and ``issn`` of the
-        :class:`~QueueServer` the agent is departing from.
+        network.
 
         An ``Agent`` chooses one of the out edges uniformly at random.
+
+        Parameters
+        ----------
+        network : :class:`~queueing_tool.network.QueueNetwork`
+        edge : tuple
+            A 3-tuple indicating which edge this agent is located at. The first two 
+            slots indicate the current edge's source and target vertices, while the
+            third slot indicates this edges ``edge_index``.
 
         Returns
         -------
@@ -99,13 +106,45 @@ class Agent :
         return new_agent
 
 
+class GreedyAgent(Agent) :
+    """An agent that chooses the queue with the shortest line as his destination."""
+    def __init__(self, issn) :
+        Agent.__init__(self, issn)
+
+    def __repr__(self) :
+        return "GreedyAgent. edge: %s, time: %s" % (self.issn, self._time)
+
+    def desired_destination(self, network, edge) :
+        """Returns the agents next destination given their current location on the
+        network. 
+
+        ``GreedyAgents`` choose their next destination with-in the network by
+        picking the adjacent queue with the fewest number of ``Agents`` in the queue.
+
+        Parameters
+        ----------
+        network : :class:`~queueing_tool.network.QueueNetwork`
+        edge : tuple
+            A 3-tuple indicating which edge this agent is located at. The first two 
+            slots indicate the current edge's source and target vertices, while the
+            third slot indicates this edge's ``edge_index``.
+
+        Returns
+        -------
+        out : int
+            Returns an the edge index corresponding to the agents next edge to visit
+            in the network. 
+        """
+        adjacent_edges = network.out_edges[edge[1]]
+        d = argmin([network.edge2queue[d].nQueued() for d in adjacent_edges])
+        return adjacent_edges[d]
+
 
 class InftyAgent :
     """An special agent that only operates within the ``QueueServer`` class.
 
     This agent never interacts with the ``QueueNetwork``.
     """
-
     def __init__(self) :
         self._time = infty
 

@@ -1,8 +1,6 @@
-"""The Queueing network module.
-"""
-
-import numpy            as np
 import graph_tool.all   as gt
+import numpy            as np
+import numbers
 import copy
 
 from .. generation.graph_preparation   import _prepare_graph
@@ -13,13 +11,6 @@ from .sorting           import oneBisectSort, bisectSort, oneSort, twoSort
 from numpy              import infty
 from gi.repository      import Gtk, GObject
 
-
-
-
-# Garages changed to FCQ (finite capacity queue)
-# Each edge and vertex has an eType and vType respectively. 
-#   The eType is used to specify they queue class to use, as well as
-#   the default values to create the queue with.
 
 class QueueNetwork :
     """The class that handles the graph and all the queues on the graph.
@@ -84,36 +75,36 @@ class QueueNetwork :
 
     The default colors are:
 
-    >>> self.colors       = { 'vertex_normal'   : [0.9, 0.9, 0.9, 1.0],
-    ...                       'vertex_color'    : [0.0, 0.5, 1.0, 1.0],
-    ...                       'vertex_type'     : [0.5, 0.5, 0.5, 1.0],
-    ...                       'edge_departure'  : [0, 0, 0, 1], 
-    ...                       'halo_normal'     : [0, 0, 0, 0],
-    ...                       'halo_arrival'    : [0.1, 0.8, 0.8, 0.25],
-    ...                       'halo_departure'  : [0.9, 0.9, 0.9, 0.25],
-    ...                       'vertex_active'   : [0.1, 1.0, 0.5, 1.0],
-    ...                       'vertex_inactive' : [0.9, 0.9, 0.9, 0.8],
-    ...                       'edge_active'     : [0.1, 0.1, 0.1, 1.0],
-    ...                       'edge_inactive'   : [0.8, 0.8, 0.8, 0.3],
-    ...                       'bg_color'        : [1, 1, 1, 1]}
+    >>> self.colors       = { 'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
+    ...                       'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
+    ...                       'vertex_type'       : [0.5, 0.5, 0.5, 1.0],
+    ...                       'edge_departure'    : [0, 0, 0, 1], 
+    ...                       'vertex_halo_color' : [0, 0, 0, 0],
+    ...                       'halo_arrival'      : [0.1, 0.8, 0.8, 0.25],
+    ...                       'halo_departure'    : [0.9, 0.9, 0.9, 0.25],
+    ...                       'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
+    ...                       'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
+    ...                       'edge_active'       : [0.1, 0.1, 0.1, 1.0],
+    ...                       'edge_inactive'     : [0.8, 0.8, 0.8, 0.3],
+    ...                       'bg_color'          : [1, 1, 1, 1]}
     """
 
     def __init__(self, g=None, q_classes=None, q_args=None, seed=None) :
         self.nEvents      = 0
         self.t            = 0
         self.agent_cap    = 1000
-        self.colors       = { 'vertex_normal'   : [0.9, 0.9, 0.9, 1.0],
-                              'vertex_color'    : [0.0, 0.5, 1.0, 1.0],
-                              'vertex_type'     : [0.5, 0.5, 0.5, 1.0],
-                              'edge_departure'  : [0, 0, 0, 1],
-                              'halo_normal'     : [0, 0, 0, 0],
-                              'halo_arrival'    : [0.1, 0.8, 0.8, 0.25],
-                              'halo_departure'  : [0.9, 0.9, 0.9, 0.25],
-                              'vertex_active'   : [0.1, 1.0, 0.5, 1.0],
-                              'vertex_inactive' : [0.9, 0.9, 0.9, 0.8],
-                              'edge_active'     : [0.1, 0.1, 0.1, 1.0],
-                              'edge_inactive'   : [0.8, 0.8, 0.8, 0.3],
-                              'bg_color'        : [1, 1, 1, 1]}
+        self.colors       = { 'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
+                              'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
+                              'vertex_type'       : [0.5, 0.5, 0.5, 1.0],
+                              'edge_departure'    : [0, 0, 0, 1],
+                              'vertex_halo_color' : [0, 0, 0, 0],
+                              'halo_arrival'      : [0.1, 0.8, 0.8, 0.25],
+                              'halo_departure'    : [0.9, 0.9, 0.9, 0.25],
+                              'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
+                              'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
+                              'edge_active'       : [0.1, 0.1, 0.1, 1.0],
+                              'edge_inactive'     : [0.8, 0.8, 0.8, 0.3],
+                              'bg_color'          : [1, 1, 1, 1]}
 
         self._to_animate  = False
         self._initialized = False
@@ -128,20 +119,24 @@ class QueueNetwork :
             for k in set(q_classes.keys()) - set(q_args.keys()) :
                 q_args[k] = {}
 
-        v_pens    = [[0, 0.5, 1, 1], [0, 0.5, 1, 1], [0.133, 0.545, 0.133, 1],
+        v_pens    = [[0.5, 0.5, 0.5, 0.5], [0, 0.5, 1, 1], [0.133, 0.545, 0.133, 1],
                      [0.282, 0.239, 0.545, 1], [1, 0.135, 0, 1]]
         q_colors  = {k : {'edge_loop_color'   : [0, 0, 0, 0],
                           'edge_color'        : [0.7, 0.7, 0.7, 0.5],
                           'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
-                          'vertex_pen_color'  : v_pens[k]} for k in range(5)}
+                          'vertex_color'      : v_pens[k]} for k in range(5)}
 
         for key, args in q_args.items() :
             if 'colors' not in args :
                 args['colors'] = q_colors[key]
 
-        if isinstance(seed, int) :
+        if isinstance(seed, numbers.Integral) :
             np.random.seed(seed)
             gt.seed_rng(seed)
+
+        for k in range(5) :
+            if k not in q_args :
+                q_args[k] = {}
 
         if g is not None :
             if isinstance(g, str) or isinstance(g, gt.Graph) :
@@ -194,7 +189,7 @@ class QueueNetwork :
     def time(self, tmp): 
         pass
 
-    def initialize(self, nActive=1, queues=None) :
+    def initialize(self, nActive=1, queues=None, edges=None, types=None) :
         """Prepares the ``QueueNetwork`` for simulation.
 
         Each :class:`~queueing_tool.queues.QueueServer` in the network starts inactive,
@@ -208,9 +203,16 @@ class QueueNetwork :
         ----------
         nActive : int (optional, the default is one)
             The number of queues to set as active. The queues are selected randomly.
-        queues : list, tuple (optional, can be any iterable)
-            Used to explicitly specify which queues to make active. Must be an iterable
-            of integers representing edges in the graph.
+        queues : `array_like` (optional)
+            Used to explicitly specify which queues to make active by passing their edge
+            index. Must be an iterable of integers representing edges in the graph.
+        edge : `array_like` (optional)
+            Used to explicitly specify which queues to make active by passing their 
+            source and target vertex indices. Must have 2 slots with integers in both,
+            or be an iterable of a 2-`array_like` objects.
+        types : int or `array_like` (optional)
+            A integer, or a collection of integers identifying which types will be set
+            active.
 
         Raises
         ------
@@ -219,11 +221,19 @@ class QueueNetwork :
             then a :exc:`~RuntimeError` is raised.
         """
         if queues is None :
-            if nActive < 1 or not isinstance(nActive, int) :
+            if edges is not None :
+                if not isinstance(edges[0], numbers.Integral) :
+                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edges]
+                else :
+                    queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
+            elif types is not None :
+                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), types) )[0]
+            elif nActive >= 1 and isinstance(nActive, numbers.Integral) :
+                queues = np.arange(self.nE)  
+                np.random.shuffle(queues)
+                queues = queues[:nActive]
+            else :
                 raise RuntimeError("If queues is None, then nActive must be a strictly positive int.")
-            queues = np.arange(self.nE)  
-            np.random.shuffle(queues)
-            queues = queues[:nActive]
 
         for ei in queues :
             self.edge2queue[ei].set_active()
@@ -248,7 +258,7 @@ class QueueNetwork :
             If ``queues`` is not specified then every ``QueueServer``'s
             data will start collecting data.
         """
-        if isinstance(queues, int) :
+        if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
             queues = range(self.nE)
@@ -268,7 +278,7 @@ class QueueNetwork :
             If ``queues`` is not specified then every ``QueueServer``'s
             data will stop collecting data.
         """
-        if isinstance(queues, int) :
+        if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
             queues = range(self.nE)
@@ -296,7 +306,7 @@ class QueueNetwork :
             column identifies how many other agents were in the queue upon arrival, 
             and the fifth column identifies which queue this occurred at.
         """
-        if isinstance(queues, int) :
+        if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
             queues = range(self.nE)
@@ -307,10 +317,11 @@ class QueueNetwork :
             for d in self.edge2queue[q].data.values() :
                 qdata.extend(d)
 
-            dat       = np.zeros( (len(qdata), 5) )
-            dat[:,:4] = np.array(qdata)
-            dat[:, 4] = q
-            data      = np.vstack( (data, dat) )
+            if len(qdata) > 0 :
+                dat       = np.zeros( (len(qdata), 5) )
+                dat[:,:4] = np.array(qdata)
+                dat[:, 4] = q
+                data      = np.vstack( (data, dat) )
 
         return data[1:,:]
 
@@ -336,7 +347,7 @@ class QueueNetwork :
             times of an ``Agent`` at a queue. The fourth column identifies which
             queue this occurred at.
         """
-        if isinstance(queues, int) :
+        if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
             queues = range(self.nE)
@@ -463,7 +474,7 @@ class QueueNetwork :
             if isinstance(e, gt.Edge) and self.g.ep['eType'][e] == n :
                 ei  = self.g.edge_index[e]
                 self.g.vp['vertex_fill_color'][v] = self.colors['vertex_type']
-                self.g.vp['vertex_color'][v]      = self.edge2queue[ei].colors['vertex_pen']
+                self.g.vp['vertex_color'][v]      = self.edge2queue[ei].colors['vertex_color']
             else :
                 self.g.vp['vertex_fill_color'][v] = self.colors['vertex_inactive']
                 self.g.vp['vertex_color'][v]      = [0, 0, 0, 0.9]
@@ -523,7 +534,7 @@ class QueueNetwork :
                 ep['edge_color'][pe]        = q.current_color(1)
                 vp['vertex_color'][pv]      = q.current_color(2)
                 vp['vertex_fill_color'][pv] = q.current_color()
-                vp['vertex_halo_color'][pv] = self.colors['halo_normal']
+                vp['vertex_halo_color'][pv] = self.colors['vertex_halo_color']
                 vp['vertex_halo'][pv]       = False
             else :
                 ep['edge_color'][pe] = q.current_color()
@@ -535,7 +546,7 @@ class QueueNetwork :
 
                 tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
-                color    = [ i * tmp / 0.9 for i in self.colors['vertex_normal'] ]
+                color    = [ i * tmp / 0.9 for i in self.colors['vertex_fill_color'] ]
                 color[3] = 1.0 - tmp
                 vp['vertex_fill_color'][pv] = color
                 vp['vertex_color'][pv]      = self.colors['vertex_color']
@@ -561,7 +572,7 @@ class QueueNetwork :
 
             tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
 
-            color    = [ i * tmp / 0.9 for i in self.colors['vertex_normal'] ]
+            color    = [ i * tmp / 0.9 for i in self.colors['vertex_fill_color'] ]
             color[3] = 1.0 - tmp
             vp['vertex_fill_color'][v] = color
             vp['vertex_color'][v]  = self.colors['vertex_color']
@@ -600,7 +611,7 @@ class QueueNetwork :
         -------
         out : tuple
             Returns a 2-tuple where the first entry is an integer indicating
-            whether the next event is an arrival (a 1) or a departure (a 2),
+            whether the next event is an arrival (1) or a departure (2),
             and the second entry is which queue/edge this corresponds to.
 
         Raises
@@ -781,7 +792,7 @@ class QueueNetwork :
             now = self.t
             while self.t < now + t :
                 self._next_event(slow=False)
-        elif isinstance(n, int) :
+        elif isinstance(n, numbers.Integral) :
             for k in range(n) :
                 self._next_event(slow=False)
 
@@ -789,10 +800,10 @@ class QueueNetwork :
     def reset_colors(self) :
         """Sets all edge and vertex colors to their default values."""
         for k, e in enumerate(self.g.edges()) :
-            self.g.ep['edge_color'][e]    = self.edge2queue[k].colors['edge_normal']
+            self.g.ep['edge_color'][e]    = self.edge2queue[k].colors['edge_color']
         for k, v in enumerate(self.g.vertices()) :
-            self.g.vp['vertex_fill_color'][v] = self.colors['vertex_normal']
-            self.g.vp['vertex_halo_color'][v] = self.colors['halo_normal']
+            self.g.vp['vertex_fill_color'][v] = self.colors['vertex_fill_color']
+            self.g.vp['vertex_halo_color'][v] = self.colors['vertex_halo_color']
             self.g.vp['vertex_halo'][v]       = False
             self.g.vp['vertex_text'][v]       = ''
 
@@ -831,7 +842,7 @@ class QueueNetwork :
             whose data will be cleared. If ``queues`` is not specified then all
             ``QueueServer``'s data will be cleared.
         """
-        queues = [queues] if isinstance(queues, int) else queues
+        queues = [queues] if isinstance(queues, numbers.Integral) else queues
 
         if queues is None :
             for q in self.edge2queue :

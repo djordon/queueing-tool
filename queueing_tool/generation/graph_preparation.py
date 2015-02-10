@@ -372,13 +372,13 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
 
     for v in g.vertices() :
         e = g.edge(v, v)
-        vertex_halo_color[v] = g_colors['halo_normal']
+        vertex_halo_color[v] = g_colors['vertex_halo_color']
         if isinstance(e, gt.Edge) :
             vertex_color[v]       = queues[g.edge_index[e]].current_color(2)
             vertex_fill_color[v]  = queues[g.edge_index[e]].current_color()
         else :
             vertex_color[v]       = g_colors['vertex_color']
-            vertex_fill_color[v]  = g_colors['vertex_normal'] 
+            vertex_fill_color[v]  = g_colors['vertex_fill_color'] 
 
     edge_pen_width.a      = 1.25
     edge_marker_size.a    = 8

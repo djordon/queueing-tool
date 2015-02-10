@@ -1,9 +1,6 @@
 Module documenation
 =====================
 
-Subpackages
------------
-
 .. toctree::
 
     network

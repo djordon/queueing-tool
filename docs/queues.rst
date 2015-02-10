@@ -22,6 +22,9 @@ Agents
 
     .. autoclass:: Agent
         :members:
+    .. autoclass:: GreedyAgent
+        :show-inheritance:
+        :members:
     .. autoclass:: InfoAgent
         :show-inheritance:
         :members:

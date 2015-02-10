@@ -1,106 +1,145 @@
 import graph_tool.all as gt
 import numpy          as np
+import numbers
 import copy
 
 from .graph_preparation import set_types_random, set_types_pagerank
 from .union_find        import UnionFind
 
-def _matrix2list(matrix) :
+def _matrix2dict(matrix) :
     """Takes an adjacency matrix and returns an adjacency list."""
     n   = len(matrix)
-    adj = [ [] for k in range(n)]
+    adj = {k : [] for k in range(n)}
     for k in range(n) :
         for j in range(n) :
             if matrix[k, j] :
                 adj[k].append(j)
-
+    
     return adj
 
 
-def _dict2list(adj_dict) :
+def _dict2dict(adj_dict) :
     """Takes a dictionary representation of an adjacency list and returns
     a list based representation.
     """
-    vertives = set()
+    vertices = set()
     for key, value in adj_dict.items() :
         vertices.add(key)
-        if isinstance(value, int) :
+        if isinstance(value, numbers.Integral) :
             vertices.add(value)
         else :
             vertices.update(value)
 
-    adj = []
     if min(vertices) == 1 :
-        for k in range(1, max(vertices) + 1 ) :
-            if k in adj_dict :
-                if isinstance(adj_dict[k], int) :
-                    adj.append( [adj_dict[k]-1] )
-                else :
-                    adj.append( [j - 1 for j in adj_dict[k]] )
-            else :
-                adj.append([])
+        adjacency = {}
+        for key, value in adj_dict.items() :
+            adjacency[key-1] = [k-1 for k in value]
+
+        for v in vertices :
+            if v - 1 not in adjacency :
+                adjacency[v-1] = []
     else :
-        for k in range(max(vertices) + 1 ) :
-            if k in adj_dict :
-                if isinstance(adj_dict[k], int) :
-                    adj.append( [adj_dict[k]] )
-                else :
-                    adj.append( adj_dict[k] )
+        adjacency = adj_dict.copy()
+
+        for v in vertices :
+            if v not in adjacency :
+                adjacency[v] = []
+
+    return adjacency
+
+
+def _list2dict(adj_list) :
+    """Takes a dictionary representation of an adjacency list and returns
+    a list based representation.
+    """
+    vertices = set()
+    adj_dict = {}
+    for key, value in enumerate(adj_list) :
+        vertices.add(key)
+        vertices.update(value)
+  
+    for key, value in enumerate(adj_list) :
+        adj_dict[key] = value
+    
+    for v in vertices :
+        if v not in adj_dict :
+            adj_dict[v] = []
+    
+    return adj_dict
+
+
+def _other2dict(adj_dict, other) :
+    other_dict = {}
+    if isinstance(other, np.ndarray) :
+        other = _matrix2dict(other)
+
+    if isinstance(other, dict) :
+        for k, value in adj_dict.items() :
+            if k in other :
+                other_dict[k] = other[k]
             else :
-                adj.append([])
-    return adj
+                other_dict[k] = []
+    elif isinstance(other, list) :
+        for k, value in adj_dict.items() :
+            if k < len(other) :
+                other_dict[k] = other[k]
+            else :
+                other_dict[k] = []
+    else :
+        raise TypeError('edge_type must by either a dict, list, or numpy.ndarray')
+
+    return other_dict
 
 
-def _adjacency_adjust(adjacency, edge_types, adjust_type, is_directed) :
+def _adjacency_adjust(adjacency, edge_type, adjust_type, is_directed) :
     """Takes an adjacency list and returns a (possibly) modified adjacency list."""
-
     ok_adj = True
-    eTypes = []
 
-    for adj in adjacency :
+    for adj in adjacency.values() :
         if len(adj) == 0 :
             ok_adj = False
             break
 
-    if edge_types is None :
-        for adj in adjacency :
-            eTypes.append([1 for k in adj])
+    if edge_type is None :
+        for adj in adjacency.values() :
+            edge_type.append([1 for k in adj])
     else :
-        for k in range(n) :
-            if len(adjacency[k]) != len(eTypes[k]) :
-                raise RuntimeError("Supplied edge types must match adjacency list/matrix.")
+        if len(adjacency) != len(edge_type) :
+            raise RuntimeError("Graph for edge types must match graph from adjacency list/matrix.")
+        for k in adjacency.keys() :
+            if len(adjacency[k]) != len(edge_type[k]) :
+                raise RuntimeError("Graph for edge types must match graph from adjacency list/matrix.")
 
     if not ok_adj and is_directed :
         if adjust_type == 1 :
             null_nodes = set()
 
-            for k, adj in enumerate(adjacency) :
+            for k, adj in adjacency.items() :
                 if len(adj) == 0 :
                     null_nodes.add(k)
 
-            for k, adj in enumerate(eTypes) :
-                eTypes[k] = [0 if j in null_nodes else j for j in adj]
+            for k, adj in edge_type.items() :
+                edge_type[k] = [0 if j in null_nodes else j for j in adj]
 
         elif adjust_type == 2 :
-            for k, adj in enumerate(adjacency) :
+            for k, adj in adjacency.items() :
                 if len(adj) == 0 :
                     adjacency[k].append(n + 1)
-                    eTypes[k].append(0)
+                    edge_type[k].append(0)
 
-            adjacency.append([])
-            eTypes.append([])
+            adjacency[len(adjacency)] = []
+            edge_type[len(adjacency)] = []
 
         else :
-            for k, adj in enumerate(adjacency) :
+            for k, adj in adjacency.items() :
                 if len(adj) == 0 :
                     adjacency[k].append(k)
-                    eTypes[k].append(0)
+                    edge_type[k].append(0)
 
-    return adjacency, eTypes
+    return adjacency, edge_type
 
 
-
-def adjacency2graph(adjacency, edge_types=None, edge_lengths=None, adjust_type=0, is_directed=True) :
+def adjacency2graph(adjacency, edge_type=None, edge_length=None, adjust_type=0, is_directed=True) :
     """Takes an adjacency list, dict, or matrix and returns a graph.
 
     The purpose of this function is take an adjacency list (or matrix) and
@@ -114,14 +153,13 @@ def adjacency2graph(adjacency, edge_types=None, edge_lengths=None, adjust_type=0
     ----------
     adjacency : list, dict, or numpy.ndarray
         An adjacency list, dict, or matrix.
-    edge_types : list, dict, or numpy.ndarray (optional)
+    edge_type : list, dict, or numpy.ndarray (optional)
         A mapping that corresponds to that edges ``eType``. For example, if
-        ``edge_types`` is a matrix, then ``edge_type[u, v]`` is the type of
-        queue along the edge between vertices ``u`` and ``v``. If ``edge_types``
+        ``edge_type`` is a matrix, then ``edge_type[u, v]`` is the type of
+        queue along the edge between vertices ``u`` and ``v``. If ``edge_type``
         is not supplied then all but terminal edges have type 1.
-    edge_lengths : list, dict, or numpy.ndarray (optional)
-        A mapping where that corresponds to each edge's length. If not supplied,
-        then each edge has length 1.
+    edge_length : list, dict, or numpy.ndarray (optional)
+        A mapping where that corresponds to each edge's length.
     adjust_type : int (optional, the default is 0)
         Specifies what to do when the graph has terminal vertices (nodes with no
         out-edges). There are three choices:
@@ -142,35 +180,38 @@ def adjacency2graph(adjacency, edge_types=None, edge_lengths=None, adjust_type=0
     -------
     out : :class:`~graph_tool.Graph`
         A :class:`~graph_tool.Graph` with the ``vType`` vertex property, and 
-        ``eType`` and ``edge_length`` edge properties.
+        ``eType`` edge property. If the ``edge_length`` parameter is supplied
+        then the ``edge_length`` edge properties is also included in the ``Graph``.
 
     Raises
     ------
     TypeError
-        Is raised if ``adjacency``, ``edge_types``, and ``edge_lengths`` are
-        not ``list``, ``dict``, or  ``numpy.ndarray`` types (``edge_types`` and 
-        ``edge_lengths`` can be ``None``).
+        Is raised if ``adjacency``, ``edge_type``, and ``edge_length`` are
+        not ``list``, ``dict``, or  ``numpy.ndarray`` types (``edge_type`` and 
+        ``edge_length`` can be ``None``).
     RuntimeError
-        A :exc:`~RuntimeError` is raised if ``edge_types`` does not have the 
+        A :exc:`~RuntimeError` is raised if ``edge_type`` does not have the 
         same dimensions as ``adjacency``.
     """
     if adjacency is None :
         raise TypeError("The `adjacency` parameter must be a list, dict, or a numpy.ndarray.")
 
-    params = [adjacency, edge_types, edge_lengths]
-    string = ['adjacency', 'edge_types', 'edge_lengths']
+    params = [adjacency, edge_type, edge_length]
+    string = ['adjacency', 'edge_type', 'edge_length']
 
-    for k, param in enumerate(params) :
-        if param is not None :
-            if isinstance(param, np.ndarray) :
-                params[k] = _matrix2list(param)
-            elif isinstance(param, dict) :
-                params[k] = _dict2list(param)
-            elif not isinstance(param, list) :
-                raise TypeError("The `%s` parameter must be a list, dict, or a numpy.ndarray." % (string[k]) )
+    if isinstance(adjacency, np.ndarray) :
+        adjacency = _matrix2dict(adjacency)
+    elif isinstance(adjacency, dict) :
+        adjacency = _dict2dict(adjacency)
+    elif isinstance(adjacency, list) :
+        adjacency = _list2dict(adjacency)
+    else :
+        raise TypeError("If the adjacency parameter is supplied it must be a list, dict, or a numpy.ndarray.")
 
-    adjacency, edge_types, edge_lengths = params
-    adjacency, edge_types = _adjacency_adjust(adjacency, edge_types, adjust_type, is_directed)
+    if edge_type is not None :
+        edge_type = _other2dict(adjacency, edge_type)
+
+    adjacency, edge_type = _adjacency_adjust(adjacency, edge_type, adjust_type, is_directed)
 
     nV  = len(adjacency)
     g   = gt.Graph()
@@ -178,34 +219,34 @@ def adjacency2graph(adjacency, edge_types=None, edge_lengths=None, adjust_type=0
 
     g.set_directed(is_directed)
 
-    if edge_lengths is None :
-        edge_lengths = [0 for k in range(adjacency)]
-        for k, adj in enumerate(adjacency) :
-            edge_lengths[k] = [1 for j in range(len(adj))]
-
-    if len(edge_lengths) != len(adjacency) :
-        edge_lengths.append([])
-
-    for k in range(nV) :
-        if len(edge_lengths[k]) != len(adjacency[k]) :
-            edge_lengths[k].append(1)
+    if edge_length is not None :
+        edge_length_none = False
+        edge_length = _other2dict(adjacency, edge_length)
+        for k, value in adjacency.items() :
+            if k not in edge_length :
+                edge_length[k] = [1 for j in value]
+            elif len(edge_length[k]) != len(adjacency[k]) :
+                edge_length[k].extend([1 for j in range(len(adjacency[k]) - len(edge_length[k]))])
+    else :
+        edge_length_none = True
 
     vType   = g.new_vertex_property("int")
     eType   = g.new_edge_property("int")
     elength = g.new_edge_property("double")
     vType.a = 1
 
-    for u, adj in enumerate(adjacency) :
+    for u, adj in adjacency.items() :
         for j, v in enumerate(adj) :
-            e = g.edge(u, v) 
-            eType[e]    = edge_types[u][j]
-            elength[e]  = edge_lengths[u][j]
+            e = g.add_edge(u, v)
+            eType[e]    = edge_type[u][j]
+            elength[e]  = edge_length[u][j] if not edge_length_none else 1.0
             if u == v :
-                vType[e.source()] = edge_types[u][j]
+                vType[e.source()] = edge_type[u][j]
 
     g.vp['vType'] = vType
     g.ep['eType'] = eType
-    g.ep['edge_length'] = elength
+    if not edge_length_none :
+        g.ep['edge_length'] = elength
     return g
     
 
