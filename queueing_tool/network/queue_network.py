@@ -13,17 +13,24 @@ from gi.repository      import Gtk, GObject
 
 
 class QueueNetwork :
-    """The class that handles the graph and all the queues on the graph.
+    """A class that simulates a network of queues.
+
+    Takes a graph-tool :class:`~graph_tool.Graph` and places queues on each
+    edge of the graph. The simulations are event based, and this class handles
+    the scheduling of events.
+
+    Each edge on the graph has a *type*, and this *type* is used to define the
+    type of ``QueueServer`` that sits on that edge.
 
     Parameters
     ----------
     g : str or :class:`~graph_tool.Graph`
         The graph specifies the network on which the queues sit.
     q_classes : dict (optional)
-        This allows the user to specify the type of
-        :class:`~queueing_tool.queues.QueueServer` class for each edge.
+        Used to Specify the :class:`~queueing_tool.queues.QueueServer` class
+        for each edge type.
     q_args : dict (optional)
-        This allows the user to specify the class arguments for each type of
+        Used to specify the class arguments for each type of
         :class:`~queueing_tool.queues.QueueServer`.
     seed : int (optional)
         An integer used to initialize ``numpy``'s and ``graph-tool``'s
@@ -35,30 +42,34 @@ class QueueNetwork :
         The graph for the network.
     in_edges : list
         A list of all in-edges for each vertex. Specifically, ``in_edges[v]``
-        returns a list edge indeces corresponding to each of the edges with the
-        **tail** of the edge at ``v``, where ``v`` is a vertex's index.
+        returns a list containing the edge index for all edges with the
+        head of the edge at ``v``, where ``v`` is a vertex's index.
     out_edges : list
-        A list of all out-edges for each vertex.
+        A list of all out-edges for each vertex. Specifically, ``out_edges[v]``
+        returns a list containing the edge index for all edges with the
+        tail of the edge at ``v``, where ``v`` is a vertex's index.
     edge2queue : list
         A list of queues where the ``edge2queue[k]`` returns the queue on the
         edge with edge index ``k``.
     nAgents : :class:`~numpy.ndarray`
-        A one-dimensional array where the ``k``'th entry corresponds to the total
-        number of agents at the edge with edge index ``k``.
+        A one-dimensional array where the ``k``'th entry corresponds to the
+        total number of agents in the ``QueueServer`` with edge index ``k``.
     nEdges : int
         The number of edges in the graph.
     nEvents : int
-        The number of that have occurred thus far. Every arrival from outside the
-        network counts as one event, but the departure of an agent from a queue
-        and the arrival of that same agent to another queue counts as one event.
+        The number of events that have occurred thus far. Every arrival from
+        outside the network counts as one event, but the departure of an agent
+        from a queue and the arrival of that same agent to another queue counts
+        as one event.
     nVertices : int
         The number of vertices in the graph.
     time : float
         The time of the last event.
     agent_cap : int (the default is 1000)
-        The maximum number of agents that can be in the queue at any time.
+        The maximum number of agents that can be in the network at any time.
     colors : dict
-        A dictionary of colors used when drawing a graph. See the notes for the defaults
+        A dictionary of colors used when drawing a graph. See the notes for the
+        defaults.
 
 
     Raises
@@ -72,6 +83,12 @@ class QueueNetwork :
 
     Notes
     -----
+    * This class must be initialized before any simulations can take place. To
+      initialize, call the :meth:`~initialize` method. If any of the queues are
+      altered, make sure to run the ``initialize`` method again.
+    * When simulating the network, the departure of an agent coincides with an 
+      arrival to another queue. There is no time lag between these events.
+    
 
     The default colors are:
 
@@ -109,6 +126,7 @@ class QueueNetwork :
         self._to_animate  = False
         self._initialized = False
         self._prev_edge   = None
+        self._queues      = []
 
         if q_classes is None :
             q_classes = {0 : NullQueue, 1 : QueueServer, 2 : LossQueue, 3 : LossQueue, 4 : LossQueue}
@@ -194,36 +212,43 @@ class QueueNetwork :
 
         Each :class:`~queueing_tool.queues.QueueServer` in the network starts inactive,
         which means they do not accept arrivals from outside the network, and they have
-        no :class:`~queueing_tool.queues.Agent` in their systems. Note that in order to
+        no :class:`~queueing_tool.queues.Agent`\s in their system. Note that in order to
         simulate the ``QueueNetwork``, there must be at least one ``Agent`` in the
         network. This method sets queues to active, which then allows agents to arrive
         from outside the network.
 
         Parameters
         ----------
-        nActive : int (optional, the default is one)
+        nActive : int (optional, the default is ``1``)
             The number of queues to set as active. The queues are selected randomly.
         queues : `array_like` (optional)
-            Used to explicitly specify which queues to make active by passing their edge
-            index. Must be an iterable of integers representing edges in the graph.
-        edge : `array_like` (optional)
-            Used to explicitly specify which queues to make active by passing their 
-            source and target vertex indices. Must have 2 slots with integers in both,
-            or be an iterable of a 2-`array_like` objects.
+            Used to explicitly specify which queues to make active by passing
+            their edge index. Must be an iterable of integers representing edges
+            in the graph.
+        edges : `array_like` (optional)
+            Explicitly specify which queues to make active by passing either the 
+            edge's source and target vertex indices, or the 
+            :class:`~graph_tool.Edge` . Must have 2 slots with integers in
+            both, or be an iterable of 2-`array_like` objects.
         types : int or `array_like` (optional)
-            A integer, or a collection of integers identifying which types will be set
-            active.
+            A integer, or a collection of integers identifying which edge types
+            will be set active.
 
         Raises
         ------
         RuntimeError
-            If ``queues`` is ``None`` and ``nActive`` is not an integer or is less than 1
-            then a :exc:`~RuntimeError` is raised.
+            If ``queues``, ``egdes``, and ``types`` are all ``None`` and 
+            ``nActive`` is not an integer or is less than 1 then a 
+            :exc:`~RuntimeError` is raised.
         """
-        if queues is None :
+        if isinstance(queues, numbers.Integral) :
+            queues = [queues]
+        elif queues is None :
             if edges is not None :
                 if not isinstance(edges[0], numbers.Integral) :
                     queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edges]
+                elif isinstance(edges[0], gt.Edge) :
+                    queues = [self.g.edge_index[e] for e in edges]
                 else :
                     queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
             elif types is not None :
@@ -247,69 +272,125 @@ class QueueNetwork :
         self._initialized  = True
 
 
-    def collect_data(self, queues=None) :
+    def collect_data(self, queues=None, edges=None, types=None) :
         """Tells the queues to collect data on agents.
 
         Parameters
         ----------
-        queues : int, list, tuple (optional)
+        queues : int, `array_like` (optional)
             An integer (or any iterable of integers) identifying the
-            :class:`~QueueServer`(s) that will start collecting data.
-            If ``queues`` is not specified then every ``QueueServer``'s
-            data will start collecting data.
+            :class:`~queueing_tool.queues.QueueServer`\(s) that will start
+            collecting data. If ``queues`` is not specified then every
+            ``QueueServer``\'s data will start collecting data.
+        edges : `array_like` (optional)
+            Explicitly specify which queues to make active by passing either the 
+            edge's source and target vertex indices, or the 
+            :class:`~graph_tool.Edge` . Must have 2 slots with integers in
+            both, or be an iterable of 2-`array_like` objects.
+        types : int or `array_like` (optional)
+            A integer, or a collection of integers identifying which edge types
+            will be set active.
         """
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
-            queues = range(self.nE)
+            if edges is not None :
+                if not isinstance(edges[0], numbers.Integral) :
+                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edges]
+                elif isinstance(edges[0], gt.Edge) :
+                    queues = [self.g.edge_index[e] for e in edges]
+                else :
+                    queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
+            elif types is not None :
+                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), types) )[0]
+            else :
+                queues = range(self.nE)
 
         for k in queues :
             self.edge2queue[k].collect_data = True
 
 
-    def no_collect_data(self, queues=None) :
+    def stop_collecting_data(self, queues=None, edges=None, types=None) :
         """Tells the queues to stop collecting data on agents.
 
         Parameters
         ----------
-        queues : int, list, tuple (optional)
+        queues : int, `array_like` (optional)
             An integer (or any iterable of integers) identifying the
-            :class:`~QueueServer`(s) that will stop collecting data.
-            If ``queues`` is not specified then every ``QueueServer``'s
-            data will stop collecting data.
+            :class:`~queueing_tool.queues.QueueServer`\(s) that will stop 
+            collecting data. If ``queues`` is not specified then every
+            ``QueueServer``\'s data will stop collecting data.
+        edges : `array_like` (optional)
+            Explicitly specify which queues to make active by passing either the 
+            edge's source and target vertex indices, or the 
+            :class:`~graph_tool.Edge` . Must have 2 slots with integers in
+            both, or be an iterable of 2-`array_like` objects.
+        types : int or `array_like` (optional)
+            A integer, or a collection of integers identifying which edge types
+            will be set active.
         """
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
-            queues = range(self.nE)
+            if edges is not None :
+                if not isinstance(edges[0], numbers.Integral) :
+                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edges]
+                elif isinstance(edges[0], gt.Edge) :
+                    queues = [self.g.edge_index[e] for e in edges]
+                else :
+                    queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
+            elif types is not None :
+                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), types) )[0]
+            else :
+                queues = range(self.nE)
 
         for k in queues :
             self.edge2queue[k].collect_data = False
 
 
-    def data_queues(self, queues=None) :
+    def data_queues(self, queues=None, edges=None, types=None) :
         """Fetches data from queues.
 
         Parameters
         ----------
-        queues : int, list, tuple (optional)
+        queues : int, `array_like` (optional)
             An integer (or any iterable of integers) identifying the
-            :class:`~QueueServer`(s) whose data will be retrieved. If ``queues``
-            is not specified then every ``QueueServer``'s data will be retrieved.
+            :class:`~queueing_tool.queues.QueueServer`\(s) whose data will be
+            retrieved. If ``queues`` is not specified then every
+            ``QueueServer``\'s data will be retrieved.
+        edges : `array_like` (optional)
+            Explicitly specify which queues to make active by passing either the 
+            edge's source and target vertex indices, or the 
+            :class:`~graph_tool.Edge` . Must have 2 slots with integers in
+            both, or be an iterable of 2-`array_like` objects.
+        types : int or `array_like` (optional)
+            A integer, or a collection of integers identifying which edge types
+            will be set active.
 
         Returns
         -------
-        out : :class:`~numpu.ndarray`
-            A five column numpy array of all the data. The first, second, and third
-            columns represent, respectively, the arrival, service start, and departure
-            times of an :class:`~queueing_tool.queues.Agent` at a queue. The fourth
-            column identifies how many other agents were in the queue upon arrival, 
-            and the fifth column identifies which queue this occurred at.
+        out : :class:`~numpy.ndarray`
+            A five column numpy array of all the data. The first, second, and
+            third columns represent, respectively, the arrival, service start,
+            and departure times of each :class:`~queueing_tool.queues.Agent`
+            that has visited the queue. The fourth column identifies how many 
+            other agents were in the queue upon arrival, and the fifth column
+            identifies which queue this occurred at.
         """
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
-            queues = range(self.nE)
+            if edges is not None :
+                if not isinstance(edges[0], numbers.Integral) :
+                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edges]
+                elif isinstance(edges[0], gt.Edge) :
+                    queues = [self.g.edge_index[e] for e in edges]
+                else :
+                    queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
+            elif types is not None :
+                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), types) )[0]
+            else :
+                queues = range(self.nE)
 
         data = np.zeros( (1,5) )
         for q in queues :
@@ -326,32 +407,51 @@ class QueueNetwork :
         return data[1:,:]
 
 
-    def data_agents(self, queues=None) :
+    def data_agents(self, queues=None, edges=None, types=None) :
         """Fetches data from queues, and organizes it by agent.
 
         Parameters
         ----------
-        queues : int, list, tuple (optional)
+        queues : int or `array_like` (optional)
             An integer (or any iterable of integers) identifying the
-            :class:`~queueing_tool.queues.QueueServer`(s) whose data will be retrieved.
-            If ``queues`` is not specified then every ``QueueServer``'s data will 
-            be retrieved.
+            :class:`~queueing_tool.queues.QueueServer`\(s) whose data will be
+            retrieved. If ``queues`` is not specified then every
+            ``QueueServer``\'s data will be retrieved.
+        edges : `array_like` (optional)
+            Explicitly specify which queues to make active by passing either the 
+            edge's source and target vertex indices, or the 
+            :class:`~graph_tool.Edge` . Must have 2 slots with integers in
+            both, or be an iterable of 2-`array_like` objects.
+        types : int or `array_like` (optional)
+            A integer, or a collection of integers identifying which edge types
+            will be set active.
 
         Returns
         -------
         out : dict
             Returns a ``dict`` where the keys are the 
-            :class:`~queueing_tool.queues.Agent`'s ``issn`` and the values are
-            :class:`~numpu.ndarray`s for that agents data. The first, second, and third
-            columns represent, respectively, the arrival, service start, and departure
-            times of an ``Agent`` at a queue. The fourth column identifies which
-            queue this occurred at.
+            :class:`~queueing_tool.queues.Agent`\'s ``issn`` and the values are
+            :class:`~numpy.ndarray`\s for that ``Agent``\'s data. The first,
+            second, and third columns represent, respectively, the arrival,
+            service start, and departure times of that ``Agent`` at a queue.
+            The fourth column identifies how many other agents were in the
+            queue upon arrival, and the fifth column identifies which queue
+            this occurred at.
         """
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
-            queues = range(self.nE)
-
+            if edges is not None :
+                if not isinstance(edges[0], numbers.Integral) :
+                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edges]
+                elif isinstance(edges[0], gt.Edge) :
+                    queues = [self.g.edge_index[e] for e in edges]
+                else :
+                    queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
+            elif types is not None :
+                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), types) )[0]
+            else :
+                queues = range(self.nE)
         data = {}
         for q in queues :
             for issn, dat in self.edge2queue[q].data.items() :
@@ -372,22 +472,24 @@ class QueueNetwork :
         return data
 
 
-    def draw(self, out_size=(750, 750), output=None, update_colors=True, **kwargs) :
+    def draw(self, out_size=(700, 700), output=None, update_colors=True, **kwargs) :
         """Draws the network. The coloring of the network corresponds to the 
         number of agents at each queue.
 
         Parameters
         ----------
-        out_size : tuple (optional, the default is (750, 750).
+        out_size : tuple (optional, the default is ``(700, 700)``).
             Specifies the size of canvas. See
-            `graph-tool <http://graph-tool.skewed.de/static/doc/index.html>`_'s documentation.
+            `graph-tool`_ \'s documentation.
         output : str (optional, the default is ``None``)
-            Specifies the directory where the drawing is saved. The default is ``None``, 
-            so the output is drawn using GraphViz.
+            Specifies the directory where the drawing is saved. If output is
+            ``None``, then the results are drawn using GraphViz.
         update_colors : bool (optional, the default is ``True``).
             Specifies whether all the colors are updated.
         **kwargs : 
             Any extra parameters to pass to :func:`~graph_tool.draw.graph_draw`.
+
+            .. _graph-tool: http://graph-tool.skewed.de/static/doc/index.html
         """
         if update_colors :
             self._update_all_colors()
@@ -414,12 +516,13 @@ class QueueNetwork :
         """Draws the network, highlighting active queues.
 
         The colored vertices represent vertices that have at least one queue
-        on an in-edge that is active. Dark edges represent queues that are active,
-        light edges represent queues that are inactive.
+        on an in-edge that is active. Dark edges represent queues that are
+        active, light edges represent queues that are inactive.
 
         Notes
         -----
-        The colors are defined by the class attribute ``colors``.
+        The colors are defined by the class attribute ``colors`` as the keys
+        ``vertex_active``, ``vertex_inactive``, ``edge_active``, ``edge_inactive``.
         """
         for v in self.g.vertices() :
             self.g.vp['vertex_color'][v] = [0, 0, 0, 0.9]
@@ -604,25 +707,32 @@ class QueueNetwork :
         self._queues.sort(reverse=True)
 
 
-    def next_event_type(self) :
-        """Returns whether the next event is either an arrival or a departure.
+    def next_event_description(self) :
+        """Returns whether the next event is either an arrival or a departure
+        and the edge index corresponding to that edge.
 
         Returns
         -------
         out : tuple
-            Returns a 2-tuple where the first entry is an integer indicating
-            whether the next event is an arrival (1) or a departure (2),
-            and the second entry is which queue/edge this corresponds to.
+            Returns a 2-tuple where the first entry indicates whether the next
+            event is an arrival or a departure, and the second entry is which
+            queue/edge this event corresponds to.
 
         Raises
         ------
         IndexError
             This error is raised if there are no events scheduled.
         """
-        return self._queues[-1].next_event_type(), self._queues[-1].edge[2]
+        if len(self._queues) == 0 :
+            ans = "Nothing"
+        else :
+            ad1 = 'Arrival' if self._queues[-1].next_event_description() == 1 else 'Departure'
+            ad2 = self._queues[-1].edge[2]
+            ans = (ad1, ad2)
+        return ans
 
 
-    def _next_event(self, slow=True) :
+    def _simulate_next_event(self, slow=True) :
         n   = len(self._queues)
         if n == 0 :
             self.t  = infty
@@ -632,7 +742,7 @@ class QueueNetwork :
         q1t = q1._time
         e1  = q1.edge[2]
 
-        event  = q1.next_event_type()
+        event  = q1.next_event_description()
         self.t = q1t
 
         if event == 2 : # This is a departure
@@ -722,22 +832,23 @@ class QueueNetwork :
             return True
 
 
-    def animate(self, out_size=(750, 750), **kwargs) :
+    def animate(self, out_size=(700, 700), **kwargs) :
         """Animates the network as it's simulating.
 
         Closing the window ends the animation.
 
         Parameters
         ----------
-        out_size : tuple (optional, the default is (750, 750)).
-            The size of the canvas for the animation.
+        out_size : tuple (optional, the default is ``(700, 700)``).
+            The size of the canvas used for the animation.
         **kwargs :
-            Any extra parameters are passed to :class:`~graph_tool.draw.GraphWindow`.
+            Any extra parameters to pass to :class:`~graph_tool.draw.GraphWindow`.
 
         Raises
         ------
         RuntimeError
-            Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not been initialized. Call
+            Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not
+            been initialized. Call
             :meth:`~queueing_tool.network.QueueNetwork.initialize` before running.
         """
         if not self._initialized :
@@ -760,7 +871,7 @@ class QueueNetwork :
                 vertex_pen_width=self.g.vp['vertex_pen_width'],
                 vertex_size=self.g.vp['vertex_size'], **kwargs)
 
-        cid = GObject.idle_add(self._next_event)
+        cid = GObject.idle_add(self._simulate_next_event)
         self._window.connect("delete_event", Gtk.main_quit)
         self._window.show_all()
         Gtk.main()
@@ -770,20 +881,23 @@ class QueueNetwork :
     def simulate(self, n=None, t=25) :
         """Simulates the network forward.
 
-        This method simulates the network forward for a specified amount of *system time* ``t``,
-        or for a specific number of events ``n``.
+        This method simulates the network forward for a specified amount of
+        *system time* ``t``\, or for a specific number of events ``n``.
 
         Parameters
         ----------
         n : int (optional)
-            The number of events to simulate.
-        t : float (optional, the default is 25)
-            The amount of system time to simulate forward. If ``n`` is ``None`` then this parameter is used.
+            The number of events to simulate. Supercedes the parameter ``t`` if
+            supplied.
+        t : float (optional, the default is ``25``)
+            The amount of system time to simulate forward. If ``n`` is ``None``
+            then this parameter is used.
 
         Raises
         ------
         RuntimeError
-            Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not been initialized. Call
+            Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not been
+            initialized. Call
             :meth:`~queueing_tool.network.QueueNetwork.initialize` before running.
         """
         if not self._initialized :
@@ -791,10 +905,10 @@ class QueueNetwork :
         if n is None :
             now = self.t
             while self.t < now + t :
-                self._next_event(slow=False)
+                self._simulate_next_event(slow=False)
         elif isinstance(n, numbers.Integral) :
             for k in range(n) :
-                self._next_event(slow=False)
+                self._simulate_next_event(slow=False)
 
 
     def reset_colors(self) :
@@ -838,7 +952,8 @@ class QueueNetwork :
         Parameters
         ----------
         queues : int, list, tuple (optional)
-            An integer (or an iterable of integers) identifying the :class:`~QueueServer`
+            An integer (or an iterable of integers) identifying the 
+            :class:`~queueing_tool.queues.QueueServer`
             whose data will be cleared. If ``queues`` is not specified then all
             ``QueueServer``'s data will be cleared.
         """
@@ -885,11 +1000,11 @@ class QueueNetwork :
 class CongestionNetwork(QueueNetwork) :
     """A network of queues that handles congestion by holding back agents.
 
-    This class is identical to the :class:`~QueueNetwork` class, with the
-    only exception being how blocking is handled when an agent is blocked
-    by a :class:`~queueing_tool.queues.LossQueue`. In this network,
-    If an agent will be blocked at his desired destination then he his
-    held back at his current queue and receives an extra service there.
+    This class is identical to the :class:`~QueueNetwork` class, with the only
+    exception being how blocking is handled when an agent is blocked by a
+    :class:`~queueing_tool.queues.LossQueue`. In this network, if an agent will
+    be blocked at his desired destination then they are held back at
+    his current queue and receives an extra service there.
     """
     def __init__(self, g=None, q_classes=None, q_args=None, seed=None) :
         QueueNetwork.__init__(self, g, seed, calcpath)
@@ -899,12 +1014,12 @@ class CongestionNetwork(QueueNetwork) :
         return 'CongestionNetwork. # nodes: %s, edges: %s, agents: %s' % (self.nV, self.nE, np.sum(self.nAgents))
 
 
-    def _next_event(self, slow=True) :
+    def _simulate_next_event(self, slow=True) :
         q1  = self.queues.pop()
         q1t = q1._time
         e1  = q1.edge[2]
 
-        event  = q1.next_event_type()
+        event  = q1.next_event_description()
         self.t = q1t
         self.nEvents += 1 if event else 0
 

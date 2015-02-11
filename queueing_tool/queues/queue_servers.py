@@ -63,81 +63,82 @@ def poisson_random_measure(rate, rate_max, t) :
 class QueueServer :
     """The base queue-server class.
 
-    This is a generic multi-server queue implimentation (from Queueing theory [2]_.
-    In `Kendall's notation <http://en.wikipedia.org/wiki/Kendall%27s_notation>`_,
-    this is a :math:`\\text{GI}_t/\\text{GI}_t/c/\infty/N/\\text{FIFO}` queue.
-
-    Each queue sits on an edge in a graph. When drawing the graph, the queue colors 
-    the edges and the edge's target vertex. 
+    This is a generic multi-server queue implimentation (see [1]_).
+    In `Kendall's notation`_\, this is a 
+    :math:`\\text{GI}_t/\\text{GI}_t/c/\infty/N/\\text{FIFO}` queue.
 
     Note that each parameter is assigned to an attribute of the same name.
 
     Parameters
     ----------
-    nServers : int (optional, the default is 1)
+    nServers : int (optional, the default is ``1``)
         The number of servers servicing agents.
-    edge : tuple (optional, the default is (0,0,0))
-        A tuple that identifies (uniquely) which edge this queue lies on. The
-        first slot of the tuple is the source edge, the second slot is the
-        target/destination edge, and the last slot is the ``edge_index`` of that
-        edge. This is automatically created when a 
+    edge : tuple (optional, the default is ``(0,0,0)``)
+        A tuple that uniquely identifies which edge this queue lies on. The
+        first slot of the tuple is the source vertex, the second slot is the
+        target vertex, and the last slot is the ``edge_index`` of that edge.
+        This is automatically created when a 
         :class:`~queueing_tool.network.QueueNetwork` is instantiated.
-    eType : int (optional, the default is 0)
-        The type of queue this is. Used by :class:`~queueing_tool.network.QueueNetwork`
-        when instantiating a network.
+    eType : int (optional, the default is ``1``)
+        The type of queue this is. Used by
+        :class:`~queueing_tool.network.QueueNetwork` when instantiating a network.
     arrival_f : function (optional, the default is ``lambda t: t + exponential(1)``)
-        A function that returns the time of next arrival from outside the network.
-        When this function is called, ``t`` is always taken to be the current time.
-        Should never return any values less than ``t``, that is, ``arrival_f(t) >= t``.
+        A function that returns the time of next arrival from outside the
+        network. When this function is called, ``t`` is always taken to be the
+        current time. **Should not return any values less than** ``t``, that is,
+        ``arrival_f(t) >= t``.
     service_f : function (optional, the default is ``lambda t: t + exponential(0.9)``)
-        A function that returns the time of an agent's service time completes. When
-        This function is called, ``t`` is the time the agent is entering service.
-        Should never return any values less than ``t``, that is, ``service_f(t) >= t``.
-    AgentClass : class (optional, the default is :class:`~Agent` class)
-        A class object for an :class:`~Agent` or any class object that has inherited the
-        :class:`~Agent` class
+        A function that returns the time of an agent's service time completes.
+        When this function is called, ``t`` is the time the agent is entering
+        service. **Should not return any values less than** ``t``, that is,
+        ``service_f(t) >= t``.
+    AgentClass : class (optional, the default is the :class:`~Agent` class)
+        A class object for an ``Agent`` or any class object that has
+        inherited the ``Agent`` class.
        
     Attributes
     ----------
     nDepartures : int
-        The number of departures from the queue.
+        The total number of departures from the queue.
     nSystem : int
-        The number of agents in the entire queue (including those currently
+        The number of agents in the entire queue (includes those currently
         being served).
     nArrivals : list
         A list with two entries. The first slot is the total number of arrivals,
         while the second slot is the number of arrivals from the outside world.
-    active : bool (the default is False)
-        A variable that specifies whether the queue accepts arrivals from outside
-        the network (queues always accept arrivals from inside the network).
+    active : bool (the default is ``False``)
+        A variable that specifies whether the queue accepts arrivals from
+        outside the network (the queue will always accept arrivals from inside
+        the network).
     active_cap : int (the default is ``numpy.infty``)
-        The maximum number of arrivals the queue will accept from outside the network.
-    collect_data : bool (the default is False)
-        A bool that defines whether the queue keeps :class:`~Agent` data
+        The maximum number of arrivals the queue will accept from outside the
+        network.
+    collect_data : bool (the default is ``False``)
+        A bool that defines whether the queue collects each ``Agent``\'s
+        arrival, service start, and departure times.
     data : dict
-        Keeps track of each :class:`~Agent`'s arrival times, service start time, and
-        departure times of all arrivals, and how many other agents were in the queue
-        upon arrival. The keys are the :class:`~Agent`'s unique ``issn``,
-        and the values is a list of lists. Each time an agent arrives at the queue it
-        appends a list of that agent's arrival times, service start time, and departure
-        times to end of the list.
+        Keeps track of each ``Agent``\'s arrival times, service start time, and
+        departure times, as well as how many other agents were in the queue
+        upon arrival. The keys are the ``Agent``\'s unique ``issn``, and the
+        values is a list of lists. Each time an agent arrives at the
+        queue it appends this data to the end of the list.
     colors : dict
-        A dictionary of the colors used when drawing the graph. The possible colors are
-        ``edge_loop_color``: The default color of the edge if the edge is a loop.
-        ``edge_color``: The normal color a non-loop edge.
-        ``vertex_fill_color``: The normal fill color for a vertex. This colors the target
-        vertex in the graph.
-        ``vertex_color``: The color of the pen for the of the target vertex.
-        The defaults are:
-
+        A dictionary of the colors used when drawing the graph. The possible
+        colors are ``edge_loop_color``: The default color of the edge if the
+        edge is a loop. ``edge_color``: The normal color a non-loop edge.
+        ``vertex_fill_color``: The normal fill color for a vertex; this also
+        colors the target vertex in the graph. ``vertex_color``: The color of
+        the vertex pen of the target vertex. The defaults are listed in the
+        notes.
 
     Notes
     -----
-    See chapter 1 of [3]_
-    (pdf `here <http://www.cs.cmu.edu/~harchol/PerformanceModeling/chpt1.pdf>`_ and 
-    `here <http://assets.cambridge.org/97811070/27503/excerpt/9781107027503_excerpt.pdf>`_)
-    for a good introduction to the theory behind the multi-server queue see 
-    or
+    Each queue sits on an edge in a graph. When drawing the graph, the queue 
+    colors the edges. If the target vertex does not have any loops, the number
+    of agents in this queue affects the target vertex's color as well.
+
+    See chapter 1 of [2]_ (pdfs from `the author`_ and `the publisher`_) for a
+    good introduction to the theory behind the multi-server queue.
 
     Some defaults:
 
@@ -148,13 +149,17 @@ class QueueServer :
 
     References
     ----------
-    .. [2] *Queueing Theory*, Wikipedia `<http://en.wikipedia.org/wiki/Queueing_theory>`_.
-    .. [3] Harchol-Balter, Mor. *Performance Modeling and Design of Computer 
+    .. [1] *Queueing Theory*, Wikipedia `<http://en.wikipedia.org/wiki/Queueing_theory>`_.
+    .. [2] Harchol-Balter, Mor. *Performance Modeling and Design of Computer 
         Systems: Queueing Theory in Action*. Cambridge University Press, 2013. Publisher's
         book webpage `here <http://www.cambridge.org/us/9781107027503>`_ and author's book
         webpage `here <http://www.cs.cmu.edu/~harchol/PerformanceModeling/book.html>`_.
+
+      .. _Kendall's notation: http://en.wikipedia.org/wiki/Kendall%27s_notation
+      .. _the author: http://www.cs.cmu.edu/~harchol/PerformanceModeling/chpt1.pdf
+      .. _the publisher: http://assets.cambridge.org/97811070/27503/excerpt/9781107027503_excerpt.pdf
     """
-    def __init__(self, nServers=1, edge=(0,0,0), eType=0, arrival_f=lambda t: t + exponential(1),
+    def __init__(self, nServers=1, edge=(0,0,0), eType=1, arrival_f=lambda t: t + exponential(1),
                     service_f=lambda t: t + exponential(0.9), AgentClass=Agent, collect_data=False,
                     active_cap=infty, deactive_t=infty, colors=None, **kwargs) :
 
@@ -231,8 +236,8 @@ class QueueServer :
 
 
     def set_active(self) :
-        """Changes the ``active`` attribute to True. The queue now has arrivals 
-        comming from the outside world.
+        """Changes the ``active`` attribute to True. The queue now has arrivals
+        arriving from outside the network.
         """
         self.active = True
         self._add_arrival()
@@ -244,12 +249,21 @@ class QueueServer :
 
 
     def set_nServers(self, n) :
-        """Change the number of servers in the queue to ``n``, where ``n``
-        is positive integer. If ``n`` is not a positive integer than an
-        Exception is raised.
+        """Change the number of servers in the queue to ``n``.
+
+        Parameters
+        ----------
+        n : int ``n``
+            A positive integer to set the number of queues in the system to.
+
+        Raises
+        ------
+        RuntimeError
+            If ``n`` is not an integer (or integer like) and positive then this
+            error is raised.
         """
         if not isinstance(n, numbers.Integral) or n <= 0 :
-            raise Exception("nServers must be positive, tried to set to %s.\n%s" % (n, str(self)) )
+            raise RuntimeError("nServers must be a positive integer, tried to set to %s.\n%s" % (n, str(self)) )
         else :
             self.nServers = n
 
@@ -312,9 +326,17 @@ class QueueServer :
                 self._time = self._departures[0]._time
 
 
-    def next_event_type(self) :
-        """Returns an integer representing whether the next event is an arrival
-        (returns 1), a departure (returns 2) or nothing (returns 0).
+    def next_event_description(self) :
+        """Returns an integer representing whether the next event is an arrival,
+        a departure, or nothing.
+
+        Returns
+        -------
+        out : int
+            An integer representing whether the next event is an arrival or a
+            departure. A ``1`` corresponds to an arrival, a ``2`` corresponds
+            to a departure, and a ``0`` corresponds to nothing scheduled to
+            occur.
         """
         if self._arrivals[0]._time < self._departures[0]._time :
             return 1
@@ -327,9 +349,13 @@ class QueueServer :
 
 
     def next_event(self) :
-        """Simulates the queue forward one event. 
+        """Simulates the queue forward one event.
 
-        If there is a departure then an agent is returned.
+        Returns
+        -------
+        out : 
+            If next event is a departure then the departing agent is returned,
+            otherwise nothing is returned.
         """
         if self._arrivals[0]._time < self._departures[0]._time :
             arrival = heappop(self._arrivals)
@@ -394,20 +420,23 @@ class QueueServer :
 
         Parameters
         ----------
-        which : int (optional, the default is 0)
+        which : int (optional, the default is ``0``)
             Specifies the type of color to return.
 
         Returns
         -------
         color : list
-            Returns a RGBA color. The color is represented as a list with 4 entries
-            where each entry can be any floating point entry between 0 and 1.
+            Returns a RGBA color. The color is represented as a list with 4 
+            entries where each entry can be any floating point number between 0
+            and 1.
 
-            * If ``which`` is 1 the it returns the color of edges that are self loops. 
+            * If ``which`` is 1 then it returns the color of the edge as if it
+              were a self loop.
             * If ``which`` is 2 then it returns the color of the vertex pen color 
-              (defined as color/vertex_color in :func:`~graph_tool.draw.graph_draw>`).
-            * If ``which`` is anything else, then it returns the color a shade of the 
+              (defined as color/vertex_color in :func:`~graph_tool.draw.graph_draw`).
+            * If ``which`` is anything else, then it returns the a shade of the 
               edge that is proportional to the number of agents in the queue.
+              More agents correspond to darker edge colors.
         """
         if which == 1 :
             color = self.colors['edge_loop_color']

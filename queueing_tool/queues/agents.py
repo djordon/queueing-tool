@@ -4,18 +4,18 @@ from numpy.random   import randint
 class Agent :
     """The base class for an agent.
 
-    ``Agents`` are the objects that move throughout the network. ``Agents`` are 
+    ``Agent``\s are the objects that move throughout the network. ``Agents`` are 
     instantiated by a queue, and once serviced the ``Agent`` moves on to another 
     queue in the network. Each ``Agent`` *decides* where in the network it wants 
     to arrive at next but choosing amongst its options (uniformly) at random.
 
     Parameters
     ----------
-    issn : tuple (optional, the default is (0,0))
+    issn : tuple (optional, the default is ``(0,0)``\)
         A unique identifier for an agent. Is set automatically by the
-        :class:`~QueueServer` that instantiates the ``Agent``. The first slot 
-        is the :class:`~QueueServer`'s edge index and the second slot is 
-        specifies the ``Agent``'s instantiation number for that queue.
+        :class:`~QueueServer` that instantiates the ``Agent``\. The first slot 
+        is the ``QueueServer``\'s edge index and the second slot is 
+        specifies the ``Agent``\'s instantiation number for that queue.
 
     Attributes
     ----------

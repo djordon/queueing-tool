@@ -10,8 +10,6 @@ import copy
 class ResourceAgent(Agent) :
     """An agent designed to interact with the :class:`~ResourceQueue` class.
 
-    Based on the :class:`~Agent` class. Overwritten methods documented below.
-
     When an ``ResourceAgent`` departs from a :class:`~ResourceQueue`, they take
     a *resource* from the queue if it does not have a resource yet. It does this
     by reducing the number of servers at that queue by one. If a ``ResourceAgent``
@@ -65,21 +63,20 @@ class ResourceAgent(Agent) :
 class ResourceQueue(LossQueue) :
     """An queue designed to interact with the :class:`~ResourceAgent` class.
 
-    Child of the :class:`~LossQueue` class.
-
-    If a :class:`~ResourceAgent` does not have a resource already it will take 
-    a *resource* from this queue when it departs. It does this by reducing the 
-    number of servers here by one. When that agent arrives to this queue with a 
+    If a ``ResourceAgent`` does not have a resource already it will take a
+    *resource* from this queue when it departs. It does this by reducing the
+    number of servers here by one. When that agent arrives to this queue with a
     resource it adds one to the number of servers here upon arrival.
 
     Attributes
     ----------
     max_servers : int
-        The maximum number of servers that be here. This is a soft max, and it is
-        used to keep track of how often the queue will be overflowing with resources.
+        The maximum number of servers that be here. This is a soft max, and it
+        is used to keep track of how often the queue will be overflowing with
+        resources.
     over_max : int
-        The number of times an agent has deposited a resource here when the number of 
-        servers was at ``max_servers``.
+        The number of times an agent has deposited a resource here when the
+        number of servers was at ``max_servers``\.
     **kwargs :
         Any arguments to pass to :class:`~queueing_tool.queues.LossQueue`.
     """
@@ -115,15 +112,15 @@ class ResourceQueue(LossQueue) :
 
 
     def next_event(self) :
-        """Simulates the queue forward one event. 
+        """Simulates the queue forward one event.
 
-        This method behaves identically to a :class:`~LossQueue` if the 
+        This method behaves identically to a :class:`~LossQueue` if the
         arriving/departing agent anything other than a :class:`~ResourceAgent`.
         The differences are:
-        * If the agent is a :class:`~ResourceAgent` and they have a resource
-        then it deletes it upon arrival and adds one to ``nServers``.
+        * If the agent is a ``ResourceAgent`` and they have a resource
+          then it deletes it upon arrival and adds one to ``nServers``.
         * If the :class:`~ResourceAgent` is arriving without a resource then
-        nothing special happens.
+          nothing special happens.
         """
         if isinstance(self._arrivals[0], ResourceAgent) :
             if self._arrivals[0]._time < self._departures[0]._time :
@@ -209,9 +206,9 @@ class InfoAgent(Agent) :
     ----------
     issn : tuple (optional, the default is (0,0))
         A unique identifier for an agent. Is set automatically by the
-        :class:`~QueueServer` that instantiates the agent. The first slot 
-        is the ``QueueServer``'s edge index and the second slot is 
-        specifies the ``InfoAgent``'s instantiation number for that queue.
+        :class:`~QueueServer` that instantiates the agent. The first slot is
+        the ``QueueServer``'s edge index and the second slot is specifies the
+        ``InfoAgent``'s instantiation number for that queue.
     net_size : int (optional, the default is 1)
         The size of the network.
     **kwargs :
@@ -295,20 +292,19 @@ class InfoAgent(Agent) :
 class InfoQueue(LossQueue) :
     """A queue that stores information about the network.
 
-    This queue gets information about the state of the network
-    (number of ``Agent``'s at other queues and loads) from arriving
-    :class:`~InfoAgent`'s. When an ``InfoAgent`` arrives, the queue
-    extracts all the information the agent has and replaces it's
-    out network information with the agents more up-to-date information
-    (if the agent has any). When an ``InfoAgent`` departs this queue,
-    the queue gives the departing agent all the information it has
-    about the state of the network.
+    This queue gets information about the state of the network (number of
+    ``Agent``'s at other queues and loads) from arriving :class:`~InfoAgent`\'s.
+    When an ``InfoAgent`` arrives, the queue extracts all the information the 
+    agent has and replaces it's own network out network information with the
+    agents more up-to-date information (if the agent has any). When an
+    ``InfoAgent`` departs this queue, the queue gives the departing agent all
+    the information it has about the state of the network.
 
     Parameters
     ----------
     net_size : int (optional, the default is 1)
         The total number of queues/edges in the network.
-    AgentClass : class (optional, the default is :class:`~InfoAgent`)
+    AgentClass : class (optional, the default is ``InfoAgent``\)
         The class of agents that arrive from outside the network.
     qbuffer : int (optional, the default is infinity)
         The maximum length of the queue/line.
