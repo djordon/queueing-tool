@@ -85,7 +85,7 @@ class QueueNetwork :
     -----
     * This class must be initialized before any simulations can take place. To
       initialize, call the :meth:`~initialize` method. If any of the queues are
-      altered, make sure to run the ``initialize`` method again.
+      altered, make sure to re-run the ``initialize`` method again.
     * When simulating the network, the departure of an agent coincides with an 
       arrival to another queue. There is no time lag between these events.
     
@@ -452,6 +452,7 @@ class QueueNetwork :
                 queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), types) )[0]
             else :
                 queues = range(self.nE)
+
         data = {}
         for q in queues :
             for issn, dat in self.edge2queue[q].data.items() :
@@ -879,9 +880,7 @@ class QueueNetwork :
 
 
     def simulate(self, n=None, t=25) :
-        """Simulates the network forward.
-
-        This method simulates the network forward for a specified amount of
+        """This method simulates the network forward for a specified amount of
         *system time* ``t``\, or for a specific number of events ``n``.
 
         Parameters

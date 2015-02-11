@@ -42,15 +42,16 @@ def poisson_random_measure(rate, rate_max, t) :
     Notes
     -----
     This function can only simulate processes that have bounded intensity functions.
-    See Chapter 6 of [1]_ for more on the mathematics behind Poisson random 
-    measures; the publisher has that chapter available online 
-    `here <http://www.springer.com/cda/content/document/cda_downloaddocument/9780387878584-c1.pdf>`_ 
-    (pdf).
+    See Chapter 6 of [R1]_ for more on the mathematics behind Poisson random 
+    measures; the book's publisher, Springer, has that chapter available online
+    (`pdf`_\).
+
+    .. _pdf: http://www.springer.com/cda/content/document/cda_downloaddocument/9780387878584-c1.pdf
 
     References
     ----------
-    ..  [1] Erhan Çınlar, *Probability and stochastics*, Graduate Texts in
-        Mathematics, vol. 261, Springer, New York, 2011. :doi:`10.1007/978-0-387-87859-1`
+    ..  [R1] Çınlar, Erhan. *Probability and stochastics*. Graduate Texts in\
+             Mathematics. Vol. 261. Springer, New York, 2011. :doi:`10.1007/978-0-387-87859-1`
     """
     scale = 1 / rate_max
     t     = t + exponential(scale)
@@ -63,7 +64,7 @@ def poisson_random_measure(rate, rate_max, t) :
 class QueueServer :
     """The base queue-server class.
 
-    This is a generic multi-server queue implimentation (see [1]_).
+    This is a generic multi-server queue implimentation (see [R3]_).
     In `Kendall's notation`_\, this is a 
     :math:`\\text{GI}_t/\\text{GI}_t/c/\infty/N/\\text{FIFO}` queue.
 
@@ -137,7 +138,7 @@ class QueueServer :
     colors the edges. If the target vertex does not have any loops, the number
     of agents in this queue affects the target vertex's color as well.
 
-    See chapter 1 of [2]_ (pdfs from `the author`_ and `the publisher`_) for a
+    See chapter 1 of [R2]_ (pdfs from `the author`_ and `the publisher`_) for a
     good introduction to the theory behind the multi-server queue.
 
     Some defaults:
@@ -149,15 +150,16 @@ class QueueServer :
 
     References
     ----------
-    .. [1] *Queueing Theory*, Wikipedia `<http://en.wikipedia.org/wiki/Queueing_theory>`_.
-    .. [2] Harchol-Balter, Mor. *Performance Modeling and Design of Computer 
-        Systems: Queueing Theory in Action*. Cambridge University Press, 2013. Publisher's
-        book webpage `here <http://www.cambridge.org/us/9781107027503>`_ and author's book
-        webpage `here <http://www.cs.cmu.edu/~harchol/PerformanceModeling/book.html>`_.
+    .. [R2] Harchol-Balter, Mor. *Performance Modeling and Design of Computer Systems:\
+            Queueing Theory in Action*. Cambridge University Press, 2013. ISBN:\
+            `9781107027503`_.
+
+    .. [R3] *Queueing Theory*, Wikipedia `<http://en.wikipedia.org/wiki/Queueing_theory>`_.
 
       .. _Kendall's notation: http://en.wikipedia.org/wiki/Kendall%27s_notation
       .. _the author: http://www.cs.cmu.edu/~harchol/PerformanceModeling/chpt1.pdf
       .. _the publisher: http://assets.cambridge.org/97811070/27503/excerpt/9781107027503_excerpt.pdf
+      .. _9781107027503: http://www.cambridge.org/us/9781107027503
     """
     def __init__(self, nServers=1, edge=(0,0,0), eType=1, arrival_f=lambda t: t + exponential(1),
                     service_f=lambda t: t + exponential(0.9), AgentClass=Agent, collect_data=False,
@@ -512,11 +514,15 @@ class QueueServer :
 
 
 class LossQueue(QueueServer) :
-    """A finite capacity queue. Child of the :class:`~QueueServer` class.
+    """A finite capacity queue.
 
     If the buffer is some finite value, then agents that arrive to the queue 
     are turned around and sent out of the queue. Essentially becomes a 
-    ``QueueServer`` if the buffer/capacity is set to ``np.infty``.
+    ``QueueServer`` if the buffer/capacity is set to ``np.infty``. In 
+    `Kendall's notation`_\, this is a
+    :math:`\\text{GI}_t/\\text{GI}_t/c/k/N/\\text{FIFO}` queue, where :math:`k`
+    is the ``qbuffer``. If the default parameters used, then this is a
+    :math:`\\text{M}/\\text{M}/1/1` queue.
 
     Parameters
     ----------
@@ -624,8 +630,9 @@ class LossQueue(QueueServer) :
 class NullQueue(QueueServer) :
     """A terminal queue.
 
-    A queue that is used but the ``QueueNetwork`` class to represent 
-    agents leaving the network.
+    A queue that is used but the ``QueueNetwork`` class to represent agents
+    leaving the network. It can collect data on agents that arrive, but all
+    arriving agents are deleted after their arrival.
     """
     def __init__(self, *args, **kwargs) :
 
@@ -654,7 +661,12 @@ class NullQueue(QueueServer) :
         return 0
 
     def _add_arrival(self, *args, **kwargs) :
-        pass
+        arrival = args[0]
+        if self.collect_data :
+            if arrival.issn not in self.data :
+                self.data[arrival.issn] = [[arrival._time, 0, 0, 0]]
+            else :
+                self.data[arrival.issn].append([arrival._time, 0, 0, 0])
 
     def _add_departure(self, *args, **kwargs) :
         pass

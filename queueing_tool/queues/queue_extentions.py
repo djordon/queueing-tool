@@ -116,11 +116,17 @@ class ResourceQueue(LossQueue) :
 
         This method behaves identically to a :class:`~LossQueue` if the
         arriving/departing agent anything other than a :class:`~ResourceAgent`.
-        The differences are:
-        * If the agent is a ``ResourceAgent`` and they have a resource
-          then it deletes it upon arrival and adds one to ``nServers``.
-        * If the :class:`~ResourceAgent` is arriving without a resource then
+        The differences are; **Arriving**:
+
+        * If the ``ResourceAgent`` has a resource then it deletes the agent
+          upon arrival and adds one to ``nServers``.
+        * If the ``ResourceAgent`` is arriving without a resource then
           nothing special happens.
+        **Departing**:
+        * If the ``ResourceAgent`` does not have a resource, then ``nServers``
+          decreases by one and the agent then *has a resource*.
+
+        Nothing else.
         """
         if isinstance(self._arrivals[0], ResourceAgent) :
             if self._arrivals[0]._time < self._departures[0]._time :

@@ -19,7 +19,7 @@ import os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../python/modules/queueing_tool'))
+sys.path.insert(0, os.path.abspath('../../python/modules/queueing_tool'))
 sys.path.append(os.path.abspath('sphinxext'))
 
 # -- General configuration ------------------------------------------------
@@ -33,11 +33,12 @@ sys.path.append(os.path.abspath('sphinxext'))
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
+    'sphinx.ext.extlinks',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinx.ext.doctest',
     'numpydoc',
 ]
 
@@ -45,6 +46,8 @@ intersphinx_mapping = {'python': ('http://docs.python.org/3', None),
                        'numpy': ('http://docs.scipy.org/doc/numpy', None),
                        'graphtool': ('http://graph-tool.skewed.de/static/doc/', None)}
 
+extlinks = {'doi': ('http://dx.doi.org/%s', 'DOI: '),
+            'arxiv': ('http://arxiv.org/abs/%s', 'arXiv: ')}
 
 numpydoc_show_class_members = False
 
