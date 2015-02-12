@@ -20,18 +20,18 @@ class QueueNetwork :
     the scheduling of events.
 
     Each edge on the graph has a *type*, and this *type* is used to define the
-    type of ``QueueServer`` that sits on that edge.
+    type of :class:`.QueueServer` that sits on that edge.
 
     Parameters
     ----------
     g : str or :class:`~graph_tool.Graph`
         The graph specifies the network on which the queues sit.
     q_classes : dict (optional)
-        Used to Specify the :class:`~queueing_tool.queues.QueueServer` class
+        Used to Specify the :class:`.QueueServer` class
         for each edge type.
     q_args : dict (optional)
         Used to specify the class arguments for each type of
-        :class:`~queueing_tool.queues.QueueServer`.
+        :class:`.QueueServer`\.
     seed : int (optional)
         An integer used to initialize ``numpy``'s and ``graph-tool``'s
         psuedorandom number generators.
@@ -53,7 +53,8 @@ class QueueNetwork :
         edge with edge index ``k``.
     nAgents : :class:`~numpy.ndarray`
         A one-dimensional array where the ``k``'th entry corresponds to the
-        total number of agents in the ``QueueServer`` with edge index ``k``.
+        total number of agents in the :class:`.QueueServer` with edge index
+        ``k``.
     nEdges : int
         The number of edges in the graph.
     nEvents : int
@@ -77,9 +78,6 @@ class QueueNetwork :
     TypeError
         The parameter ``g`` must be either a :class:`~graph_tool.Graph`, a string or
         file location to a graph, or ``None``. Raises a :exc:`~TypeError` otherwise.
-
-    Methods
-    -------
 
     Notes
     -----
@@ -210,27 +208,27 @@ class QueueNetwork :
     def initialize(self, nActive=1, queues=None, edges=None, types=None) :
         """Prepares the ``QueueNetwork`` for simulation.
 
-        Each :class:`~queueing_tool.queues.QueueServer` in the network starts inactive,
-        which means they do not accept arrivals from outside the network, and they have
-        no :class:`~queueing_tool.queues.Agent`\s in their system. Note that in order to
-        simulate the ``QueueNetwork``, there must be at least one ``Agent`` in the
-        network. This method sets queues to active, which then allows agents to arrive
-        from outside the network.
+        Each :class:`.QueueServer` in the network starts inactive,
+        which means they do not accept arrivals from outside the network, and
+        they have no :class:`.Agent`\s in their system. Note that in order to
+        simulate the :class:`.QueueServer`\, there must be at least one
+        :class:`.Agent` in the network. This method sets queues to active,
+        which then allows agents to arrive from outside the network.
 
         Parameters
         ----------
         nActive : int (optional, the default is ``1``)
             The number of queues to set as active. The queues are selected randomly.
-        queues : `array_like` (optional)
+        queues : *array_like* (optional)
             Used to explicitly specify which queues to make active by passing
-            their edge index. Must be an iterable of integers representing edges
-            in the graph.
-        edges : `array_like` (optional)
-            Explicitly specify which queues to make active by passing either the 
-            edge's source and target vertex indices, or the 
-            :class:`~graph_tool.Edge` . Must have 2 slots with integers in
-            both, or be an iterable of 2-`array_like` objects.
-        types : int or `array_like` (optional)
+            their edge index. Must be an iterable of integers representing
+            edges/queues in the graph.
+        edges : 2-tuple of int or *array_like* (optional)
+            Explicitly specify which queues to make active. Must be either: a
+            2-tuple of the edge's source and target vertex indices, an iterable
+            of 2-tuples of the edge's source and target vertex indices, an 
+            iterable of :class:`~graph_tool.Edge`\(s).
+        types : int or *array_like* (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
 
@@ -277,17 +275,17 @@ class QueueNetwork :
 
         Parameters
         ----------
-        queues : int, `array_like` (optional)
+        queues : int, *array_like* (optional)
             An integer (or any iterable of integers) identifying the
-            :class:`~queueing_tool.queues.QueueServer`\(s) that will start
-            collecting data. If ``queues`` is not specified then every
-            ``QueueServer``\'s data will start collecting data.
-        edges : `array_like` (optional)
-            Explicitly specify which queues to make active by passing either the 
-            edge's source and target vertex indices, or the 
-            :class:`~graph_tool.Edge` . Must have 2 slots with integers in
-            both, or be an iterable of 2-`array_like` objects.
-        types : int or `array_like` (optional)
+            :class:`.QueueServer`\(s) that will start collecting data. If 
+            ``queues`` is not specified then every :class:`.QueueServer`\'s
+            data will start collecting data.
+        edges : 2-tuple of int or *array_like* (optional)
+            Explicitly specify which queues to make active. Must be either: a
+            2-tuple of the edge's source and target vertex indices, an iterable
+            of 2-tuples of the edge's source and target vertex indices, an 
+            iterable of :class:`~graph_tool.Edge`\(s).
+        types : int or *array_like* (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
         """
@@ -315,17 +313,17 @@ class QueueNetwork :
 
         Parameters
         ----------
-        queues : int, `array_like` (optional)
+        queues : int, *array_like* (optional)
             An integer (or any iterable of integers) identifying the
-            :class:`~queueing_tool.queues.QueueServer`\(s) that will stop 
-            collecting data. If ``queues`` is not specified then every
-            ``QueueServer``\'s data will stop collecting data.
-        edges : `array_like` (optional)
-            Explicitly specify which queues to make active by passing either the 
-            edge's source and target vertex indices, or the 
-            :class:`~graph_tool.Edge` . Must have 2 slots with integers in
-            both, or be an iterable of 2-`array_like` objects.
-        types : int or `array_like` (optional)
+            :class:`.QueueServer`\(s) that will stop collecting data. If
+            ``queues`` is not specified then every :class:`.QueueServer`\'s
+            data will stop collecting data.
+        edges : 2-tuple of int or *array_like* (optional)
+            Explicitly specify which queues to make active. Must be either: a
+            2-tuple of the edge's source and target vertex indices, an iterable
+            of 2-tuples of the edge's source and target vertex indices, an 
+            iterable of :class:`~graph_tool.Edge`\(s).
+        types : int or *array_like* (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
         """
@@ -353,29 +351,29 @@ class QueueNetwork :
 
         Parameters
         ----------
-        queues : int, `array_like` (optional)
+        queues : int or an *array_like* of int, (optional)
             An integer (or any iterable of integers) identifying the
-            :class:`~queueing_tool.queues.QueueServer`\(s) whose data will be
-            retrieved. If ``queues`` is not specified then every
-            ``QueueServer``\'s data will be retrieved.
-        edges : `array_like` (optional)
-            Explicitly specify which queues to make active by passing either the 
-            edge's source and target vertex indices, or the 
-            :class:`~graph_tool.Edge` . Must have 2 slots with integers in
-            both, or be an iterable of 2-`array_like` objects.
-        types : int or `array_like` (optional)
+            :class:`.QueueServer`\(s) whose data will be retrieved. If 
+            ``queues`` is not specified then every :class:`.QueueServer`\'s 
+            data will be retrieved.
+        edges : 2-tuple of int or *array_like* (optional)
+            Explicitly specify which queues to make active. Must be either: a
+            2-tuple of the edge's source and target vertex indices, an iterable
+            of 2-tuples of the edge's source and target vertex indices, an 
+            iterable of :class:`~graph_tool.Edge`\(s).
+        types : int or *array_like* (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
 
         Returns
         -------
-        out : :class:`~numpy.ndarray`
+        :class:`~numpy.ndarray`
             A five column numpy array of all the data. The first, second, and
             third columns represent, respectively, the arrival, service start,
-            and departure times of each :class:`~queueing_tool.queues.Agent`
-            that has visited the queue. The fourth column identifies how many 
-            other agents were in the queue upon arrival, and the fifth column
-            identifies which queue this occurred at.
+            and departure times of each :class:`.Agent` that has visited the
+            queue. The fourth column identifies how many other agents were in
+            the queue upon arrival, and the fifth column identifies which queue
+            this occurred at.
         """
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
@@ -412,31 +410,30 @@ class QueueNetwork :
 
         Parameters
         ----------
-        queues : int or `array_like` (optional)
+        queues : int or *array_like* (optional)
             An integer (or any iterable of integers) identifying the
-            :class:`~queueing_tool.queues.QueueServer`\(s) whose data will be
-            retrieved. If ``queues`` is not specified then every
-            ``QueueServer``\'s data will be retrieved.
-        edges : `array_like` (optional)
-            Explicitly specify which queues to make active by passing either the 
-            edge's source and target vertex indices, or the 
-            :class:`~graph_tool.Edge` . Must have 2 slots with integers in
-            both, or be an iterable of 2-`array_like` objects.
-        types : int or `array_like` (optional)
+            :class:`.QueueServer`\(s) whose data will be retrieved. If 
+            ``queues`` is not specified then every :class:`.QueueServer`\'s 
+            data will be retrieved.
+        edges : 2-tuple of int or *array_like* (optional)
+            Explicitly specify which queues to make active. Must be either: a
+            2-tuple of the edge's source and target vertex indices, an iterable
+            of 2-tuples of the edge's source and target vertex indices, an 
+            iterable of :class:`~graph_tool.Edge`\(s).
+        types : int or *array_like* (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
 
         Returns
         -------
-        out : dict
-            Returns a ``dict`` where the keys are the 
-            :class:`~queueing_tool.queues.Agent`\'s ``issn`` and the values are
-            :class:`~numpy.ndarray`\s for that ``Agent``\'s data. The first,
-            second, and third columns represent, respectively, the arrival,
-            service start, and departure times of that ``Agent`` at a queue.
-            The fourth column identifies how many other agents were in the
-            queue upon arrival, and the fifth column identifies which queue
-            this occurred at.
+        dict
+            Returns a ``dict`` where the keys are the :class:`.Agent`\'s 
+            ``issn`` and the values are :class:`~numpy.ndarray`\s for that
+            :class:`.Agent`\'s data. The first, second, and third columns
+            represent, respectively, the arrival, service start, and departure
+            times of that :class:`.Agent` at a queue; the fourth column
+            identifies how many other agents were in the queue upon arrival,
+            and the fifth column identifies which queue this occurred at.
         """
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
@@ -481,16 +478,16 @@ class QueueNetwork :
         ----------
         out_size : tuple (optional, the default is ``(700, 700)``).
             Specifies the size of canvas. See
-            `graph-tool`_ \'s documentation.
+            ``graph-tool``\'s `documentation`_.
         output : str (optional, the default is ``None``)
             Specifies the directory where the drawing is saved. If output is
             ``None``, then the results are drawn using GraphViz.
         update_colors : bool (optional, the default is ``True``).
             Specifies whether all the colors are updated.
-        **kwargs : 
+        kwargs
             Any extra parameters to pass to :func:`~graph_tool.draw.graph_draw`.
 
-            .. _graph-tool: http://graph-tool.skewed.de/static/doc/index.html
+            .. _documentation: http://graph-tool.skewed.de/static/doc/index.html
         """
         if update_colors :
             self._update_all_colors()
@@ -553,8 +550,8 @@ class QueueNetwork :
     def show_type(self, n) :
         """Draws the network, highlighting queues of a certain type.
 
-        The colored vertices represent self loops of type ``n``. Dark edges represent
-        queues of type ``n``.
+        The colored vertices represent self loops of type ``n``. Dark edges
+        represent queues of type ``n``.
 
         Parameters
         ----------
@@ -714,7 +711,7 @@ class QueueNetwork :
 
         Returns
         -------
-        out : tuple
+        tuple
             Returns a 2-tuple where the first entry indicates whether the next
             event is an arrival or a departure, and the second entry is which
             queue/edge this event corresponds to.
@@ -849,8 +846,7 @@ class QueueNetwork :
         ------
         RuntimeError
             Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not
-            been initialized. Call
-            :meth:`~queueing_tool.network.QueueNetwork.initialize` before running.
+            been initialized. Call :meth:`.initialize` before running.
         """
         if not self._initialized :
             raise RuntimeError("Network has not been initialized. Call 'initialize()' first.")
@@ -896,8 +892,7 @@ class QueueNetwork :
         ------
         RuntimeError
             Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not been
-            initialized. Call
-            :meth:`~queueing_tool.network.QueueNetwork.initialize` before running.
+            initialized. Call :meth:`.initialize` before running.
         """
         if not self._initialized :
             raise RuntimeError("Network has not been initialized. Call '.initialize()' first.")
@@ -925,10 +920,8 @@ class QueueNetwork :
         """Resets the queue to its initial state.
 
         The attributes ``t``, ``nEvents``, ``nAgents`` are set to zero
-        :meth:`~queueing_tool.network.QueueNetwork.reset_colors` is called;
-        and the :class:`~queueing_tool.queues.QueueServer` method
-        :meth:`~queueing_tool.queues.QueueServer.clear` is called for each
-        queue in the network.
+        :meth:`.reset_colors` is called; and the :class:`.QueueServer` method
+        :meth:`.clear` is called for each queue in the network.
 
         Notes
         -----
@@ -950,11 +943,10 @@ class QueueNetwork :
 
         Parameters
         ----------
-        queues : int, list, tuple (optional)
-            An integer (or an iterable of integers) identifying the 
-            :class:`~queueing_tool.queues.QueueServer`
-            whose data will be cleared. If ``queues`` is not specified then all
-            ``QueueServer``'s data will be cleared.
+        queues : int or an iterable of int (optional)
+            An integer (or an iterable of integers) identifying the
+            :class:`.QueueServer` whose data will be cleared. If ``queues`` is
+            not specified then all :class:`.QueueServer`\'s data will be cleared.
         """
         queues = [queues] if isinstance(queues, numbers.Integral) else queues
 

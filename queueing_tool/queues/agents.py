@@ -4,17 +4,18 @@ from numpy.random   import randint
 class Agent :
     """The base class for an agent.
 
-    ``Agent``\s are the objects that move throughout the network. ``Agents`` are 
-    instantiated by a queue, and once serviced the ``Agent`` moves on to another 
-    queue in the network. Each ``Agent`` *decides* where in the network it wants 
-    to arrive at next but choosing amongst its options (uniformly) at random.
+    ``Agent``\s are the objects that move throughout the network. ``Agents``
+    are instantiated by a queue, and once serviced the ``Agent`` moves on to
+    another queue in the network. Each ``Agent`` *decides* where in the network
+    it wants to arrive at next but choosing amongst its options (uniformly) at
+    random.
 
     Parameters
     ----------
     issn : tuple (optional, the default is ``(0,0)``\)
         A unique identifier for an agent. Is set automatically by the
-        :class:`~QueueServer` that instantiates the ``Agent``\. The first slot 
-        is the ``QueueServer``\'s edge index and the second slot is 
+        :class:`.QueueServer` that instantiates the ``Agent``\. The first slot
+        is the :class:`.QueueServer`\'s edge index and the second slot is
         specifies the ``Agent``\'s instantiation number for that queue.
 
     Attributes
@@ -22,7 +23,8 @@ class Agent :
         issn : tuple
             A unique identifier for an agent.
         blocked : int
-            Specifies how many times an agent has been blocked by a finite capacity queue.
+            Specifies how many times an agent has been blocked by a finite
+            capacity queue.
     """
     def __init__(self, issn=(0,0), **kwargs) :
         self.issn     = issn
@@ -59,31 +61,31 @@ class Agent :
 
 
     def add_loss(self, *args, **kwargs) :
-        """Adds one to the number of times the agent has been blocked from entering a
-        finite capacity queue.
+        """Adds one to the number of times the agent has been blocked from
+        entering a finite capacity queue.
         """
         self.blocked   += 1 
 
 
     def desired_destination(self, network, edge) :
-        """Returns the agents next destination given their current location on the
-        network.
+        """Returns the agents next destination given their current location on
+        the network.
 
         An ``Agent`` chooses one of the out edges uniformly at random.
 
         Parameters
         ----------
-        network : :class:`~queueing_tool.network.QueueNetwork`
+        network : :class:`.QueueNetwork`
         edge : tuple
-            A 3-tuple indicating which edge this agent is located at. The first two 
-            slots indicate the current edge's source and target vertices, while the
-            third slot indicates this edges ``edge_index``.
+            A 3-tuple indicating which edge this agent is located at. The first
+            two slots indicate the current edge's source and target vertices,
+            while the third slot indicates this edges ``edge_index``.
 
         Returns
         -------
-        out : int
-            Returns an the edge index corresponding to the agents next edge to visit
-            in the network. 
+        int
+            Returns an the edge index corresponding to the agents next edge to
+            visit in the network.
         """
         n   = len( network.out_edges[edge[1]] )
         d   = randint(0, n)
@@ -92,8 +94,8 @@ class Agent :
 
 
     def queue_action(self, queue, *args, **kwargs) :
-        """A function that acts on the queue that it is departing from. By default it does
-        nothing to the queue.
+        """A function that acts on the queue that it is departing from. By
+        default it does nothing to the queue.
         """
         pass
 
@@ -115,25 +117,26 @@ class GreedyAgent(Agent) :
         return "GreedyAgent. edge: %s, time: %s" % (self.issn, self._time)
 
     def desired_destination(self, network, edge) :
-        """Returns the agents next destination given their current location on the
-        network. 
+        """Returns the agents next destination given their current location on
+        the network.
 
         ``GreedyAgents`` choose their next destination with-in the network by
-        picking the adjacent queue with the fewest number of ``Agents`` in the queue.
+        picking the adjacent queue with the fewest number of ``Agents`` in the
+        queue.
 
         Parameters
         ----------
-        network : :class:`~queueing_tool.network.QueueNetwork`
+        network : :class:`.QueueNetwork`
         edge : tuple
-            A 3-tuple indicating which edge this agent is located at. The first two 
-            slots indicate the current edge's source and target vertices, while the
-            third slot indicates this edge's ``edge_index``.
+            A 3-tuple indicating which edge this agent is located at. The first
+            two slots indicate the current edge's source and target vertices,
+            while the third slot indicates this edges ``edge_index``.
 
         Returns
         -------
-        out : int
-            Returns an the edge index corresponding to the agents next edge to visit
-            in the network. 
+        int
+            Returns an the edge index corresponding to the agents next edge to
+            visit in the network. 
         """
         adjacent_edges = network.out_edges[edge[1]]
         d = argmin([network.edge2queue[d].nQueued() for d in adjacent_edges])
@@ -141,9 +144,9 @@ class GreedyAgent(Agent) :
 
 
 class InftyAgent :
-    """An special agent that only operates within the ``QueueServer`` class.
+    """An special agent that only operates within the :class:`.QueueServer` class.
 
-    This agent never interacts with the ``QueueNetwork``.
+    This agent never interacts with the :class:`.QueueNetwork`.
     """
     def __init__(self) :
         self._time = infty

@@ -5,13 +5,20 @@ Queueing networks
 
    .. autoclass:: QueueNetwork
 
+Simulation methods
+------------------
+
+      .. automethod:: QueueNetwork.initialize
+      .. automethod:: QueueNetwork.simulate
+
+
 Data methods
 ------------
 
       .. automethod:: QueueNetwork.collect_data
-      .. automethod:: QueueNetwork.stop_collecting_data
-      .. automethod:: QueueNetwork.data_queues
       .. automethod:: QueueNetwork.data_agents
+      .. automethod:: QueueNetwork.data_queues
+      .. automethod:: QueueNetwork.stop_collecting_data
 
 Graph drawing methods
 ---------------------
@@ -26,10 +33,10 @@ Generic methods
 
       .. automethod:: QueueNetwork.clear
       .. automethod:: QueueNetwork.clear_data
-      .. automethod:: QueueNetwork.reset_colors
-      .. automethod:: QueueNetwork.next_event_description
       .. automethod:: QueueNetwork.copy
+      .. automethod:: QueueNetwork.next_event_description
+      .. automethod:: QueueNetwork.reset_colors
 
-    .. autoclass:: CongestionNetwork
+   .. autoclass:: CongestionNetwork
       :members:
       :show-inheritance:

@@ -11,6 +11,7 @@
 
 @import url("basic.css");
 
+
 /* -- page layout ----------------------------------------------------------- */
 
 body {
@@ -28,6 +29,7 @@ body {
     min-width: 780px;
     max-width: 1080px;
 }
+
 
 .pageheader {
     background-image: url(headerbg.png);
@@ -269,19 +271,21 @@ a.headerlink:hover {
     color: white!important;
 }
 
+/* Changed: changed font-family, removed letter spacing  */
 cite, code, tt {
-    font-family: 'Consolas', 'DejaVu Sans Mono',
-                 'Bitstream Vera Sans Mono', monospace;
-    font-size: 14px;
-    letter-spacing: -0.02em;
+    font-family: Monaco, Consolas, "Lucida Console", monospace;
+    font-size: 95%;
 }
 
-tt {
-    background-color: #f2f2f2;
-    border: 1px solid #ddd;
-    border-radius: 2px;
-    color: #333;
-    padding: 1px;
+
+tt.literal {
+    padding: 2px 4px;
+    color: #4E4E4E;
+    background-color: #F0F0F0;
+}
+
+div.body a.reference {
+    text-decoration: none;
 }
 
 tt.descname, tt.descclassname, tt.xref {
@@ -336,9 +340,10 @@ div.topic {
     background-color: #f8f8f8;
 }
 
+/* Changed margin left and right to 0 from -0.5em*/
 table {
     border-collapse: collapse;
-    margin: 0 -0.5em 0 -0.5em;
+    margin: 0;
 }
 
 table td, table th {
@@ -394,3 +399,64 @@ div.viewcode-block:target {
     border-top: 1px solid #ac9;
     border-bottom: 1px solid #ac9;
 }
+
+
+dl.function, dl.class, dl.exception {
+    border-top-style: solid;
+    border-top-width: 3px;
+/*  padding-top: 1em;
+    clear: both;*/
+}
+
+dl.function dt, dl.class dt, dl.exception dt{
+    background-color: #e7f2fa;
+    padding-top: 0.5em;
+    padding-right: 0.5em;
+    padding-bottom: 0.5em;
+    padding-left: 0.5em;
+}
+
+dl.method {
+    border-top-style: solid;
+    border-top-width: 2px;
+    border-color: #6ab0de;
+/*  padding-top: 1em;
+    clear: both;*/
+}
+
+dl.method dt {
+    background-color: #e7f2fa;
+    padding-top: 0.3em;
+    padding-right: 0.3em;
+    padding-bottom: 0.3em;
+    padding-left: 0.3em;
+}
+
+dl.function dt:target, dl.class dt:target, dl.exception dt:target,
+dl.method dt:target, .highlighted {
+    background-color: #FBE54E;
+}
+
+table.docutils tbody tr.row-even {
+    background-color: #EFEFEF;
+}
+
+table.docutils td, table.docutils th {
+    border-width: 0;
+    padding: 2px 8px 2px 0px;
+}
+
+table.field-list {
+    margin-left: 1px;
+    border-left: 5px solid #EEE !important;
+    border-collapse: collapse;
+    border-spacing: 5px;
+}
+
+table.field-list th.field-name {
+    display: inline-block;
+    padding: ; 2px 8px 2px 5px;
+    background-color: #EEE;
+    white-space: nowrap;
+}
+

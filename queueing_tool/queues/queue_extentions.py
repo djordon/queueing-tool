@@ -8,13 +8,13 @@ import copy
 
 
 class ResourceAgent(Agent) :
-    """An agent designed to interact with the :class:`~ResourceQueue` class.
+    """An agent designed to interact with the :class:`.ResourceQueue` class.
 
-    When an ``ResourceAgent`` departs from a :class:`~ResourceQueue`, they take
+    When an ``ResourceAgent`` departs from a :class:`.ResourceQueue`, they take
     a *resource* from the queue if it does not have a resource yet. It does this
     by reducing the number of servers at that queue by one. If a ``ResourceAgent``
-    with a resource arrives at the next :class:`~ResourceQueue` (this could be the
-    same queue) the :class:`~ResourceQueue` adds a resource to that queue by adding
+    with a resource arrives at the next :class:`.ResourceQueue` (this could be the
+    same queue) the :class:`.ResourceQueue` adds a resource to that queue by adding
     increasing the number of servers there by one; the ``ResourceAgent`` is then deleted.
     """
     def __init__(self, issn) :
@@ -27,19 +27,19 @@ class ResourceAgent(Agent) :
 
 
     def queue_action(self, queue, *args, **kwargs) :
-        """Function that specifies the interaction with a :class:`~ResourceQueue` 
+        """Function that specifies the interaction with a :class:`.ResourceQueue` 
         upon departure.
 
-        Upon departure from a :class:`~ResourceQueue` (or a :class:`~QueueServer`), this
-        method is called where the ``queue`` is the :class:`~ResourceQueue` that the agent
+        Upon departure from a :class:`.ResourceQueue` (or a :class:`.QueueServer`), this
+        method is called where the ``queue`` is the :class:`.ResourceQueue` that the agent
         is departing from. If the agent does not already have a resource then it decrements
-        the number of servers at :class:`~ResourceQueue` by one.
+        the number of servers at :class:`.ResourceQueue` by one.
 
         Parameters
         ----------
-        queue : :class:`~QueueServer`
+        queue : :class:`.QueueServer`
             The instance of the queue that the ``ResourceAgent`` will interact with. If
-            It's not a :class:`~ResourceQueue` then it does nothing.
+            It's not a :class:`.ResourceQueue` then it does nothing.
         """
         if isinstance(queue, ResourceQueue) :
             if self._has_resource :
@@ -61,10 +61,10 @@ class ResourceAgent(Agent) :
 
 
 class ResourceQueue(LossQueue) :
-    """An queue designed to interact with the :class:`~ResourceAgent` class.
+    """An queue designed to interact with the :class:`.ResourceAgent` class.
 
-    If a ``ResourceAgent`` does not have a resource already it will take a
-    *resource* from this queue when it departs. It does this by reducing the
+    If a :class:`.ResourceAgent` does not have a resource already it will take
+    a *resource* from this queue when it departs. It does this by reducing the
     number of servers here by one. When that agent arrives to this queue with a
     resource it adds one to the number of servers here upon arrival.
 
@@ -77,8 +77,8 @@ class ResourceQueue(LossQueue) :
     over_max : int
         The number of times an agent has deposited a resource here when the
         number of servers was at ``max_servers``\.
-    **kwargs :
-        Any arguments to pass to :class:`~queueing_tool.queues.LossQueue`.
+    kwargs
+        Any arguments to pass to :class:`.LossQueue`\.
     """
     def __init__(self, nServers=10, AgentClass=ResourceAgent, qbuffer=0, **kwargs) :
 
@@ -114,17 +114,17 @@ class ResourceQueue(LossQueue) :
     def next_event(self) :
         """Simulates the queue forward one event.
 
-        This method behaves identically to a :class:`~LossQueue` if the
-        arriving/departing agent anything other than a :class:`~ResourceAgent`.
+        This method behaves identically to a :class:`.LossQueue` if the
+        arriving/departing agent anything other than a :class:`.ResourceAgent`.
         The differences are; **Arriving**:
 
-        * If the ``ResourceAgent`` has a resource then it deletes the agent
-          upon arrival and adds one to ``nServers``.
-        * If the ``ResourceAgent`` is arriving without a resource then
-          nothing special happens.
+        # If the :class:`.ResourceAgent` has a resource then it deletes the
+        agent upon arrival and adds one to ``nServers``.
+        # If the :class:`.ResourceAgent` is arriving without a resource then
+        nothing special happens.
         **Departing**:
-        * If the ``ResourceAgent`` does not have a resource, then ``nServers``
-          decreases by one and the agent then *has a resource*.
+        # If the :class:`.ResourceAgent` does not have a resource, then
+        ``nServers`` decreases by one and the agent then *has a resource*.
 
         Nothing else.
         """
@@ -205,20 +205,20 @@ class ResourceQueue(LossQueue) :
 class InfoAgent(Agent) :
     """An agent that carries information about the queue around.
 
-    This agent is designed to work with the :class:`~InfoQueue`. It
+    This agent is designed to work with the :class:`.InfoQueue`. It
     collects load data from each queue that it visits.
 
     Parameters
     ----------
     issn : tuple (optional, the default is (0,0))
         A unique identifier for an agent. Is set automatically by the
-        :class:`~QueueServer` that instantiates the agent. The first slot is
-        the ``QueueServer``'s edge index and the second slot is specifies the
-        ``InfoAgent``'s instantiation number for that queue.
+        :class:`.QueueServer` that instantiates the agent. The first slot is
+        the :class:`.QueueServer`\'s edge index and the second slot is specifies
+        the :class:`.InfoAgent`\'s instantiation number for that queue.
     net_size : int (optional, the default is 1)
         The size of the network.
     **kwargs :
-        Any arguments to pass to :class:`~queueing_tool.queues.Agent`.        
+        Any arguments to pass to :class:`.Agent`.
     """
     def __init__(self, issn=(0,0), net_size=1, **kwargs) :
         Agent.__init__(self, issn, **kwargs)
@@ -299,23 +299,24 @@ class InfoQueue(LossQueue) :
     """A queue that stores information about the network.
 
     This queue gets information about the state of the network (number of
-    ``Agent``'s at other queues and loads) from arriving :class:`~InfoAgent`\'s.
-    When an ``InfoAgent`` arrives, the queue extracts all the information the 
-    agent has and replaces it's own network out network information with the
-    agents more up-to-date information (if the agent has any). When an
-    ``InfoAgent`` departs this queue, the queue gives the departing agent all
-    the information it has about the state of the network.
+    :class:`.Agent`\'s at other queues and loads) from arriving 
+    :class:`.InfoAgent`\'s. When an :class:`.InfoAgent` arrives, the queue
+    extracts all the information the agent has and replaces it's own network
+    out network information with the agents more up-to-date information (if the
+    agent has any). When an :class:`.InfoAgent` departs this queue, the queue
+    gives the departing agent all the information it has about the state of the
+    network.
 
     Parameters
     ----------
     net_size : int (optional, the default is 1)
         The total number of queues/edges in the network.
-    AgentClass : class (optional, the default is ``InfoAgent``\)
+    AgentClass : class (optional, the default is :class:`.InfoAgent`\)
         The class of agents that arrive from outside the network.
-    qbuffer : int (optional, the default is infinity)
+    qbuffer : int (optional, the default is :const:`~numpy.infty`\)
         The maximum length of the queue/line.
     **kwargs :
-        Extra parameters to pass to :class:`~queueing_tool.queues.LossQueue`.
+        Extra parameters to pass to :class:`.LossQueue`.
     """
     def __init__(self, net_size=1, AgentClass=InfoAgent, qbuffer=np.infty, **kwargs) :
         LossQueue.__init__(self, AgentClass, qbuffer, **kwargs)

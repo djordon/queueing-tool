@@ -9,48 +9,60 @@ import copy
 
 
 def poisson_random_measure(rate, rate_max, t) :
-    u"""A function that returns the arrival time of the next arrival for a Poisson 
-    random measure.
-
-    Returns the time of the next arrival when the distribution of the number of 
-    arrivals between times :math:`t` and :math:`t+s` is Poisson with mean
-    
-    .. math::
-
-        \int_{t}^{t+s} dx \, r(t)
-
-    where :math:`r(t)` is the supplied ``rate`` function.
-
-    A Poisson random measure is sometimes called a nonhomogeneous Poisson process,
-    with a Poisson process is a special type of Poisson random measure.
+    u"""A function that returns the arrival time of the next arrival for a
+    Poisson random measure.
 
     Parameters
     ----------
     rate : function
-        The *intensity function* for the measure, where ``rate(t)`` is the expected 
-        arrival rate at time ``t``.
+        The *intensity function* for the measure, where ``rate(t)`` is the
+        expected arrival rate at time ``t``.
     rate_max : float
-        The maximume value of the intensity function.
+        The maximume value of the ``rate`` function.
     t : float
         The start time from which to simulate the next arrival time.
 
     Returns
     -------
-    out : float
+    float
         The time of the next arrival.
 
     Notes
     -----
-    This function can only simulate processes that have bounded intensity functions.
-    See Chapter 6 of [R1]_ for more on the mathematics behind Poisson random 
-    measures; the book's publisher, Springer, has that chapter available online
-    (`pdf`_\).
+    This function returns the time of the next arrival when the distribution of
+    the number of arrivals between times :math:`t` and :math:`t+s` is Poisson
+    with mean
+    
+    .. math::
+
+        \int_{t}^{t+s} dx \, r(t)
+
+    where :math:`r(t)` is the supplied ``rate`` function. This function can
+    only simulate processes that have bounded intensity functions. See chapter
+    6 of [1]_ for more on the mathematics behind Poisson random measures; the
+    book's publisher, Springer, has that chapter available online (`pdf`_\).
+
+    A Poisson random measure is sometimes called a nonhomogeneous Poisson
+    process, with a Poisson process is a special type of Poisson random measure.
 
     .. _pdf: http://www.springer.com/cda/content/document/cda_downloaddocument/9780387878584-c1.pdf
 
+    Examples
+    --------
+    This function is designed to work the :class:`.QueueServer` class. Suppose
+    you wanted to make an :math:`\\text{M}_t/\\text{M}/10` ``QueueServer``
+    where the arrivals were modeled as a Poisson random measure where the rate
+    function was :math:`r(t) = 2 + \sin( 2\pi t)` and the service distribution
+    that is exponential with rate ``2.5``. Then you could do so as follows:
+
+    >>> rate  = lambda t: 2 + np.sin( 2 * np.pi * t)
+    >>> arr_f = lambda t: poisson_random_measure(rate, 3, t)
+    >>> ser_f = lambda t: t + np.random.exponential(1/2.5)
+    >>> q = QueueServer(nServers=10, arrival_f=arr_f, service_f=ser_f)
+
     References
     ----------
-    ..  [R1] Çınlar, Erhan. *Probability and stochastics*. Graduate Texts in\
+    ..  [1] Çınlar, Erhan. *Probability and stochastics*. Graduate Texts in\
              Mathematics. Vol. 261. Springer, New York, 2011. :doi:`10.1007/978-0-387-87859-1`
     """
     scale = 1 / rate_max
@@ -64,25 +76,12 @@ def poisson_random_measure(rate, rate_max, t) :
 class QueueServer :
     """The base queue-server class.
 
-    This is a generic multi-server queue implimentation (see [R3]_).
-    In `Kendall's notation`_\, this is a 
-    :math:`\\text{GI}_t/\\text{GI}_t/c/\infty/N/\\text{FIFO}` queue.
-
     Note that each parameter is assigned to an attribute of the same name.
 
     Parameters
     ----------
     nServers : int (optional, the default is ``1``)
         The number of servers servicing agents.
-    edge : tuple (optional, the default is ``(0,0,0)``)
-        A tuple that uniquely identifies which edge this queue lies on. The
-        first slot of the tuple is the source vertex, the second slot is the
-        target vertex, and the last slot is the ``edge_index`` of that edge.
-        This is automatically created when a 
-        :class:`~queueing_tool.network.QueueNetwork` is instantiated.
-    eType : int (optional, the default is ``1``)
-        The type of queue this is. Used by
-        :class:`~queueing_tool.network.QueueNetwork` when instantiating a network.
     arrival_f : function (optional, the default is ``lambda t: t + exponential(1)``)
         A function that returns the time of next arrival from outside the
         network. When this function is called, ``t`` is always taken to be the
@@ -93,9 +92,17 @@ class QueueServer :
         When this function is called, ``t`` is the time the agent is entering
         service. **Should not return any values less than** ``t``, that is,
         ``service_f(t) >= t``.
+    edge : tuple (optional, the default is ``(0,0,0)``)
+        A tuple that uniquely identifies which edge this queue lays on. The
+        first slot of the tuple is the source vertex, the second slot is the
+        target vertex, and the last slot is the ``edge_index`` of that edge.
+        This is automatically created when a :class:`.QueueNetwork` is instantiated.
+    eType : int (optional, the default is ``1``)
+        The type of queue this is. Used by :class:`.QueueNetwork` when
+        instantiating a network.
     AgentClass : class (optional, the default is the :class:`~Agent` class)
-        A class object for an ``Agent`` or any class object that has
-        inherited the ``Agent`` class.
+        A class object for an :class:`.Agent` or any class object that has
+        inherited the :class:`.Agent` class.
        
     Attributes
     ----------
@@ -111,17 +118,17 @@ class QueueServer :
         A variable that specifies whether the queue accepts arrivals from
         outside the network (the queue will always accept arrivals from inside
         the network).
-    active_cap : int (the default is ``numpy.infty``)
+    active_cap : int (the default is :const:`~numpy.infty``)
         The maximum number of arrivals the queue will accept from outside the
         network.
     collect_data : bool (the default is ``False``)
-        A bool that defines whether the queue collects each ``Agent``\'s
+        A bool that defines whether the queue collects each :class:`.Agent`\'s
         arrival, service start, and departure times.
     data : dict
-        Keeps track of each ``Agent``\'s arrival times, service start time, and
-        departure times, as well as how many other agents were in the queue
-        upon arrival. The keys are the ``Agent``\'s unique ``issn``, and the
-        values is a list of lists. Each time an agent arrives at the
+        Keeps track of each :class:`.Agent`\'s arrival times, service start
+        time, and departure times, as well as how many other agents were in the
+        queue upon arrival. The keys are the :class:`.Agent`\'s unique ``issn``,
+        and the values is a list of lists. Each time an agent arrives at the
         queue it appends this data to the end of the list.
     colors : dict
         A dictionary of the colors used when drawing the graph. The possible
@@ -134,12 +141,16 @@ class QueueServer :
 
     Notes
     -----
+    This is a generic multi-server queue implimentation (see [3]_).
+    In `Kendall's notation`_\, this is a 
+    :math:`\\text{GI}_t/\\text{GI}_t/c/\infty/N/\\text{FIFO}` queue class. See
+    chapter 1 of [2]_ (pdfs from `the author`_ and `the publisher`_) for a good
+    introduction to the theory behind the multi-server queue.
+
     Each queue sits on an edge in a graph. When drawing the graph, the queue 
     colors the edges. If the target vertex does not have any loops, the number
     of agents in this queue affects the target vertex's color as well.
 
-    See chapter 1 of [R2]_ (pdfs from `the author`_ and `the publisher`_) for a
-    good introduction to the theory behind the multi-server queue.
 
     Some defaults:
 
@@ -148,22 +159,24 @@ class QueueServer :
         ...                   'vertex_fill_color' : [1.0, 1.0, 1.0, 1.0],
         ...                   'vertex_color'      : [0.0, 0.5, 1.0, 1.0]}
 
+
     References
     ----------
-    .. [R2] Harchol-Balter, Mor. *Performance Modeling and Design of Computer Systems:\
+    .. [2] Harchol-Balter, Mor. *Performance Modeling and Design of Computer Systems:\
             Queueing Theory in Action*. Cambridge University Press, 2013. ISBN:\
             `9781107027503`_.
 
-    .. [R3] *Queueing Theory*, Wikipedia `<http://en.wikipedia.org/wiki/Queueing_theory>`_.
+    .. [3] *Queueing Theory*, Wikipedia `<http://en.wikipedia.org/wiki/Queueing_theory>`_.
 
       .. _Kendall's notation: http://en.wikipedia.org/wiki/Kendall%27s_notation
       .. _the author: http://www.cs.cmu.edu/~harchol/PerformanceModeling/chpt1.pdf
       .. _the publisher: http://assets.cambridge.org/97811070/27503/excerpt/9781107027503_excerpt.pdf
       .. _9781107027503: http://www.cambridge.org/us/9781107027503
     """
-    def __init__(self, nServers=1, edge=(0,0,0), eType=1, arrival_f=lambda t: t + exponential(1),
-                    service_f=lambda t: t + exponential(0.9), AgentClass=Agent, collect_data=False,
-                    active_cap=infty, deactive_t=infty, colors=None, **kwargs) :
+    def __init__(self, nServers=1, arrival_f=lambda t: t + exponential(1),
+                    service_f=lambda t: t + exponential(0.9), edge=(0,0,0), eType=1,
+                    AgentClass=Agent, collect_data=False, active_cap=infty,
+                    deactive_t=infty, colors=None, **kwargs) :
 
         self.edge         = edge
         self.eType        = eType
@@ -230,7 +243,7 @@ class QueueServer :
 
         Returns
         -------
-        out : bool
+        bool
             Always returns False, since the ``QueueServer`` class has 
             infinite capacity.
         """
@@ -271,7 +284,13 @@ class QueueServer :
 
 
     def nQueued(self) :
-        """Returns the number of agents in the queue."""
+        """Returns the number of agents in the queue.
+
+        Returns
+        -------
+        int
+            The number of agents waiting in line to be served.
+        """
         return len(self._queue)
 
 
@@ -334,7 +353,7 @@ class QueueServer :
 
         Returns
         -------
-        out : int
+        int
             An integer representing whether the next event is an arrival or a
             departure. A ``1`` corresponds to an arrival, a ``2`` corresponds
             to a departure, and a ``0`` corresponds to nothing scheduled to
@@ -427,10 +446,9 @@ class QueueServer :
 
         Returns
         -------
-        color : list
-            Returns a RGBA color. The color is represented as a list with 4 
-            entries where each entry can be any floating point number between 0
-            and 1.
+        list
+            Returns a RGBA color that is represented as a list with 4 entries
+            where each entry can be any floating point number between 0 and 1.
 
             * If ``which`` is 1 then it returns the color of the edge as if it
               were a self loop.
@@ -481,7 +499,7 @@ class QueueServer :
 
 
     def copy(self) :
-        """Returns a deep copy of self."""
+        """Returns a deep copy of ``self``."""
         return copy.deepcopy(self)
 
 
@@ -518,19 +536,15 @@ class LossQueue(QueueServer) :
 
     If the buffer is some finite value, then agents that arrive to the queue 
     are turned around and sent out of the queue. Essentially becomes a 
-    ``QueueServer`` if the buffer/capacity is set to ``np.infty``. In 
-    `Kendall's notation`_\, this is a
-    :math:`\\text{GI}_t/\\text{GI}_t/c/k/N/\\text{FIFO}` queue, where :math:`k`
-    is the ``qbuffer``. If the default parameters used, then this is a
-    :math:`\\text{M}/\\text{M}/1/1` queue.
+    :class:`.QueueServer` if the buffer/capacity is set to :const:`~numpy.infty`\.
 
     Parameters
     ----------
     qbuffer : int (optional, the default is 0)
         Specifies the length of the buffer (i.e. specifies how long the size
         of the queue can be).
-    **kwargs :
-        Parameters to pass to :class:`~QueueServer`.
+    kwargs
+        Any :class:`~QueueServer` parameters.
 
     Attributes
     ----------
@@ -540,6 +554,13 @@ class LossQueue(QueueServer) :
     buffer : int
         Specifies the length of the buffer (i.e. specifies how long the 
         size of the queue can be).
+
+    Notes
+    -----
+    In `Kendall's notation`_\, this is a
+    :math:`\\text{GI}_t/\\text{GI}_t/c/k/N/\\text{FIFO}` queue, where :math:`k`
+    is the ``qbuffer``. If the default parameters used then the returned
+    instance is an :math:`\\text{M}/\\text{M}/1/1` queue.
     """
 
     def __init__(self, qbuffer=0, **kwargs) :
@@ -572,7 +593,7 @@ class LossQueue(QueueServer) :
 
         Returns
         -------
-        out : bool
+        bool
             Returns whether the number of agents in the system is greater than 
             or equal to ``nServers + buffer``.
         """
@@ -580,7 +601,19 @@ class LossQueue(QueueServer) :
 
 
     def next_event(self) :
-        """Does something different.
+        """Simulates the queue forward one event.
+
+        If the queue is at capacity, then the arriving agent is scheduled for
+        immediate departure. That is, if an agent attempts to enter the queue
+        at time ``t`` when it is at capacity, they are scheduled for departure 
+        from the queue at time ``t``. The next event will be the departure of
+        this agent.
+
+        Returns
+        -------
+        out : 
+            If next event is a departure then the departing agent is returned,
+            otherwise nothing is returned.
         """
         if self._arrivals[0]._time < self._departures[0]._time :
             if self.nSystem < self.nServers + self.buffer :
@@ -610,7 +643,7 @@ class LossQueue(QueueServer) :
                 else :
                     self._time = self._departures[0]._time
 
-        elif self._departures[0]._time < self._arrivals[0]._time :
+        elif self._departures[0]._time < infty :
             return QueueServer.next_event(self)
 
 
@@ -630,9 +663,9 @@ class LossQueue(QueueServer) :
 class NullQueue(QueueServer) :
     """A terminal queue.
 
-    A queue that is used but the ``QueueNetwork`` class to represent agents
-    leaving the network. It can collect data on agents that arrive, but all
-    arriving agents are deleted after their arrival.
+    A queue that is used but the :class:`.QueueNetwork` class to represent
+    agents leaving the network. It can collect data on agents that arrive, but
+    all arriving agents are deleted after their arrival.
     """
     def __init__(self, *args, **kwargs) :
 
@@ -661,12 +694,13 @@ class NullQueue(QueueServer) :
         return 0
 
     def _add_arrival(self, *args, **kwargs) :
-        arrival = args[0]
         if self.collect_data :
-            if arrival.issn not in self.data :
-                self.data[arrival.issn] = [[arrival._time, 0, 0, 0]]
-            else :
-                self.data[arrival.issn].append([arrival._time, 0, 0, 0])
+            if len(args) > 0 :
+                arrival = args[0]
+                if arrival.issn not in self.data :
+                    self.data[arrival.issn] = [[arrival._time, 0, 0, 0]]
+                else :
+                    self.data[arrival.issn].append([arrival._time, 0, 0, 0])
 
     def _add_departure(self, *args, **kwargs) :
         pass
