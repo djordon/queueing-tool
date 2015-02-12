@@ -27,8 +27,7 @@ class QueueNetwork :
     g : str or :class:`~graph_tool.Graph`
         The graph specifies the network on which the queues sit.
     q_classes : dict (optional)
-        Used to Specify the :class:`.QueueServer` class
-        for each edge type.
+        Used to Specify the :class:`.QueueServer` class for each edge type.
     q_args : dict (optional)
         Used to specify the class arguments for each type of
         :class:`.QueueServer`\.
@@ -40,14 +39,16 @@ class QueueNetwork :
     ----------
     g : :class:`~graph_tool.Graph`
         The graph for the network.
-    in_edges : list
-        A list of all in-edges for each vertex. Specifically, ``in_edges[v]``
-        returns a list containing the edge index for all edges with the
-        head of the edge at ``v``, where ``v`` is a vertex's index.
-    out_edges : list
-        A list of all out-edges for each vertex. Specifically, ``out_edges[v]``
-        returns a list containing the edge index for all edges with the
-        tail of the edge at ``v``, where ``v`` is a vertex's index.
+    in_edges : dict
+        A mapping between vertex indices and the in-edges at that vertex.
+        Specifically, ``in_edges[v]`` returns a list containing the edge index
+        for all edges with the head of the edge at ``v``, where ``v`` is the
+        the vertex's index number.
+    out_edges : dict
+        A mapping between vertex indices and the in-edges at that vertex.
+        Specifically, ``out_edges[v]`` returns a list containing the edge index
+        for all edges with the tail of the edge at ``v``, where ``v`` is the
+        the vertex's index number.
     edge2queue : list
         A list of queues where the ``edge2queue[k]`` returns the queue on the
         edge with edge index ``k``.
@@ -71,7 +72,14 @@ class QueueNetwork :
     colors : dict
         A dictionary of colors used when drawing a graph. See the notes for the
         defaults.
-
+    route_prob : dict
+        The routing probabilities for each vertex in the graph. Specifically,
+        ``route_prob[v]`` returns a list of numbers (that sum to 1), where the
+        ``k``th entry is the probability of moving from vertex ``v`` to the
+        edge with edge index ``out_edge[v][k]``. Use ``v.out_edges()`` to get a
+        generator of all out edges from ``v`` where ``v`` is a ``graph-tool``
+        :class:`~graph_tool.Vertex`\. This is used by the :class:`.Agent` class
+        to route themselves throughout the network.
 
     Raises
     ------
@@ -81,12 +89,18 @@ class QueueNetwork :
 
     Notes
     -----
+    If only a :class:`~graph_tool.Graph` is passed when instantiating a 
+    ``QueueNetwork`` instance then the returned network is a `Jackson network`_
+    where the routing probability at a vertex ``v`` is ``1 / v.out_degree()``.
+    See
+
     * This class must be initialized before any simulations can take place. To
       initialize, call the :meth:`~initialize` method. If any of the queues are
       altered, make sure to re-run the ``initialize`` method again.
     * When simulating the network, the departure of an agent coincides with an 
       arrival to another queue. There is no time lag between these events.
-    
+
+    .. _Jackson network: http://en.wikipedia.org/wiki/Jackson_network    
 
     The default colors are:
 
@@ -102,6 +116,17 @@ class QueueNetwork :
     ...                       'edge_active'       : [0.1, 0.1, 0.1, 1.0],
     ...                       'edge_inactive'     : [0.8, 0.8, 0.8, 0.3],
     ...                       'bg_color'          : [1, 1, 1, 1]}
+
+    If the graph is not connected then there may be issues with ``Agents``
+    that arrive at an edge that points to terminal vertex. If the graph was 
+    created using :func:`.adjacency2graph` then this is not an issue, so
+    long as ``q_classes`` key  0 is a :class:`.NullQueue` (note that 0 does
+    not need to be a key of the ``q_classess`` parameter, but if it is it
+    should be set to :class:`.NullQueue`). If the graph was not created
+    using :func:`.adjacency2graph` and it's not connected then I recommend
+    the following
+
+    >>> 
     """
 
     def __init__(self, g=None, q_classes=None, q_args=None, seed=None) :
@@ -125,9 +150,14 @@ class QueueNetwork :
         self._initialized = False
         self._prev_edge   = None
         self._queues      = []
+        default_classes   = {0 : NullQueue, 1 : QueueServer, 2 : LossQueue,
+                             3 : LossQueue, 4 : LossQueue}
 
         if q_classes is None :
-            q_classes = {0 : NullQueue, 1 : QueueServer, 2 : LossQueue, 3 : LossQueue, 4 : LossQueue}
+            q_classes = default_classes
+        else :
+            for k in set(default_classes.keys()) - set(q_classes.keys()) :
+                q_classes[k] = default_classes[k]
 
         if q_args is None :
             q_args  = {k : {} for k in range(5)}
@@ -160,13 +190,21 @@ class QueueNetwork :
             else :
                 raise TypeError("The Parameter `g` needs to be either a graph-tool Graph, a string, or None.")
 
+            self.edge2queue = qs
+            self.nAgents    = np.zeros( g.num_edges() )
+            self.out_edges  = {}
+            self.in_edges   = {}
+            self.route_prob = {}
+
             def edge_index(e) :
                 return g.edge_index[e]
 
-            self.out_edges  = [ [i for i in map(edge_index, list(v.out_edges()))] for v in g.vertices()]
-            self.in_edges   = [ [i for i in map(edge_index, list(v.in_edges()))] for v in g.vertices() ]
-            self.edge2queue = qs
-            self.nAgents    = np.zeros( g.num_edges() )
+            for v in g.vertices() :
+                vi  = int(v)
+                vod = v.out_degree()
+                self.out_edges[vi]  = [i for i in map(edge_index, list(v.out_edges()))]
+                self.in_edges[vi]   = [i for i in map(edge_index, list(v.in_edges()))]
+                self.route_prob[vi] = [1 / vod for i in range(vod)]
 
             self.g  = g
             self.nV = g.num_vertices()
@@ -722,7 +760,7 @@ class QueueNetwork :
             This error is raised if there are no events scheduled.
         """
         if len(self._queues) == 0 :
-            ans = "Nothing"
+            ans = ("Nothing", None)
         else :
             ad1 = 'Arrival' if self._queues[-1].next_event_description() == 1 else 'Departure'
             ad2 = self._queues[-1].edge[2]

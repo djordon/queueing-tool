@@ -1,5 +1,5 @@
 from numpy          import infty, argmin
-from numpy.random   import randint
+from numpy.random   import uniform
 
 class Agent :
     """The base class for an agent.
@@ -71,7 +71,9 @@ class Agent :
         """Returns the agents next destination given their current location on
         the network.
 
-        An ``Agent`` chooses one of the out edges uniformly at random.
+        An ``Agent`` chooses one of the out edges random. The probability that
+        the ``Agent`` will travel along a specific edge is specified in
+        :class:`.QueueNetwork`\'s ``route_prob`` attribute.
 
         Parameters
         ----------
@@ -87,10 +89,23 @@ class Agent :
             Returns an the edge index corresponding to the agents next edge to
             visit in the network.
         """
-        n   = len( network.out_edges[edge[1]] )
-        d   = randint(0, n)
-        z   = network.out_edges[edge[1]][d]
-        return z
+        n = len(network.out_edges[edge[1]])
+        if n <= 1 :
+            return network.out_edges[edge[1]][0]
+
+        u   = uniform()
+        pr  = network.route_prob[edge[1]]
+        if u <= pr[0] :
+            k = 0
+        else :
+            z = pr[0]
+            for k in range(1, n) :
+                if u <= z + pr[k] :
+                    break
+                else :
+                    z  += pr[k]
+
+        return network.out_edges[edge[1]][k]
 
 
     def queue_action(self, queue, *args, **kwargs) :
