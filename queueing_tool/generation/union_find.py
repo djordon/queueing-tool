@@ -2,10 +2,11 @@ class UnionFind :
     """The union-find data structure with union by rank and path compression.
 
     The UnionFind data structure is a collection of objects that supports
-    the union and find operations (described below). Each object in the collection
-    belongs to a set, which is identified by its leader. To sets can be fused
-    together to form a new set (union), and for any element in the collection,
-    we can find the leader of the set to which it belongs (find)
+    the union and find operations (described below). Each object in the
+    collection belongs to a set, which is identified by its leader. Using the
+    ``union(s1, s2)`` operation, the two sets that contain ``s1`` and ``s2``
+    can be fused together to form a new set. The ``find(s)`` operation
+    identifies the leader of the set to which ``s`` belongs.
 
     Parameters
     ----------
@@ -42,18 +43,16 @@ class UnionFind :
 
 
     def find(self, s) :
-        """Find the leader of the element ``s`` with path compression.
-
-        Locates the leader to which the element ``s`` belongs.
+        """Locates the leader of the set to which the element ``s`` belongs.
 
         Parameters
         ----------
         s : object
-            An object.
+            An object that the ``UnionFind`` contains.
 
         Returns
         -------
-        out : object
+        object
             The leader of the set that contains ``s``.
         """
         pSet    = [s]
@@ -71,9 +70,7 @@ class UnionFind :
 
 
     def union(self, a, b) :
-        """Union the set that contains ``a`` with the set that contains ``b``.
-
-        Merges the set that contains ``a`` with the set that contains ``b``.
+        """Merges the set that contains ``a`` with the set that contains ``b``.
 
         Parameters
         ----------

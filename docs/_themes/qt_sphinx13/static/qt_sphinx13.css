@@ -12,14 +12,16 @@
 @import url("basic.css");
 
 
+
+
 /* -- page layout ----------------------------------------------------------- */
 
 body {
     font-family: 'Open Sans', 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
                  'Verdana', sans-serif;
     font-size: 14px;
-    text-align: center;
-    background-image: url(bodybg.png);
+    /*text-align: center;
+    /*background-image: url(bodybg.png);*/
     color: black;
     padding: 0;
     border-right: 1px solid #0a507a;
@@ -32,7 +34,7 @@ body {
 
 
 .pageheader {
-    background-image: url(headerbg.png);
+    /*background-image: url(headerbg.png);*/
     text-align: left;
     padding: 10px 15px;
 }
@@ -71,7 +73,7 @@ div.document {
 
 div.bodywrapper {
     margin: 0 240px 0 0;
-    border-right: 1px solid #0a507a;
+    /*border-right: 1px solid #0a507a;*/
 }
 
 div.body {
@@ -85,7 +87,7 @@ div.related {
 }
 
 div.related ul {
-    background-image: url(relbg.png);
+    /*background-image: url(relbg.png);*/
     height: 1.9em;
     border-top: 1px solid #002e50;
     border-bottom: 1px solid #002e50;
@@ -151,7 +153,7 @@ div.sphinxsidebar input {
 
 div.sphinxsidebar h3 {
     font-size: 1.5em;
-    border-top: 1px solid #0a507a;
+    /*border-top: 1px solid #0a507a;*/
     margin-top: 1em;
     margin-bottom: 0.5em;
     padding-top: 0.5em;
@@ -190,11 +192,11 @@ div.sphinxsidebar ul {
 
 div.sphinxsidebar ul ul {
     margin-left: 20px;
-    list-style-image: url(listitem.png);
+    /*list-style-image: url(listitem.png);*/
 }
 
 div.footer {
-    background-image: url(footerbg.png);
+    /*background-image: url(footerbg.png);*/
     color: #ccc;
     text-shadow: 0 0 .2px rgba(255, 255, 255, 0.8);
     padding: 3px 8px 3px 0;
@@ -459,4 +461,5 @@ table.field-list th.field-name {
     background-color: #EEE;
     white-space: nowrap;
 }
+
 

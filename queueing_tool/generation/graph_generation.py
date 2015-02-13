@@ -178,7 +178,7 @@ def adjacency2graph(adjacency, edge_type=None, edge_length=None, adjust_type=0, 
 
     Returns
     -------
-    out : :class:`~graph_tool.Graph`
+    :class:`~graph_tool.Graph`
         A :class:`~graph_tool.Graph` with the ``vType`` vertex property, and 
         ``eType`` edge property. If the ``edge_length`` parameter is supplied
         then the ``edge_length`` edge properties is also included in the ``Graph``.
@@ -265,7 +265,7 @@ def generate_random_graph(nVertices=250, **kwargs) :
 
     Returns
     -------
-    g : :class:`~graph_tool.Graph`
+    :class:`~graph_tool.Graph`
         A graph with a ``pos`` and ``vType`` vertex property and the ``eType`` and 
         ``edge_length`` edge property.
     """
@@ -289,7 +289,7 @@ def generate_pagerank_graph(nVertices=250, **kwargs) :
 
     Returns
     -------
-    g : :class:`~graph_tool.Graph`
+    :class:`~graph_tool.Graph`
         A graph with a ``pos`` and ``vType`` vertex property and the ``eType`` and 
         ``edge_length`` edge property.
     """
@@ -323,7 +323,7 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None) :
 
     Returns
     -------
-    g : :class:`~graph_tool.Graph`
+    :class:`~graph_tool.Graph`
         A graph with a ``pos`` vertex property for the vertex positions.
     """
     points  = np.random.random((nVertices, 2)) * 10

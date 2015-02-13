@@ -36,7 +36,7 @@ def poisson_random_measure(rate, rate_max, t) :
     
     .. math::
 
-        \int_{t}^{t+s} dx \, r(t)
+        \int_{t}^{t+s} dx \, r(x)
 
     where :math:`r(t)` is the supplied ``rate`` function. This function can
     only simulate processes that have bounded intensity functions. See chapter
@@ -52,9 +52,9 @@ def poisson_random_measure(rate, rate_max, t) :
     --------
     This function is designed to work the :class:`.QueueServer` class. Suppose
     you wanted to make an :math:`\\text{M}_t/\\text{M}/10` ``QueueServer``
-    where the arrivals were modeled as a Poisson random measure where the rate
-    function was :math:`r(t) = 2 + \sin( 2\pi t)` and the service distribution
-    that is exponential with rate ``2.5``. Then you could do so as follows:
+    where the arrivals are modeled as a Poisson random measure with rate
+    function :math:`r(t) = 2 + \sin( 2\pi t)` and a service distribution that
+    is exponential with rate ``2.5``. Then you could do so as follows:
 
     >>> rate  = lambda t: 2 + np.sin( 2 * np.pi * t)
     >>> arr_f = lambda t: poisson_random_measure(rate, 3, t)
@@ -77,60 +77,56 @@ def poisson_random_measure(rate, rate_max, t) :
 class QueueServer :
     """The base queue-server class.
 
-    Note that each parameter is assigned to an attribute of the same name.
+    Built to work with the :class:`.QueueNetwork` class, but can stand alone
+    as a multi-server queue. It supports a capped pool of potential arrivals
+    using the ``active_cap`` attribute, as well as the stopping time attribute,
+    ``deactive_t``, after which no more arrivals can enter the queue. When
+    connected to a network of queues via a :class:`.QueueNetwork`\, the
+    ``active_cap`` and ``deactive_t`` attributes applies only to arrivals from
+    outside the network, the ``QueueServer`` instance always accepts arrivals
+    from other queues inside the :class:`.QueueNetwork`\.
+
+    This class supports arbitrary arrival and service distribution functions
+    (that can depend on time but do not on the state of the system).
+
+    Note that of the following parameters are assigned to an attribute of the
+    same name.
 
     Parameters
     ----------
-    nServers : int (optional, the default is ``1``)
+    nServers : int or :const:`~numpy.infty` (optional, the default is ``1``)
         The number of servers servicing agents.
     arrival_f : function (optional, the default is ``lambda t: t + exponential(1)``)
         A function that returns the time of next arrival from outside the
         network. When this function is called, ``t`` is always taken to be the
         current time. **Should not return any values less than** ``t``, that is,
-        ``arrival_f(t) >= t``.
+        ``arrival_f(t) >= t`` should always be true.
     service_f : function (optional, the default is ``lambda t: t + exponential(0.9)``)
         A function that returns the time of an agent's service time completes.
         When this function is called, ``t`` is the time the agent is entering
         service. **Should not return any values less than** ``t``, that is,
-        ``service_f(t) >= t``.
+        ``service_f(t) >= t`` should always be true.
     edge : tuple (optional, the default is ``(0,0,0)``)
         A tuple that uniquely identifies which edge this queue lays on. The
         first slot of the tuple is the source vertex, the second slot is the
         target vertex, and the last slot is the ``edge_index`` of that edge.
-        This is automatically created when a :class:`.QueueNetwork` is instantiated.
+        This is automatically created when a :class:`.QueueNetwork` is
+        instantiated.
     eType : int (optional, the default is ``1``)
         The type of queue this is. Used by :class:`.QueueNetwork` when
         instantiating a network.
     AgentClass : class (optional, the default is the :class:`~Agent` class)
         A class object for an :class:`.Agent` or any class object that has
         inherited the :class:`.Agent` class.
-       
-    Attributes
-    ----------
-    nDepartures : int
-        The total number of departures from the queue.
-    nSystem : int or :const:`numpy.infinity`
-        The number of agents in the entire queue (includes those currently
-        being served).
-    nArrivals : list
-        A list with two entries. The first slot is the total number of arrivals,
-        while the second slot is the number of arrivals from the outside world.
-    active : bool (the default is ``False``)
-        A variable that specifies whether the queue accepts arrivals from
-        outside the network (the queue will always accept arrivals from inside
-        the network).
-    active_cap : int (the default is :const:`~numpy.infty``)
+    active_cap : int (the default is :const:`~numpy.infty``\)
         The maximum number of arrivals the queue will accept from outside the
         network.
+    deactive_t : float (the default is :const:`~numpy.infty``\)
+        Sets a stopping time, after which no more arrivals (from outside the
+        network) will attempt to enter the ``QueueServer``.
     collect_data : bool (the default is ``False``)
         A bool that defines whether the queue collects each :class:`.Agent`\'s
         arrival, service start, and departure times.
-    data : dict
-        Keeps track of each :class:`.Agent`\'s arrival times, service start
-        time, and departure times, as well as how many other agents were in the
-        queue upon arrival. The keys are the :class:`.Agent`\'s unique ``issn``,
-        and the values is a list of lists. Each time an agent arrives at the
-        queue it appends this data to the end of the list.
     colors : dict
         A dictionary of the colors used when drawing the graph. The possible
         colors are ``edge_loop_color``: The default color of the edge if the
@@ -139,14 +135,37 @@ class QueueServer :
         colors the target vertex in the graph. ``vertex_color``: The color of
         the vertex pen of the target vertex. The defaults are listed in the
         notes.
+       
+    Attributes
+    ----------
+    active : bool (the default is ``False``)
+        Returns whether the queue accepts arrivals from outside the network 
+        (the queue will always accept arrivals from inside the network).
+    nDepartures : int
+        The total number of departures from the queue.
+    nSystem : int
+        The number of agents in the entire queue (includes those currently
+        being served).
+    nArrivals : list
+        A list with two entries. The first slot is the total number of arrivals,
+        while the second slot is the number of arrivals from the outside world.
+    data : dict
+        Keeps track of each :class:`.Agent`\'s arrival times, service start
+        time, and departure times, as well as how many other agents were in the
+        queue upon arrival. The keys are the :class:`.Agent`\'s unique ``issn``,
+        and the values is a list of lists. Each time an agent arrives at the
+        queue it appends this data to the end of the list.
+
 
     Notes
     -----
     This is a generic multi-server queue implimentation (see [3]_).
     In `Kendall's notation`_\, this is a 
-    :math:`\\text{GI}_t/\\text{GI}_t/c/\infty/N/\\text{FIFO}` queue class. See
-    chapter 1 of [2]_ (pdfs from `the author`_ and `the publisher`_) for a good
-    introduction to the theory behind the multi-server queue.
+    :math:`\\text{GI}_t/\\text{GI}_t/c/\infty/N/\\text{FIFO}` queue class, 
+    where :math:`c` is set by ``nServers`` and :math:`N` is set by
+    ``active_cap``. See chapter 1 of [2]_ (pdfs from `the author`_ and
+    `the publisher`_) for a good introduction to the theory behind the 
+    multi-server queue.
 
     Each queue sits on an edge in a graph. When drawing the graph, the queue 
     colors the edges. If the target vertex does not have any loops, the number
@@ -188,7 +207,6 @@ class QueueServer :
         self.nDepartures  = 0
         self.nSystem      = 0
         self.nArrivals    = [0, 0]
-        self.active       = False
         self.data         = {}                # agent issn : [arrival t, service start t, departure t]
 
         self.arrival_f    = arrival_f
@@ -203,6 +221,7 @@ class QueueServer :
         self._departures  = [inftyAgent]
         self._queue       = collections.deque()
         self._nTotal      = 0
+        self._active      = False
         self._current_t   = 0
         self._time        = infty
         self._next_ct     = 0
@@ -220,6 +239,15 @@ class QueueServer :
         else :
             self.colors = default_colors
 
+    @property
+    def active(self):
+        return self._active
+    @active.deleter
+    def active(self): 
+        pass
+    @active.setter
+    def active(self, tmp): 
+        pass
 
     def __repr__(self) :
         tmp = "QueueServer: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
@@ -258,13 +286,13 @@ class QueueServer :
         """Changes the ``active`` attribute to True. The queue now has arrivals
         arriving from outside the network.
         """
-        self.active = True
+        self._active = True
         self._add_arrival()
 
 
     def set_inactive(self) :
         """Changes the ``active`` attribute to False."""
-        self.active = False
+        self._active = False
 
 
     def set_nServers(self, n) :
@@ -307,7 +335,7 @@ class QueueServer :
                 self._next_ct = self.arrival_f(self._current_t)
 
                 if self._next_ct >= self.deactive_t :
-                    self.active = False
+                    self._active = False
                     return
 
                 new_agent = self.AgentClass( (self.edge[2], self.nArrivals[1]) )
@@ -318,7 +346,7 @@ class QueueServer :
                 self.nArrivals[1] += 1
 
                 if self.nArrivals[1] >= self.active_cap :
-                    self.active = False
+                    self._active = False
 
         if self._arrivals[0]._time < self._departures[0]._time :
             self._time = self._arrivals[0]._time
@@ -386,7 +414,7 @@ class QueueServer :
             arrival = heappop(self._arrivals)
             self._current_t = arrival._time
 
-            if self.active :
+            if self._active :
                 self._add_arrival()
 
             self.nSystem       += 1
@@ -512,13 +540,13 @@ class QueueServer :
         new_server.edge         = copy.copy(self.edge)
         new_server.eType        = copy.copy(self.eType)
         new_server.nServers     = copy.copy(self.nServers)
-        new_server.active       = copy.copy(self.active)
         new_server.active_cap   = copy.copy(self.active_cap)
         new_server.deactive_t   = copy.copy(self.deactive_t)
         new_server.collect_data = copy.copy(self.collect_data)
         new_server.nDepartures  = copy.copy(self.nDepartures)
         new_server.nSystem      = copy.copy(self.nSystem)
         new_server._nTotal      = copy.copy(self._nTotal)
+        new_server._active      = copy.copy(self._active)
         new_server._current_t   = copy.copy(self._current_t)
         new_server._time        = copy.copy(self._time)
         new_server._next_ct     = copy.copy(self._next_ct)
@@ -631,7 +659,7 @@ class LossQueue(QueueServer) :
                 new_agent.add_loss(self.edge)
 
                 self._current_t = new_agent._time
-                if self.active :
+                if self._active :
                     self._add_arrival()
 
                 if self.collect_data :
@@ -683,6 +711,10 @@ class NullQueue(QueueServer) :
                 kwargs['colors'][col] = default_colors[col]
         else :
             kwargs['colors'] = default_colors
+
+        if 'eType' not in kwargs :
+            kwargs['eType'] = 0
+
         QueueServer.__init__(self, **kwargs)
 
     def __repr__(self) :

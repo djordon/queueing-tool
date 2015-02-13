@@ -11,7 +11,7 @@ def _test_graph(g) :
 
     Returns
     -------
-    out : :class:`~graph_tool.Graph`
+    :class:`~graph_tool.Graph`
         If ``g`` is a string or a file object then the output given by
         ``graph_tool.load_graph(g, fmt='xml')``, if ``g`` is aready a 
         :class:`~graph_tool.Graph` then it is returned unaltered.
@@ -45,7 +45,7 @@ def osm_edge_types(g) :
 
     Returns
     -------
-    out : :class:`~graph_tool.Graph`
+    :class:`~graph_tool.Graph`
         Returns the :class:`~graph_tool.Graph` ``g`` with a ``vType`` vertex property
         an ``eType`` edge property, and an ``edge_length`` edge property.
 
@@ -129,7 +129,7 @@ def add_edge_lengths(g) :
 
     Returns
     -------
-    out : :class:`~graph_tool.Graph`
+    :class:`~graph_tool.Graph`
         Returns the :class:`~graph_tool.Graph` ``g`` with the ``edge_length`` edge property.
 
     Raises
@@ -169,7 +169,7 @@ def set_types_random(g, pTypes=None, **kwargs) :
 
     Returns
     -------
-    out : :class:`~graph_tool.Graph`
+    :class:`~graph_tool.Graph`
         Returns the :class:`~graph_tool.Graph` ``g`` with a ``vType`` vertex property
         an ``eType`` edge property, and an ``edge_length`` edge property.
 
@@ -246,12 +246,12 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, **kwargs) :
         Specifies the proportion of edges that will be of type 2.
     pType3 : float (optional, the default is 0.1)
         Specifies the proportion of edges that will be of type 3.
-    **kwargs :
+    kwargs :
         Unused.
 
     Returns
     -------
-    out : :class:`~graph_tool.Graph`
+    :class:`~graph_tool.Graph`
         Returns the :class:`~graph_tool.Graph` ``g`` with a ``vType`` vertex property
         an ``eType`` edge property, and an ``edge_length`` edge property.
 

@@ -9,8 +9,8 @@ Simulation methods
 ------------------
 
       .. automethod:: QueueNetwork.initialize
+      .. automethod:: QueueNetwork.set_routing_probs
       .. automethod:: QueueNetwork.simulate
-
 
 Data methods
 ------------

@@ -26,30 +26,30 @@ class QueueNetwork :
     ----------
     g : str or :class:`~graph_tool.Graph`
         The graph specifies the network on which the queues sit.
-    q_classes : dict (optional)
+    q_classes : :class:`.dict` (optional)
         Used to Specify the :class:`.QueueServer` class for each edge type.
-    q_args : dict (optional)
+    q_args : :class:`.dict` (optional)
         Used to specify the class arguments for each type of
         :class:`.QueueServer`\.
     seed : int (optional)
-        An integer used to initialize ``numpy``'s and ``graph-tool``'s
+        An integer used to initialize ``numpy``\'s and ``graph-tool``\'s
         psuedorandom number generators.
 
     Attributes
     ----------
     g : :class:`~graph_tool.Graph`
         The graph for the network.
-    in_edges : dict
+    in_edges : :class:`.dict`
         A mapping between vertex indices and the in-edges at that vertex.
         Specifically, ``in_edges[v]`` returns a list containing the edge index
         for all edges with the head of the edge at ``v``, where ``v`` is the
         the vertex's index number.
-    out_edges : dict
+    out_edges : :class:`.dict`
         A mapping between vertex indices and the in-edges at that vertex.
         Specifically, ``out_edges[v]`` returns a list containing the edge index
         for all edges with the tail of the edge at ``v``, where ``v`` is the
         the vertex's index number.
-    edge2queue : list
+    edge2queue : :class:`.list`
         A list of queues where the ``edge2queue[k]`` returns the queue on the
         edge with edge index ``k``.
     nAgents : :class:`~numpy.ndarray`
@@ -69,12 +69,12 @@ class QueueNetwork :
         The time of the last event.
     agent_cap : int (the default is 1000)
         The maximum number of agents that can be in the network at any time.
-    colors : dict
+    colors : :class:`.dict`
         A dictionary of colors used when drawing a graph. See the notes for the
         defaults.
-    route_prob : dict
+    routing_probs : :class:`.dict`
         The routing probabilities for each vertex in the graph. Specifically,
-        ``route_prob[v]`` returns a list of numbers (that sum to 1), where the
+        ``routing_prob[v]`` returns a list of numbers (that sum to 1), where the
         ``k``th entry is the probability of moving from vertex ``v`` to the
         edge with edge index ``out_edge[v][k]``. Use ``v.out_edges()`` to get a
         generator of all out edges from ``v`` where ``v`` is a ``graph-tool``
@@ -120,7 +120,7 @@ class QueueNetwork :
     If the graph is not connected then there may be issues with ``Agents``
     that arrive at an edge that points to terminal vertex. If the graph was 
     created using :func:`.adjacency2graph` then this is not an issue, so
-    long as ``q_classes`` key  0 is a :class:`.NullQueue` (note that 0 does
+    long as ``q_classes`` key  ``0`` is a :class:`.NullQueue` (note that ``0`` does
     not need to be a key of the ``q_classess`` parameter, but if it is it
     should be set to :class:`.NullQueue`). If the graph was not created
     using :func:`.adjacency2graph` and it's not connected then I recommend
@@ -190,11 +190,11 @@ class QueueNetwork :
             else :
                 raise TypeError("The Parameter `g` needs to be either a graph-tool Graph, a string, or None.")
 
-            self.edge2queue = qs
-            self.nAgents    = np.zeros( g.num_edges() )
-            self.out_edges  = {}
-            self.in_edges   = {}
-            self.route_prob = {}
+            self.edge2queue   = qs
+            self.nAgents      = np.zeros( g.num_edges() )
+            self.out_edges    = {}
+            self.in_edges     = {}
+            self._route_probs = {}
 
             def edge_index(e) :
                 return g.edge_index[e]
@@ -202,9 +202,9 @@ class QueueNetwork :
             for v in g.vertices() :
                 vi  = int(v)
                 vod = v.out_degree()
-                self.out_edges[vi]  = [i for i in map(edge_index, list(v.out_edges()))]
-                self.in_edges[vi]   = [i for i in map(edge_index, list(v.in_edges()))]
-                self.route_prob[vi] = [1 / vod for i in range(vod)]
+                self.out_edges[vi]    = [i for i in map(edge_index, list(v.out_edges()))]
+                self.in_edges[vi]     = [i for i in map(edge_index, list(v.in_edges()))]
+                self._route_probs[vi] = [np.float64(1 / vod) for i in range(vod)]
 
             self.g  = g
             self.nV = g.num_vertices()
@@ -243,6 +243,16 @@ class QueueNetwork :
     def time(self, tmp): 
         pass
 
+    @property
+    def routing_probs(self):
+        return copy.deepcopy(self._route_probs)
+    @routing_probs.deleter
+    def routing_probs(self): 
+        pass
+    @routing_probs.setter
+    def routing_probs(self, tmp): 
+        pass
+
     def initialize(self, nActive=1, queues=None, edges=None, types=None) :
         """Prepares the ``QueueNetwork`` for simulation.
 
@@ -261,7 +271,7 @@ class QueueNetwork :
             Used to explicitly specify which queues to make active by passing
             their edge index. Must be an iterable of integers representing
             edges/queues in the graph.
-        edges : 2-tuple of int or *array_like* (optional)
+        edges : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to make active. Must be either: a
             2-tuple of the edge's source and target vertex indices, an iterable
             of 2-tuples of the edge's source and target vertex indices, an 
@@ -308,6 +318,34 @@ class QueueNetwork :
         self._initialized  = True
 
 
+    def set_routing_probs(self, mat) :
+        """Change the routing probabilities for the network.
+
+        Parameters
+        ----------
+        mat : :class:`.dict` or :class:`~numpy.ndarray`
+            A routing matrix or routing dictionary, where the keys are the
+            vertex indices and the values are the probabilities for the each
+            adjacent vertex.
+
+        Raises
+        ------
+        RuntimeError
+            If the keys in the :class:`.dict` don't match with any vertex index in the
+            graph. Also if the sum of the probabilities of all but the last
+            adjacent vertices is greater than 1.
+        """
+        if isinstance(mat, dict) :
+            for key, value in mat.items() :
+                if k not in self._route_probs :
+                    raise RuntimeError("One of the keys don't correspond to a vertex.")
+                elif len(value) > 1 and sum(value[:-1]) > 1 :
+                    raise RuntimeError("Sum of routing probabilities at a vertex was greater than 1.")
+                else :
+                    s = np.float64(1 - sum(value[:-1]))
+                    self._route_probs[k] = [np.float64(p) if k + 1 < len(value) else s for p in value]
+
+
     def collect_data(self, queues=None, edges=None, types=None) :
         """Tells the queues to collect data on agents.
 
@@ -318,7 +356,7 @@ class QueueNetwork :
             :class:`.QueueServer`\(s) that will start collecting data. If 
             ``queues`` is not specified then every :class:`.QueueServer`\'s
             data will start collecting data.
-        edges : 2-tuple of int or *array_like* (optional)
+        edges : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to make active. Must be either: a
             2-tuple of the edge's source and target vertex indices, an iterable
             of 2-tuples of the edge's source and target vertex indices, an 
@@ -356,7 +394,7 @@ class QueueNetwork :
             :class:`.QueueServer`\(s) that will stop collecting data. If
             ``queues`` is not specified then every :class:`.QueueServer`\'s
             data will stop collecting data.
-        edges : 2-tuple of int or *array_like* (optional)
+        edges : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to make active. Must be either: a
             2-tuple of the edge's source and target vertex indices, an iterable
             of 2-tuples of the edge's source and target vertex indices, an 
@@ -394,7 +432,7 @@ class QueueNetwork :
             :class:`.QueueServer`\(s) whose data will be retrieved. If 
             ``queues`` is not specified then every :class:`.QueueServer`\'s 
             data will be retrieved.
-        edges : 2-tuple of int or *array_like* (optional)
+        edges : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to make active. Must be either: a
             2-tuple of the edge's source and target vertex indices, an iterable
             of 2-tuples of the edge's source and target vertex indices, an 
@@ -406,7 +444,7 @@ class QueueNetwork :
         Returns
         -------
         :class:`~numpy.ndarray`
-            A five column numpy array of all the data. The first, second, and
+            A five column ``np.array`` of all the data. The first, second, and
             third columns represent, respectively, the arrival, service start,
             and departure times of each :class:`.Agent` that has visited the
             queue. The fourth column identifies how many other agents were in
@@ -453,7 +491,7 @@ class QueueNetwork :
             :class:`.QueueServer`\(s) whose data will be retrieved. If 
             ``queues`` is not specified then every :class:`.QueueServer`\'s 
             data will be retrieved.
-        edges : 2-tuple of int or *array_like* (optional)
+        edges : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to make active. Must be either: a
             2-tuple of the edge's source and target vertex indices, an iterable
             of 2-tuples of the edge's source and target vertex indices, an 
@@ -464,7 +502,7 @@ class QueueNetwork :
 
         Returns
         -------
-        dict
+        :class:`.dict`
             Returns a ``dict`` where the keys are the :class:`.Agent`\'s 
             ``issn`` and the values are :class:`~numpy.ndarray`\s for that
             :class:`.Agent`\'s data. The first, second, and third columns
@@ -514,13 +552,13 @@ class QueueNetwork :
 
         Parameters
         ----------
-        out_size : tuple (optional, the default is ``(700, 700)``).
+        out_size : :class:`.tuple` (optional, the default is ``(700, 700)``).
             Specifies the size of canvas. See
             ``graph-tool``\'s `documentation`_.
         output : str (optional, the default is ``None``)
             Specifies the directory where the drawing is saved. If output is
             ``None``, then the results are drawn using GraphViz.
-        update_colors : bool (optional, the default is ``True``).
+        update_colors : ``bool`` (optional, the default is ``True``).
             Specifies whether all the colors are updated.
         kwargs
             Any extra parameters to pass to :func:`~graph_tool.draw.graph_draw`.
@@ -749,14 +787,14 @@ class QueueNetwork :
 
         Returns
         -------
-        tuple
+        :class:`.tuple`
             Returns a 2-tuple where the first entry indicates whether the next
             event is an arrival or a departure, and the second entry is which
             queue/edge this event corresponds to.
 
         Raises
         ------
-        IndexError
+        :exc:`.IndexError`
             This error is raised if there are no events scheduled.
         """
         if len(self._queues) == 0 :
@@ -877,13 +915,13 @@ class QueueNetwork :
         ----------
         out_size : tuple (optional, the default is ``(700, 700)``).
             The size of the canvas used for the animation.
-        **kwargs :
+        kwargs :
             Any extra parameters to pass to :class:`~graph_tool.draw.GraphWindow`.
 
         Raises
         ------
-        RuntimeError
-            Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not
+        :exc:`.RuntimeError`
+            Will raise a ``RuntimeError`` if the ``QueueNetwork`` has not
             been initialized. Call :meth:`.initialize` before running.
         """
         if not self._initialized :
@@ -928,8 +966,8 @@ class QueueNetwork :
 
         Raises
         ------
-        RuntimeError
-            Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not been
+        :exc:`.RuntimeError`
+            Will raise a ``RuntimeError`` if the ``QueueNetwork`` has not been
             initialized. Call :meth:`.initialize` before running.
         """
         if not self._initialized :

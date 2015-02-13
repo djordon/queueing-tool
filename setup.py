@@ -21,14 +21,16 @@ cmdclass    = {}
 ext_modules = []
 
 if use_cython:
-    ext_modules.append(
-        Extension('queueing_tool.network.sorting', ['queueing_tool/network/sorting.pyx'])
-    )
+    ext_modules.extend([
+        Extension('queueing_tool.network.sorting', ['queueing_tool/network/sorting.pyx']),
+        Extension('queueing_tool.queues.choice', ['queueing_tool/queues/choice.pyx'])
+    ])
     cmdclass.update({ 'build_ext': build_ext })
 else:
-    ext_modules.extend(
-        Extension('queueing_tool.network.sorting', ['queueing_tool/network/sorting.c'])
-    )
+    ext_modules.extend([
+        Extension('queueing_tool.network.sorting', ['queueing_tool/network/sorting.c']),
+        Extension('queueing_tool.queues.choice', ['queueing_tool/queues/choice.c'])
+    ])
 
 
 with open('README', 'r') as a_file :

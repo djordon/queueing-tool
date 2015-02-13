@@ -1,5 +1,6 @@
 from numpy          import infty, argmin
 from numpy.random   import uniform
+from .choice        import _choice
 
 class Agent :
     """The base class for an agent.
@@ -7,8 +8,10 @@ class Agent :
     ``Agent``\s are the objects that move throughout the network. ``Agents``
     are instantiated by a queue, and once serviced the ``Agent`` moves on to
     another queue in the network. Each ``Agent`` *decides* where in the network
-    it wants to arrive at next but choosing amongst its options (uniformly) at
-    random.
+    it wants to arrive at next but choosing amongst its options randomly. The
+    probabilities are specified in :class:`.QueueNetwork`\'s ``routing_probs``
+    attribute. See :meth:`.set_routing_probs` for changing the routing
+    probabilities.
 
     Parameters
     ----------
@@ -89,21 +92,13 @@ class Agent :
             Returns an the edge index corresponding to the agents next edge to
             visit in the network.
         """
-        n = len(network.out_edges[edge[1]])
+        n   = len(network.out_edges[edge[1]])
         if n <= 1 :
             return network.out_edges[edge[1]][0]
 
         u   = uniform()
-        pr  = network.route_prob[edge[1]]
-        if u <= pr[0] :
-            k = 0
-        else :
-            z = pr[0]
-            for k in range(1, n) :
-                if u <= z + pr[k] :
-                    break
-                else :
-                    z  += pr[k]
+        pr  = network._route_probs[edge[1]]
+        k   = _choice(pr, u, n)
 
         return network.out_edges[edge[1]][k]
 
