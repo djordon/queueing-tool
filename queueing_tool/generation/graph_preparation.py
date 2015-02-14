@@ -19,7 +19,8 @@ def _test_graph(g) :
     Raises
     ------
     TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string or a :class:`~graph_tool.Graph`.
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
+        or a :class:`~graph_tool.Graph`\.
     """
     if isinstance(g, str) :
         g = gt.load_graph(g, fmt='xml')
@@ -33,11 +34,11 @@ def osm_edge_types(g) :
     them for use with the :class:`~queueing_tool.network.QueueNetwork` class.
 
     Made specifically for a :class:`~graph_tool.Graph` created using data from
-    `openstreetmaps <www.openstreetmaps.org>`_. Graphs from openstreetmaps 
+    `openstreetmaps <www.openstreetmaps.org>`_. Graphs from openstreetmaps
     sometimes have tags for certain nodes (like the latitude and longitude),
-    or whether a location is an attraction. This function uses some of that information
-    to set a :class:`~graph_tool.Graph`'s ``vType`` vertex property and 
-    the ``eType`` and ``edge_length`` edge property.
+    or whether a location is an attraction. This function uses some of that
+    information to set a :class:`~graph_tool.Graph`'s ``vType`` vertex property
+    and the ``eType`` and ``edge_length`` edge property.
 
     Parameters
     ----------
@@ -46,13 +47,15 @@ def osm_edge_types(g) :
     Returns
     -------
     :class:`~graph_tool.Graph`
-        Returns the :class:`~graph_tool.Graph` ``g`` with a ``vType`` vertex property
-        an ``eType`` edge property, and an ``edge_length`` edge property.
+        Returns the :class:`~graph_tool.Graph` ``g`` with a ``vType`` vertex
+        property an ``eType`` edge property, and an ``edge_length`` edge
+        property.
 
     Raises
     ------
     TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object, or a :class:`~graph_tool.Graph`.
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
+        or a :class:`~graph_tool.Graph`\.
     """
     g = _test_graph(g)
 
@@ -130,12 +133,15 @@ def add_edge_lengths(g) :
     Returns
     -------
     :class:`~graph_tool.Graph`
-        Returns the :class:`~graph_tool.Graph` ``g`` with the ``edge_length`` edge property.
+        Returns the :class:`~graph_tool.Graph` ``g`` with the ``edge_length``
+        edge property.
 
     Raises
     ------
     TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object, or a :class:`~graph_tool.Graph`.
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
+        or a :class:`~graph_tool.Graph`\.
+
     """
     g = _test_graph(g)
     elength   = g.new_edge_property("double")
@@ -166,21 +172,24 @@ def set_types_random(g, pTypes=None, **kwargs) :
         The values can be either proportions (that add to one) or the exact number of
         edges that be set to a type. In the later case, the sum of all the values must
         equal the total number of edges in the :class:`~graph_tool.Graph`.
+    **kwargs :
+        Unused.
 
     Returns
     -------
     :class:`~graph_tool.Graph`
-        Returns the :class:`~graph_tool.Graph` ``g`` with a ``vType`` vertex property
-        an ``eType`` edge property, and an ``edge_length`` edge property.
+        Returns the :class:`~graph_tool.Graph` ``g`` with a ``vType`` vertex
+        property and an ``eType`` edge property.
 
     Raises
     ------
     TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object, or a 
-        :class:`~graph_tool.Graph`.
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
+        or a :class:`~graph_tool.Graph`\.
+
     RuntimeError
-        Raises a :exc:`~RuntimeError` if the ``pType`` values do not sum to one and do not sum to the
-        number of edges in the graph.
+        Raises a :exc:`~RuntimeError` if the ``pType`` values do not sum to one
+        and do not sum to the number of edges in the graph.
     
     Notes
     -----
@@ -223,21 +232,21 @@ def set_types_random(g, pTypes=None, **kwargs) :
     
     g.vp['vType'] = vType
     g.ep['eType'] = eType
-    return add_edge_lengths(g)
+    return g
 
 
 def set_types_pagerank(g, pType2=0.1, pType3=0.1, **kwargs) :
-    """Sets edge and vertex types using `pagerank <http://en.wikipedia.org/wiki/PageRank>`_.
+    """Sets edge and vertex types using `pagerank`_.
 
-    This function sets the edge and vertex types of a graph to be either 1, 2, or 3. 
-    It sets the vertices to type 2 by selecting the top ``pType2 * g.num_vertices()`` 
-    vertices given by the :func:`~graph_tool.centrality.pagerank` of the graph. It 
-    then randomly sets vertices close to type 2 vertices as type 3. The rest of the 
-    vertices are set to type 1 vertices.
+    This function sets the edge and vertex types of a graph to be either 1, 2, or 3.
+    It sets the vertices to type 2 by selecting the top ``pType2 * g.num_vertices()``
+    vertices given by the :func:`~graph_tool.centrality.pagerank` of the graph.
+    It then randomly sets vertices close to type 2 vertices as type 3. The rest
+    of the vertices are set to type 1 vertices.
 
-    Also, the graph is altered to make sure that all vertices that are of type 2 or 3
-    have loops. These loops then have edge type corresponding to the vertex. All other 
-    edges have edge type 1.
+    Also, the graph is altered to make sure that all vertices that are of type
+    2 or 3 have loops. These loops then have an edge type that is the same as
+    the target vertex's vertex type. All other edges have edge type 1.
 
     Parameters
     ----------
@@ -246,20 +255,22 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, **kwargs) :
         Specifies the proportion of edges that will be of type 2.
     pType3 : float (optional, the default is 0.1)
         Specifies the proportion of edges that will be of type 3.
-    kwargs :
+    **kwargs :
         Unused.
 
     Returns
     -------
     :class:`~graph_tool.Graph`
-        Returns the :class:`~graph_tool.Graph` ``g`` with a ``vType`` vertex property
-        an ``eType`` edge property, and an ``edge_length`` edge property.
+        Returns the :class:`~graph_tool.Graph` ``g`` with the ``vType`` vertex
+        property and the ``eType`` edge property.
 
     Raises
     ------
     TypeError
-        Raises :exc:`~TypeError` if ``g`` is not a string to a file object, or a 
-        :class:`~graph_tool.Graph`.
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
+        or a :class:`~graph_tool.Graph`\.
+
+        .. _pagerank: http://en.wikipedia.org/wiki/PageRank
     """
     g = _test_graph(g)
 
@@ -311,28 +322,78 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, **kwargs) :
     
     g.vp['vType'] = vType
     g.ep['eType'] = eType
-    return add_edge_lengths(g)
+    return g
 
 
-def _prepare_graph(g, g_colors, q_cls, q_arg) :
-    """Prepare graph for QueueNetwork."""
+def prepare_graph(g, g_colors, q_cls, q_arg) :
+    """Prepares a graph for use in :class:`.QueueNetwork`.
+
+    This function is called by ``__init__`` in the :class:`.QueueNetwork` class.
+    It creates the :class:`.QueueServer` instances that sit on the edges, and
+    sets various :class:`~graph_tool.PropertyMap`\s that are used when drawing
+    the graph.
+
+    Parameters
+    ----------
+    g : :class:`~graph_tool.Graph`
+    g_colors : :class:`.dict`
+        A dictionary of colors. The specific keys used are ``vertex_color`` and
+        ``vertex_fill_color`` for vertices that do not have any loops. Set
+        :class:`.QueueNetwork` for the default values passed.
+    q_cls : :class:`.dict`
+        A dictionary where the keys are integers that represent an edge type,
+        and the values are :class:`.QueueServer` classes.
+    q_args : :class:`.dict`
+        A dictionary where the keys are integers that represent an edge type,
+        and the values are the arguments that are used when creating an
+        instance of that :class:`.QueueServer` class.
+
+    Returns
+    -------
+    g : :class:`~graph_tool.Graph`
+        The same graph, but with the addiction of various
+        :class:`~graph_tool.PropertyMap`\s.
+    queues : :class:`.list`
+        A list of :class:`.QueueServer`\s where ``queues[k]`` is the
+        ``QueueServer`` that sets on the edge with edge index ``k``.
+    
+    Notes
+    -----
+    The graph ``g`` should have the ``eType`` edge property map and the
+    ``vType`` vertex property map. If they are not in ``g`` then each edge and
+    vertex has their ``eType`` and ``vType`` set to 1.
+
+    The following properties are set by each queue: ``vertex_color``,
+    ``vertex_fill_color``, ``vertex_fill_color``, ``edge_color``.
+    See :class:`.QueueServer` for more on setting these values.
+
+    The following properties are assigned as a :class:`~graph_tool.PropertyMap`
+    to the graph; their default values for each edge or vertex is shown:
+        
+        * ``vertex_pen_width``: ``1.1``,
+        * ``vertex_size``: ``8``,
+        * ``edge_control_points``: ``[0, 0, 0, 0]``
+        * ``edge_marker_size``: ``8``
+        * ``edge_pen_width``: ``1.25``
+        
+    Raises
+    ------
+    TypeError
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
+        or a :class:`~graph_tool.Graph`.
+    """
     g = _test_graph(g)
 
     g.reindex_edges()
     vertex_color        = g.new_vertex_property("vector<double>")
     vertex_fill_color   = g.new_vertex_property("vector<double>")
-    vertex_halo_color   = g.new_vertex_property("vector<double>")
-    vertex_halo_size    = g.new_vertex_property("double")
     vertex_pen_width    = g.new_vertex_property("double")
     vertex_size         = g.new_vertex_property("double")
-    vertex_halo         = g.new_vertex_property("bool")
 
     edge_control_points = g.new_edge_property("vector<double>")
     edge_color          = g.new_edge_property("vector<double>")
     edge_marker_size    = g.new_edge_property("double")
     edge_pen_width      = g.new_edge_property("double")
-    edge_length         = g.new_edge_property("double")
-    edge_times          = g.new_edge_property("double")
 
     vertex_props = set()
     for key in g.vertex_properties.keys() :
@@ -355,24 +416,18 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
     props   = vertex_props.union(edge_props)
     queues  = _set_queues(g, q_cls, q_arg, 'cap' in vertex_props)
 
-    has_length  = 'edge_length' in edge_props
-
     if 'pos' not in vertex_props :
         g.vp['pos'] = gt.sfdp_layout(g, epsilon=1e-2, cooling_step=0.95)
 
     for k, e in enumerate(g.edges()) :
-        p2  = np.array(g.vp['pos'][e.target()])
-        p1  = np.array(g.vp['pos'][e.source()])
-        edge_length[e] = g.ep['edge_length'][e] if has_length else np.linalg.norm(p1 - p2)
         if e.target() == e.source() :
-            edge_color[e] = [0, 0, 0, 0]
+            edge_color[e] = queues[k].colors['edge_loop_color']
         else :
             edge_control_points[e]    = [0, 0, 0, 0]
             edge_color[e] = queues[k].colors['edge_color']
 
     for v in g.vertices() :
         e = g.edge(v, v)
-        vertex_halo_color[v] = g_colors['vertex_halo_color']
         if isinstance(e, gt.Edge) :
             vertex_color[v]       = queues[g.edge_index[e]].current_color(2)
             vertex_fill_color[v]  = queues[g.edge_index[e]].current_color()
@@ -382,25 +437,17 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
 
     edge_pen_width.a      = 1.25
     edge_marker_size.a    = 8
-    edge_times.a          = 1
-
-    vertex_halo_size.a    = 1.3
     vertex_pen_width.a    = 1.1
     vertex_size.a         = 8
 
     properties = {
         'vertex_fill_color' : vertex_fill_color,
-        'vertex_halo_color' : vertex_halo_color,
-        'vertex_halo_size' : vertex_halo_size,
         'vertex_pen_width' : vertex_pen_width,
         'vertex_color' : vertex_color,
         'vertex_size' : vertex_size,
-        'vertex_halo' : vertex_halo,
         'edge_control_points' : edge_control_points,
         'edge_marker_size' : edge_marker_size,
         'edge_pen_width' : edge_pen_width,
-        'edge_length' : edge_length,
-        'edge_times' : edge_times,
         'edge_color' : edge_color}
 
     for key, value in properties.items() :
@@ -414,15 +461,15 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
 
 
 def _set_queues(g, q_cls, q_arg, has_cap) :
-    queues    = [0 for k in range(g.num_edges())]
+    queues = [0 for k in range(g.num_edges())]
 
     for e in g.edges() :
-        qedge = (int(e.source()), int(e.target()), g.edge_index[e])
         eType = g.ep['eType'][e]
+        qedge = (int(e.source()), int(e.target()), g.edge_index[e], eType)
 
         if has_cap and 'nServers' not in q_arg[eType] :
             q_arg[eType]['nServers'] = max(g.vp['cap'][e.target()] // 2, 1)
 
-        queues[qedge[2]] = q_cls[eType](edge=qedge, eType=eType, **q_arg[eType])
+        queues[qedge[2]] = q_cls[eType](edge=qedge, **q_arg[eType])
 
     return queues

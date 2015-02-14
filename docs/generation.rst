@@ -18,4 +18,5 @@ Graph Specification
 -------------------
 
     .. autofunction:: adjacency2graph
+    .. autofunction:: prepare_graph
     .. autofunction:: shortest_paths_distances

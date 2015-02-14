@@ -106,15 +106,12 @@ class QueueServer :
         When this function is called, ``t`` is the time the agent is entering
         service. **Should not return any values less than** ``t``, that is,
         ``service_f(t) >= t`` should always be true.
-    edge : tuple (optional, the default is ``(0,0,0)``)
-        A tuple that uniquely identifies which edge this queue lays on. The
-        first slot of the tuple is the source vertex, the second slot is the
-        target vertex, and the last slot is the ``edge_index`` of that edge.
-        This is automatically created when a :class:`.QueueNetwork` is
-        instantiated.
-    eType : int (optional, the default is ``1``)
-        The type of queue this is. Used by :class:`.QueueNetwork` when
-        instantiating a network.
+    edge : 4-:class:`.tuple` of int (optional, the default is ``(0,0,0,1)``)
+        A tuple that uniquely identifies which edge this queue lays on and the
+        edge type. The first slot of the tuple is the source vertex, the second
+        slot is the target vertex, and the third slot is the ``edge_index`` of 
+        that edge, and the last slot is the edge type for this queue. This is
+        automatically created when a :class:`.QueueNetwork` is instantiated.
     AgentClass : class (optional, the default is the :class:`~Agent` class)
         A class object for an :class:`.Agent` or any class object that has
         inherited the :class:`.Agent` class.
@@ -171,7 +168,6 @@ class QueueServer :
     colors the edges. If the target vertex does not have any loops, the number
     of agents in this queue affects the target vertex's color as well.
 
-
     Some defaults:
 
         >>> default_colors = {'edge_loop_color'   : [0, 0, 0, 0],
@@ -194,7 +190,7 @@ class QueueServer :
       .. _9781107027503: http://www.cambridge.org/us/9781107027503
     """
     def __init__(self, nServers=1, arrival_f=lambda t: t + exponential(1),
-                    service_f=lambda t: t + exponential(0.9), edge=(0,0,0), eType=1,
+                    service_f=lambda t: t + exponential(0.9), edge=(0,0,0,1), 
                     AgentClass=Agent, collect_data=False, active_cap=infty,
                     deactive_t=infty, colors=None, **kwargs) :
 
@@ -202,7 +198,6 @@ class QueueServer :
             raise RuntimeError("nServers must be a positive integer or infinity.\n%s" % (str(self)) )
 
         self.edge         = edge
-        self.eType        = eType
         self.nServers     = nServers
         self.nDepartures  = 0
         self.nSystem      = 0
@@ -538,7 +533,6 @@ class QueueServer :
     def __deepcopy__(self, memo) :
         new_server              = self.__class__()
         new_server.edge         = copy.copy(self.edge)
-        new_server.eType        = copy.copy(self.eType)
         new_server.nServers     = copy.copy(self.nServers)
         new_server.active_cap   = copy.copy(self.active_cap)
         new_server.deactive_t   = copy.copy(self.deactive_t)
@@ -575,7 +569,7 @@ class LossQueue(QueueServer) :
     qbuffer : int (optional, the default is 0)
         Specifies the length of the buffer (i.e. specifies how long the size
         of the queue can be).
-    kwargs
+    **kwargs
         Any :class:`~QueueServer` parameters.
 
     Attributes
@@ -626,7 +620,7 @@ class LossQueue(QueueServer) :
         Returns
         -------
         bool
-            Returns whether the number of agents in the system is greater than 
+            Returns whether the number of agents in the system is greater than
             or equal to ``nServers + buffer``.
         """
         return self.nSystem >= self.nServers + self.buffer
@@ -637,13 +631,13 @@ class LossQueue(QueueServer) :
 
         If the queue is at capacity, then the arriving agent is scheduled for
         immediate departure. That is, if an agent attempts to enter the queue
-        at time ``t`` when it is at capacity, they are scheduled for departure 
+        at time ``t`` when it is at capacity, they are scheduled for departure
         from the queue at time ``t``. The next event will be the departure of
         this agent.
 
         Returns
         -------
-        out : 
+        out :
             If next event is a departure then the departing agent is returned,
             otherwise nothing is returned.
         """
@@ -711,9 +705,6 @@ class NullQueue(QueueServer) :
                 kwargs['colors'][col] = default_colors[col]
         else :
             kwargs['colors'] = default_colors
-
-        if 'eType' not in kwargs :
-            kwargs['eType'] = 0
 
         QueueServer.__init__(self, **kwargs)
 

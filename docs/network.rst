@@ -36,7 +36,3 @@ Generic methods
       .. automethod:: QueueNetwork.copy
       .. automethod:: QueueNetwork.next_event_description
       .. automethod:: QueueNetwork.reset_colors
-
-   .. autoclass:: CongestionNetwork
-      :members:
-      :show-inheritance:

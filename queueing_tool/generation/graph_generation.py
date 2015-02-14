@@ -139,15 +139,14 @@ def _adjacency_adjust(adjacency, edge_type, adjust_type, is_directed) :
     return adjacency, edge_type
 
 
-def adjacency2graph(adjacency, edge_type=None, edge_length=None, adjust_type=0, is_directed=True) :
+def adjacency2graph(adjacency, edge_type=None, adjust_type=0, is_directed=True) :
     """Takes an adjacency list, dict, or matrix and returns a graph.
 
     The purpose of this function is take an adjacency list (or matrix) and
     return a :class:`~graph_tool.Graph` that can be used with
     :class:`~queueing_tool.network.QueueNetwork`. The Graph returned has a 
-    ``vType`` vertex property, and ``eType`` and ``edge_length`` edge 
-    properties. If the adjacency is directed and not connected, then the
-    adjacency list is altered.
+    ``vType`` vertex property, and ``eType`` edge property. If the adjacency is
+    directed and not connected, then the adjacency list is altered.
 
     Parameters
     ----------
@@ -158,19 +157,17 @@ def adjacency2graph(adjacency, edge_type=None, edge_length=None, adjust_type=0, 
         ``edge_type`` is a matrix, then ``edge_type[u, v]`` is the type of
         queue along the edge between vertices ``u`` and ``v``. If ``edge_type``
         is not supplied then all but terminal edges have type 1.
-    edge_length : list, dict, or numpy.ndarray (optional)
-        A mapping where that corresponds to each edge's length.
     adjust_type : int (optional, the default is 0)
-        Specifies what to do when the graph has terminal vertices (nodes with no
-        out-edges). There are three choices:
+        Specifies what to do when the graph has terminal vertices (nodes with
+        no out-edges). There are three choices:
 
-            ``adjust_type = 0``: A loop is added to each terminal node in the graph,
-            and their ``eType`` of that edge is set to 0.
-            ``adjust_type = 1``: All edges leading to terminal nodes have their 
+            ``adjust_type = 0``: A loop is added to each terminal node in the
+            graph, and their ``eType`` of that edge is set to 0.
+            ``adjust_type = 1``: All edges leading to terminal nodes have their
             ``eType`` set to 0.
-            ``adjust_type = 2``: A new vertex is created and each node has an edge
-            connect to the new vertex. The ``eType`` for each of these new edges is
-            set to 0.
+            ``adjust_type = 2``: A new vertex is created and each node has an
+            edge connect to the new vertex. The ``eType`` for each of these new
+            edges is set to 0.
 
         Note that if ``adjust_type`` is not 1 or 2 then it assumed to be 0.
     is_directed : bool (optional, the default is True)
@@ -180,18 +177,17 @@ def adjacency2graph(adjacency, edge_type=None, edge_length=None, adjust_type=0, 
     -------
     :class:`~graph_tool.Graph`
         A :class:`~graph_tool.Graph` with the ``vType`` vertex property, and 
-        ``eType`` edge property. If the ``edge_length`` parameter is supplied
-        then the ``edge_length`` edge properties is also included in the ``Graph``.
+        ``eType`` edge property.
 
     Raises
     ------
     TypeError
-        Is raised if ``adjacency``, ``edge_type``, and ``edge_length`` are
-        not ``list``, ``dict``, or  ``numpy.ndarray`` types (``edge_type`` and 
-        ``edge_length`` can be ``None``).
+        Is raised if ``adjacency`` or ``edge_type`` is not a :class:`.list`\,
+        :class:`.dict`\, :class:`~numpy.ndarray` the (``edge_type`` can be 
+        ``None``\).
     RuntimeError
         A :exc:`~RuntimeError` is raised if ``edge_type`` does not have the 
-        same dimensions as ``adjacency``.
+        same dimensions as ``adjacency``\.
     """
     if adjacency is None :
         raise TypeError("The `adjacency` parameter must be a list, dict, or a numpy.ndarray.")
@@ -219,16 +215,7 @@ def adjacency2graph(adjacency, edge_type=None, edge_length=None, adjust_type=0, 
 
     g.set_directed(is_directed)
 
-    if edge_length is not None :
-        edge_length_none = False
-        edge_length = _other2dict(adjacency, edge_length)
-        for k, value in adjacency.items() :
-            if k not in edge_length :
-                edge_length[k] = [1 for j in value]
-            elif len(edge_length[k]) != len(adjacency[k]) :
-                edge_length[k].extend([1 for j in range(len(adjacency[k]) - len(edge_length[k]))])
-    else :
-        edge_length_none = True
+
 
     vType   = g.new_vertex_property("int")
     eType   = g.new_edge_property("int")
@@ -261,13 +248,14 @@ def generate_random_graph(nVertices=250, **kwargs) :
     nVertices : int (optional, the default is 250)
         The number of vertices in the graph.
     **kwargs :
-        Any parameters to send to :func:`~minimal_random_graph` or :func:`~set_types_random`.
+        Any parameters to send to :func:`~minimal_random_graph` or
+        :func:`~set_types_random`.
 
     Returns
     -------
     :class:`~graph_tool.Graph`
-        A graph with a ``pos`` and ``vType`` vertex property and the ``eType`` and 
-        ``edge_length`` edge property.
+        A graph with a ``pos`` and ``vType`` vertex property and the ``eType``
+        edge property.
     """
     g = minimal_random_graph(nVertices, **kwargs)
     g = set_types_random(g, **kwargs)
@@ -285,7 +273,8 @@ def generate_pagerank_graph(nVertices=250, **kwargs) :
     nVertices : int (optional, the default is 250)
         The number of vertices in the graph.
     **kwargs :
-        Any parameters to send to :func:`~minimal_random_graph` or :func:`~set_types_pagerank`.
+        Any parameters to send to :func:`~minimal_random_graph` or
+        :func:`~set_types_pagerank`.
 
     Returns
     -------

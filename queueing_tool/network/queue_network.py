@@ -3,7 +3,7 @@ import numpy            as np
 import numbers
 import copy
 
-from .. generation.graph_preparation   import _prepare_graph
+from .. generation      import prepare_graph
 
 from .. queues          import NullQueue, QueueServer, LossQueue
 from .sorting           import oneBisectSort, bisectSort, oneSort, twoSort
@@ -34,6 +34,10 @@ class QueueNetwork :
     seed : int (optional)
         An integer used to initialize ``numpy``\'s and ``graph-tool``\'s
         psuedorandom number generators.
+    colors : :class:`.dict` (optional)
+        A dictionary of colors used to color the graph. The keys are specified
+        in the Notes section. If a particular key is missing, then the default
+        value for that key is used.
 
     Attributes
     ----------
@@ -108,9 +112,6 @@ class QueueNetwork :
     ...                       'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
     ...                       'vertex_type'       : [0.5, 0.5, 0.5, 1.0],
     ...                       'edge_departure'    : [0, 0, 0, 1], 
-    ...                       'vertex_halo_color' : [0, 0, 0, 0],
-    ...                       'halo_arrival'      : [0.1, 0.8, 0.8, 0.25],
-    ...                       'halo_departure'    : [0.9, 0.9, 0.9, 0.25],
     ...                       'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
     ...                       'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
     ...                       'edge_active'       : [0.1, 0.1, 0.1, 1.0],
@@ -129,27 +130,35 @@ class QueueNetwork :
     >>> 
     """
 
-    def __init__(self, g=None, q_classes=None, q_args=None, seed=None) :
+    def __init__(self, g=None, q_classes=None, q_args=None, seed=None, colors=None) :
         self.nEvents      = 0
         self.t            = 0
         self.agent_cap    = 1000
-        self.colors       = { 'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
+
+        self._to_animate  = False
+        self._initialized = False
+        self._prev_edge   = None
+        self._queues      = []
+
+        if colors is None :
+            colors = {}
+
+        default_colors    = { 'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
                               'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
                               'vertex_type'       : [0.5, 0.5, 0.5, 1.0],
                               'edge_departure'    : [0, 0, 0, 1],
-                              'vertex_halo_color' : [0, 0, 0, 0],
-                              'halo_arrival'      : [0.1, 0.8, 0.8, 0.25],
-                              'halo_departure'    : [0.9, 0.9, 0.9, 0.25],
                               'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
                               'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
                               'edge_active'       : [0.1, 0.1, 0.1, 1.0],
                               'edge_inactive'     : [0.8, 0.8, 0.8, 0.3],
                               'bg_color'          : [1, 1, 1, 1]}
 
-        self._to_animate  = False
-        self._initialized = False
-        self._prev_edge   = None
-        self._queues      = []
+        for key, value in default_colors.items() :
+            if key not in colors :
+                colors[key] = value
+
+        self.colors = colors
+
         default_classes   = {0 : NullQueue, 1 : QueueServer, 2 : LossQueue,
                              3 : LossQueue, 4 : LossQueue}
 
@@ -186,7 +195,7 @@ class QueueNetwork :
 
         if g is not None :
             if isinstance(g, str) or isinstance(g, gt.Graph) :
-                g, qs = _prepare_graph(g, self.colors, q_classes, q_args)
+                g, qs = prepare_graph(g, self.colors, q_classes, q_args)
             else :
                 raise TypeError("The Parameter `g` needs to be either a graph-tool Graph, a string, or None.")
 
@@ -546,7 +555,7 @@ class QueueNetwork :
         return data
 
 
-    def draw(self, out_size=(700, 700), output=None, update_colors=True, **kwargs) :
+    def draw(self, update_colors=True, **kwargs) :
         """Draws the network. The coloring of the network corresponds to the 
         number of agents at each queue.
 
@@ -561,29 +570,54 @@ class QueueNetwork :
         update_colors : ``bool`` (optional, the default is ``True``).
             Specifies whether all the colors are updated.
         kwargs
-            Any extra parameters to pass to :func:`~graph_tool.draw.graph_draw`.
+            Any parameters to pass to :func:`~graph_tool.draw.graph_draw`.
+
+        Notes
+        -----
+        There are several parameters passed to :func:`~graph_tool.draw.graph_draw`
+        by default. The following parameters are property maps set to the graph
+        when :func:`.prepare_graph` is called, they include:
+
+            * ``vertex_color``, ``vertex_fill_color``, ``vertex_size``,
+              ``vertex_pen_width``, ``pos``.
+            * ``edge_color``, ``edge_control_points``, ``edge_marker_size``,
+              ``edge_pen_width``.
+        the ``bg_color`` parameter is defined in the :class:`.dict`
+        ``QueueNetwork.colors``. The ``output_size`` parameter defaults to
+        ``(700, 700)``.
+
+        If these parameters are supplied as arguments to :meth:`.draw` then the
+        passed arguments are used over the defaults.
 
             .. _documentation: http://graph-tool.skewed.de/static/doc/index.html
         """
         if update_colors :
             self._update_all_colors()
 
-        more_kwargs = {'geometry' : out_size} if output is None else {'output_size': out_size , 'output' : output}
-        kwargs.update(more_kwargs)
+        output_size = (700, 700)
 
-        ans = gt.graph_draw(g=self.g, pos=self.g.vp['pos'],
-                bg_color=self.colors['bg_color'],
-                edge_color=self.g.ep['edge_color'],
-                edge_control_points=self.g.ep['edge_control_points'],
-                edge_marker_size=self.g.ep['edge_marker_size'],
-                edge_pen_width=self.g.ep['edge_pen_width'],
-                vertex_color=self.g.vp['vertex_color'],
-                vertex_fill_color=self.g.vp['vertex_fill_color'],
-                vertex_halo=self.g.vp['vertex_halo'],
-                vertex_halo_color=self.g.vp['vertex_halo_color'],
-                vertex_halo_size=self.g.vp['vertex_halo_size'],
-                vertex_pen_width=self.g.vp['vertex_pen_width'],
-                vertex_size=self.g.vp['vertex_size'], **kwargs)
+        if 'output' not in kwargs :
+            if 'geometry' not in kwargs :
+                kwargs.update( {'geometry' : output_size } )
+        else :
+            if 'output_size' not in kwargs :
+                kwargs.update( {'output_size' : output_size } )
+            
+        vertex_params = set(['vertex_color', 'vertex_fill_color', 'vertex_size',
+                             'vertex_pen_width', 'pos'])
+
+        edge_params   = set(['edge_color', 'edge_control_points',
+                             'edge_marker_size', 'edge_pen_width'])
+
+        for param in vertex_params :
+            if param not in kwargs :
+                kwargs[param] = self.g.vp[param]
+
+        for param in edge_params :
+            if param not in kwargs :
+                kwargs[param] = self.g.ep[param]
+
+        ans = gt.graph_draw(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
 
 
     def show_active(self) :
@@ -658,7 +692,7 @@ class QueueNetwork :
 
         for e in self.g.edges() :
             ei = self.g.edge_index[e]
-            if self.edge2queue[ei].eType == n :
+            if self.g.ep['eType'][e] == n :
                 self.g.ep['edge_color'][e] = self.colors['edge_active']
             else :
                 self.g.ep['edge_color'][e] = self.colors['edge_inactive']
@@ -787,18 +821,15 @@ class QueueNetwork :
 
         Returns
         -------
-        :class:`.tuple`
-            Returns a 2-tuple where the first entry indicates whether the next
-            event is an arrival or a departure, and the second entry is which
-            queue/edge this event corresponds to.
-
-        Raises
-        ------
-        :exc:`.IndexError`
-            This error is raised if there are no events scheduled.
+        des : str
+            Indicates whether the next event is an arrival a departure, or
+            nothing; returns ``'Arrival'``, ``'Departure'``, or ``'Nothing'``.
+        edge : int or ``None``
+            The edge index of the edge that this event will occur at. If there
+            are no events then ``None`` is returned.
         """
         if len(self._queues) == 0 :
-            ans = ("Nothing", None)
+            ans = ('Nothing', None)
         else :
             ad1 = 'Arrival' if self._queues[-1].next_event_description() == 1 else 'Departure'
             ad2 = self._queues[-1].edge[2]
@@ -920,8 +951,8 @@ class QueueNetwork :
 
         Raises
         ------
-        :exc:`.RuntimeError`
-            Will raise a ``RuntimeError`` if the ``QueueNetwork`` has not
+        RuntimeError
+            Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not
             been initialized. Call :meth:`.initialize` before running.
         """
         if not self._initialized :
@@ -966,8 +997,8 @@ class QueueNetwork :
 
         Raises
         ------
-        :exc:`.RuntimeError`
-            Will raise a ``RuntimeError`` if the ``QueueNetwork`` has not been
+        RuntimeError
+            Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not been
             initialized. Call :meth:`.initialize` before running.
         """
         if not self._initialized :
@@ -1069,9 +1100,9 @@ class CongestionNetwork(QueueNetwork) :
 
     This class is identical to the :class:`~QueueNetwork` class, with the only
     exception being how blocking is handled when an agent is blocked by a
-    :class:`~queueing_tool.queues.LossQueue`. In this network, if an agent will
-    be blocked at his desired destination then they are held back at
-    his current queue and receives an extra service there.
+    :class:`.LossQueue`. In this network, if an agent will be blocked at his
+    desired destination then they are held back at his current queue and
+    receives an extra service there.
     """
     def __init__(self, g=None, q_classes=None, q_args=None, seed=None) :
         QueueNetwork.__init__(self, g, seed, calcpath)
