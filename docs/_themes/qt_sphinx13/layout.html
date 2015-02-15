@@ -15,6 +15,14 @@
 
 {% block extrahead %}
     <link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css' />
+    <link href='http://fonts.googleapis.com/css?family=Roboto:300,400,700' rel='stylesheet' type='text/css' />
+
+  <link rel="stylesheet" href="_static/bootstrap-paper.min.css" type="text/css" /> <!-- -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script><!-- -->
+
+    <link rel="stylesheet" href="_static/qt_sphinx13.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
 {{ super() }}
 {%- if not embedded %}
     <style type="text/css">
@@ -55,44 +63,56 @@
 {%- endif %}
 {% endblock %}
 
-{% block rootrellink %}
-        <li><a href="{{ pathto('index') }}">Sphinx home</a>&nbsp;|</li>
-        <li><a href="{{ pathto('contents') }}">Documentation</a> &raquo;</li>
-{% endblock %}
+{% block rootrellink %}{% endblock %}
+{% block relbaritems %}{% endblock %}
+{% block relbar1 %}{% endblock %}
+{% block relbar2 %}{% endblock %}
 
 {% block header %}
+<div class="push-nav-down">
 <nav class="navbar navbar-inverse">
   <div class="container-fluid">
     <div class="navbar-header">
-      <a class="navbar-brand" href="#">WebSiteName</a>
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-2">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="{{ pathto('index') }}">Queueing-tool</a>
     </div>
-    <div>
+
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
       <ul class="nav navbar-nav">
-        <li class="active"><a href="#">Home</a></li>
-        <li><a href="#">Page 1</a></li>
-        <li><a href="#">Page 2</a></li>
-        <li><a href="#">Page 3</a></li>
+        <!--li><a> 0.1.0</a></li-->
+        <li class="active"><a href="https://github.com/djordon/queueing-tool">Get it<span class="sr-only">(current)</span></a></li>
+        <li><a href="#">Link</a></li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Contents <span class="caret"></span></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a href="overview.html">Overview</a></li>
+            <li><a href="quickstart.html#installation">Installation</a></li>
+            <li class="divider"></li>
+            <li><a href="network.html">Queueing networks</a></li>
+            <li><a href="queues.html">Queues and agents</a></li>
+            <li><a href="generation.html">Graph generation</a></li>
+            <li class="divider"></li>
+            <li><a href="#">One more separated link</a></li>
+          </ul>
+        </li>
       </ul>
+      <form class="navbar-form navbar-right search" action="search.html" method="get" role="search">
+        <div class="form-group" id="searchbox">
+          <!--input class="form-control" placeholder="Search" type="text"> <!-- -->
+          <input class="form-control" name="q" type="text">
+          <input name="check_keywords" value="yes" type="hidden">
+          <input name="area" value="default" type="hidden">
+        </div>
+        <button type="submit" class="btn btn-default">Submit</button>
+        <script type="text/javascript">$('#searchbox').show(0);</script>
+      </form>
     </div>
   </div>
 </nav>
-<div class="pageheader">
-  <ul>
-    <li><a href="{{ pathto('index') }}">Home</a></li>
-    <li><a href="{{ pathto('install') }}">Get it</a></li>
-    <li><a href="{{ pathto('contents') }}">Docs</a></li>
-  </ul>
-  <div>
-    <a href="{{ pathto('index') }}">
-      <img src="{{ pathto('_static/sphinxheader.png', 1) }}" alt="SPHINX" />
-    </a>
-  </div>
 </div>
-{% endblock %}
-
-{% block footer %}
-  <!-- <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"> 
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>-->
-{{super()}}
 {% endblock %}

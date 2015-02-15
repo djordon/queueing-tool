@@ -475,19 +475,14 @@ class QueueNetwork :
             else :
                 queues = range(self.nE)
 
-        data = np.zeros( (1,5) )
+        data = np.zeros( (0,5) )
         for q in queues :
-            qdata = []
-            for d in self.edge2queue[q].data.values() :
-                qdata.extend(d)
+            dat = self.edge2queue[q].fetch_data()
 
-            if len(qdata) > 0 :
-                dat       = np.zeros( (len(qdata), 5) )
-                dat[:,:4] = np.array(qdata)
-                dat[:, 4] = q
+            if len(dat) > 0 :
                 data      = np.vstack( (data, dat) )
 
-        return data[1:,:]
+        return data
 
 
     def data_agents(self, queues=None, edges=None, types=None) :
@@ -582,6 +577,7 @@ class QueueNetwork :
               ``vertex_pen_width``, ``pos``.
             * ``edge_color``, ``edge_control_points``, ``edge_marker_size``,
               ``edge_pen_width``.
+
         the ``bg_color`` parameter is defined in the :class:`.dict`
         ``QueueNetwork.colors``. The ``output_size`` parameter defaults to
         ``(700, 700)``.
@@ -1095,7 +1091,7 @@ class QueueNetwork :
 
 
 
-class CongestionNetwork(QueueNetwork) :
+class _CongestionNetwork(QueueNetwork) :
     """A network of queues that handles congestion by holding back agents.
 
     This class is identical to the :class:`~QueueNetwork` class, with the only

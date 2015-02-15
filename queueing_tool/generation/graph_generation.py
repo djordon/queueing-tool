@@ -287,7 +287,7 @@ def generate_pagerank_graph(nVertices=250, **kwargs) :
     return g
 
 
-def minimal_random_graph(nVertices, is_directed=True, sfdp=None) :
+def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None) :
     """Creates a connected random graph.
 
     This function first places ``nVertices`` points in the unit square randomly
@@ -307,19 +307,30 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None) :
     is_directed : bool (optional, the default is ``True``)
         Specifies whether the graph is directed or not.
     sfdp : bool or None (optional, the default is ``None``)
-        Specifies whether to run ``graph-tool``'s :func:`~graph_tool.draw.sfdp_layout` 
-        function on the created graph ``g``.
+        Specifies whether to run ``graph-tool``'s :
+        func:`~graph_tool.draw.sfdp_layout` function on the graph ``g``. If
+        ``True``, the vertex positions returned by
+        func:`~graph_tool.draw.sfdp_layout` are used to set the ``pos`` vertex
+        property.
+    seed : int (optional)
+        An integer used to initialize ``numpy``\'s and ``graph-tool``\'s
+        psuedorandom number generators.
 
     Returns
     -------
     :class:`~graph_tool.Graph`
         A graph with a ``pos`` vertex property for the vertex positions.
     """
+
+    if isinstance(seed, numbers.Integral) :
+        np.random.seed(seed)
+        gt.seed_rng(seed)
+
     points  = np.random.random((nVertices, 2)) * 10
     nEdges  = nVertices * (nVertices - 1) // 2
     edges   = []
 
-    for k in range(nVertices) :
+    for k in range(nVertices-1) :
         for j in range(k+1, nVertices) :
             v = points[k] - points[j]
             edges.append( (k, j, v[0]**2 + v[1]**2) )

@@ -38,8 +38,8 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
     'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
     'sphinx.ext.mathjax',
+    'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     'numpydoc',
 ]

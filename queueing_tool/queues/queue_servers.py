@@ -40,7 +40,7 @@ def poisson_random_measure(rate, rate_max, t) :
 
     where :math:`r(t)` is the supplied ``rate`` function. This function can
     only simulate processes that have bounded intensity functions. See chapter
-    6 of [1]_ for more on the mathematics behind Poisson random measures; the
+    6 of [2]_ for more on the mathematics behind Poisson random measures; the
     book's publisher, Springer, has that chapter available online (`pdf`_\).
 
     A Poisson random measure is sometimes called a nonhomogeneous Poisson
@@ -50,21 +50,17 @@ def poisson_random_measure(rate, rate_max, t) :
 
     Examples
     --------
-    This function is designed to work the :class:`.QueueServer` class. Suppose
-    you wanted to make an :math:`\\text{M}_t/\\text{M}/10` ``QueueServer``
-    where the arrivals are modeled as a Poisson random measure with rate
-    function :math:`r(t) = 2 + \sin( 2\pi t)` and a service distribution that
-    is exponential with rate ``2.5``. Then you could do so as follows:
+    Suppose you wanted to modeled the arrival process as a Poisson random
+    measure with rate function :math:`r(t) = 2 + \sin( 2\pi t)`. Then you could
+    do so as follows::
 
-    >>> rate  = lambda t: 2 + np.sin( 2 * np.pi * t)
-    >>> arr_f = lambda t: poisson_random_measure(rate, 3, t)
-    >>> ser_f = lambda t: t + np.random.exponential(1/2.5)
-    >>> q = QueueServer(nServers=10, arrival_f=arr_f, service_f=ser_f)
+        >>> rate  = lambda t: 2 + np.sin( 2 * np.pi * t)
+        >>> arr_f = lambda t: poisson_random_measure(rate, 3, t)
 
     References
     ----------
-    ..  [1] Çınlar, Erhan. *Probability and stochastics*. Graduate Texts in\
-             Mathematics. Vol. 261. Springer, New York, 2011. :doi:`10.1007/978-0-387-87859-1`
+    .. [2] Çınlar, Erhan. *Probability and stochastics*. Graduate Texts in\
+           Mathematics. Vol. 261. Springer, New York, 2011. :doi:`10.1007/978-0-387-87859-1`
     """
     scale = 1 / rate_max
     t     = t + exponential(scale)
@@ -115,10 +111,10 @@ class QueueServer :
     AgentClass : class (optional, the default is the :class:`~Agent` class)
         A class object for an :class:`.Agent` or any class object that has
         inherited the :class:`.Agent` class.
-    active_cap : int (the default is :const:`~numpy.infty``\)
+    active_cap : int (the default is :const:`~numpy.infty`\)
         The maximum number of arrivals the queue will accept from outside the
         network.
-    deactive_t : float (the default is :const:`~numpy.infty``\)
+    deactive_t : float (the default is :const:`~numpy.infty`\)
         Sets a stopping time, after which no more arrivals (from outside the
         network) will attempt to enter the ``QueueServer``.
     collect_data : bool (the default is ``False``)
@@ -141,8 +137,8 @@ class QueueServer :
     nDepartures : int
         The total number of departures from the queue.
     nSystem : int
-        The number of agents in the entire queue (includes those currently
-        being served).
+        The number of agents in the entire queue -- which includes those being
+        served and those waiting to be served.
     nArrivals : list
         A list with two entries. The first slot is the total number of arrivals,
         while the second slot is the number of arrivals from the outside world.
@@ -153,14 +149,37 @@ class QueueServer :
         and the values is a list of lists. Each time an agent arrives at the
         queue it appends this data to the end of the list.
 
+    Examples
+    --------
+    This function is designed to work the :class:`.QueueServer` class. Suppose
+    you wanted to make an :math:`\\text{M}_t/\\text{M}/10` ``QueueServer``
+    where the arrivals are modeled as a Poisson random measure with rate
+    function :math:`r(t) = 1 + \sin^2( 2\pi t)` and a service distribution that
+    is exponential with rate ``2.5``. Then you could do so as follows::
+
+        >>> rate  = lambda t: 1 + np.sin( 2 * np.pi * t)**2
+        >>> arr_f = lambda t: poisson_random_measure(rate, 2, t)
+        >>> ser_f = lambda t: t + np.random.exponential(1/2.5)
+        >>> q = QueueServer(nServers=10, arrival_f=arr_f, service_f=ser_f)
+
+    Before you could simulate the queue it must be set to active; also, no data
+    is collect by default, we change this with the following::
+
+        >>> q.set_active()
+        >>> q.collect_data = True
+
+    To simulate 12000 events and collect the data run::
+
+        >>> q.simulate(n=12000)
+        >>> data = q.fetch_data()
 
     Notes
     -----
-    This is a generic multi-server queue implimentation (see [3]_).
+    This is a generic multi-server queue implimentation (see [4]_).
     In `Kendall's notation`_\, this is a 
     :math:`\\text{GI}_t/\\text{GI}_t/c/\infty/N/\\text{FIFO}` queue class, 
     where :math:`c` is set by ``nServers`` and :math:`N` is set by
-    ``active_cap``. See chapter 1 of [2]_ (pdfs from `the author`_ and
+    ``active_cap``. See chapter 1 of [3]_ (pdfs from `the author`_ and
     `the publisher`_) for a good introduction to the theory behind the 
     multi-server queue.
 
@@ -178,11 +197,11 @@ class QueueServer :
 
     References
     ----------
-    .. [2] Harchol-Balter, Mor. *Performance Modeling and Design of Computer Systems:\
-            Queueing Theory in Action*. Cambridge University Press, 2013. ISBN:\
-            `9781107027503`_.
+    .. [3] Harchol-Balter, Mor. *Performance Modeling and Design of Computer Systems:\
+           Queueing Theory in Action*. Cambridge University Press, 2013. ISBN:\
+           `9781107027503`_.
 
-    .. [3] *Queueing Theory*, Wikipedia `<http://en.wikipedia.org/wiki/Queueing_theory>`_.
+    .. [4] *Queueing Theory*, Wikipedia `<http://en.wikipedia.org/wiki/Queueing_theory>`_.
 
       .. _Kendall's notation: http://en.wikipedia.org/wiki/Kendall%27s_notation
       .. _the author: http://www.cs.cmu.edu/~harchol/PerformanceModeling/chpt1.pdf
@@ -212,15 +231,15 @@ class QueueServer :
         self.deactive_t   = deactive_t
 
         inftyAgent        = InftyAgent()
-        self._arrivals    = [inftyAgent]
-        self._departures  = [inftyAgent]
+        self._arrivals    = [inftyAgent]    # A list of arriving agents.
+        self._departures  = [inftyAgent]    # A list of departing agents.
         self._queue       = collections.deque()
-        self._nTotal      = 0
+        self._nTotal      = 0               # The number of agents scheduled to arrive + nSystem 
         self._active      = False
-        self._current_t   = 0
-        self._time        = infty
-        self._next_ct     = 0
-        self._black_cap   = 5                # Used to help color edges and vertices.
+        self._current_t   = 0               # The time of the last event.
+        self._time        = infty           # The time of the next event.
+        self._next_ct     = 0               # The closest time an arrival from outside the network can arrive.
+        self._black_cap   = 5               # Used to help color edges and vertices.
 
         default_colors   = {'edge_loop_color'   : [0, 0, 0, 0],
                             'edge_color'        : [0.9, 0.9, 0.9, 0.5],
@@ -319,6 +338,32 @@ class QueueServer :
             The number of agents waiting in line to be served.
         """
         return len(self._queue)
+
+
+    def fetch_data(self) :
+        """Fetches data from the queue.
+
+        Returns
+        -------
+        data : :class:`~numpy.ndarray`
+            A five column ``np.array`` of all the data. The first, second, and
+            third columns represent, respectively, the arrival, service start,
+            and departure times of each ``Agent`` that has visited the queue.
+            The fourth column identifies how many other agents were in the
+            queue upon arrival, and the fifth column identifies this queue by
+            its edge index.
+        """
+
+        qdata = []
+        for d in self.data.values() :
+            qdata.extend(d)
+
+        dat = np.zeros( (len(qdata), 5) )
+        if len(qdata) > 0 :
+            dat[:,:4] = np.array(qdata)
+            dat[:, 4] = self.edge[2]
+
+        return dat
 
 
     def _add_arrival(self, *args) :
@@ -463,6 +508,28 @@ class QueueServer :
             return new_depart
 
 
+    def simulate(self, n=None, t=10) :
+        """This method simulates the queue forward for a specified amount of
+        *system time* ``t``\, or for a specific number of events ``n``.
+
+        Parameters
+        ----------
+        n : int (optional)
+            The number of events to simulate. Supercedes the parameter ``t`` if
+            supplied.
+        t : float (optional, the default is ``10``)
+            The amount of system time to simulate forward. If ``n`` is ``None``
+            then this parameter is used.
+        """
+        if n is None :
+            now = self._current_t
+            while self._current_t < now + t :
+                tmp = self.next_event()
+        elif isinstance(n, numbers.Integral) :
+            for k in range(n) :
+                tmp = self.next_event()
+
+
     def current_color(self, which=0) :
         """Returns a color for the queue.
 
@@ -473,17 +540,22 @@ class QueueServer :
 
         Returns
         -------
-        list
+        color : :class:`.list`
             Returns a RGBA color that is represented as a list with 4 entries
             where each entry can be any floating point number between 0 and 1.
 
             * If ``which`` is 1 then it returns the color of the edge as if it
-              were a self loop.
+              were a self loop. This is specified in
+              ``colors['edge_loop_color']``.
             * If ``which`` is 2 then it returns the color of the vertex pen color 
               (defined as color/vertex_color in :func:`~graph_tool.draw.graph_draw`).
+              This is specified in ``colors['vertex_color']``.
             * If ``which`` is anything else, then it returns the a shade of the 
-              edge that is proportional to the number of agents in the queue.
-              More agents correspond to darker edge colors.
+              edge that is proportional to the number of agents in the system
+              -- which includes those being servered and those waiting to be
+              served. More agents correspond to darker edge colors. Uses
+              ``colors['vertex_fill_color']`` if the queue sits on a loop, and
+              ``colors['edge_color']`` otherwise.
         """
         if which == 1 :
             color = self.colors['edge_loop_color']
@@ -585,7 +657,7 @@ class LossQueue(QueueServer) :
     -----
     In `Kendall's notation`_\, this is a
     :math:`\\text{GI}_t/\\text{GI}_t/c/k/N/\\text{FIFO}` queue, where :math:`k`
-    is the ``qbuffer``. If the default parameters used then the returned
+    is the ``qbuffer``. If the default parameters are used then the returned
     instance is an :math:`\\text{M}/\\text{M}/1/1` queue.
     """
 
@@ -689,9 +761,14 @@ class LossQueue(QueueServer) :
 class NullQueue(QueueServer) :
     """A terminal queue.
 
-    A queue that is used but the :class:`.QueueNetwork` class to represent
+    A queue that is used by the :class:`.QueueNetwork` class to represent
     agents leaving the network. It can collect data on agents that arrive, but
     all arriving agents are deleted after their arrival.
+
+    This class can collect data on arriving agents. With the exception of
+    ``next_event_description``, ``nQueued``, and ``current_color``, all
+    functions have been replaced with ``pass``. The methods
+    ``next_event_description`` and ``nQueued`` will always return ``0``.
     """
     def __init__(self, *args, **kwargs) :
 
@@ -705,6 +782,9 @@ class NullQueue(QueueServer) :
                 kwargs['colors'][col] = default_colors[col]
         else :
             kwargs['colors'] = default_colors
+
+        if 'edge' not in kwargs :
+            kwargs['edge'] = (0,0,0,0)
 
         QueueServer.__init__(self, **kwargs)
 
@@ -735,7 +815,7 @@ class NullQueue(QueueServer) :
     def delay_service(self) :
         pass
 
-    def next_event_type(self) :
+    def next_event_description(self) :
         return 0
 
     def next_event(self) :

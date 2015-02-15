@@ -10,17 +10,35 @@
  */
 
 @import url("basic.css");
-
-
-/* taken from bootstrap 3.3.2 */
+/* basic.css*/
 
 blockquote {
-  padding: inherit;
-  margin: inherit;
+  padding: 0;
+  margin: 14px 40px;
   font-size: inherit;
   border-left: none;
 }
 
+dt, dd {
+  line-height: inherit;
+  font-weight: inherit;
+}
+
+.push-nav-down {
+  padding-top: 25px;
+}
+
+.label {
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    color: inherit;
+}
+
+/*
+* {
+    box-sizing: content-box;
+}*/
 
 /* -- page layout ----------------------------------------------------------- */
 
@@ -28,13 +46,12 @@ body {
     font-family: 'Open Sans', 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
                  'Verdana', sans-serif;
     font-size: 14px;
-    /*text-align: center;
-    /*background-image: url(bodybg.png);*/
+    /*text-align: center;*/
+    background-image: url(crossword.png);
     color: black;
     padding: 0;
-    border-right: 1px solid #0a507a;
-    border-left: 1px solid #0a507a;
-
+    line-height: 1.42857;
+    letter-spacing: 0px;
     margin: 0 auto;
     min-width: 780px;
     max-width: 1080px;
@@ -43,6 +60,7 @@ body {
 
 .pageheader {
     /*background-image: url(headerbg.png);*/
+    background-color: white;
     text-align: left;
     padding: 10px 15px;
 }
@@ -77,6 +95,7 @@ body {
 div.document {
     background-color: white;
     text-align: left;
+    border: 1px solid #0a507a;
 }
 
 div.bodywrapper {
