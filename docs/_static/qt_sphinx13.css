@@ -13,8 +13,8 @@
 /* basic.css*/
 
 blockquote {
-  padding: 0;
-  margin: 14px 40px;
+  padding: 10px 40px;
+  margin: 0px;
   font-size: inherit;
   border-left: none;
 }

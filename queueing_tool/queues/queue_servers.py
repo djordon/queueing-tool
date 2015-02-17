@@ -60,7 +60,8 @@ def poisson_random_measure(rate, rate_max, t) :
     References
     ----------
     .. [2] Çınlar, Erhan. *Probability and stochastics*. Graduate Texts in\
-           Mathematics. Vol. 261. Springer, New York, 2011. :doi:`10.1007/978-0-387-87859-1`
+           Mathematics. Vol. 261. Springer, New York, 2011.\
+           :doi:`10.1007/978-0-387-87859-1`
     """
     scale = 1 / rate_max
     t     = t + exponential(scale)
@@ -131,9 +132,14 @@ class QueueServer :
        
     Attributes
     ----------
-    active : bool (the default is ``False``)
+    active : bool
         Returns whether the queue accepts arrivals from outside the network 
-        (the queue will always accept arrivals from inside the network).
+        (the queue will always accept arrivals from inside the network). The
+        default is false.
+    current_time : float
+        The time of the last event.
+    time : float
+        The time of the next event.
     nDepartures : int
         The total number of departures from the queue.
     nSystem : int
@@ -197,9 +203,9 @@ class QueueServer :
 
     References
     ----------
-    .. [3] Harchol-Balter, Mor. *Performance Modeling and Design of Computer Systems:\
-           Queueing Theory in Action*. Cambridge University Press, 2013. ISBN:\
-           `9781107027503`_.
+    .. [3] Harchol-Balter, Mor. *Performance Modeling and Design of Computer\
+           Systems: Queueing Theory in Action*. Cambridge University Press,\
+           2013. ISBN: `9781107027503`_.
 
     .. [4] *Queueing Theory*, Wikipedia `<http://en.wikipedia.org/wiki/Queueing_theory>`_.
 
@@ -261,6 +267,26 @@ class QueueServer :
         pass
     @active.setter
     def active(self, tmp): 
+        pass
+
+    @property
+    def time(self):
+        return self._time
+    @time.deleter
+    def time(self): 
+        pass
+    @time.setter
+    def time(self, tmp): 
+        pass
+
+    @property
+    def current_time(self):
+        return self._current_t
+    @current_time.deleter
+    def current_time(self): 
+        pass
+    @time.setter
+    def current_time(self, tmp): 
         pass
 
     def __repr__(self) :
@@ -508,26 +534,32 @@ class QueueServer :
             return new_depart
 
 
-    def simulate(self, n=None, t=10) :
+    def simulate(self, n=1, t=None, nD=None) :
         """This method simulates the queue forward for a specified amount of
         *system time* ``t``\, or for a specific number of events ``n``.
 
         Parameters
         ----------
-        n : int (optional)
+        n : int (optional, the default is ``1``)
             The number of events to simulate. Supercedes the parameter ``t`` if
-            supplied.
-        t : float (optional, the default is ``10``)
-            The amount of system time to simulate forward. If ``n`` is ``None``
-            then this parameter is used.
+            supplied. If ``t`` and ``nD`` are both ``None`` then this parameter
+            is used.
+        t : float (optional)
+            The minimum amount of system time to simulate forward. 
+        nD : int (optional)
+            Simulate until you observe this many departures.
         """
-        if n is None :
-            now = self._current_t
-            while self._current_t < now + t :
-                tmp = self.next_event()
-        elif isinstance(n, numbers.Integral) :
+        if t is None and nD is None :
             for k in range(n) :
                 tmp = self.next_event()
+        elif t is not None :
+            then = self._current_t + t
+            while self._current_t < then :
+                tmp = self.next_event()
+        elif nD is not None :
+            nDeparts = self.nDepartures + nD
+            while self.nDepartures < nDeparts :
+                tmp = self.next_event() 
 
 
     def current_color(self, which=0) :

@@ -2,6 +2,7 @@ import graph_tool.all   as gt
 import numpy            as np
 import numbers
 import copy
+import sys
 
 from .. generation      import prepare_graph
 
@@ -333,26 +334,46 @@ class QueueNetwork :
         Parameters
         ----------
         mat : :class:`.dict` or :class:`~numpy.ndarray`
-            A routing matrix or routing dictionary, where the keys are the
-            vertex indices and the values are the probabilities for the each
-            adjacent vertex.
+            A routing matrix or routing dictionary. If passed a routing
+            dictionary, the keys should be vertex indices and the values are
+            the probabilities for the each adjacent vertex.
 
         Raises
         ------
         RuntimeError
-            If the keys in the :class:`.dict` don't match with any vertex index in the
-            graph. Also if the sum of the probabilities of all but the last
-            adjacent vertices is greater than 1.
+            A :exc:`.RuntimeError` is raised if: the keys in the :class:`.dict`
+            don't match with any vertex index in the graph; the sum of the
+            routing probabilities out of a vertex is not 1; and if the a
+            :class:`~numpy.ndarray` is passed with the wrong shape, must be
+            (nVertices, nVertices).
         """
         if isinstance(mat, dict) :
             for key, value in mat.items() :
-                if k not in self._route_probs :
+                if key not in self._route_probs :
                     raise RuntimeError("One of the keys don't correspond to a vertex.")
-                elif len(value) > 1 and sum(value[:-1]) > 1 :
-                    raise RuntimeError("Sum of routing probabilities at a vertex was greater than 1.")
-                else :
-                    s = np.float64(1 - sum(value[:-1]))
-                    self._route_probs[k] = [np.float64(p) if k + 1 < len(value) else s for p in value]
+                elif not np.isclose(np.sum(value), 1) :
+                    raise RuntimeError("Sum of routing probabilities at a vertex was not 1.")
+
+                self._route_probs[key] = []
+                if len(value) == self.nV :
+                    for e in self.g.vertex(key).out_edges() :
+                        p = value[ int(e.target()) ]
+                        self._route_probs[key].append( np.float64(p) )
+                elif len(value) == len(self._route_probs[key]) :
+                    for p in value :
+                        self._route_probs[key].append( np.float64(p) )
+
+        elif isinstance(mat, np.ndarray) :
+            if mat.shape != (self.nV, self.nV) :
+                raise RuntimeError("Matrix is the wrong shape, should be %s x %s." % (self.nV, self.nV))
+            elif not np.allclose(np.sum(mat, axis=1), 1) :
+                raise RuntimeError("Sum of routing probabilities at a vertex was not 1.")
+
+            for k in range(self.nV) :
+                self._route_probs[k] = []
+                for e in self.g.vertex(k).out_edges() :
+                    p = mat[k, int(e.source())]
+                    self._route_probs[key].append( np.float64(p) )
 
 
     def collect_data(self, queues=None, edges=None, types=None) :
@@ -570,20 +591,23 @@ class QueueNetwork :
         Notes
         -----
         There are several parameters passed to :func:`~graph_tool.draw.graph_draw`
-        by default. The following parameters are property maps set to the graph
-        when :func:`.prepare_graph` is called, they include:
+        by default. The following parameters are property maps that are 
+        automatically set to the graph when a ``QueueNetwork`` instance is
+        created (the maps are set using the :func:`.prepare_graph` function).
+        These property maps include:
 
             * ``vertex_color``, ``vertex_fill_color``, ``vertex_size``,
               ``vertex_pen_width``, ``pos``.
             * ``edge_color``, ``edge_control_points``, ``edge_marker_size``,
               ``edge_pen_width``.
 
-        the ``bg_color`` parameter is defined in the :class:`.dict`
+        Each of these properties are used by ``draw`` to style the canvas.
+        Also, the ``bg_color`` parameter is defined in the :class:`.dict`
         ``QueueNetwork.colors``. The ``output_size`` parameter defaults to
         ``(700, 700)``.
 
-        If these parameters are supplied as arguments to :meth:`.draw` then the
-        passed arguments are used over the defaults.
+        If any of these parameters are supplied as arguments to ``draw`` then
+        the passed arguments are used over the defaults.
 
             .. _documentation: http://graph-tool.skewed.de/static/doc/index.html
         """
@@ -866,9 +890,6 @@ class QueueNetwork :
             if q2.active and np.sum(self.nAgents) > self.agent_cap - 1 :
                 q2.active = False
 
-            if q2._departures[0]._time < q2._arrivals[0]._time :
-                print("WHOA! THIS NEEDS CHANGING! %s %s %s" % (q2._departures[0]._time, q2._arrivals[0]._time, q2) )
-
             q2.next_event()
 
             if slow :
@@ -930,20 +951,58 @@ class QueueNetwork :
         if self._to_animate :
             self._window.graph.regenerate_surface(lazy=False)
             self._window.graph.queue_draw()
+
+            if self._to_disk :
+                pixbuf = self._window.get_pixbuf()
+                pixbuf.savev(self._outdir+'%d.png' % self._count, 'png', [], [])
+                if self._count >= self._max_count :
+                    Gtk.main_quit()
+                    #return False
+                    #sys.exit(0)
+                self._count += 1
+
             return True
 
 
-    def animate(self, out_size=(700, 700), **kwargs) :
+    def animate(self, out_dir=None, count=10, **kwargs) :
         """Animates the network as it's simulating.
 
-        Closing the window ends the animation.
+        The animations can be saved to disk or view in interactive mode.
+        Closing the window ends the animation if viewed in interactive mode.
 
         Parameters
         ----------
-        out_size : tuple (optional, the default is ``(700, 700)``).
-            The size of the canvas used for the animation.
+        out_dir : str (optional)
+            The location where the frames for the images will be saved. If this
+            parameter is not given, then the animation is shown in interactive
+            mode.
+        count : int (optional, the default is 10)
+            This parameter is only used if ``out_dir`` is passed. It indicates
+            the number of frames to save to disk.
         kwargs :
             Any extra parameters to pass to :class:`~graph_tool.draw.GraphWindow`.
+
+        Notes
+        -----
+        There are several parameters passed to :func:`~graph_tool.draw.graph_draw`
+        by default. The following parameters are property maps that are 
+        automatically set to the graph when a ``QueueNetwork`` instance is
+        created (the maps are set using the :func:`.prepare_graph` function).
+        These property maps include:
+
+            * ``vertex_color``, ``vertex_fill_color``, ``vertex_size``,
+              ``vertex_pen_width``, ``pos``.
+            * ``edge_color``, ``edge_control_points``, ``edge_marker_size``,
+              ``edge_pen_width``.
+
+        Each of these properties are used by ``simulate`` to style the canvas.
+        Also, the ``bg_color`` parameter is defined in the :class:`.dict`
+        ``QueueNetwork.colors``. The ``output_size`` parameter defaults to
+        ``(700, 700)``.
+
+        If any of these parameters are supplied as arguments to ``simulate``
+        then the passed arguments are used over the defaults.
+
 
         Raises
         ------
@@ -951,45 +1010,74 @@ class QueueNetwork :
             Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not
             been initialized. Call :meth:`.initialize` before running.
         """
+
+
         if not self._initialized :
             raise RuntimeError("Network has not been initialized. Call 'initialize()' first.")
 
+        output_size = (700, 700)
+
+        if outdir is None :
+            if 'geometry' not in kwargs :
+                kwargs.update( {'geometry' : output_size } )
+        else :
+            if 'output_size' in kwargs :
+                output_size = kwargs['output_size']
+                del kwargs['output_size']
+            if 'geometry' in kwargs :
+                output_size = kwargs['geometry']
+                del kwargs['geometry']
+            
+        vertex_params = set(['vertex_color', 'vertex_fill_color', 'vertex_size',
+                             'vertex_pen_width', 'pos'])
+
+        edge_params   = set(['edge_color', 'edge_control_points',
+                             'edge_marker_size', 'edge_pen_width'])
+
+        for param in vertex_params :
+            if param not in kwargs :
+                kwargs[param] = self.g.vp[param]
+
+        for param in edge_params :
+            if param not in kwargs :
+                kwargs[param] = self.g.ep[param]
+
         self._to_animate = True
         self._update_all_colors()
-        self._window = gt.GraphWindow(g=self.g, pos=self.g.vp['pos'],
-                geometry=out_size,
-                bg_color=self.colors['bg_color'],
-                edge_color=self.g.ep['edge_color'],
-                edge_control_points=self.g.ep['edge_control_points'],
-                edge_marker_size=self.g.ep['edge_marker_size'],
-                edge_pen_width=self.g.ep['edge_pen_width'],
-                vertex_color=self.g.vp['vertex_color'],
-                vertex_fill_color=self.g.vp['vertex_fill_color'],
-                vertex_halo=self.g.vp['vertex_halo'],
-                vertex_halo_color=self.g.vp['vertex_halo_color'],
-                vertex_halo_size=self.g.vp['vertex_halo_size'],
-                vertex_pen_width=self.g.vp['vertex_pen_width'],
-                vertex_size=self.g.vp['vertex_size'], **kwargs)
+
+        if outdir is None :
+            self._window = gt.GraphWindow(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
+        else :
+            self._count     = 0
+            self._max_count = count
+            self._to_disk   = True
+            self._outdir    = outdir
+            self._window    = Gtk.OffscreenWindow()
+            self._window.set_default_size(output_size[0], output_size[1])
+            self._window.graph = gt.GraphWidget(self.g, bg_color=self.colors['bg_color'], **kwargs)
+            self._window.add(self._window.graph)
 
         cid = GObject.idle_add(self._simulate_next_event)
         self._window.connect("delete_event", Gtk.main_quit)
         self._window.show_all()
         Gtk.main()
+
         self._to_animate = False
+        self._to_disk    = False
 
 
-    def simulate(self, n=None, t=25) :
-        """This method simulates the network forward for a specified amount of
-        *system time* ``t``\, or for a specific number of events ``n``.
+    def simulate(self, n=1, t=None) :
+        """This method simulates the network forward for a specific number of
+        events ``n`` or for a specified amount of *system time* ``t``\.
 
         Parameters
         ----------
-        n : int (optional)
-            The number of events to simulate. Supercedes the parameter ``t`` if
-            supplied.
-        t : float (optional, the default is ``25``)
-            The amount of system time to simulate forward. If ``n`` is ``None``
+        n : int (optional, the default is 1)
+            The number of events to simulate. If ``t`` is ``None`` (the default)
             then this parameter is used.
+        t : float (optional)
+            The amount of system time to simulate forward. If given, ``t`` is
+            used instead of ``n``.
 
         Raises
         ------
@@ -999,13 +1087,14 @@ class QueueNetwork :
         """
         if not self._initialized :
             raise RuntimeError("Network has not been initialized. Call '.initialize()' first.")
-        if n is None :
+        if t is None :
+            for k in range(n) :
+                self._simulate_next_event(slow=False)
+        else :
             now = self.t
             while self.t < now + t :
                 self._simulate_next_event(slow=False)
-        elif isinstance(n, numbers.Integral) :
-            for k in range(n) :
-                self._simulate_next_event(slow=False)
+
 
 
     def reset_colors(self) :
@@ -1141,9 +1230,6 @@ class _CongestionNetwork(QueueNetwork) :
                 if slow :
                     self._update_graph_colors(ad='departure', qedge=q1.edge)
                     self._prev_edge = q1.edge
-
-                if q2._departures[0]._time <= q2._arrivals[0]._time :
-                    print("WHOA! THIS NEEDS CHANGING! %s %s" % (q2._departures[0]._time, q2._arrivals[0]._time) )
 
                 q2.next_event()
 
