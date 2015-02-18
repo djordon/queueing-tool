@@ -23,5 +23,6 @@ Graph specification
 Miscellaneous functions
 -----------------------
 
+    .. autofunction:: graph2dict
     .. autofunction:: vertices2edge
     .. autofunction:: shortest_paths_distances

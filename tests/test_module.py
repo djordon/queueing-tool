@@ -2,6 +2,10 @@ import numpy    as np
 import scipy    as sp
 import unittest
 
+import scipy.stats as stats
+
+from scipy.stats import poisson
+
 import queueing_tool as qt
 
 
@@ -164,8 +168,10 @@ class TestQueueServer(unittest.TestCase) :
 
     def test_poisson_random_measure(self) :
         """This function tests to make sure the poisson_random_measure function
-        actually simulates a Poisson random measure. It does so using a
-        chi-squared test for the composite null hypothesis.
+        actually simulates a Poisson random measure. It does so looking for
+        Poisson random variables using a chi-squared test (testing the
+        composite null hypothesis). It does not look for independence of the
+        random variables.
         """
         rate  = lambda t: 0.5 + 4 * np.sin(np.pi * t / 12)**2
         arr_f = lambda t: qt.poisson_random_measure(rate, 4.5, t)
@@ -180,13 +186,13 @@ class TestQueueServer(unittest.TestCase) :
                 arrival_times[k, j] = t
 
         mu1 = 3 * np.sum( rate(np.linspace(0, 3, 200)) ) / 200 # or 2*(3 - 6/pi) + 1.5
-        mu2 = 6 * np.sum( rate(np.linspace(3, 9, 200)) ) / 200 # or 2*(6 + 2 * 6/pi) + 3
-        mu3 = 3 * np.sum( rate(np.linspace(9, 12, 200)) ) / 200 # or 2*(3 - 6/pi) + 1.5
+        mu2 = 5 * np.sum( rate(np.linspace(3, 8, 200)) ) / 200 # or 2*(5 + (sqrt(3) + 2) * 3/pi) + 2.5
+        mu3 = 4 * np.sum( rate(np.linspace(8, 12, 200)) ) / 200 # or 2*(4 - 3*sqrt(3)/pi) + 2
         mus = [mu1, mu2, mu3]
 
         rv1 = np.sum(np.logical_and(0 < arrival_times, arrival_times < 3), axis=1)
-        rv2 = np.sum(np.logical_and(3 < arrival_times, arrival_times < 9), axis=1)
-        rv3 = np.sum(np.logical_and(9 < arrival_times, arrival_times < 12), axis=1)
+        rv2 = np.sum(np.logical_and(3 < arrival_times, arrival_times < 8), axis=1)
+        rv3 = np.sum(np.logical_and(8 < arrival_times, arrival_times < 12), axis=1)
         rvs = [rv1, rv2, rv3]
         df  = [max(rv1)+2, max(rv2)+2, max(rv3)+2]
 
@@ -202,6 +208,8 @@ class TestQueueServer(unittest.TestCase) :
         Qs  = np.sum(Q[:,:], axis=0)
         p   = np.array([1 - stats.chi2.cdf(Qs[i], df[i]-2) for i in range(3)])
         self.assertTrue( (p > 0.1).all() )
+
+
 
 
 

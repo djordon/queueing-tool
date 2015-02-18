@@ -86,60 +86,60 @@ def _other2dict(adj_dict, other) :
             else :
                 other_dict[k] = []
     else :
-        raise TypeError('edge_type must by either a dict, list, or numpy.ndarray')
+        raise TypeError('eType must by either a dict, list, or numpy.ndarray')
 
     return other_dict
 
 
-def _adjacency_adjust(adjacency, edge_type, adjust_type, is_directed) :
+def _adjacency_adjust(adjacency, eType, adjust, is_directed) :
     """Takes an adjacency list and returns a (possibly) modified adjacency list."""
-    ok_adj = True
 
-    for adj in adjacency.values() :
-        if len(adj) == 0 :
-            ok_adj = False
-            break
-
-    if edge_type is None :
+    if eType is None :
         for adj in adjacency.values() :
-            edge_type.append([1 for k in adj])
+            eType.append([1 for k in adj])
     else :
-        if len(adjacency) != len(edge_type) :
+        if len(adjacency) != len(eType) :
             raise RuntimeError("Graph for edge types must match graph from adjacency list/matrix.")
         for k in adjacency.keys() :
-            if len(adjacency[k]) != len(edge_type[k]) :
+            if len(adjacency[k]) != len(eType[k]) :
                 raise RuntimeError("Graph for edge types must match graph from adjacency list/matrix.")
 
+    ok_adj = True
+
+    for v, adj in adjacency.items() :
+        if len(adj) == 0 :
+            if eType is None :
+                ok_adj = False
+                break
+            else :
+                for u, adj2 in adjacency.items() :
+                    for k, w in enumerate(adj2) :
+                        if v == w and eType[u][k] != 0 :
+                            ok_adj = False
+                            break
+
     if not ok_adj and is_directed :
-        if adjust_type == 1 :
+        if adjust == 1 :
             null_nodes = set()
 
             for k, adj in adjacency.items() :
                 if len(adj) == 0 :
                     null_nodes.add(k)
 
-            for k, adj in edge_type.items() :
-                edge_type[k] = [0 if j in null_nodes else j for j in adj]
-
-        elif adjust_type == 2 :
             for k, adj in adjacency.items() :
-                if len(adj) == 0 :
-                    adjacency[k].append(n + 1)
-                    edge_type[k].append(0)
-
-            adjacency[len(adjacency)] = []
-            edge_type[len(adjacency)] = []
+                et = eType[k].copy()
+                eType[k] = [0 if v in null_nodes else et[j] for j, v in enumerate(adj)]
 
         else :
             for k, adj in adjacency.items() :
                 if len(adj) == 0 :
                     adjacency[k].append(k)
-                    edge_type[k].append(0)
+                    eType[k].append(0)
 
-    return adjacency, edge_type
+    return adjacency, eType
 
 
-def adjacency2graph(adjacency, edge_type=None, adjust_type=0, is_directed=True) :
+def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     """Takes an adjacency list, dict, or matrix and returns a graph.
 
     The purpose of this function is take an adjacency list (or matrix) and
@@ -152,24 +152,21 @@ def adjacency2graph(adjacency, edge_type=None, adjust_type=0, is_directed=True) 
     ----------
     adjacency : list, dict, or numpy.ndarray
         An adjacency list, dict, or matrix.
-    edge_type : list, dict, or numpy.ndarray (optional)
+    eType : list, dict, or numpy.ndarray (optional)
         A mapping that corresponds to that edges ``eType``. For example, if
-        ``edge_type`` is a matrix, then ``edge_type[u, v]`` is the type of
-        queue along the edge between vertices ``u`` and ``v``. If ``edge_type``
+        ``eType`` is a matrix, then ``eType[u, v]`` is the type of
+        queue along the edge between vertices ``u`` and ``v``. If ``eType``
         is not supplied then all but terminal edges have type 1.
-    adjust_type : int (optional, the default is 0)
+    adjust : int (optional, the default is 0)
         Specifies what to do when the graph has terminal vertices (nodes with
         no out-edges). There are three choices:
 
-            ``adjust_type = 0``: A loop is added to each terminal node in the
+            ``adjust = 0``: A loop is added to each terminal node in the
             graph, and their ``eType`` of that edge is set to 0.
-            ``adjust_type = 1``: All edges leading to terminal nodes have their
+            ``adjust = 1``: All edges leading to terminal nodes have their
             ``eType`` set to 0.
-            ``adjust_type = 2``: A new vertex is created and each node has an
-            edge connect to the new vertex. The ``eType`` for each of these new
-            edges is set to 0.
 
-        Note that if ``adjust_type`` is not 1 or 2 then it assumed to be 0.
+        Note that if ``adjust`` is not 1 or 2 then it assumed to be 0.
     is_directed : bool (optional, the default is True)
         Sets whether the returned graph is directed or not.
 
@@ -181,19 +178,49 @@ def adjacency2graph(adjacency, edge_type=None, adjust_type=0, is_directed=True) 
     Raises
     ------
     TypeError
-        Is raised if ``adjacency`` or ``edge_type`` is not a :class:`.list`\,
-        :class:`.dict`\, :class:`~numpy.ndarray` the (``edge_type`` can be 
+        Is raised if ``adjacency`` or ``eType`` is not a :class:`.list`\,
+        :class:`.dict`\, :class:`~numpy.ndarray` the (``eType`` can be 
         ``None``\).
     RuntimeError
-        A :exc:`~RuntimeError` is raised if ``edge_type`` does not have the 
+        A :exc:`~RuntimeError` is raised if ``eType`` does not have the 
         same dimensions as ``adjacency``\.
+
+    Examples
+    --------
+    If terminal nodes are such that all in-edges have edge type 0 then nothing
+    is changed
+
+    >>> adj = { 0 : [1], 1 : [2], 2 : [3, 4], 3 : [2] }
+    >>> eTy = { 0 : [1], 1 : [2], 2 : [4, 0], 3 : [3] }
+    >>> g = qt.adjacency2graph(adj, eType=eTy)
+    >>> ans = qt.graph2dict(g)
+    >>> ans[0]
+    {0: [1], 1: [2], 2: [3, 4], 3: [2], 4: []}
+    >>> ans[1]
+    {0: [1], 1: [2], 2: [4, 0], 3: [3], 4: []}
+
+    If this is not the case, then the graph is adjusted by adding a loop with
+    eType 0 to the terminal edge:
+
+    >>> eTy = { 0 : [1], 1 : [2], 2 : [4, 5], 3 : [3] }
+    >>> g = qt.adjacency2graph(adj, eType=eTy)
+    >>> ans = qt.graph2dict(g)
+    >>> ans[0]
+    {0: [1], 1: [2], 2: [3, 4], 3: [2], 4: [4]}
+    >>> ans[1]
+    {0: [1], 1: [2], 2: [4, 5], 3: [3], 4: [0]}
+
+    Alternatively, you could have this function adjust the edges that lead to
+    terminal vertices by changing their edge type to 0:
+
+    >>> eTy = { 0 : [1], 1 : [2], 2 : [4, 5], 3 : [3] }
+    >>> g = qt.adjacency2graph(adj, eType=eTy, adjust=1)
+    >>> ans = qt.graph2dict(g)
+    >>> ans[0]
+    {0: [1], 1: [2], 2: [3, 4], 3: [2], 4: [4]}
+    >>> ans[1]
+    {0: [1], 1: [2], 2: [4, 0], 3: [3], 4: []}
     """
-    if adjacency is None :
-        raise TypeError("The `adjacency` parameter must be a list, dict, or a numpy.ndarray.")
-
-    params = [adjacency, edge_type, edge_length]
-    string = ['adjacency', 'edge_type', 'edge_length']
-
     if isinstance(adjacency, np.ndarray) :
         adjacency = _matrix2dict(adjacency)
     elif isinstance(adjacency, dict) :
@@ -203,10 +230,10 @@ def adjacency2graph(adjacency, edge_type=None, adjust_type=0, is_directed=True) 
     else :
         raise TypeError("If the adjacency parameter is supplied it must be a list, dict, or a numpy.ndarray.")
 
-    if edge_type is not None :
-        edge_type = _other2dict(adjacency, edge_type)
+    if eType is not None :
+        eType = _other2dict(adjacency, eType)
 
-    adjacency, edge_type = _adjacency_adjust(adjacency, edge_type, adjust_type, is_directed)
+    adjacency, eType = _adjacency_adjust(adjacency, eType, adjust, is_directed)
 
     nV  = len(adjacency)
     g   = gt.Graph()
@@ -214,27 +241,26 @@ def adjacency2graph(adjacency, edge_type=None, adjust_type=0, is_directed=True) 
 
     g.set_directed(is_directed)
 
-    eType   = g.new_edge_property("int")
-    elength = g.new_edge_property("double")
+    eT = g.new_edge_property("int")
 
     for u, adj in adjacency.items() :
         for j, v in enumerate(adj) :
             e = g.add_edge(u, v)
-            eType[e]    = edge_type[u][j]
-            elength[e]  = edge_length[u][j] if not edge_length_none else 1.0
+            eT[e] = eType[u][j]
 
-    g.ep['eType'] = eType
-    if not edge_length_none :
-        g.ep['edge_length'] = elength
+    g.ep['eType'] = eT
     return g
 
 
-def random_transition_matrix(g) :
+def generate_transition_matrix(g, seed=None) :
     """Generates a random transition matrix for the graph g.
 
     Parameters
     ----------
     g : :class:`~graph_tool.Graph`
+    seed : int (optional)
+        An integer used to initialize ``numpy``\'s psuedorandom number
+        generators.
 
     Returns
     -------
@@ -243,6 +269,9 @@ def random_transition_matrix(g) :
         transitioning from vertex ``i`` to vertex ``j``\. If there is no edge
         connecting vertex ``i`` to vertex ``j`` then ``mat[i,j] = 0``\.
     """
+    if isinstance(seed, numbers.Integral) :
+        np.random.seed(seed)
+
     nV  = g.num_vertices()
     mat = np.zeros( (nV, nV) )
 
@@ -281,6 +310,20 @@ def generate_random_graph(nVertices=250, **kwargs) :
     -------
     :class:`~graph_tool.Graph`
         A graph with a ``pos`` vertex property and the ``eType`` edge property.
+
+    Examples
+    --------
+    The following generates a directed graph with 50 vertices where half the
+    edges are type 1 and 1/4th are type 2 and 1/4th are type 3:
+
+    >>> g = qt.generate_random_graph(nVertices=50, pTypes={1: 0.5, 2: 0.25, 3: 0.25})
+
+    To make an undirected graph with 25 vertices where there are 4 different
+    edge types with random proportions:
+
+    >>> p = np.random.rand(4)
+    >>> p = {k + 1: p[k] / sum(p) for k in range(4)}
+    >>> g = qt.generate_random_graph(nVertices=25, is_directed=False, pTypes=p)
     """
     g = minimal_random_graph(nVertices, **kwargs)
     g = set_types_random(g, **kwargs)
@@ -311,7 +354,7 @@ def generate_pagerank_graph(nVertices=250, **kwargs) :
     return g
 
 
-def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None) :
+def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kwargs) :
     """Creates a connected random graph.
 
     This function first places ``nVertices`` points in the unit square
@@ -339,6 +382,8 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None) :
     seed : int (optional)
         An integer used to initialize ``numpy``\'s and ``graph-tool``\'s
         psuedorandom number generators.
+    **kwargs :
+        Unused.
 
     Returns
     -------

@@ -28,6 +28,37 @@ def vertices2edge(g, u, v) :
     return g.edge_index[g.edge(u, v)]
 
 
+def graph2dict(g) :
+    """Takes a graph and returns an adjacency list.
+
+    Parameters
+    ----------
+    g : :class:`~graph_tool.Graph`
+
+    Returns
+    -------
+    adj : :class:`.dict`
+        A dictionary where a key is the vertex index for a vertex ``v`` and the
+        values are :class:`.list`\s of vertex indices where that vertex is
+        connected to ``v`` by an edge.
+    eTypes : :class:`.dict` or ``None``
+        A dictionary where a key is the vertex index for a vertex ``v`` and the
+        values are :class:`.list`\s of vertex indices where that vertex is
+        connected to ``v`` by an edge. 
+    """
+    adj = {int(v) : [int(e.target()) for e in v.out_edges()] for v in g.vertices()}
+    if 'eType' in g.ep :
+        eTypes = {}
+        for key, value in adj.items() :
+            eTypes[key] = []
+            for v in value :
+                e = g.edge(key, v)
+                eTypes[key].append( g.ep['eType'][e] )
+    else :
+        eTypes = None                
+    return adj, eTypes
+
+
 def shortest_paths_distances(g) :
     """Returns the shortest paths between every two vertices in the graph ``g``,
     as well as the total distances along those distances.

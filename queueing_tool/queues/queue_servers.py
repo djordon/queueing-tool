@@ -215,10 +215,11 @@ class QueueServer :
 
     .. [4] *Queueing Theory*, Wikipedia `<http://en.wikipedia.org/wiki/Queueing_theory>`_.
 
-      .. _Kendall's notation: http://en.wikipedia.org/wiki/Kendall%27s_notation
-      .. _the author: http://www.cs.cmu.edu/~harchol/PerformanceModeling/chpt1.pdf
-      .. _the publisher: http://assets.cambridge.org/97811070/27503/excerpt/9781107027503_excerpt.pdf
-      .. _9781107027503: http://www.cambridge.org/us/9781107027503
+
+    .. _Kendall's notation: http://en.wikipedia.org/wiki/Kendall%27s_notation
+    .. _the author: http://www.cs.cmu.edu/~harchol/PerformanceModeling/chpt1.pdf
+    .. _the publisher: http://assets.cambridge.org/97811070/27503/excerpt/9781107027503_excerpt.pdf
+    .. _9781107027503: http://www.cambridge.org/us/9781107027503
     """
     def __init__(self, nServers=1, arrival_f=lambda t: t + exponential(1),
                     service_f=lambda t: t + exponential(0.9), edge=(0,0,0,1), 
@@ -233,7 +234,7 @@ class QueueServer :
         self.nDepartures  = 0
         self.nSystem      = 0
         self.nArrivals    = [0, 0]
-        self.data         = {}                # agent issn : [arrival t, service start t, departure t]
+        self.data         = {}                #times; issn : [arrival, service start, departure]
 
         self.arrival_f    = arrival_f
         self.service_f    = service_f
@@ -300,8 +301,10 @@ class QueueServer :
         pass
 
     def __repr__(self) :
-        tmp = "QueueServer: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.edge[2], self.nServers, len(self._queue), self.nArrivals, self.nDepartures, np.round(self._time, 3))
+        tmp = "QueueServer: %s. servers: %s, queued: %s, arrivals: %s, " + \
+              "departures: %s, next time: %s" \
+            %  (self.edge[2], self.nServers, len(self._queue), self.nArrivals,\
+                self.nDepartures, np.round(self._time, 3))
         return tmp
 
     def __lt__(a, b) :
@@ -668,6 +671,10 @@ class QueueServer :
         """Clears out the queue. Removes all arrivals, departures, and queued agents from
         the ``QueueServer``, resets ``nArrivals``, ``nDepartures``, and ``nSystem`` to zero,
         and clears any stored ``data``.
+
+        Notes
+        -----
+        If the server is active, it stays active.
         """
         self.data        = {}
         self.nArrivals   = [0, 0]
@@ -743,8 +750,8 @@ class LossQueue(QueueServer) :
     -----
     In `Kendall's notation`_\, this is a
     :math:`\\text{GI}_t/\\text{GI}_t/c/k/N/\\text{FIFO}` queue, where :math:`k`
-    is the ``c + qbuffer``. If the default parameters are used then the
-    instance is an :math:`\\text{M}/\\text{M}/1/1` queue.
+    is equal to :math:`c` plus ``qbuffer``. If the default parameters are used
+    then the instance is an :math:`\\text{M}/\\text{M}/1/1` queue.
     """
 
     def __init__(self, qbuffer=0, **kwargs) :
@@ -767,8 +774,10 @@ class LossQueue(QueueServer) :
 
 
     def __repr__(self) :
-        tmp = "LossQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.edge[2], self.nServers, len(self._queue), self.nArrivals, self.nDepartures, np.round(self._time, 3))
+        tmp = "LossQueue: %s. servers: %s, queued: %s, arrivals: %s, departures:\
+               %s, next time: %s" \
+            %  (self.edge[2], self.nServers, len(self._queue), self.nArrivals, \
+                self.nDepartures, np.round(self._time, 3))
         return tmp
 
 

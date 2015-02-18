@@ -230,25 +230,25 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
 
 
 def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
-    """Sets edge and vertex types using `pagerank`_.
+    """Creates a stylized graph. Sets edge and types using `pagerank`_.
 
-    This function sets the edge and vertex types of a graph to be either 1, 2, or 3.
-    It sets the vertices to type 2 by selecting the top ``pType2 * g.num_vertices()``
-    vertices given by the :func:`~graph_tool.centrality.pagerank` of the graph.
-    It then randomly sets vertices close to type 2 vertices as type 3. The rest
-    of the vertices are set to type 1 vertices.
-
-    Also, the graph is altered to make sure that all vertices that are of type
-    2 or 3 have loops. These loops then have an edge type that is the same as
-    the target vertex's vertex type. All other edges have edge type 1.
+    This function sets the edge types of a graph to be either 1, 2, or 3.
+    It sets the vertices to type 2 by selecting the top
+    ``pType2 * g.num_vertices()`` vertices given by the
+    :func:`~graph_tool.centrality.pagerank` of the graph. These a loop is added
+    to all vertices identified this way (if one does not exist already). It
+    then randomly sets vertices close to type 2 vertices as type 3, and adds
+    loops to these vertices as well. These loops then have edge types the
+    correspond to the vertices type. The rest of the edges are set to type 1.
 
     Parameters
     ----------
     g : A string or a :class:`~graph_tool.Graph`.
     pType2 : float (optional, the default is 0.1)
-        Specifies the proportion of edges that will be of type 2.
+        Specifies the proportion of vertices that will be of type 2.
     pType3 : float (optional, the default is 0.1)
-        Specifies the proportion of edges that will be of type 3.
+        Specifies the proportion of vertices that will be of type 3 and that
+        are near pType2 vertices.
     seed : int (optional)
         An integer used to initialize ``numpy``\'s and ``graph-tool``\'s
         psuedorandom number generators.
@@ -267,7 +267,7 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
         Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
         or a :class:`~graph_tool.Graph`\.
 
-        .. _pagerank: http://en.wikipedia.org/wiki/PageRank
+    .. _pagerank: http://en.wikipedia.org/wiki/PageRank
     """
     g = _test_graph(g)
 
@@ -276,7 +276,7 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
         gt.seed_rng(seed)
 
     pagerank    = gt.pagerank(g)
-    tmp         = np.sort( np.array(pagerank.a) )
+    tmp         = np.sort(np.array(pagerank.a))
     nDests      = int(np.ceil(g.num_vertices() * pType2))
     dests       = np.where(pagerank.a >= tmp[-nDests])[0]
     
@@ -287,7 +287,7 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
     
     r, theta    = np.random.random(nFCQ) / 500, np.random.random(nFCQ) * 360
     xy_pos      = np.array([r * np.cos(theta), r * np.sin(theta)]).transpose()
-    g_pos       = xy_pos + dest_pos[ np.array( np.mod(np.arange(nFCQ), nDests), int) ]
+    g_pos       = xy_pos + dest_pos[np.array( np.mod(np.arange(nFCQ), nDests), int)]
     
     for v in g.vertices() :
         if int(v) not in dests :

@@ -249,7 +249,7 @@ class QueueNetwork :
     def time(self, tmp): 
         pass
 
-    def initialize(self, nActive=1, queues=None, edges=None, types=None) :
+    def initialize(self, nActive=1, queues=None, edges=None, eType=None) :
         """Prepares the ``QueueNetwork`` for simulation.
 
         Each :class:`.QueueServer` in the network starts inactive,
@@ -270,16 +270,16 @@ class QueueNetwork :
         edges : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to make active. Must be either: a
             2-tuple of the edge's source and target vertex indices, an iterable
-            of 2-tuples of the edge's source and target vertex indices, an 
+            of 2-tuples of the edge's source and target vertex indices, or an 
             iterable of :class:`~graph_tool.Edge`\(s).
-        types : int or *array_like* (optional)
+        eType : int or *array_like* (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
 
         Raises
         ------
         RuntimeError
-            If ``queues``, ``egdes``, and ``types`` are all ``None`` and 
+            If ``queues``, ``egdes``, and ``eType`` are all ``None`` and 
             ``nActive`` is not an integer or is less than 1 then a 
             :exc:`~RuntimeError` is raised.
         """
@@ -293,8 +293,8 @@ class QueueNetwork :
                     queues = [self.g.edge_index[e] for e in edges]
                 else :
                     queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
-            elif types is not None :
-                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), types) )[0]
+            elif eType is not None :
+                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
             elif nActive >= 1 and isinstance(nActive, numbers.Integral) :
                 queues = np.arange(self.nE)  
                 np.random.shuffle(queues)
@@ -364,47 +364,71 @@ class QueueNetwork :
         ------
         RuntimeError
             A :exc:`.RuntimeError` is raised if: the keys in the :class:`.dict`
-            don't match with any vertex index in the graph; the sum of the
-            transition probabilities out of a vertex is not 1; and if the a
-            :class:`~numpy.ndarray` is passed with the wrong shape, must be
-            (nVertices, nVertices).
+            don't match with a vertex index in the graph; or the sum of the
+            transition probabilities out of a vertex is not 1 (for non-terminal
+            edges); or if the a :class:`~numpy.ndarray` is passed with the
+            wrong shape, must be (``nVertices``, ``nVertices``).
 
         Examples
         --------
-        The default transition matrix is
+        The default transition matrix is every out edge being equally likely:
 
-        suppose we wanted to change
+        >>> g = qt.generate_random_graph(5, seed=10)
+        >>> net = qt.QueueNetwork(g)
+        >>> net.transitions(False)
+        {0: [1.0], 1: [0.5, 0.5], 2: [0.333, 0.333, 0.333], 3: [1.0], 4: [1.0]}
+
+        If you want to change only one vertex's transition probabilities, you
+        can do so with the following:
+
+        >>> net.set_transitions({1 : [0.75, 0.25]})
+        >>> net.transitions(False)
+        {0: [1.0], 1: [0.75, 0.25], 2: [0.333, 0.333, 0.333], 3: [1.0], 4: [1.0]}
+
+        To change all transition probabilities with an :class:`~numpy.ndarray`
+        do the following:
+
+        >>> mat = qt.generate_transition_matrix(g, seed=10)
+        >>> net.set_transitions(mat)
+        >>> net.transitions(False)
+        {0: [1.0], 1: [0.963, 0.037], 2: [0.338, 0.396, 0.265], 3: [1.0], 4: [1.0]}
+
+        See Also
+        --------
+        generate_transition_matrix : Generates a random transition matrix.
         """
         if isinstance(mat, dict) :
             for key, value in mat.items() :
                 if key not in self._route_probs :
                     raise RuntimeError("One of the keys don't correspond to a vertex.")
-                elif not np.isclose(np.sum(value), 1) :
+                elif len(self.out_edges[key]) > 0 and not np.isclose(np.sum(value), 1) :
                     raise RuntimeError("Sum of transition probabilities at a vertex was not 1.")
 
-                self._route_probs[key] = []
                 if len(value) == self.nV :
+                    self._route_probs[key] = []
                     for e in self.g.vertex(key).out_edges() :
                         p = value[ int(e.target()) ]
                         self._route_probs[key].append( np.float64(p) )
                 elif len(value) == len(self._route_probs[key]) :
+                    self._route_probs[key] = []
                     for p in value :
                         self._route_probs[key].append( np.float64(p) )
 
         elif isinstance(mat, np.ndarray) :
+            non_terminal = np.array([v.out_degree() > 0 for v in self.g.vertices()])
             if mat.shape != (self.nV, self.nV) :
                 raise RuntimeError("Matrix is the wrong shape, should be %s x %s." % (self.nV, self.nV))
-            elif not np.allclose(np.sum(mat, axis=1), 1) :
+            elif not np.allclose(np.sum(mat[non_terminal,:], axis=1), 1) :
                 raise RuntimeError("Sum of transition probabilities at a vertex was not 1.")
 
             for k in range(self.nV) :
                 self._route_probs[k] = []
                 for e in self.g.vertex(k).out_edges() :
-                    p = mat[k, int(e.source())]
-                    self._route_probs[key].append( np.float64(p) )
+                    p = mat[k, int(e.target())]
+                    self._route_probs[k].append( np.float64(p) )
 
 
-    def collect_data(self, queues=None, edges=None, types=None) :
+    def collect_data(self, queues=None, edges=None, eType=None) :
         """Tells the queues to collect data on agents.
 
         Parameters
@@ -419,7 +443,7 @@ class QueueNetwork :
             2-tuple of the edge's source and target vertex indices, an iterable
             of 2-tuples of the edge's source and target vertex indices, an 
             iterable of :class:`~graph_tool.Edge`\(s).
-        types : int or *array_like* (optional)
+        eType : int or *array_like* (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
         """
@@ -433,8 +457,8 @@ class QueueNetwork :
                     queues = [self.g.edge_index[e] for e in edges]
                 else :
                     queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
-            elif types is not None :
-                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), types) )[0]
+            elif eType is not None :
+                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
             else :
                 queues = range(self.nE)
 
@@ -442,7 +466,7 @@ class QueueNetwork :
             self.edge2queue[k].collect_data = True
 
 
-    def stop_collecting_data(self, queues=None, edges=None, types=None) :
+    def stop_collecting_data(self, queues=None, edges=None, eType=None) :
         """Tells the queues to stop collecting data on agents.
 
         Parameters
@@ -457,7 +481,7 @@ class QueueNetwork :
             2-tuple of the edge's source and target vertex indices, an iterable
             of 2-tuples of the edge's source and target vertex indices, an 
             iterable of :class:`~graph_tool.Edge`\(s).
-        types : int or *array_like* (optional)
+        eType : int or *array_like* (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
         """
@@ -471,8 +495,8 @@ class QueueNetwork :
                     queues = [self.g.edge_index[e] for e in edges]
                 else :
                     queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
-            elif types is not None :
-                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), types) )[0]
+            elif eType is not None :
+                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
             else :
                 queues = range(self.nE)
 
@@ -480,7 +504,7 @@ class QueueNetwork :
             self.edge2queue[k].collect_data = False
 
 
-    def data_queues(self, queues=None, edges=None, types=None) :
+    def data_queues(self, queues=None, edges=None, eType=None) :
         """Fetches data from queues.
 
         Parameters
@@ -495,7 +519,7 @@ class QueueNetwork :
             2-tuple of the edge's source and target vertex indices, an iterable
             of 2-tuples of the edge's source and target vertex indices, an 
             iterable of :class:`~graph_tool.Edge`\(s).
-        types : int or *array_like* (optional)
+        eType : int or *array_like* (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
 
@@ -508,6 +532,29 @@ class QueueNetwork :
             queue. The fourth column identifies how many other agents were in
             the queue upon arrival, and the fifth column identifies which queue
             this occurred at.
+
+        Examples
+        --------
+        Data is not collected by default. Before simulating, by sure to turn it
+        on (as well as initialize the network). The following returns data from
+        queues with ``eType`` 1 or 3:
+
+        >>> net.collect_data()
+        >>> net.initialize(10)
+        >>> net.simulate(2000)
+        >>> data = net.data_queues(eType=(1,3))
+
+        To get data from an edge connecting two vertices do the following:
+
+        >>> data = net.data_queues(edges=(1,50))
+
+        To get data from several edges do the following:
+
+        >>> data = net.data_queues(eType=[(1,3), (10,91), (90,90)])
+
+        You can specify the edge indices as well:
+
+        >>> data = net.data_queues(queues=(20, 14, 0, 4))
         """
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
@@ -519,8 +566,8 @@ class QueueNetwork :
                     queues = [self.g.edge_index[e] for e in edges]
                 else :
                     queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
-            elif types is not None :
-                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), types) )[0]
+            elif eType is not None :
+                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
             else :
                 queues = range(self.nE)
 
@@ -534,7 +581,7 @@ class QueueNetwork :
         return data
 
 
-    def data_agents(self, queues=None, edges=None, types=None) :
+    def data_agents(self, queues=None, edges=None, eType=None) :
         """Fetches data from queues, and organizes it by agent.
 
         Parameters
@@ -549,7 +596,7 @@ class QueueNetwork :
             2-tuple of the edge's source and target vertex indices, an iterable
             of 2-tuples of the edge's source and target vertex indices, an 
             iterable of :class:`~graph_tool.Edge`\(s).
-        types : int or *array_like* (optional)
+        eType : int or *array_like* (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
 
@@ -574,8 +621,8 @@ class QueueNetwork :
                     queues = [self.g.edge_index[e] for e in edges]
                 else :
                     queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
-            elif types is not None :
-                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), types) )[0]
+            elif eType is not None :
+                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
             else :
                 queues = range(self.nE)
 
@@ -695,12 +742,18 @@ class QueueNetwork :
         ans = gt.graph_draw(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
 
 
-    def show_active(self) :
+    def show_active(self, **kwargs) :
         """Draws the network, highlighting active queues.
 
         The colored vertices represent vertices that have at least one queue
         on an in-edge that is active. Dark edges represent queues that are
         active, light edges represent queues that are inactive.
+
+        Parameters
+        ----------
+        **kwargs
+            Any additional parameters to pass to :meth:`.draw`, and
+            :func:`~graph_tool.draw.graph_draw`.
 
         Notes
         -----
@@ -729,7 +782,7 @@ class QueueNetwork :
             else :
                 self.g.ep['edge_color'][e] = self.colors['edge_inactive']
 
-        self.draw(update_colors=False)
+        self.draw(update_colors=False, **kwargs)
         self._update_all_colors()
 
 
@@ -827,8 +880,6 @@ class QueueNetwork :
                 ep['edge_color'][pe]        = q._current_color(1)
                 vp['vertex_color'][pv]      = q._current_color(2)
                 vp['vertex_fill_color'][pv] = q._current_color()
-                vp['vertex_halo_color'][pv] = self.colors['vertex_halo_color']
-                vp['vertex_halo'][pv]       = False
             else :
                 ep['edge_color'][pe] = q._current_color()
                 nSy = 0
@@ -849,12 +900,7 @@ class QueueNetwork :
             ep['edge_color'][e]         = q._current_color(1)
             vp['vertex_fill_color'][v]  = q._current_color()
             vp['vertex_color'][v]       = q._current_color(2)
-            vp['vertex_halo'][v]        = True
 
-            if ad == 'arrival' :
-                vp['vertex_halo_color'][v] = self.colors['halo_arrival']
-            elif ad == 'departure' :
-                vp['vertex_halo_color'][v] = self.colors['halo_departure']
         else :
             ep['edge_color'][e] = q._current_color()
             nSy = 0
@@ -1071,6 +1117,23 @@ class QueueNetwork :
         RuntimeError
             Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not
             been initialized. Call :meth:`.initialize` before running.
+
+        Examples
+        --------
+        This function works similarly to ``QueueNetwork``\'s :meth:`.draw`
+        method. To animate the network in interactive mode do the following:
+
+        >>> net.draw(count=15 output_size=(400,400))
+
+        Stop the animation just close the window. If you want write the frames
+        to disk run something like the following:
+
+        >>> net.animate(out_dir="./test", count=25, output_size=(400,400), vertex_size=15)
+
+        which outputs the frames in the current working directory and outputs
+        25 ``png`` images whose names start with ``test`` e.g. ``test0.png``\, 
+        ``test1.png``\, ... etc. Also, the vertex size for each vertex was
+        changed from the default (of 8) to 15.
         """
 
 
@@ -1079,7 +1142,7 @@ class QueueNetwork :
 
         output_size = (700, 700)
 
-        if outdir is None :
+        if out_dir is None :
             if 'geometry' not in kwargs :
                 kwargs.update( {'geometry' : output_size } )
         else :
@@ -1107,13 +1170,13 @@ class QueueNetwork :
         self._to_animate = True
         self._update_all_colors()
 
-        if outdir is None :
+        if out_dir is None :
             self._window = gt.GraphWindow(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
         else :
             self._count     = 0
             self._max_count = count
             self._to_disk   = True
-            self._outdir    = outdir
+            self._outdir    = out_dir
             self._window    = Gtk.OffscreenWindow()
             self._window.set_default_size(output_size[0], output_size[1])
             self._window.graph = gt.GraphWidget(self.g, bg_color=self.colors['bg_color'], **kwargs)
@@ -1192,9 +1255,6 @@ class QueueNetwork :
             self.g.ep['edge_color'][e]    = self.edge2queue[k].colors['edge_color']
         for k, v in enumerate(self.g.vertices()) :
             self.g.vp['vertex_fill_color'][v] = self.colors['vertex_fill_color']
-            self.g.vp['vertex_halo_color'][v] = self.colors['vertex_halo_color']
-            self.g.vp['vertex_halo'][v]       = False
-            self.g.vp['vertex_text'][v]       = ''
 
 
     def clear(self) :
@@ -1211,6 +1271,7 @@ class QueueNetwork :
         self.t            = 0
         self.nEvents      = 0
         self.nAgents      = np.zeros(self.nE)
+        self._queues      = []
         self._to_animate  = False
         self._prev_edge   = None
         self._initialized = False
@@ -1219,7 +1280,7 @@ class QueueNetwork :
             q.clear()
 
 
-    def clear_data(self, queues=None) :
+    def clear_data(self, queues=None, edges=None, eType=None) :
         """Clears data from queues.
 
         Parameters
@@ -1228,15 +1289,32 @@ class QueueNetwork :
             An integer (or an iterable of integers) identifying the
             :class:`.QueueServer` whose data will be cleared. If ``queues`` is
             not specified then all :class:`.QueueServer`\'s data will be cleared.
+        edges : 2-:class:`.tuple` of int or *array_like* (optional)
+            Explicitly specify which queues to make active. Must be either: a
+            2-tuple of the edge's source and target vertex indices, an iterable
+            of 2-tuples of the edge's source and target vertex indices, an 
+            iterable of :class:`~graph_tool.Edge`\(s).
+        eType : int or *array_like* (optional)
+            A integer, or a collection of integers identifying which edge types
+            will be set active.
         """
-        queues = [queues] if isinstance(queues, numbers.Integral) else queues
+        if isinstance(queues, numbers.Integral) :
+            queues = [queues]
+        elif queues is None :
+            if edges is not None :
+                if not isinstance(edges[0], numbers.Integral) :
+                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edges]
+                elif isinstance(edges[0], gt.Edge) :
+                    queues = [self.g.edge_index[e] for e in edges]
+                else :
+                    queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
+            elif eType is not None :
+                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
+            else :
+                queues = range(self.nE)
 
-        if queues is None :
-            for q in self.edge2queue :
-                q.data = {}
-        else :
-            for k in queues :
-                self.edge2queue[k].data = {}
+        for k in queues :
+            self.edge2queue[k].data = {}
 
 
     def copy(self) :
