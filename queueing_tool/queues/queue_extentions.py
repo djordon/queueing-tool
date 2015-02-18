@@ -162,7 +162,7 @@ class ResourceQueue(LossQueue) :
             return LossQueue.next_event(self)
 
 
-    def current_color(self, which=0) :
+    def _current_color(self, which=0) :
         if which == 1 :
             nSy = self.nServers
             cap = self.max_servers

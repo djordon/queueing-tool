@@ -77,14 +77,6 @@ class QueueNetwork :
     colors : :class:`.dict`
         A dictionary of colors used when drawing a graph. See the notes for the
         defaults.
-    routing_probs : :class:`.dict`
-        The routing probabilities for each vertex in the graph. Specifically,
-        ``routing_prob[v]`` returns a list of numbers (that sum to 1), where the
-        ``k``th entry is the probability of moving from vertex ``v`` to the
-        edge with edge index ``out_edge[v][k]``. Use ``v.out_edges()`` to get a
-        generator of all out edges from ``v`` where ``v`` is a ``graph-tool``
-        :class:`~graph_tool.Vertex`\. This is used by the :class:`.Agent` class
-        to route themselves throughout the network.
 
     Raises
     ------
@@ -111,7 +103,7 @@ class QueueNetwork :
 
     >>> self.colors       = { 'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
     ...                       'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
-    ...                       'vertex_type'       : [0.5, 0.5, 0.5, 1.0],
+    ...                       'vertex_highlight'  : [0.5, 0.5, 0.5, 1.0],
     ...                       'edge_departure'    : [0, 0, 0, 1], 
     ...                       'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
     ...                       'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
@@ -122,13 +114,17 @@ class QueueNetwork :
     If the graph is not connected then there may be issues with ``Agents``
     that arrive at an edge that points to terminal vertex. If the graph was 
     created using :func:`.adjacency2graph` then this is not an issue, so
-    long as ``q_classes`` key  ``0`` is a :class:`.NullQueue` (note that ``0`` does
-    not need to be a key of the ``q_classess`` parameter, but if it is it
-    should be set to :class:`.NullQueue`). If the graph was not created
-    using :func:`.adjacency2graph` and it's not connected then I recommend
-    the following
+    long as ``q_classes`` key  ``0`` is a :class:`.NullQueue` (note that ``0``
+    does not need to be a key of the ``q_classess`` parameter, but if it is it
+    should be set to :class:`.NullQueue`).
 
-    >>> 
+    Examples
+    --------
+    Unless specified, all examples in class method docstrings were generated
+    with the following code:
+
+    >>> g   = qt.generate_pagerank_graph(100, seed=13)
+    >>> net = qt.QueueNetwork(g, seed=13)
     """
 
     def __init__(self, g=None, q_classes=None, q_args=None, seed=None, colors=None) :
@@ -146,7 +142,7 @@ class QueueNetwork :
 
         default_colors    = { 'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
                               'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
-                              'vertex_type'       : [0.5, 0.5, 0.5, 1.0],
+                              'vertex_highlight'  : [0.5, 0.5, 0.5, 1.0],
                               'edge_departure'    : [0, 0, 0, 1],
                               'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
                               'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
@@ -253,16 +249,6 @@ class QueueNetwork :
     def time(self, tmp): 
         pass
 
-    @property
-    def routing_probs(self):
-        return copy.deepcopy(self._route_probs)
-    @routing_probs.deleter
-    def routing_probs(self): 
-        pass
-    @routing_probs.setter
-    def routing_probs(self, tmp): 
-        pass
-
     def initialize(self, nActive=1, queues=None, edges=None, types=None) :
         """Prepares the ``QueueNetwork`` for simulation.
 
@@ -328,13 +314,49 @@ class QueueNetwork :
         self._initialized  = True
 
 
-    def set_routing_probs(self, mat) :
-        """Change the routing probabilities for the network.
+    def transitions(self, return_mat=True) :
+        """Returns the transition probabilities for each vertex in the graph.
+
+        Parameters
+        ----------
+        return_mat : bool (optional, the default is ``True``)
+            Specifies whether a :class:`~numpy.ndarray` is returned. If
+            ``False``, a :class:`.dict` is returned instead.
+
+        Returns
+        -------
+        out : an :class:`~numpy.ndarray` or a :class:`.dict`
+            The transition probabilities for each vertex in the graph. If
+            ``out`` is an :class:`~numpy.ndarray`, then ``out[v, u]`` returns
+            the probability of a transition from vertex ``v`` to vertex ``u``.
+            If ``out`` is a :class:`.dict` then ``out_edge[v][k]`` is the
+            probability of moving from vertex ``v`` to the vertex at the head
+            of the ``k``th out-edge.
+
+        Notes
+        -----
+        Use ``v.out_edges()`` to get a generator of all out edges from ``v``
+        where ``v`` is a :class:`~graph_tool.Vertex`\.
+        """
+        if return_mat :
+            mat = np.zeros( (self.nV, self.nV) )
+            for v in self.g.vertices() :
+                vi  = int(v)
+                ind = [int(e.target()) for e in v.out_edges()]
+                mat[vi, ind] = self._route_probs[vi]
+        else :
+            mat = copy.deepcopy(self._route_probs)
+
+        return mat
+
+
+    def set_transitions(self, mat) :
+        """Change the routing transitions probabilities for the network.
 
         Parameters
         ----------
         mat : :class:`.dict` or :class:`~numpy.ndarray`
-            A routing matrix or routing dictionary. If passed a routing
+            A transition routing matrix or transition dictionary. If passed a
             dictionary, the keys should be vertex indices and the values are
             the probabilities for the each adjacent vertex.
 
@@ -343,16 +365,22 @@ class QueueNetwork :
         RuntimeError
             A :exc:`.RuntimeError` is raised if: the keys in the :class:`.dict`
             don't match with any vertex index in the graph; the sum of the
-            routing probabilities out of a vertex is not 1; and if the a
+            transition probabilities out of a vertex is not 1; and if the a
             :class:`~numpy.ndarray` is passed with the wrong shape, must be
             (nVertices, nVertices).
+
+        Examples
+        --------
+        The default transition matrix is
+
+        suppose we wanted to change
         """
         if isinstance(mat, dict) :
             for key, value in mat.items() :
                 if key not in self._route_probs :
                     raise RuntimeError("One of the keys don't correspond to a vertex.")
                 elif not np.isclose(np.sum(value), 1) :
-                    raise RuntimeError("Sum of routing probabilities at a vertex was not 1.")
+                    raise RuntimeError("Sum of transition probabilities at a vertex was not 1.")
 
                 self._route_probs[key] = []
                 if len(value) == self.nV :
@@ -367,7 +395,7 @@ class QueueNetwork :
             if mat.shape != (self.nV, self.nV) :
                 raise RuntimeError("Matrix is the wrong shape, should be %s x %s." % (self.nV, self.nV))
             elif not np.allclose(np.sum(mat, axis=1), 1) :
-                raise RuntimeError("Sum of routing probabilities at a vertex was not 1.")
+                raise RuntimeError("Sum of transition probabilities at a vertex was not 1.")
 
             for k in range(self.nV) :
                 self._route_probs[k] = []
@@ -610,6 +638,33 @@ class QueueNetwork :
         the passed arguments are used over the defaults.
 
             .. _documentation: http://graph-tool.skewed.de/static/doc/index.html
+
+        Examples
+        --------
+        To draw the current state of the network, call:
+
+        >>> net.draw()
+
+        If you specify a file name and location, the drawing will be saved to
+        disk. For example, to save the drawing to the current working directory
+        do the following:
+
+        >>> net.draw(output="current_state.png", output_size=(400,400))
+
+        .. figure:: current_state.png
+            :align: center
+
+        The shade of each edge depicts how many agents are located at the
+        corresponding queue. The shade of each vertex is determined by the
+        total number of inbound agents. Although loops are not visible by
+        default, the vertex that corresponds to a loop shows how many agents
+        are in that loop.
+
+        there are several additional parameters that can be passed -- all
+        :func:`~graph_tool.draw.graph_draw` parameters are valid. For example
+        To show the vertex number in the graph, one could do the following:
+
+        >>> net.draw(vertex_text=net.g.vertex_index)
         """
         if update_colors :
             self._update_all_colors()
@@ -650,7 +705,8 @@ class QueueNetwork :
         Notes
         -----
         The colors are defined by the class attribute ``colors`` as the keys
-        ``vertex_active``, ``vertex_inactive``, ``edge_active``, ``edge_inactive``.
+        ``vertex_active``, ``vertex_inactive``, ``edge_active``,
+        ``edge_inactive``.
         """
         for v in self.g.vertices() :
             self.g.vp['vertex_color'][v] = [0, 0, 0, 0.9]
@@ -677,7 +733,7 @@ class QueueNetwork :
         self._update_all_colors()
 
 
-    def show_type(self, n) :
+    def show_type(self, n, **kwargs) :
         """Draws the network, highlighting queues of a certain type.
 
         The colored vertices represent self loops of type ``n``. Dark edges
@@ -687,24 +743,30 @@ class QueueNetwork :
         ----------
         n : int
             The type of vertices and edges to be shown.
+        **kwargs
+            Any additional parameters to pass to :meth:`.draw`, and
+            :func:`~graph_tool.draw.graph_draw`.
 
         Notes
         -----
         The colors are defined by the class attribute ``colors``.
+
+        Examples
+        --------
+        The following code highlights all edges with edge type ``2``. If the 
+        edge is a loop then the vertex is highlighted as well, and in this
+        case all edges with edge type ``2`` happen to be loops.
+
+        >>> net.show_type(2, output_size=(400,400), output='edge_type_2.png')
+
+        .. figure:: edge_type_2.png
+           :align: center
         """
         for v in self.g.vertices() :
-            is_active = False
-            edge_iter = v.in_edges() if self.g.is_directed() else v.out_edges()
-            for e in edge_iter :
-                ei = self.g.edge_index[e]
-                if self.edge2queue[ei].active :
-                    is_active = True
-                    break
-
             e   = self.g.edge(v, v)
             if isinstance(e, gt.Edge) and self.g.ep['eType'][e] == n :
                 ei  = self.g.edge_index[e]
-                self.g.vp['vertex_fill_color'][v] = self.colors['vertex_type']
+                self.g.vp['vertex_fill_color'][v] = self.colors['vertex_highlight']
                 self.g.vp['vertex_color'][v]      = self.edge2queue[ei].colors['vertex_color']
             else :
                 self.g.vp['vertex_fill_color'][v] = self.colors['vertex_inactive']
@@ -717,7 +779,7 @@ class QueueNetwork :
             else :
                 self.g.ep['edge_color'][e] = self.colors['edge_inactive']
 
-        self.draw(update_colors=False)
+        self.draw(update_colors=False, **kwargs)
         self._update_all_colors()
 
 
@@ -729,11 +791,11 @@ class QueueNetwork :
             e = self.g.edge(q.edge[0], q.edge[1])
             v = self.g.vertex(q.edge[1])
             if q.edge[0] == q.edge[1] :
-                ep['edge_color'][e]         = q.current_color(1)
-                vp['vertex_color'][v]       = q.current_color(2)
-                vp['vertex_fill_color'][v]  = q.current_color()
+                ep['edge_color'][e]         = q._current_color(1)
+                vp['vertex_color'][v]       = q._current_color(2)
+                vp['vertex_fill_color'][v]  = q._current_color()
             else :
-                ep['edge_color'][e]   = q.current_color()
+                ep['edge_color'][e]   = q._current_color()
                 if do[q.edge[1]] :
                     nSy = 0
                     cap = 0
@@ -762,13 +824,13 @@ class QueueNetwork :
             q   = self.edge2queue[self._prev_edge[2]]
 
             if pe.target() == pe.source() :
-                ep['edge_color'][pe]        = q.current_color(1)
-                vp['vertex_color'][pv]      = q.current_color(2)
-                vp['vertex_fill_color'][pv] = q.current_color()
+                ep['edge_color'][pe]        = q._current_color(1)
+                vp['vertex_color'][pv]      = q._current_color(2)
+                vp['vertex_fill_color'][pv] = q._current_color()
                 vp['vertex_halo_color'][pv] = self.colors['vertex_halo_color']
                 vp['vertex_halo'][pv]       = False
             else :
-                ep['edge_color'][pe] = q.current_color()
+                ep['edge_color'][pe] = q._current_color()
                 nSy = 0
                 cap = 0
                 for vi in self.in_edges[self._prev_edge[1]] :
@@ -784,9 +846,9 @@ class QueueNetwork :
 
         q   = self.edge2queue[qedge[2]]
         if qedge[0] == qedge[1] :
-            ep['edge_color'][e]         = q.current_color(1)
-            vp['vertex_fill_color'][v]  = q.current_color()
-            vp['vertex_color'][v]       = q.current_color(2)
+            ep['edge_color'][e]         = q._current_color(1)
+            vp['vertex_fill_color'][v]  = q._current_color()
+            vp['vertex_color'][v]       = q._current_color(2)
             vp['vertex_halo'][v]        = True
 
             if ad == 'arrival' :
@@ -794,7 +856,7 @@ class QueueNetwork :
             elif ad == 'departure' :
                 vp['vertex_halo_color'][v] = self.colors['halo_departure']
         else :
-            ep['edge_color'][e] = q.current_color()
+            ep['edge_color'][e] = q._current_color()
             nSy = 0
             cap = 0
             for vi in self.in_edges[qedge[1]] :
@@ -1076,14 +1138,41 @@ class QueueNetwork :
             The number of events to simulate. If ``t`` is ``None`` (the default)
             then this parameter is used.
         t : float (optional)
-            The amount of system time to simulate forward. If given, ``t`` is
-            used instead of ``n``.
+            The amount of simulation time to simulate forward. If given, ``t``
+            is used instead of ``n``.
 
         Raises
         ------
         RuntimeError
-            Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not been
-            initialized. Call :meth:`.initialize` before running.
+            Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not
+            been initialized. Call :meth:`.initialize` before running.
+
+        Examples
+        --------
+        Let ``net`` denote your instance of a ``QueueNetwork``. Before you
+        simulate, you need to initialize the network, which allows arrivals
+        from outside the network. To initialize with 2 (random chosen) edges
+        accepting arrivals run.
+
+        >>> net.initialize(2)
+
+        To simulate the network 50000 events run:
+
+        >>> nE0 = net.nEvents
+        >>> net.simulate(50000)
+        >>> net.nEvents - nE0
+        50000
+
+        To simulate the network for at least 25 simulation time units run:
+
+        >>> nE0 = net.nEvents
+        >>> t0  = net.time
+        >>> net.simulate(t=75)
+        >>> t1  = net.time
+        >>> round(t1 - t0, 3)
+        75.005
+        >>> net.nEvents - nE0
+        21595
         """
         if not self._initialized :
             raise RuntimeError("Network has not been initialized. Call '.initialize()' first.")

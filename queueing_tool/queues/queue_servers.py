@@ -36,11 +36,11 @@ def poisson_random_measure(rate, rate_max, t) :
     
     .. math::
 
-        \int_{t}^{t+s} dx \, r(x)
+       \int_{t}^{t+s} dx \, r(x)
 
     where :math:`r(t)` is the supplied ``rate`` function. This function can
     only simulate processes that have bounded intensity functions. See chapter
-    6 of [2]_ for more on the mathematics behind Poisson random measures; the
+    6 of [3]_ for more on the mathematics behind Poisson random measures; the
     book's publisher, Springer, has that chapter available online (`pdf`_\).
 
     A Poisson random measure is sometimes called a nonhomogeneous Poisson
@@ -52,14 +52,14 @@ def poisson_random_measure(rate, rate_max, t) :
     --------
     Suppose you wanted to modeled the arrival process as a Poisson random
     measure with rate function :math:`r(t) = 2 + \sin( 2\pi t)`. Then you could
-    do so as follows::
+    do so as follows:
 
-        >>> rate  = lambda t: 2 + np.sin( 2 * np.pi * t)
-        >>> arr_f = lambda t: poisson_random_measure(rate, 3, t)
+    >>> rate  = lambda t: 2 + np.sin( 2 * np.pi * t)
+    >>> arr_f = lambda t: poisson_random_measure(rate, 3, t)
 
     References
     ----------
-    .. [2] Çınlar, Erhan. *Probability and stochastics*. Graduate Texts in\
+    .. [3] Çınlar, Erhan. *Probability and stochastics*. Graduate Texts in\
            Mathematics. Vol. 261. Springer, New York, 2011.\
            :doi:`10.1007/978-0-387-87859-1`
     """
@@ -121,7 +121,7 @@ class QueueServer :
     collect_data : bool (the default is ``False``)
         A bool that defines whether the queue collects each :class:`.Agent`\'s
         arrival, service start, and departure times.
-    colors : dict
+    colors : dict (optional)
         A dictionary of the colors used when drawing the graph. The possible
         colors are ``edge_loop_color``: The default color of the edge if the
         edge is a loop. ``edge_color``: The normal color a non-loop edge.
@@ -129,6 +129,9 @@ class QueueServer :
         colors the target vertex in the graph. ``vertex_color``: The color of
         the vertex pen of the target vertex. The defaults are listed in the
         notes.
+    seed : int (optional)
+        If supplied ``seed`` is used to initialize ``numpy``\'s psuedorandom
+        number generator.
        
     Attributes
     ----------
@@ -157,27 +160,30 @@ class QueueServer :
 
     Examples
     --------
-    This function is designed to work the :class:`.QueueServer` class. Suppose
-    you wanted to make an :math:`\\text{M}_t/\\text{M}/10` ``QueueServer``
-    where the arrivals are modeled as a Poisson random measure with rate
-    function :math:`r(t) = 1 + \sin^2( 2\pi t)` and a service distribution that
-    is exponential with rate ``2.5``. Then you could do so as follows::
+    The following code constructs an :math:`\\text{M}_t/\\text{GI}/5`
+    ``QueueServer`` with mean utilization rate :math:`\\rho = 0.8`. The
+    arrivals are modeled as a Poisson random measure with rate function
+    :math:`r(t) = 2 + 16 \sin^2(\pi t / 8)` and a service distribution that is
+    gamma with shape and scale parameters 4 and 0.1 respectively. To create
+    such a queue run:
 
-        >>> rate  = lambda t: 1 + np.sin( 2 * np.pi * t)**2
-        >>> arr_f = lambda t: poisson_random_measure(rate, 2, t)
-        >>> ser_f = lambda t: t + np.random.exponential(1/2.5)
-        >>> q = QueueServer(nServers=10, arrival_f=arr_f, service_f=ser_f)
+    >>> rate = lambda t: 2 + 16 * np.sin( np.pi * t / 8)**2
+    >>> arr  = lambda t: poisson_random_measure(rate, 18, t)
+    >>> ser  = lambda t : t + np.random.gamma(4, 0.1)
+    >>> q = qt.QueueServer(5, arrival_f=arr, service_f=ser, seed=13)
 
-    Before you could simulate the queue it must be set to active; also, no data
-    is collect by default, we change this with the following::
+    All examples below use the above construction ``QueueServer``\.
 
-        >>> q.set_active()
-        >>> q.collect_data = True
+    Before you can simulate the queue, it must be set to active; also, no data
+    is collect by default, we change these things with the following
 
-    To simulate 12000 events and collect the data run::
+    >>> q.set_active()
+    >>> q.collect_data = True
 
-        >>> q.simulate(n=12000)
-        >>> data = q.fetch_data()
+    To simulate 12000 events and collect the data run
+
+    >>> q.simulate(n=12000)
+    >>> data = q.fetch_data()
 
     Notes
     -----
@@ -195,10 +201,10 @@ class QueueServer :
 
     Some defaults:
 
-        >>> default_colors = {'edge_loop_color'   : [0, 0, 0, 0],
-        ...                   'edge_color'        : [0.9, 0.9, 0.9, 0.5],
-        ...                   'vertex_fill_color' : [1.0, 1.0, 1.0, 1.0],
-        ...                   'vertex_color'      : [0.0, 0.5, 1.0, 1.0]}
+    >>> default_colors = {'edge_loop_color'   : [0, 0, 0, 0],
+    ...                   'edge_color'        : [0.9, 0.9, 0.9, 0.5],
+    ...                   'vertex_fill_color' : [1.0, 1.0, 1.0, 1.0],
+    ...                   'vertex_color'      : [0.0, 0.5, 1.0, 1.0]}
 
 
     References
@@ -217,7 +223,7 @@ class QueueServer :
     def __init__(self, nServers=1, arrival_f=lambda t: t + exponential(1),
                     service_f=lambda t: t + exponential(0.9), edge=(0,0,0,1), 
                     AgentClass=Agent, collect_data=False, active_cap=infty,
-                    deactive_t=infty, colors=None, **kwargs) :
+                    deactive_t=infty, colors=None, seed=None, **kwargs) :
 
         if (not isinstance(nServers, numbers.Integral) and nServers is not infty) or nServers <= 0 :
             raise RuntimeError("nServers must be a positive integer or infinity.\n%s" % (str(self)) )
@@ -247,6 +253,9 @@ class QueueServer :
         self._next_ct     = 0               # The closest time an arrival from outside the network can arrive.
         self._black_cap   = 5               # Used to help color edges and vertices.
 
+        if isinstance(seed, numbers.Integral) :
+            np.random.seed(seed)
+
         default_colors   = {'edge_loop_color'   : [0, 0, 0, 0],
                             'edge_color'        : [0.9, 0.9, 0.9, 0.5],
                             'vertex_fill_color' : [1.0, 1.0, 1.0, 1.0],
@@ -258,6 +267,7 @@ class QueueServer :
                 self.colors[col] = default_colors[col]
         else :
             self.colors = default_colors
+
 
     @property
     def active(self):
@@ -534,7 +544,7 @@ class QueueServer :
             return new_depart
 
 
-    def simulate(self, n=1, t=None, nD=None) :
+    def simulate(self, n=1, t=None, nA=None, nD=None) :
         """This method simulates the queue forward for a specified amount of
         *system time* ``t``\, or for a specific number of events ``n``.
 
@@ -542,14 +552,54 @@ class QueueServer :
         ----------
         n : int (optional, the default is ``1``)
             The number of events to simulate. Supercedes the parameter ``t`` if
-            supplied. If ``t`` and ``nD`` are both ``None`` then this parameter
-            is used.
+            supplied. If ``t``, ``nA``, and ``nD`` are not given then this
+            parameter is used.
         t : float (optional)
-            The minimum amount of system time to simulate forward. 
+            The minimum amount of simulation time to simulate forward.
+        nA : int (optional)
+            Simulate until ``nA`` additional arrivals are observed.
         nD : int (optional)
-            Simulate until you observe this many departures.
+            Simulate until ``nD`` additional departures are observed.
+
+        Examples
+        --------
+        Let ``q`` denote your instance of a ``QueueServer``. Before any
+        simulations can take place the ``QueueServer`` must be activated:
+
+        >>> q.set_active()
+
+        To simulate 50000 events do the following:
+
+        >>> nE0 = q.nArrivals[0] + q.nDepartures
+        >>> q.simulate(50000)
+        >>> q.nArrivals[0] + q.nDepartures - nE0
+        50000
+
+        To simulate a 75 units of simulation time, do the following:
+
+        >>> t0  = q.time
+        >>> q.simulate(t=75)
+        >>> round(q.time - t0, 3)
+        75.105
+        >>> q.nArrivals[1] + q.nDepartures - nE1
+        1558
+
+        To simulate forward until 1000 new departures are observed run:
+
+        >>> nA0, nD0 = q.nArrivals[1], q.nDepartures
+        >>> q.simulate(nD=1000)
+        >>> q.nDepartures - nD0, q.nArrivals[1] - nA0
+        (1000, 992)
+
+        To simulate until 1000 new arrivals are observed run:
+
+        >>> nA0, nD0 = q.nArrivals[1], q.nDepartures
+        >>> q.simulate(nA=1000)
+        >>> q.nDepartures - nD0, q.nArrivals[1] - nA0,
+        (989, 1000)
+
         """
-        if t is None and nD is None :
+        if t is None and nD is None and nA is None :
             for k in range(n) :
                 tmp = self.next_event()
         elif t is not None :
@@ -557,12 +607,16 @@ class QueueServer :
             while self._current_t < then :
                 tmp = self.next_event()
         elif nD is not None :
-            nDeparts = self.nDepartures + nD
-            while self.nDepartures < nDeparts :
-                tmp = self.next_event() 
+            nDepartures = self.nDepartures + nD
+            while self.nDepartures < nDepartures :
+                tmp = self.next_event()
+        elif nA is not None :
+            nArrivals = self.nArrivals[1] + nA
+            while self.nArrivals[1] < nArrivals :
+                tmp = self.next_event()
 
 
-    def current_color(self, which=0) :
+    def _current_color(self, which=0) :
         """Returns a color for the queue.
 
         Parameters
@@ -689,7 +743,7 @@ class LossQueue(QueueServer) :
     -----
     In `Kendall's notation`_\, this is a
     :math:`\\text{GI}_t/\\text{GI}_t/c/k/N/\\text{FIFO}` queue, where :math:`k`
-    is the ``qbuffer``. If the default parameters are used then the returned
+    is the ``c + qbuffer``. If the default parameters are used then the
     instance is an :math:`\\text{M}/\\text{M}/1/1` queue.
     """
 
@@ -753,10 +807,10 @@ class LossQueue(QueueServer) :
                 self.nArrivals[0]  += 1
                 self.nSystem       += 1
 
-                new_agent = heappop(self._arrivals)
-                new_agent.add_loss(self.edge)
+                arrival = heappop(self._arrivals)
+                arrival.add_loss(self.edge)
 
-                self._current_t = new_agent._time
+                self._current_t = arrival._time
                 if self._active :
                     self._add_arrival()
 
@@ -766,7 +820,7 @@ class LossQueue(QueueServer) :
                     else :
                         self.data[arrival.issn] = [[arrival._time, 0, 0, len(self._queue)]]
 
-                heappush(self._departures, new_agent)
+                heappush(self._departures, arrival)
 
                 if self._arrivals[0]._time < self._departures[0]._time :
                     self._time = self._arrivals[0]._time
@@ -853,7 +907,7 @@ class NullQueue(QueueServer) :
     def next_event(self) :
         pass
 
-    def current_color(self, which=0) :
+    def _current_color(self, which=0) :
         if which == 1 :
             color = self.colors['edge_loop_color']
         elif which == 2 :

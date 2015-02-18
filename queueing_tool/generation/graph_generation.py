@@ -144,9 +144,9 @@ def adjacency2graph(adjacency, edge_type=None, adjust_type=0, is_directed=True) 
 
     The purpose of this function is take an adjacency list (or matrix) and
     return a :class:`~graph_tool.Graph` that can be used with
-    :class:`~queueing_tool.network.QueueNetwork`. The Graph returned has a 
-    ``vType`` vertex property, and ``eType`` edge property. If the adjacency is
-    directed and not connected, then the adjacency list is altered.
+    :class:`.QueueNetwork`. The Graph returned has an ``eType`` edge property.
+    If the adjacency is directed and not connected, then the adjacency list is
+    altered.
 
     Parameters
     ----------
@@ -176,8 +176,7 @@ def adjacency2graph(adjacency, edge_type=None, adjust_type=0, is_directed=True) 
     Returns
     -------
     :class:`~graph_tool.Graph`
-        A :class:`~graph_tool.Graph` with the ``vType`` vertex property, and 
-        ``eType`` edge property.
+        A :class:`~graph_tool.Graph` with the ``eType`` edge property.
 
     Raises
     ------
@@ -215,27 +214,54 @@ def adjacency2graph(adjacency, edge_type=None, adjust_type=0, is_directed=True) 
 
     g.set_directed(is_directed)
 
-
-
-    vType   = g.new_vertex_property("int")
     eType   = g.new_edge_property("int")
     elength = g.new_edge_property("double")
-    vType.a = 1
 
     for u, adj in adjacency.items() :
         for j, v in enumerate(adj) :
             e = g.add_edge(u, v)
             eType[e]    = edge_type[u][j]
             elength[e]  = edge_length[u][j] if not edge_length_none else 1.0
-            if u == v :
-                vType[e.source()] = edge_type[u][j]
 
-    g.vp['vType'] = vType
     g.ep['eType'] = eType
     if not edge_length_none :
         g.ep['edge_length'] = elength
     return g
-    
+
+
+def random_transition_matrix(g) :
+    """Generates a random transition matrix for the graph g.
+
+    Parameters
+    ----------
+    g : :class:`~graph_tool.Graph`
+
+    Returns
+    -------
+    mat : :class:`~numpy.ndarray`
+        Returns a transition matrix where ``mat[i,j]`` is the probability of
+        transitioning from vertex ``i`` to vertex ``j``\. If there is no edge
+        connecting vertex ``i`` to vertex ``j`` then ``mat[i,j] = 0``\.
+    """
+    nV  = g.num_vertices()
+    mat = np.zeros( (nV, nV) )
+
+    for v in g.vertices() :
+        vi  = int(v)
+        ind = [int(e.target()) for e in v.out_edges()]
+        deg = len(ind)
+        if deg == 1 :
+            mat[vi, ind] = 1
+        elif deg > 1 :
+            probs = np.ceil(np.random.rand(deg) * 100) / 100
+            if np.isclose(np.sum(probs), 0) :
+                probs[np.random.randint(deg)]  = 1
+
+            mat[vi, ind] = probs / np.sum(probs)
+
+    return mat
+            
+
 
 def generate_random_graph(nVertices=250, **kwargs) :
     """Creates a random graph where the edge and vertex types are selected 
@@ -254,8 +280,7 @@ def generate_random_graph(nVertices=250, **kwargs) :
     Returns
     -------
     :class:`~graph_tool.Graph`
-        A graph with a ``pos`` and ``vType`` vertex property and the ``eType``
-        edge property.
+        A graph with a ``pos`` vertex property and the ``eType`` edge property.
     """
     g = minimal_random_graph(nVertices, **kwargs)
     g = set_types_random(g, **kwargs)
@@ -264,23 +289,22 @@ def generate_random_graph(nVertices=250, **kwargs) :
 
 def generate_pagerank_graph(nVertices=250, **kwargs) :
     """Creates a random graph where the edge and vertex types are selected 
-    using the :func:`~set_types_pagerank` method.
+    using the :func:`.set_types_pagerank` method.
 
-    Calls :func:`~minimal_random_graph` and then calls :func:`~set_types_pagerank`.
+    Calls :func:`.minimal_random_graph` and then calls :func:`.set_types_pagerank`.
 
     Parameters
     ----------
     nVertices : int (optional, the default is 250)
         The number of vertices in the graph.
     **kwargs :
-        Any parameters to send to :func:`~minimal_random_graph` or
-        :func:`~set_types_pagerank`.
+        Any parameters to send to :func:`.minimal_random_graph` or
+        :func:`.set_types_pagerank`.
 
     Returns
     -------
     :class:`~graph_tool.Graph`
-        A graph with a ``pos`` and ``vType`` vertex property and the ``eType`` and 
-        ``edge_length`` edge property.
+        A graph with a ``pos`` vertex property and the ``eType`` edge property.
     """
     g = minimal_random_graph(nVertices, **kwargs)
     g = set_types_pagerank(g, **kwargs)
@@ -290,11 +314,11 @@ def generate_pagerank_graph(nVertices=250, **kwargs) :
 def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None) :
     """Creates a connected random graph.
 
-    This function first places ``nVertices`` points in the unit square randomly
-    and selects a radius ``r``. Then for every vertex ``v`` all other vertices
-    with Euclidean distance less or equal to ``r`` are connect by an edge. The
-    ``r`` choosen is the smallest number such that the graph ends up connected
-    at the end of this process.
+    This function first places ``nVertices`` points in the unit square
+    randomly. Then, for every vertex ``v``, all other vertices with Euclidean
+    distance less or equal to ``r`` are connect by an edge --- where ``r`` is
+    the smallest number such that the graph ends up connected at the end of
+    this process.
 
     If the number of nodes is greater than 200 and ``sfdp`` is ``None`` (the
     default) then the position of the nodes is altered  using ``graph-tool``'s
@@ -321,7 +345,6 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None) :
     :class:`~graph_tool.Graph`
         A graph with a ``pos`` vertex property for the vertex positions.
     """
-
     if isinstance(seed, numbers.Integral) :
         np.random.seed(seed)
         gt.seed_rng(seed)

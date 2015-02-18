@@ -4,7 +4,7 @@ Network generation tools
 .. automodule:: queueing_tool.generation
     :undoc-members:
 
-Graph Generation
+Graph generation
 ----------------
 
     .. autofunction:: generate_random_graph
@@ -14,9 +14,14 @@ Graph Generation
     .. autofunction:: set_types_random
     .. autofunction:: add_edge_lengths
 
-Graph Specification
+Graph specification
 -------------------
 
     .. autofunction:: adjacency2graph
     .. autofunction:: prepare_graph
+
+Miscellaneous functions
+-----------------------
+
+    .. autofunction:: vertices2edge
     .. autofunction:: shortest_paths_distances

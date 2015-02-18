@@ -23,6 +23,23 @@ Or use the following code if you only want to install it locally::
 
 Note that you **do not** need to use ``sudo`` before this command.
 
+
+Using this documentation
+------------------------
+
+Documentation is available in online and in docstrings provided with the code.
+
+The docstring examples assume ``queueing_tool`` has been imported as ``qt`` using the following command::
+
+    >>> import queueing_tool as qt
+
+Code snippets are indicated by three greater-than signs, such as the above code snippet or the following::
+
+    >>> x = x + 1
+
+
+
+
 An example
 ----------
 

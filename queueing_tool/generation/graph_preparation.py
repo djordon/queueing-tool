@@ -1,5 +1,6 @@
 import graph_tool.all as gt
-import numpy          as np
+import numpy   as np
+import numbers
 
 def _test_graph(g) :
     """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or 
@@ -31,14 +32,14 @@ def _test_graph(g) :
 
 def osm_edge_types(g) :
     """A function that takes graphs created using open street maps and formsts
-    them for use with the :class:`~queueing_tool.network.QueueNetwork` class.
+    them for use with the :class:`.QueueNetwork` class.
 
     Made specifically for a :class:`~graph_tool.Graph` created using data from
     `openstreetmaps <www.openstreetmaps.org>`_. Graphs from openstreetmaps
     sometimes have tags for certain nodes (like the latitude and longitude),
     or whether a location is an attraction. This function uses some of that
-    information to set a :class:`~graph_tool.Graph`'s ``vType`` vertex property
-    and the ``eType`` and ``edge_length`` edge property.
+    information to set a :class:`~graph_tool.Graph`'s ``eType`` and
+    ``edge_length`` edge properties.
 
     Parameters
     ----------
@@ -47,9 +48,8 @@ def osm_edge_types(g) :
     Returns
     -------
     :class:`~graph_tool.Graph`
-        Returns the :class:`~graph_tool.Graph` ``g`` with a ``vType`` vertex
-        property an ``eType`` edge property, and an ``edge_length`` edge
-        property.
+        Returns the :class:`~graph_tool.Graph` ``g`` with the ``eType`` and
+        ``edge_length`` edge properties.
 
     Raises
     ------
@@ -75,24 +75,20 @@ def osm_edge_types(g) :
     has_edestin = 'destination' in edge_props
     has_elight  = 'light' in edge_props
 
-    vType   = g.new_vertex_property("int")
     eType   = g.new_edge_property("int")
     for v in g.vertices() :
         if has_garage and g.vp['garage'][v] :
             e = g.edge(v,v)
             if isinstance(e, gt.Edge) :
                 eType[e]  = 1
-            vType[v]    = 1
         if has_destin and g.vp['destination'][v] :
             e = g.edge(v,v)
             if isinstance(e, gt.Edge) :
                 eType[e]  = 2
-            vType[v]  = 2
         if has_light and g.vp['light'][v] :
             e = g.edge(v,v)
             if isinstance(e, gt.Edge) :
                 eType[e]  = 3
-            vType[v]  = 3
 
     for e in g.edges() :
         if has_egarage and g.ep['garage'][e] :
@@ -102,7 +98,6 @@ def osm_edge_types(g) :
         if has_elight and g.ep['light'][e] :
             eType[e]  = 3
 
-    g.vp['vType'].a = vType.a + 1
     g.ep['eType'].a = eType.a + 1
     return add_edge_lengths(g)
 
@@ -155,9 +150,8 @@ def add_edge_lengths(g) :
     return g
 
 
-def set_types_random(g, pTypes=None, **kwargs) :
-    """Randomly sets ``eType`` (edge type) and ``vType`` (vertex type) 
-    properties of the graph.
+def set_types_random(g, pTypes=None, seed=None, **kwargs) :
+    """Randomly sets ``eType`` (edge type) properties of the graph.
 
     This function randomly assigns each edge a type. The probability of an edge being 
     a specific type is proscribed in the ``pTypes`` variable. The vertex type is set
@@ -168,18 +162,21 @@ def set_types_random(g, pTypes=None, **kwargs) :
     g : A string or a :class:`~graph_tool.Graph`.
     pTypes : dict (optional)
         A dictionary of types and proportions, where the keys are the types
-        and the values are the proportion of edges that are expected to be of that type.
-        The values can be either proportions (that add to one) or the exact number of
-        edges that be set to a type. In the later case, the sum of all the values must
-        equal the total number of edges in the :class:`~graph_tool.Graph`.
+        and the values are the proportion of edges that are expected to be of
+        that type. The values can be either proportions (that add to one) or
+        the exact number of edges that be set to a type. In the later case, the
+        sum of all the values must equal the total number of edges in the
+        :class:`~graph_tool.Graph`\.
+    seed : int (optional)
+        An integer used to initialize ``numpy``\'s psuedorandom number
+        generator.
     **kwargs :
         Unused.
 
     Returns
     -------
     :class:`~graph_tool.Graph`
-        Returns the :class:`~graph_tool.Graph` ``g`` with a ``vType`` vertex
-        property and an ``eType`` edge property.
+        Returns the :class:`~graph_tool.Graph` ``g`` with an ``eType`` edge property.
 
     Raises
     ------
@@ -197,6 +194,9 @@ def set_types_random(g, pTypes=None, **kwargs) :
     types in the graph (types 1, 2, and 3) and sets their proportions to be 1/3 each.
     """
     g = _test_graph(g)
+
+    if isinstance(seed, numbers.Integral) :
+        np.random.seed(seed)
 
     if pTypes is None :
         pTypes = {k : 1/3 for k in range(1,4)}
@@ -220,22 +220,16 @@ def set_types_random(g, pTypes=None, **kwargs) :
             for ei in edges[cut_off[k-1]:cut_off[k]] :
                 eTypes[ei] = key
 
-    vType = g.new_vertex_property("int")
     eType = g.new_edge_property("int")
 
     for e in g.edges() :
         eType[e] = eTypes[g.edge_index[e]]
-        if e.target() == e.source() :
-            vType[e.target()] = eTypes[g.edge_index[e]]
-        else :
-            vType[e.target()] = 1
     
-    g.vp['vType'] = vType
     g.ep['eType'] = eType
     return g
 
 
-def set_types_pagerank(g, pType2=0.1, pType3=0.1, **kwargs) :
+def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
     """Sets edge and vertex types using `pagerank`_.
 
     This function sets the edge and vertex types of a graph to be either 1, 2, or 3.
@@ -255,14 +249,17 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, **kwargs) :
         Specifies the proportion of edges that will be of type 2.
     pType3 : float (optional, the default is 0.1)
         Specifies the proportion of edges that will be of type 3.
+    seed : int (optional)
+        An integer used to initialize ``numpy``\'s and ``graph-tool``\'s
+        psuedorandom number generators.
     **kwargs :
         Unused.
 
     Returns
     -------
     :class:`~graph_tool.Graph`
-        Returns the :class:`~graph_tool.Graph` ``g`` with the ``vType`` vertex
-        property and the ``eType`` edge property.
+        Returns the :class:`~graph_tool.Graph` ``g`` with the ``eType`` edge
+        property.
 
     Raises
     ------
@@ -273,6 +270,10 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, **kwargs) :
         .. _pagerank: http://en.wikipedia.org/wiki/PageRank
     """
     g = _test_graph(g)
+
+    if isinstance(seed, numbers.Integral) :
+        np.random.seed(seed)
+        gt.seed_rng(seed)
 
     pagerank    = gt.pagerank(g)
     tmp         = np.sort( np.array(pagerank.a) )
@@ -296,15 +297,15 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, **kwargs) :
     
     ind_g_dist  = np.unique(ind_g_dist)
     fcqs        = ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )]
-    vType       = g.new_vertex_property("int")
+    loop_type   = g.new_vertex_property("int")
 
     for v in g.vertices() :
         if int(v) in dests :
-            vType[v] = 3
+            loop_type[v] = 3
             if not isinstance(g.edge(v, v), gt.Edge) :
                 e = g.add_edge(source=v, target=v)
         elif int(v) in fcqs :
-            vType[v] = 2
+            loop_type[v] = 2
             if not isinstance(g.edge(v, v), gt.Edge) :
                 e = g.add_edge(source=v, target=v)
     
@@ -313,14 +314,13 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, **kwargs) :
     eType.a  += 1
 
     for v in g.vertices() :
-        if vType[v] in [2, 3] :
+        if loop_type[v] in [2, 3] :
             e = g.edge(v, v)
-            if vType[v] == 2 :
+            if loop_type[v] == 2 :
                 eType[e] = 2
             else :
                 eType[e] = 3
     
-    g.vp['vType'] = vType
     g.ep['eType'] = eType
     return g
 
@@ -359,9 +359,8 @@ def prepare_graph(g, g_colors, q_cls, q_arg) :
     
     Notes
     -----
-    The graph ``g`` should have the ``eType`` edge property map and the
-    ``vType`` vertex property map. If they are not in ``g`` then each edge and
-    vertex has their ``eType`` and ``vType`` set to 1.
+    The graph ``g`` should have the ``eType`` edge property map. If it does not
+    then an ``eType`` edge property is created and set to 1.
 
     The following properties are set by each queue: ``vertex_color``,
     ``vertex_fill_color``, ``vertex_fill_color``, ``edge_color``.
@@ -408,11 +407,6 @@ def prepare_graph(g, g_colors, q_cls, q_arg) :
         eType.a = 1
         g.ep['eType'] = eType
 
-    if 'vType' not in vertex_props :
-        vType   = g.new_vertex_property("int")
-        vType.a = 1
-        g.vp['vType'] = vType
-
     props   = vertex_props.union(edge_props)
     queues  = _set_queues(g, q_cls, q_arg, 'cap' in vertex_props)
 
@@ -423,14 +417,13 @@ def prepare_graph(g, g_colors, q_cls, q_arg) :
         if e.target() == e.source() :
             edge_color[e] = queues[k].colors['edge_loop_color']
         else :
-            edge_control_points[e]    = [0, 0, 0, 0]
             edge_color[e] = queues[k].colors['edge_color']
 
     for v in g.vertices() :
         e = g.edge(v, v)
         if isinstance(e, gt.Edge) :
-            vertex_color[v]       = queues[g.edge_index[e]].current_color(2)
-            vertex_fill_color[v]  = queues[g.edge_index[e]].current_color()
+            vertex_color[v]       = queues[g.edge_index[e]]._current_color(2)
+            vertex_fill_color[v]  = queues[g.edge_index[e]]._current_color()
         else :
             vertex_color[v]       = g_colors['vertex_color']
             vertex_fill_color[v]  = g_colors['vertex_fill_color'] 
