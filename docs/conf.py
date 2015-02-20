@@ -22,7 +22,8 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return Mock()
 
-MOCK_MODULES = ['gi.repository', 'Gtk', 'GObject', 'sorting', 'choice', 'scipy', 'numpy', 'graph_tool']
+MOCK_MODULES = ['gi.repository', 'Gtk', 'GObject', 'sorting', 'choice', 
+                'scipy', 'numpy', 'numpy.random', 'graph_tool']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
