@@ -23,6 +23,7 @@ class Mock(MagicMock):
             return Mock()
 
 MOCK_MODULES = ['gi.repository', 'Gtk', 'GObject', 'sorting', 'choice', 
+                'queueing_tool.queues.choice', 'queueing_tool.network.sorting',
                 'scipy', 'numpy', 'numpy.random', 'graph_tool']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
