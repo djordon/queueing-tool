@@ -168,8 +168,7 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
         sum of all the values must equal the total number of edges in the
         :class:`~graph_tool.Graph`\.
     seed : int (optional)
-        An integer used to initialize ``numpy``\'s psuedorandom number
-        generator.
+        An integer used to initialize numpy's psuedorandom number generator.
     **kwargs :
         Unused.
 
@@ -241,6 +240,8 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
     loops to these vertices as well. These loops then have edge types the
     correspond to the vertices type. The rest of the edges are set to type 1.
 
+    .. _pagerank: http://en.wikipedia.org/wiki/PageRank
+
     Parameters
     ----------
     g : A string or a :class:`~graph_tool.Graph`.
@@ -250,8 +251,8 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
         Specifies the proportion of vertices that will be of type 3 and that
         are near pType2 vertices.
     seed : int (optional)
-        An integer used to initialize ``numpy``\'s and ``graph-tool``\'s
-        psuedorandom number generators.
+        An integer used to initialize numpy's and graph-tool's psuedorandom
+        number generators.
     **kwargs :
         Unused.
 
@@ -266,8 +267,6 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
     TypeError
         Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
         or a :class:`~graph_tool.Graph`\.
-
-    .. _pagerank: http://en.wikipedia.org/wiki/PageRank
     """
     g = _test_graph(g)
 
@@ -279,7 +278,11 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
     tmp         = np.sort(np.array(pagerank.a))
     nDests      = int(np.ceil(g.num_vertices() * pType2))
     dests       = np.where(pagerank.a >= tmp[-nDests])[0]
-    
+
+    if 'pos' not in g.vp :
+        pos = gt.sfdp_layout(g, max_iter=10000)
+        g.vp['pos'] = pos
+
     dest_pos    = np.array([g.vp['pos'][g.vertex(k)] for k in dests])
     nFCQ        = int(pType3 * g.num_vertices())
     min_g_dist  = np.ones(nFCQ) * np.infty

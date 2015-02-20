@@ -13,9 +13,8 @@ else:
     use_cython = True
 
 
-
-if sys.version_info[0:2] < (3, 2):
-    raise RuntimeError('Python version 3.2+ required.')
+if sys.version_info[:2] < (2, 7) or (3, 0) <=  sys.version_info[:2] < (3, 2):
+    raise RuntimeError('Python version 2.7 or >= 3.2 required.')
 
 cmdclass    = {}
 ext_modules = []
@@ -55,11 +54,14 @@ setup(
               'queueing_tool.generation'],
     cmdclass=cmdclass,
     ext_modules=ext_modules,
-    keywords=['queueing', 'networks', 'simulation', 'network simulation'],
+    keywords=['queueing theory', 'queueing', 'simulation', 'queueing simulator',
+              'queueing network simulation', 'networks', 'queueing simulation'],
     classifiers=[
-    'Development Status :: 3 - Alpha',
+    'Development Status :: 4 - Beta',
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.2',
     'Programming Language :: Python :: 3.3',

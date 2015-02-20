@@ -4,16 +4,17 @@
    contain the root `toctree` directive.
 
 Welcome to queueing-tool's documentation!
-==========================================
+=========================================
+
 
 Contents:
 
 .. toctree::
-    :maxdepth: 3
+   :maxdepth: 3
 
-    overview
-    quickstart
-    modules
+   installation
+   overview
+   modules
 
 Indices and tables
 ==================
@@ -21,4 +22,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

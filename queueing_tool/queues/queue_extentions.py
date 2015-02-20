@@ -100,8 +100,10 @@ class ResourceQueue(LossQueue) :
 
 
     def __repr__(self) :
-        tmp = "ResourceQueue: %s. servers: %s, max servers: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.edge[2], self.nServers, self.max_servers, self.nArrivals, self.nDepartures, np.round(self._time, 3))
+        my_str = "ResourceQueue: %s. servers: %s, max servers: %s, " + \
+                 "arrivals: %s, departures: %s, next time: %s"
+        tmp =  my_str % (self.edge[2], self.nServers, self.max_servers,\
+                         self.nArrivals, self.nDepartures, np.round(self._time, 3))
         return tmp
 
 
@@ -134,7 +136,7 @@ class ResourceQueue(LossQueue) :
                 if self._arrivals[0]._has_resource :
                     new_arrival   = heappop(self._arrivals)
                     self._current_t = new_arrival._time
-                    self.nTotal  -= 1
+                    self._nTotal  -= 1
                     self.set_nServers(self.nServers+1)
 
                     if self._arrivals[0]._time < self._departures[0]._time :
@@ -146,11 +148,12 @@ class ResourceQueue(LossQueue) :
                     QueueServer.next_event(self)
 
                 else :
-                    self.nBlocked      += 1
-                    self.nArrivals[0]  += 1
-                    self.nTotal        -= 1
-                    new_arrival         = heappop(self._arrivals)
-                    self._current_t       = new_arrival._time
+                    self.nBlocked   += 1
+                    self._nArrivals += 1
+                    self._nTotal    -= 1
+                    new_arrival      = heappop(self._arrivals)
+                    self._current_t  = new_arrival._time
+
                     if self._arrivals[0]._time < self._departures[0]._time :
                         self._time = self._arrivals[0]._time
                     else :
@@ -325,13 +328,10 @@ class InfoQueue(LossQueue) :
         self.networking(net_size)
 
     def __repr__(self) :
-        tmp = "InfoQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.edge[2], self.nServers, len(self._queue), self.nArrivals, self.nDepartures, np.round(self._time, 3))
-        return tmp
-
-    def __repr__(self) :
-        tmp = "InfoQueue: %s. servers: %s, max servers: %s, arrivals: %s, departures: %s, next time: %s" \
-            %  (self.edge[2], self.nServers, self.max_servers, self.nArrivals, self.nDepartures, np.round(self._time, 3))
+        my_str = "InfoQueue: %s. servers: %s, queued: %s, " + \
+                 "arrivals: %s, departures: %s, next time: %s"
+        tmp =  my_str % (self.edge[2], self.nServers, len(self._queue),\
+                         self.nArrivals, self.nDepartures, np.round(self._time, 3))
         return tmp
 
 
@@ -347,11 +347,11 @@ class InfoQueue(LossQueue) :
 
     def _add_arrival(self, *args) :
         if len(args) > 0 :
-            self.nTotal += 1
+            self._nTotal += 1
             heappush(self._arrivals, args[0])
         else : 
             if self._current_t >= self._next_ct :
-                self.nTotal  += 1
+                self._nTotal  += 1
                 self._next_ct = self.arrival_f(self._current_t)
 
                 if self._next_ct >= self.deactive_t :
@@ -362,8 +362,8 @@ class InfoQueue(LossQueue) :
                 new_arrival.set_arrival(self._next_ct)
                 heappush(self._arrivals, new_arrival)
 
-                self.nArrivals[1] += 1
-                if self.nArrivals[1] >= self.active_cap :
+                self._oArrivals += 1
+                if self._oArrivals >= self.active_cap :
                     self.active = False
 
         if self._arrivals[0]._time < self._departures[0]._time :

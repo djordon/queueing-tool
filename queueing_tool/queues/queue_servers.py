@@ -130,7 +130,7 @@ class QueueServer :
         the vertex pen of the target vertex. The defaults are listed in the
         notes.
     seed : int (optional)
-        If supplied ``seed`` is used to initialize ``numpy``\'s psuedorandom
+        If supplied ``seed`` is used to initialize numpy's psuedorandom
         number generator.
        
     Attributes
@@ -233,7 +233,6 @@ class QueueServer :
         self.nServers     = nServers
         self.nDepartures  = 0
         self.nSystem      = 0
-        self.nArrivals    = [0, 0]
         self.data         = {}                #times; issn : [arrival, service start, departure]
 
         self.arrival_f    = arrival_f
@@ -247,6 +246,8 @@ class QueueServer :
         self._arrivals    = [inftyAgent]    # A list of arriving agents.
         self._departures  = [inftyAgent]    # A list of departing agents.
         self._queue       = collections.deque()
+        self._nArrivals   = 0
+        self._oArrivals   = 0
         self._nTotal      = 0               # The number of agents scheduled to arrive + nSystem 
         self._active      = False
         self._current_t   = 0               # The time of the last event.
@@ -300,11 +301,21 @@ class QueueServer :
     def current_time(self, tmp): 
         pass
 
+    @property
+    def nArrivals(self):
+        return [self._nArrivals, self._oArrivals]
+    @nArrivals.deleter
+    def nArrivals(self): 
+        pass
+    @nArrivals.setter
+    def nArrivals(self, tmp): 
+        pass
+
     def __repr__(self) :
-        tmp = "QueueServer: %s. servers: %s, queued: %s, arrivals: %s, " + \
-              "departures: %s, next time: %s" \
-            %  (self.edge[2], self.nServers, len(self._queue), self.nArrivals,\
-                self.nDepartures, np.round(self._time, 3))
+        my_str = "QueueServer: %s. servers: %s, queued: %s, arrivals: %s, " + \
+                 "departures: %s, next time: %s"
+        tmp =  my_str % (self.edge[2], self.nServers, len(self._queue), self.nArrivals,\
+                         self.nDepartures, np.round(self._time, 3))
         return tmp
 
     def __lt__(a, b) :
@@ -362,7 +373,7 @@ class QueueServer :
             If ``n`` is not an integer (or integer like) and positive then this
             error is raised.
         """
-        if (not isinstance(n, numbers.Integral) and n is not infty) or n <= 0 :
+        if ((not isinstance(n, numbers.Integral)) and n is not infty) or n <= 0 :
             raise RuntimeError("nServers must be a positive integer or infinity.\n%s" % (str(self)) )
         else :
             self.nServers = n
@@ -405,10 +416,10 @@ class QueueServer :
         return dat
 
 
-    def _add_arrival(self, *args) :
-        if len(args) > 0 :
-            self._nTotal += 1
-            heappush(self._arrivals, args[0])
+    def _add_arrival(self, agent=None) :
+        self._nTotal += 1
+        if agent is not None :
+            heappush(self._arrivals, agent)
         else : 
             if self._current_t >= self._next_ct :
                 self._next_ct = self.arrival_f(self._current_t)
@@ -417,14 +428,13 @@ class QueueServer :
                     self._active = False
                     return
 
-                new_agent = self.AgentClass( (self.edge[2], self.nArrivals[1]) )
+                new_agent = self.AgentClass( (self.edge[2], self._oArrivals) )
                 new_agent.set_arrival(self._next_ct)
                 heappush(self._arrivals, new_agent)
 
-                self._nTotal      += 1
-                self.nArrivals[1] += 1
+                self._oArrivals += 1
 
-                if self.nArrivals[1] >= self.active_cap :
+                if self._oArrivals >= self.active_cap :
                     self._active = False
 
         if self._arrivals[0]._time < self._departures[0]._time :
@@ -432,8 +442,8 @@ class QueueServer :
 
 
     def _add_departure(self, agent, t) :
-        self.nSystem       += 1
-        self.nArrivals[0]  += 1
+        self.nSystem    += 1
+        self._nArrivals += 1
 
         if self.nSystem <= self.nServers :
             agent.set_departure(self.service_f(t))
@@ -445,11 +455,25 @@ class QueueServer :
             self._time = self._departures[0]._time
 
 
-    def delay_service(self) :
-        """Adds an extra service time to the next departing agents service time."""
+    def delay_service(self, t=None) :
+        """Adds an extra service time to the next departing agents service 
+        time.
+
+        Parameters
+        ----------
+        t : float (optional)
+            Specifies when the next departing should depart. If ``t`` is not
+            given, then an additional service time is added to the next
+            departing agent.
+        """
         if len(self._departures) > 1 :
             agent = heappop(self._departures)
-            agent.set_departure(self.service_f(agent._time))
+
+            if t is None :
+                agent.set_departure(self.service_f(agent._time))
+            else :
+                agent.set_departure(t)
+
             heappush(self._departures, agent)
 
             if self._arrivals[0]._time < self._departures[0]._time :
@@ -496,8 +520,8 @@ class QueueServer :
             if self._active :
                 self._add_arrival()
 
-            self.nSystem       += 1
-            self.nArrivals[0]  += 1
+            self.nSystem    += 1
+            self._nArrivals += 1
 
             if self.collect_data :
                 if arrival.issn not in self.data :
@@ -614,8 +638,8 @@ class QueueServer :
             while self.nDepartures < nDepartures :
                 tmp = self.next_event()
         elif nA is not None :
-            nArrivals = self.nArrivals[1] + nA
-            while self.nArrivals[1] < nArrivals :
+            nArrivals = self._oArrivals + nA
+            while self._oArrivals < nArrivals :
                 tmp = self.next_event()
 
 
@@ -677,7 +701,8 @@ class QueueServer :
         If the server is active, it stays active.
         """
         self.data        = {}
-        self.nArrivals   = [0, 0]
+        self._nArrivals  = 0
+        self._oArrivals  = 0
         self.nDepartures = 0
         self.nSystem     = 0
         self._nTotal     = 0
@@ -709,8 +734,9 @@ class QueueServer :
         new_server._current_t   = copy.copy(self._current_t)
         new_server._time        = copy.copy(self._time)
         new_server._next_ct     = copy.copy(self._next_ct)
+        new_server._nArrivals   = copy.copy(self._nArrivals)
+        new_server._oArrivals   = copy.copy(self._oArrivals)
         new_server.data         = copy.deepcopy(self.data)
-        new_server.nArrivals    = copy.deepcopy(self.nArrivals)
         new_server.colors       = copy.deepcopy(self.colors)
         new_server._queue       = copy.deepcopy(self._queue, memo)
         new_server._arrivals    = copy.deepcopy(self._arrivals, memo)
@@ -732,8 +758,8 @@ class LossQueue(QueueServer) :
     Parameters
     ----------
     qbuffer : int (optional, the default is 0)
-        Specifies the length of the buffer (i.e. specifies how long the size
-        of the queue can be).
+        Specifies the length of the buffer i.e. specifies the maximum number
+        of agents that can be waiting in line to be served.
     **kwargs
         Any :class:`~QueueServer` parameters.
 
@@ -749,9 +775,9 @@ class LossQueue(QueueServer) :
     Notes
     -----
     In `Kendall's notation`_\, this is a
-    :math:`\\text{GI}_t/\\text{GI}_t/c/k/N/\\text{FIFO}` queue, where :math:`k`
-    is equal to :math:`c` plus ``qbuffer``. If the default parameters are used
-    then the instance is an :math:`\\text{M}/\\text{M}/1/1` queue.
+    :math:`\\text{GI}_t/\\text{GI}_t/c/c+b/N/\\text{FIFO}` queue, where
+    :math:`b` is the ``qbuffer``. If the default parameters are used then the
+    instance is an :math:`\\text{M}/\\text{M}/1/1` queue.
     """
 
     def __init__(self, qbuffer=0, **kwargs) :
@@ -812,14 +838,16 @@ class LossQueue(QueueServer) :
             if self.nSystem < self.nServers + self.buffer :
                 QueueServer.next_event(self)
             else :
-                self.nBlocked      += 1
-                self.nArrivals[0]  += 1
-                self.nSystem       += 1
+                self.nBlocked += 1
+                self._nTotal  -= 1
+                self._nArrivals += 1
+
 
                 arrival = heappop(self._arrivals)
                 arrival.add_loss(self.edge)
 
                 self._current_t = arrival._time
+
                 if self._active :
                     self._add_arrival()
 
@@ -828,8 +856,6 @@ class LossQueue(QueueServer) :
                         self.data[arrival.issn].append([arrival._time, 0, 0, len(self._queue)])
                     else :
                         self.data[arrival.issn] = [[arrival._time, 0, 0, len(self._queue)]]
-
-                heappush(self._departures, arrival)
 
                 if self._arrivals[0]._time < self._departures[0]._time :
                     self._time = self._arrivals[0]._time

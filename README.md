@@ -1,7 +1,7 @@
 Queueing-tool
 =============
 
-`queueing-tool` is an efficient `python` module for analysis of graphs. It is written for `python 3` and uses [`graph-tool`](http://graph-tool.skewed.de/) and [`numpy`](http://www.numpy.org/). The main goal of `queueing-tool` is to aid in agent based simulations of networks. The original purpose was to analyze transportation networks.
+`queueing-tool` is an efficient `python` module for analysis of graphs. It is written for `Python` (2.7 or 3.2+)  and uses [`graph-tool`](http://graph-tool.skewed.de/) and [`numpy`](http://www.numpy.org/). The main goal of `queueing-tool` is to aid in simulations of networks. The original purpose was to analyze transportation networks.
 
 ## Features
 
@@ -28,6 +28,13 @@ If you only want to test out `queueing-tool`, open a prompt in the package direc
 ```bash
 python3 setup.py install --user
 ```
+
+or 
+
+```bash
+python setup.py install --user
+```
+
 The above code will install `queueing_tool` at `~/.local/lib/python3.X/`, where `X` is the latest version of python installed on your machine. If `~/.local/lib/python3.X` does not exists it will create it. Once `queueing-tool` is installed you can import it with the following
 
 ```python

@@ -15,13 +15,14 @@
 
 {% block extrahead %}
     <!--link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400,700' rel='stylesheet' type='text/css' /-->
-<link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,700|Roboto:300,400,700' rel='stylesheet' type='text/css'>
-  <link rel="stylesheet" href="_static/bootstrap-paper.min.css" type="text/css" /> <!-- -->
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,700|Roboto:300,400,700' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="_static/bootstrap-lumen.min.css" type="text/css" /> <!-- -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
   <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script><!-- -->
 
-    <link rel="stylesheet" href="_static/qt_sphinx13.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/qt_sphinx13.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
 {{ super() }}
 {%- if not embedded %}
     <style type="text/css">
@@ -89,26 +90,24 @@
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Contents <span class="caret"></span></a>
           <ul class="dropdown-menu" role="menu">
+            <li><a href="installation.html">Installation</a></li>
             <li><a href="overview.html">Overview</a></li>
-            <li><a href="quickstart.html#installation">Installation</a></li>
             <li class="divider"></li>
             <li><a href="network.html">Queueing networks</a></li>
             <li><a href="queues.html">Queues and agents</a></li>
             <li><a href="generation.html">Graph generation</a></li>
-            <li class="divider"></li>
-            <li><a href="#">One more separated link</a></li>
           </ul>
         </li>
       </ul>
       <form class="navbar-form navbar-right search" action="search.html" method="get" role="search">
-        <div class="form-group" id="searchbox">
+        <div class="form-group" id="searchbox2">
           <!--input class="form-control" placeholder="Search" type="text"> <!-- -->
           <input class="form-control" name="q" type="text">
           <input name="check_keywords" value="yes" type="hidden">
           <input name="area" value="default" type="hidden">
         </div>
         <button type="submit" class="btn btn-default">Submit</button>
-        <script type="text/javascript">$('#searchbox').show(0);</script>
+        <script type="text/javascript">$('#searchbox2').show(0);</script>
       </form>
     </div>
   </div>

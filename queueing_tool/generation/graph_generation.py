@@ -259,8 +259,7 @@ def generate_transition_matrix(g, seed=None) :
     ----------
     g : :class:`~graph_tool.Graph`
     seed : int (optional)
-        An integer used to initialize ``numpy``\'s psuedorandom number
-        generators.
+        An integer used to initialize numpy's psuedorandom number generator.
 
     Returns
     -------
@@ -364,7 +363,7 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kw
     this process.
 
     If the number of nodes is greater than 200 and ``sfdp`` is ``None`` (the
-    default) then the position of the nodes is altered  using ``graph-tool``'s
+    default) then the position of the nodes is altered  using graph-tool's
     :func:`~graph_tool.draw.sfdp_layout` function (with its default arguments).
 
     Parameters
@@ -374,14 +373,14 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kw
     is_directed : bool (optional, the default is ``True``)
         Specifies whether the graph is directed or not.
     sfdp : bool or None (optional, the default is ``None``)
-        Specifies whether to run ``graph-tool``'s :
+        Specifies whether to run graph-tool's :
         func:`~graph_tool.draw.sfdp_layout` function on the graph ``g``. If
         ``True``, the vertex positions returned by
         func:`~graph_tool.draw.sfdp_layout` are used to set the ``pos`` vertex
         property.
     seed : int (optional)
-        An integer used to initialize ``numpy``\'s and ``graph-tool``\'s
-        psuedorandom number generators.
+        An integer used to initialize numpy's and graph-tool's psuedorandom
+        number generators.
     **kwargs :
         Unused.
 
@@ -430,7 +429,7 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kw
 
     g.reindex_edges()
     if (nVertices > 200 and sfdp is None) or sfdp :
-        pos = gt.sfdp_layout(g)
+        pos = gt.sfdp_layout(g, max_iter=10000)
     
     g.vp['pos'] = pos
     return g

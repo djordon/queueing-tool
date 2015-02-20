@@ -1,17 +1,18 @@
-import graph_tool.all   as gt
-import numpy            as np
+import graph_tool.all as gt
+import numpy   as np
 import numbers
 import copy
 import sys
 
-from .. generation      import prepare_graph
+from .. generation import prepare_graph
+from .. queues     import NullQueue, QueueServer, LossQueue
 
-from .. queues          import NullQueue, QueueServer, LossQueue
-from .sorting           import oneBisectSort, bisectSort, oneSort, twoSort
+from .sorting      import oneBisectSort, bisectSort, oneSort, twoSort
 
-from numpy              import infty
-from gi.repository      import Gtk, GObject
+from numpy         import infty
+from gi.repository import Gtk, GObject
 
+EPS = np.float64(1e-10)
 
 class QueueNetwork :
     """A class that simulates a network of queues.
@@ -33,17 +34,36 @@ class QueueNetwork :
         Used to specify the class arguments for each type of
         :class:`.QueueServer`\.
     seed : int (optional)
-        An integer used to initialize ``numpy``\'s and ``graph-tool``\'s
-        psuedorandom number generators.
+        An integer used to initialize numpy's and graph-tool's psuedorandom
+        number generators.
     colors : :class:`.dict` (optional)
         A dictionary of colors used to color the graph. The keys are specified
         in the Notes section. If a particular key is missing, then the default
         value for that key is used.
+    blocking : str ``{'BAS', 'RS'}`` (optional, the default is ``'BAS'``)
+        Specifies the blocking behavior for the system. If ``blocking`` is not
+        ``'RS'``, then it is assumed to be ``'BAS'``.
+
+        ``'BAS'``
+            Blocking After Service: if an agent attempts to enter a
+            :class:`.LossQueue` that is at capacity, the agent is forced to
+            wait until an agent departs from that queue. The blocked agent
+            then enters the :class:`.LossQueue`\.
+        ``'RS'``
+            Repetitive Service Blocking: if an agent attempts to enter a
+            :class:`.LossQueue` that is at capacity, the agent is forced to
+            receive another service from the queue it is departing from.
+            After the agent receives the service, he then checks to see if
+            the desired queue is still at capacity, and if it is, this process
+            is repeated.
 
     Attributes
     ----------
     g : :class:`~graph_tool.Graph`
         The graph for the network.
+    blocking_type : str
+        Specifies whether the system's blocking behavior is either Blocking
+        After Service (BAS) or Repetitive Service Blocking (RS).
     in_edges : :class:`.dict`
         A mapping between vertex indices and the in-edges at that vertex.
         Specifically, ``in_edges[v]`` returns a list containing the edge index
@@ -72,7 +92,7 @@ class QueueNetwork :
         The number of vertices in the graph.
     time : float
         The time of the last event.
-    agent_cap : int (the default is 1000)
+    max_agents : int (the default is 1000)
         The maximum number of agents that can be in the network at any time.
     colors : :class:`.dict`
         A dictionary of colors used when drawing a graph. See the notes for the
@@ -127,15 +147,20 @@ class QueueNetwork :
     >>> net = qt.QueueNetwork(g, seed=13)
     """
 
-    def __init__(self, g=None, q_classes=None, q_args=None, seed=None, colors=None) :
-        self.nEvents      = 0
-        self.t            = 0
-        self.agent_cap    = 1000
+    def __init__(self, g, q_classes=None, q_args=None, seed=None, colors=None, blocking='BAS') :
 
-        self._to_animate  = False
-        self._initialized = False
-        self._prev_edge   = None
-        self._queues      = []
+        if not isinstance(blocking, str) :
+            raise TypeError("blocking must be a string")
+
+        self.nEvents        = 0
+        self.t              = 0
+        self.max_agents     = 1000
+
+        self._to_animate    = False
+        self._initialized   = False
+        self._prev_edge     = None
+        self._queues        = []
+        self._blocking_type = True if blocking.lower() != 'rs' else False
 
         if colors is None :
             colors = {}
@@ -156,8 +181,8 @@ class QueueNetwork :
 
         self.colors = colors
 
-        default_classes   = {0 : NullQueue, 1 : QueueServer, 2 : LossQueue,
-                             3 : LossQueue, 4 : LossQueue}
+        default_classes = {0 : NullQueue, 1 : QueueServer, 2 : LossQueue,
+                           3 : LossQueue, 4 : LossQueue}
 
         if q_classes is None :
             q_classes = default_classes
@@ -194,7 +219,7 @@ class QueueNetwork :
             if isinstance(g, str) or isinstance(g, gt.Graph) :
                 g, qs = prepare_graph(g, self.colors, q_classes, q_args)
             else :
-                raise TypeError("The Parameter `g` needs to be either a graph-tool Graph, a string, or None.")
+                raise TypeError("The Parameter `g` needs to be either a graph-tool Graph, a string.")
 
             self.edge2queue   = qs
             self.nAgents      = np.zeros( g.num_edges() )
@@ -249,6 +274,19 @@ class QueueNetwork :
     def time(self, tmp): 
         pass
 
+    @property
+    def blocking_type(self):
+        return 'BAS' if self._blocking_type else 'RS'
+    @blocking_type.deleter
+    def blocking_type(self): 
+        pass
+    @blocking_type.setter
+    def blocking_type(self, tmp):
+        if not isinstance(tmp, str) :
+            raise TypeError("blocking_type must be a string")
+        self._blocking_type = True if tmp.lower() != 'rs' else False
+
+
     def initialize(self, nActive=1, queues=None, edges=None, eType=None) :
         """Prepares the ``QueueNetwork`` for simulation.
 
@@ -302,8 +340,12 @@ class QueueNetwork :
             else :
                 raise RuntimeError("If queues is None, then nActive must be a strictly positive int.")
 
+        if len(queues) > self.max_agents - np.sum(self.nAgents) :
+            queues = queues[:self.max_agents]
+
         for ei in queues :
             self.edge2queue[ei].set_active()
+            self.nAgents[ei] = self.edge2queue[ei]._nTotal
 
         self._queues = [q for q in self.edge2queue]
         self._queues.sort()
@@ -319,7 +361,7 @@ class QueueNetwork :
 
         Parameters
         ----------
-        return_mat : bool (optional, the default is ``True``)
+        return_mat : bool (optional, the default is ``True``\)
             Specifies whether a :class:`~numpy.ndarray` is returned. If
             ``False``, a :class:`.dict` is returned instead.
 
@@ -327,11 +369,11 @@ class QueueNetwork :
         -------
         out : an :class:`~numpy.ndarray` or a :class:`.dict`
             The transition probabilities for each vertex in the graph. If
-            ``out`` is an :class:`~numpy.ndarray`, then ``out[v, u]`` returns
-            the probability of a transition from vertex ``v`` to vertex ``u``.
+            ``out`` is an :class:`~numpy.ndarray`\, then ``out[v, u]`` returns
+            the probability of a transition from vertex ``v`` to vertex ``u``\.
             If ``out`` is a :class:`.dict` then ``out_edge[v][k]`` is the
             probability of moving from vertex ``v`` to the vertex at the head
-            of the ``k``th out-edge.
+            of the ``k``\th out-edge.
 
         Notes
         -----
@@ -385,17 +427,14 @@ class QueueNetwork :
         >>> net.transitions(False)
         {0: [1.0], 1: [0.75, 0.25], 2: [0.333, 0.333, 0.333], 3: [1.0], 4: [1.0]}
 
-        To change all transition probabilities with an :class:`~numpy.ndarray`
-        do the following:
+        One can generate a transition matrix using 
+        :func:`.generate_transition_matrix`. To change all transition
+        probabilities with an :class:`~numpy.ndarray` do the following:
 
         >>> mat = qt.generate_transition_matrix(g, seed=10)
         >>> net.set_transitions(mat)
         >>> net.transitions(False)
         {0: [1.0], 1: [0.963, 0.037], 2: [0.338, 0.396, 0.265], 3: [1.0], 4: [1.0]}
-
-        See Also
-        --------
-        generate_transition_matrix : Generates a random transition matrix.
         """
         if isinstance(mat, dict) :
             for key, value in mat.items() :
@@ -653,8 +692,7 @@ class QueueNetwork :
         Parameters
         ----------
         out_size : :class:`.tuple` (optional, the default is ``(700, 700)``).
-            Specifies the size of canvas. See
-            ``graph-tool``\'s `documentation`_.
+            Specifies the size of canvas. See graph-tool's `documentation`_.
         output : str (optional, the default is ``None``)
             Specifies the directory where the drawing is saved. If output is
             ``None``, then the results are drawn using GraphViz.
@@ -662,6 +700,8 @@ class QueueNetwork :
             Specifies whether all the colors are updated.
         kwargs
             Any parameters to pass to :func:`~graph_tool.draw.graph_draw`.
+
+            .. _documentation: http://graph-tool.skewed.de/static/doc/index.html
 
         Notes
         -----
@@ -683,8 +723,6 @@ class QueueNetwork :
 
         If any of these parameters are supplied as arguments to ``draw`` then
         the passed arguments are used over the defaults.
-
-            .. _documentation: http://graph-tool.skewed.de/static/doc/index.html
 
         Examples
         --------
@@ -767,7 +805,7 @@ class QueueNetwork :
             my_iter   = v.in_edges() if self.g.is_directed() else v.out_edges()
             for e in my_iter :
                 ei = self.g.edge_index[e]
-                if self.edge2queue[ei].active :
+                if self.edge2queue[ei]._active :
                     is_active = True
                     break
             if is_active :
@@ -777,7 +815,7 @@ class QueueNetwork :
 
         for e in self.g.edges() :
             ei = self.g.edge_index[e]
-            if self.edge2queue[ei].active :
+            if self.edge2queue[ei]._active :
                 self.g.ep['edge_color'][e] = self.colors['edge_active']
             else :
                 self.g.ep['edge_color'][e] = self.colors['edge_inactive']
@@ -802,7 +840,9 @@ class QueueNetwork :
 
         Notes
         -----
-        The colors are defined by the class attribute ``colors``.
+        The colors are defined by the class attribute ``colors``\. The
+        relevant colors are ``vertex_active``\, ``vertex_inactive``\,
+        ``vertex_highlight``\, ``edge_active``\, and ``edge_inactive``\.
 
         Examples
         --------
@@ -844,11 +884,24 @@ class QueueNetwork :
             e = self.g.edge(q.edge[0], q.edge[1])
             v = self.g.vertex(q.edge[1])
             if q.edge[0] == q.edge[1] :
-                ep['edge_color'][e]         = q._current_color(1)
-                vp['vertex_color'][v]       = q._current_color(2)
-                vp['vertex_fill_color'][v]  = q._current_color()
+                ep['edge_color'][e]        = q._current_color(1)
+                vp['vertex_color'][v]      = q._current_color(2)
+                if q.edge[3] == 0 :
+                    nSy = 0
+                    cap = 0
+                    for vi in self.in_edges[q.edge[1]] :
+                        nSy += self.edge2queue[vi].nSystem
+                        cap += self.edge2queue[vi].nServers
+
+                    tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+
+                    color    = [ i * tmp / 0.9 for i in q.colors['vertex_fill_color'] ]
+                    color[3] = 1.0 - tmp
+                    vp['vertex_fill_color'][v] = color
+                else :
+                    vp['vertex_fill_color'][v] = q._current_color()
             else :
-                ep['edge_color'][e]   = q._current_color()
+                ep['edge_color'][e] = q._current_color()
                 if do[q.edge[1]] :
                     nSy = 0
                     cap = 0
@@ -977,32 +1030,42 @@ class QueueNetwork :
 
         event  = q1.next_event_description()
         self.t = q1t
+        self.nEvents += 1
 
         if event == 2 : # This is a departure
-            agent             = q1.next_event()
-            self.nAgents[e1]  = q1._nTotal
-            self.nEvents     += 1
-
-            e2  = agent.desired_destination(self, q1.edge) # expects QueueNetwork, and current location
+            e2  = q1._departures[0].desired_destination(self, q1.edge)
             q2  = self.edge2queue[e2]
             q2t = q2._time
-            agent.set_arrival(q1t)
 
-            q2._add_arrival(agent)
-            self.nAgents[e2] = q2._nTotal
+            if q2.at_capacity() :
+                q2.nBlocked += 1
+                q1._departures[0].blocked += 1
+                if self._blocking_type :
+                    t = q2._departures[0]._time + EPS
+                    q1.delay_service(t)
+                else :
+                    q1.delay_service()
+            else :
+                agent = q1.next_event()
+                agent.set_arrival(q1t)
 
-            if slow :
-                self._update_graph_colors(ad='departure', qedge=q1.edge)
-                self._prev_edge = q1.edge
+                q2._add_arrival(agent)
+                self.nAgents[e1] = q1._nTotal
+                self.nAgents[e2] = q2._nTotal
 
-            if q2.active and np.sum(self.nAgents) > self.agent_cap - 1 :
-                q2.active = False
+                if slow :
+                    self._update_graph_colors(ad='departure', qedge=q1.edge)
+                    self._prev_edge = q1.edge
 
-            q2.next_event()
+                if q2._active and np.sum(self.nAgents) > self.max_agents - 1 :
+                    q2._active = False
 
-            if slow :
-                self._update_graph_colors(ad='arrival', qedge=q2.edge)
-                self._prev_edge = q2.edge
+                q2.next_event()
+                self.nAgents[e2] = q2._nTotal
+
+                if slow :
+                    self._update_graph_colors(ad='arrival', qedge=q2.edge)
+                    self._prev_edge = q2.edge
 
             if q1._time < infty :
                 if q2._time < q2t < infty and e2 != e1 :
@@ -1039,12 +1102,11 @@ class QueueNetwork :
                         bisectSort(self._queues, q2, n-1)
 
         elif event == 1 : # This is an arrival
-            if q1.active and np.sum(self.nAgents) > self.agent_cap - 1 :
-                q1.active = False
+            if q1._active and np.sum(self.nAgents) > self.max_agents - 1 :
+                q1._active = False
 
             q1.next_event()
-            self.nAgents[e1]  = q1._nTotal
-            self.nEvents     += 1
+            self.nAgents[e1] = q1._nTotal
 
             if slow :
                 self._update_graph_colors(ad='arrival', qedge=q1.edge)
@@ -1062,11 +1124,9 @@ class QueueNetwork :
 
             if self._to_disk :
                 pixbuf = self._window.get_pixbuf()
-                pixbuf.savev(self._outdir+'%d.png' % self._count, 'png', [], [])
+                pixbuf.savev(self._outdir+'%d.' + self._fmt % self._count, self._fmt, [], [])
                 if self._count >= self._max_count :
                     Gtk.main_quit()
-                    #return False
-                    #sys.exit(0)
                 self._count += 1
 
             return True
@@ -1173,6 +1233,7 @@ class QueueNetwork :
         if out_dir is None :
             self._window = gt.GraphWindow(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
         else :
+            self._fmt       = kwargs['fmt'] if 'fmt' in kwargs else 'png'
             self._count     = 0
             self._max_count = count
             self._to_disk   = True
@@ -1215,7 +1276,7 @@ class QueueNetwork :
         Let ``net`` denote your instance of a ``QueueNetwork``. Before you
         simulate, you need to initialize the network, which allows arrivals
         from outside the network. To initialize with 2 (random chosen) edges
-        accepting arrivals run.
+        accepting arrivals run:
 
         >>> net.initialize(2)
 
@@ -1319,22 +1380,23 @@ class QueueNetwork :
 
     def copy(self) :
         """Returns a deep copy of self."""
-        net               = QueueNetwork()
-        net.g             = self.g.copy()
-        net.t             = copy.copy(self.t)
-        net.agent_cap     = copy.copy(self.agent_cap)
-        net.nV            = copy.copy(self.nV)
-        net.nE            = copy.copy(self.nE)
-        net.nAgents       = copy.copy(self.nAgents)
-        net.nEvents       = copy.copy(self.nEvents)
-        net.shortest_path = copy.copy(self.shortest_path)
-        net._initialized  = copy.copy(self._initialized)
-        net._prev_edge    = copy.copy(self._prev_edge)
-        net._to_animate   = copy.copy(self._to_animate)
-        net.colors        = copy.deepcopy(self.colors)
-        net.out_edges     = copy.deepcopy(self.out_edges)
-        net.in_edges      = copy.deepcopy(self.in_edges)
-        net.edge2queue    = copy.deepcopy(self.edge2queue)
+        net                 = QueueNetwork(None)
+        net.g               = self.g.copy()
+        net.t               = copy.copy(self.t)
+        net.max_agents      = copy.copy(self.max_agents)
+        net.nV              = copy.copy(self.nV)
+        net.nE              = copy.copy(self.nE)
+        net.nAgents         = copy.copy(self.nAgents)
+        net.nEvents         = copy.copy(self.nEvents)
+        net.shortest_path   = copy.copy(self.shortest_path)
+        net._initialized    = copy.copy(self._initialized)
+        net._prev_edge      = copy.copy(self._prev_edge)
+        net._to_animate     = copy.copy(self._to_animate)
+        net._blocking_type  = copy.copy(self._blocking_type)
+        net.colors          = copy.deepcopy(self.colors)
+        net.out_edges       = copy.deepcopy(self.out_edges)
+        net.in_edges        = copy.deepcopy(self.in_edges)
+        net.edge2queue      = copy.deepcopy(self.edge2queue)
 
         if net._initialized :
             net.queues = [q for q in net.edge2queue]
@@ -1344,94 +1406,3 @@ class QueueNetwork :
 
             net.queues.sort(reverse=True)
         return net
-
-
-
-class _CongestionNetwork(QueueNetwork) :
-    """A network of queues that handles congestion by holding back agents.
-
-    This class is identical to the :class:`~QueueNetwork` class, with the only
-    exception being how blocking is handled when an agent is blocked by a
-    :class:`.LossQueue`. In this network, if an agent will be blocked at his
-    desired destination then they are held back at his current queue and
-    receives an extra service there.
-    """
-    def __init__(self, g=None, q_classes=None, q_args=None, seed=None) :
-        QueueNetwork.__init__(self, g, seed, calcpath)
-
-
-    def __repr__(self) :
-        return 'CongestionNetwork. # nodes: %s, edges: %s, agents: %s' % (self.nV, self.nE, np.sum(self.nAgents))
-
-
-    def _simulate_next_event(self, slow=True) :
-        q1  = self.queues.pop()
-        q1t = q1._time
-        e1  = q1.edge[2]
-
-        event  = q1.next_event_description()
-        self.t = q1t
-        self.nEvents += 1 if event else 0
-
-        if event == 2 : # This is a departure
-            e2  = q1._departures[0].desired_destination(self, q1.edge) # expects QueueNetwork, and current location
-            q2  = self.edge2queue[e2]
-            q2t = q2._time
-
-            if q2.at_capacity() :
-                q2.nBlocked += 1
-                q1._departures[0].blocked += 1
-                q1.delay_service()
-            else :
-                agent = q1.next_event()
-                agent.set_arrival(q1t)
-
-                q2._add_arrival(agent)
-
-                self.nAgents[e1]  = q1._nTotal
-                self.nAgents[e2]  = q2._nTotal
-
-                if q2.active and np.sum(self.nAgents) > self.agent_cap - 1 :
-                    q2.active = False
-
-                if slow :
-                    self._update_graph_colors(ad='departure', qedge=q1.edge)
-                    self._prev_edge = q1.edge
-
-                q2.next_event()
-
-                if slow :
-                    self._update_graph_colors(ad='arrival', qedge=q2.edge)
-                    self._prev_edge = q2.edge
-
-            if q1._time < infty :
-                if q2._time < q2t < infty and e2 != e1 :
-                    oneBisectSort(self.queues, q1, q2t, len(self.queues))
-                elif q2._time < q2t and e2 != e1 :
-                    twoSort(self.queues, q1, q2, len(self.queues))
-                else :
-                    bisectSort(self.queues, q1, len(self.queues))
-            else :
-                if q2._time < q2t < infty :
-                    oneSort(self.queues, q2t, len(self.queues))
-                elif q2._time < q2t :
-                    bisectSort(self.queues, q2, len(self.queues))
-
-        elif event == 1 : # This is an arrival
-            if q1.active and np.sum(self.nAgents) > self.agent_cap - 1 :
-                q1.active = False
-
-            q1.next_event()
-            self.nAgents[e1]  = q1._nTotal
-
-            if slow :
-                self._update_graph_colors(ad='arrival', qedge=q1.edge)
-                self._prev_edge  = q1.edge
-
-            if q1._time < infty :
-                bisectSort(self.queues, q1, len(self.queues) )
-
-        if self._to_animate :
-            self._window.graph.regenerate_surface(lazy=False)
-            self._window.graph.queue_draw()
-            return True

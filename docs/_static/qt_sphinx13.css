@@ -24,8 +24,16 @@ dt, dd {
   font-weight: inherit;
 }
 
+blockquote dl.docutils dt{
+    background-color: transparent;
+    padding-top: 0.5em;
+    padding-right: 0.5em;
+    padding-bottom: 0.5em;
+    padding-left: 0.5em;
+}
+
 .push-nav-down {
-  padding-top: 25px;
+  /*padding-top: 25px;*/
 }
 
 .label {
@@ -45,10 +53,11 @@ dt, dd {
 body {
     font-family: 'Open Sans', 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
                  'Verdana', sans-serif;
-    font-size: 14px;
+    font-size: 15px;
     /*text-align: center;*/
-    background-image: url(crossword.png);
-    color: black;
+    /*background-image: url(absurdidad.png); /* url(crossword.png); */
+    background-color: white;
+    color: #111; /*black*/
     padding: 0;
     line-height: 1.42857;
     letter-spacing: 0px;
@@ -93,10 +102,10 @@ body {
 }
 
 div.document {
-    background-color: white;
+    /*background-color: white;*/
     text-align: left;
-    border: 1px solid #0a507a;
-    border-radius: 5px;
+    /*border: 1px solid #0a507a;
+    border-radius: 5px;*/
 }
 
 div.bodywrapper {
