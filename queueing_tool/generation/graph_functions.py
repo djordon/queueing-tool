@@ -1,13 +1,37 @@
 import graph_tool.all as gt
 import numpy as np
 
-from .graph_preparation import _test_graph
 
+def _test_graph(g) :
+    """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or 
+     a string or file object to one.
+
+    Parameters
+    ----------
+    g : A **str** or a :class:`~graph_tool.Graph`.
+
+    Returns
+    -------
+    :class:`~graph_tool.Graph`
+        If ``g`` is a string or a file object then the output given by
+        ``graph_tool.load_graph(g, fmt='xml')``, if ``g`` is aready a 
+        :class:`~graph_tool.Graph` then it is returned unaltered.
+
+    Raises
+    ------
+    TypeError
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
+        or a :class:`~graph_tool.Graph`\.
+    """
+    if isinstance(g, str) :
+        g = gt.load_graph(g, fmt='xml')
+    elif not isinstance(g, gt.Graph) :
+        raise TypeError("Need to supply a graph-tool graph or the location of a graph")
+    return g
 
 
 def vertices2edge(g, u, v) :
-    """Takes two vertex indices and if these two vertices are connected by an
-    edge, then that edge's edge index is returned.
+    """Returns the edge index of the edge that connects two vertex.
 
     Parameters
     ----------
@@ -43,8 +67,9 @@ def graph2dict(g) :
         connected to ``v`` by an edge.
     eTypes : :class:`.dict` or ``None``
         A dictionary where a key is the vertex index for a vertex ``v`` and the
-        values are :class:`.list`\s of vertex indices where that vertex is
-        connected to ``v`` by an edge. 
+        values are :class:`.list`\s of each adjacent edge's edge type.
+        More specifically, ``eType[v][k]`` is the edge type of the edge
+        ``adj[v][k]``.
     """
     adj = {int(v) : [int(e.target()) for e in v.out_edges()] for v in g.vertices()}
     if 'eType' in g.ep :
@@ -66,16 +91,17 @@ def shortest_paths_distances(g) :
     Parameters
     ----------
     g : Graph
-        The connected :class:`~graph_tool.Graph`.
+        A connected :class:`~graph_tool.Graph`.
 
     Returns
     -------
     shortest_path : :class:`~numpy.ndarray`
-        A two-dimensional array where the ``i,j`` entry is the next vertex to visit if
-        you want to take the shortest path from node ``i`` to node ``j``.
+        A two-dimensional array where ``shortest_path[i,j]`` is the next vertex
+        to visit if you want to take the shortest path from node ``i`` to node
+        ``j``.
     distances : :class:`~numpy.ndarray`
-        A two-dimensional array where the ``i,j`` entry is the distance of the shortest
-        path from node ``i`` to node ``j``.
+        A two-dimensional array where ``distances[i,j]`` is the distance of the
+        shortest path from node ``i`` to node ``j``.
 
     Raises
     ------
@@ -83,7 +109,7 @@ def shortest_paths_distances(g) :
         Raises a :exc:`~TypeError` if ``g`` is not a string to a file object, or a 
         :class:`~graph_tool.Graph`.
     """
-    _test_graph(g)
+    g = _test_graph(g)
 
     v_props = set()
     for key in self.Qn.g.vertex_properties.keys() :

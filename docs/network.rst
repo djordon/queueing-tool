@@ -9,15 +9,16 @@ Simulation methods
 ------------------
 
       .. automethod:: QueueNetwork.initialize
-      .. automethod:: QueueNetwork.set_transitions
       .. automethod:: QueueNetwork.simulate
+      .. automethod:: QueueNetwork.set_transitions
+      .. automethod:: QueueNetwork.transitions
 
 Data methods
 ------------
 
-      .. automethod:: QueueNetwork.collect_data
-      .. automethod:: QueueNetwork.data_agents
       .. automethod:: QueueNetwork.data_queues
+      .. automethod:: QueueNetwork.data_agents
+      .. automethod:: QueueNetwork.collect_data
       .. automethod:: QueueNetwork.stop_collecting_data
 
 Graph drawing methods
@@ -31,7 +32,6 @@ Graph drawing methods
 Generic methods
 ---------------
 
-      .. automethod:: QueueNetwork.transitions
       .. automethod:: QueueNetwork.clear
       .. automethod:: QueueNetwork.clear_data
       .. automethod:: QueueNetwork.copy

@@ -2,6 +2,10 @@ import graph_tool.all as gt
 import numpy   as np
 import numbers
 
+from .graph_generation import adjacency2graph
+from .graph_functions  import graph2dict
+
+
 def _test_graph(g) :
     """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or 
      a string or file object to one.
@@ -150,185 +154,8 @@ def add_edge_lengths(g) :
     return g
 
 
-def set_types_random(g, pTypes=None, seed=None, **kwargs) :
-    """Randomly sets ``eType`` (edge type) properties of the graph.
 
-    This function randomly assigns each edge a type. The probability of an edge being 
-    a specific type is proscribed in the ``pTypes`` variable. The vertex type is set
-    to the same type as an edge that is a loop, and 1 otherwise.
-
-    Parameters
-    ----------
-    g : A string or a :class:`~graph_tool.Graph`.
-    pTypes : dict (optional)
-        A dictionary of types and proportions, where the keys are the types
-        and the values are the proportion of edges that are expected to be of
-        that type. The values can be either proportions (that add to one) or
-        the exact number of edges that be set to a type. In the later case, the
-        sum of all the values must equal the total number of edges in the
-        :class:`~graph_tool.Graph`\.
-    seed : int (optional)
-        An integer used to initialize numpy's psuedorandom number generator.
-    **kwargs :
-        Unused.
-
-    Returns
-    -------
-    :class:`~graph_tool.Graph`
-        Returns the :class:`~graph_tool.Graph` ``g`` with an ``eType`` edge property.
-
-    Raises
-    ------
-    TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
-        or a :class:`~graph_tool.Graph`\.
-
-    RuntimeError
-        Raises a :exc:`~RuntimeError` if the ``pType`` values do not sum to one
-        and do not sum to the number of edges in the graph.
-    
-    Notes
-    -----
-    If ``pTypes`` is not explicitly specified in the arguments, then it defaults to three
-    types in the graph (types 1, 2, and 3) and sets their proportions to be 1/3 each.
-    """
-    g = _test_graph(g)
-
-    if isinstance(seed, numbers.Integral) :
-        np.random.seed(seed)
-
-    if pTypes is None :
-        pTypes = {k : 1/3 for k in range(1,4)}
-
-    nEdges  = g.num_edges()
-    edges   = [k for k in range(nEdges)]
-    cut_off = np.cumsum( list(pTypes.values()) )
-
-    if np.isclose(cut_off[-1], 1) :
-        cut_off = np.round(cut_off * nEdges, out=np.zeros(len(pTypes), int))
-    elif cut_off != nEdges :
-        raise RuntimeError("pTypes must sum to one, or sum to the number of edges in the graph")
-
-    np.random.shuffle(edges)
-    eTypes  = {}
-    for k, key in enumerate(pTypes.keys()) :
-        if k == 0 :
-            for ei in edges[:cut_off[k]] :
-                eTypes[ei] = key
-        else :
-            for ei in edges[cut_off[k-1]:cut_off[k]] :
-                eTypes[ei] = key
-
-    eType = g.new_edge_property("int")
-
-    for e in g.edges() :
-        eType[e] = eTypes[g.edge_index[e]]
-    
-    g.ep['eType'] = eType
-    return g
-
-
-def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
-    """Creates a stylized graph. Sets edge and types using `pagerank`_.
-
-    This function sets the edge types of a graph to be either 1, 2, or 3.
-    It sets the vertices to type 2 by selecting the top
-    ``pType2 * g.num_vertices()`` vertices given by the
-    :func:`~graph_tool.centrality.pagerank` of the graph. These a loop is added
-    to all vertices identified this way (if one does not exist already). It
-    then randomly sets vertices close to type 2 vertices as type 3, and adds
-    loops to these vertices as well. These loops then have edge types the
-    correspond to the vertices type. The rest of the edges are set to type 1.
-
-    .. _pagerank: http://en.wikipedia.org/wiki/PageRank
-
-    Parameters
-    ----------
-    g : A string or a :class:`~graph_tool.Graph`.
-    pType2 : float (optional, the default is 0.1)
-        Specifies the proportion of vertices that will be of type 2.
-    pType3 : float (optional, the default is 0.1)
-        Specifies the proportion of vertices that will be of type 3 and that
-        are near pType2 vertices.
-    seed : int (optional)
-        An integer used to initialize numpy's and graph-tool's psuedorandom
-        number generators.
-    **kwargs :
-        Unused.
-
-    Returns
-    -------
-    :class:`~graph_tool.Graph`
-        Returns the :class:`~graph_tool.Graph` ``g`` with the ``eType`` edge
-        property.
-
-    Raises
-    ------
-    TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
-        or a :class:`~graph_tool.Graph`\.
-    """
-    g = _test_graph(g)
-
-    if isinstance(seed, numbers.Integral) :
-        np.random.seed(seed)
-        gt.seed_rng(seed)
-
-    pagerank    = gt.pagerank(g)
-    tmp         = np.sort(np.array(pagerank.a))
-    nDests      = int(np.ceil(g.num_vertices() * pType2))
-    dests       = np.where(pagerank.a >= tmp[-nDests])[0]
-
-    if 'pos' not in g.vp :
-        pos = gt.sfdp_layout(g, max_iter=10000)
-        g.vp['pos'] = pos
-
-    dest_pos    = np.array([g.vp['pos'][g.vertex(k)] for k in dests])
-    nFCQ        = int(pType3 * g.num_vertices())
-    min_g_dist  = np.ones(nFCQ) * np.infty
-    ind_g_dist  = np.ones(nFCQ, int)
-    
-    r, theta    = np.random.random(nFCQ) / 500, np.random.random(nFCQ) * 360
-    xy_pos      = np.array([r * np.cos(theta), r * np.sin(theta)]).transpose()
-    g_pos       = xy_pos + dest_pos[np.array( np.mod(np.arange(nFCQ), nDests), int)]
-    
-    for v in g.vertices() :
-        if int(v) not in dests :
-            tmp = np.array([_calculate_distance(g.vp['pos'][v], g_pos[k, :]) for k in range(nFCQ)])
-            min_g_dist = np.min((tmp, min_g_dist), 0)
-            ind_g_dist[min_g_dist == tmp] = int(v)
-    
-    ind_g_dist  = np.unique(ind_g_dist)
-    fcqs        = ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )]
-    loop_type   = g.new_vertex_property("int")
-
-    for v in g.vertices() :
-        if int(v) in dests :
-            loop_type[v] = 3
-            if not isinstance(g.edge(v, v), gt.Edge) :
-                e = g.add_edge(source=v, target=v)
-        elif int(v) in fcqs :
-            loop_type[v] = 2
-            if not isinstance(g.edge(v, v), gt.Edge) :
-                e = g.add_edge(source=v, target=v)
-    
-    g.reindex_edges()
-    eType     = g.new_edge_property("int")
-    eType.a  += 1
-
-    for v in g.vertices() :
-        if loop_type[v] in [2, 3] :
-            e = g.edge(v, v)
-            if loop_type[v] == 2 :
-                eType[e] = 2
-            else :
-                eType[e] = 3
-    
-    g.ep['eType'] = eType
-    return g
-
-
-def prepare_graph(g, g_colors, q_cls, q_arg) :
+def _prepare_graph(g, g_colors, q_cls, q_arg) :
     """Prepares a graph for use in :class:`.QueueNetwork`.
 
     This function is called by ``__init__`` in the :class:`.QueueNetwork` class.
@@ -354,7 +181,7 @@ def prepare_graph(g, g_colors, q_cls, q_arg) :
     Returns
     -------
     g : :class:`~graph_tool.Graph`
-        The same graph, but with the addiction of various
+        The same graph, but with the addition of various
         :class:`~graph_tool.PropertyMap`\s.
     queues : :class:`.list`
         A list of :class:`.QueueServer`\s where ``queues[k]`` is the
@@ -374,7 +201,7 @@ def prepare_graph(g, g_colors, q_cls, q_arg) :
         
         * ``vertex_pen_width``: ``1.1``,
         * ``vertex_size``: ``8``,
-        * ``edge_control_points``: ``[0, 0, 0, 0]``
+        * ``edge_control_points``: ``[]``
         * ``edge_marker_size``: ``8``
         * ``edge_pen_width``: ``1.25``
         
@@ -406,11 +233,9 @@ def prepare_graph(g, g_colors, q_cls, q_arg) :
         edge_props.add(key)
 
     if 'eType' not in edge_props :
-        eType   = g.new_edge_property("int")
-        eType.a = 1
-        g.ep['eType'] = eType
+        ans = graph2dict(g)
+        g   = adjacency2graph(ans[0], adjust=1)
 
-    props   = vertex_props.union(edge_props)
     queues  = _set_queues(g, q_cls, q_arg, 'cap' in vertex_props)
 
     if 'pos' not in vertex_props :
@@ -431,10 +256,10 @@ def prepare_graph(g, g_colors, q_cls, q_arg) :
             vertex_color[v]       = g_colors['vertex_color']
             vertex_fill_color[v]  = g_colors['vertex_fill_color'] 
 
-    edge_pen_width.a      = 1.25
-    edge_marker_size.a    = 8
-    vertex_pen_width.a    = 1.1
-    vertex_size.a         = 8
+    edge_pen_width.a   = 1.25
+    edge_marker_size.a = 8
+    vertex_pen_width.a = 1.1
+    vertex_size.a      = 8
 
     properties = {
         'vertex_fill_color' : vertex_fill_color,
@@ -446,6 +271,7 @@ def prepare_graph(g, g_colors, q_cls, q_arg) :
         'edge_pen_width' : edge_pen_width,
         'edge_color' : edge_color}
 
+    props = vertex_props.union(edge_props)
     for key, value in properties.items() :
         if key not in props :
             if key[:4] == 'edge' :
@@ -464,7 +290,7 @@ def _set_queues(g, q_cls, q_arg, has_cap) :
         qedge = (int(e.source()), int(e.target()), g.edge_index[e], eType)
 
         if has_cap and 'nServers' not in q_arg[eType] :
-            q_arg[eType]['nServers'] = max(g.vp['cap'][e.target()] // 2, 1)
+            q_arg[eType]['nServers'] = max(g.vp['cap'][e.target()], 1)
 
         queues[qedge[2]] = q_cls[eType](edge=qedge, **q_arg[eType])
 

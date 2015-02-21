@@ -1,34 +1,100 @@
 Overview
 ========
 
-``Queueing-tool`` is an Python simulation package for analysing networks of queues. The simulations are event based, where events are comprised as arrivals and departures of agents. Arrivals from outside the network are simulated as agents, which then move throughout the network from queue to queue. The network is represented as a graph, which is handled by ``graph-tool``\.
+Queueing-tool is an Python simulation package for analyzing networks of queues.
+The simulations are event based, where events are comprised as arrivals and 
+departures of agents that move from queue to queue in the network. The network
+is represented as a graph, which is handled by graph-tool.
 
-There are three major components to ``queueing-tool``: the ``QueueServer`` classes, ``Agent`` classes, and ``QueueNetwork`` classes. The package includes several different types of each class.
+There are three major components to ``queueing-tool``: the :class:`.QueueServer`
+classes, :class:`.Agent` classes, and :class:`.QueueNetwork` class. This package
+includes several different types of each class.
 
-1. The :class:`.QueueServer` is the basic part of the package. They have arrivals enter the queue from the outside world and and these arrivals receive service from the queue before moving on. Each queue can have any arrival and service distribution, and these distributions can depend on time. In `Kendall's notation`_, these are :math:`\text{GI}_t/\text{GI}_t/c/\infty/N/\text{FIFO}` queues. There is also a :class:`.LossQueue` class which block arrivals when the queue is at capacity.
+1. The :class:`.QueueServer` class is a standard implementation of a
+   `waiting line <http://en.wikipedia.org/wiki/Queueing_theory>`_. It's basic
+   function is facilitating the arrival of agents --- which arrive with some
+   regularity according to some distribution --- and servicing those agents before
+   they leave. Each queue can have any arrival and service distribution, and these
+   distributions can depend on time. Two such implemented are the following:
 
-2. An ``Agents`` is an objects that moves throughout the network. When an instance of the network is created it starts empty. ``Agents`` are created by a queue and once serviced the ``Agent`` moves on to another queue in the network. Each ``Agent`` *decides* where in the network it wants to arrive at next. An ``Agent`` can also interact with the queues it visits and change the properties of the queue.
+    - The :class:`.QueueServer` class can have any positive number of servers
+      (including infinitely many). There can also be a maximum number of potential
+      arrivals to the queue. In `Kendall's notation`_, these are
+      :math:`\text{GI}_t/\text{GI}_t/c/\infty/N/\text{FIFO}` queues. 
+    - The :class:`.LossQueue` class is an implementation of a 
+      `finite capacity queue`_\. It has all the features of the :class:`.QueueServer`
+      class but also implements blocking (or loss). This class can be used to
+      simulate `loss networks`_\. In Kendall's notation, these are
+      :math:`\text{GI}_t/\text{GI}_t/c/c+b/N/\text{FIFO}` queues.
 
-3. The ``QueueNetwork`` manages the routing of agents from queue to queue. It can also manage congestion and blocking within the network as well. There are two blocking regimes implemented: blocking after service, and repetitive service blocking. One can also limiting the maximum number of agents within the system for modeling closed networks.
+2. An :class:`.Agent` is an objects that moves throughout the network. When an
+   instance of the network is created it starts empty. Agents are created by a
+   queue and once serviced the agent moves on to another queue in the network.
+   Each agent *decides* where in the network it wants to arrive at next. Two of
+   the agent implementation are:
 
+    - The :class:`.Agent` class routes itself throughout the network randomly.
+      More specifically, when at node ``i`` in the network, the :class:`.Agent`
+      decides to transition to node ``j`` with probability :math:`p_{ij}`. These
+      transition probabilities are set by the by the :class:`.QueueNetwork` class.
+    - The :class:`.GreedyAgent` class routes itself by choosing the queue with
+      the shortest line.
+
+3. The :class:`.QueueNetwork` class manages the routing of agents from queue to
+   queue. It can also manage congestion and blocking within the network. There are
+   two blocking regimes implemented:
+
+    - Blocking After Service: when an agent attempts to enter a
+      :class:`.LossQueue` that is at capacity, the agent is forced to
+      wait until an agent departs from that queue.
+    - Repetitive Service Blocking: when an agent attempts to enter a
+      :class:`.LossQueue` that is at capacity, the agent is forced to
+      receive another service from the queue it is departing from.
+      After the agent receives the service, he then checks to see if
+      the desired queue is still at capacity, and if it is this process
+      is repeated, otherwise he enters the queue.
+
+   One can also limiting the maximum number of agents within the system for
+   modeling closed networks.
+
+.. _loss networks: http://en.wikipedia.org/wiki/Loss_network
+.. _finite capacity queue: http://en.wikipedia.org/wiki/M/M/c_queue#Finite_capacity
 .. _Kendall's notation: http://en.wikipedia.org/wiki/Kendall%27s_notation
 
-The package also contains visualization component, whereby the user can see queueing dynamics in real-time as the simulations take place.
+The package also contains visualization component, whereby the user can see
+queueing dynamics in real-time as the simulations take place.
 
 
 An example
 ----------
 
-Its probably best to become acquainted with ``queueing-tool`` by way of an example. Suppose you wanted to measure the performance of two queueing systems. The first system, which looks as follows:
+Its probably best to become acquainted with ``queueing-tool`` by way of an example.
 
+Lets model the checkout process of a busy grocery store. People enter the store
+according to some random process, shop around for some time, and then checkout.
+They also arrive at greater frequency in the middle of the day. When it's time
+to checkout customers choose their checkout line by searching for the shortest
+line. They wait in line before receiving service from the checkout counter and
+when they're done they leave the store.
 
-Lets model the checkout process of a busy grocery store. People enter the store according to some random process, shop and checkout. They also arrive at greater frequency in the middle of the day. When it's time to checkout you choose your checkout line by searching for the shortest line. You wait in line before receiving service from the checkout counter and when you're done you leave the system.
+In ``queueing-tool``, each *person* entering the system is represented as an
+:class:`.Agent`\. Each ``Agent`` decides how they navigate in the network. In
+this system an ``Agent`` chooses the shortest queue to enter at whenever they
+choose which queue to arrive at next. The :class:`.GreedyAgent` class is built
+to model such routing.
 
-In ``queueing-tool``, each *person* entering the system is represented as an :class:`.Agent`\. Each ``Agent`` decides how they navigate in the network. In this system an ``Agent`` chooses the shortest queue to enter at whenever they choose which queue to arrive at next. There is already a built-in class of agents that navigate by choosing the shortest queue; this class is the :class:`.GreedyAgent` class.
+The network is represented as a graph-tool :class:`~graph_tool.Graph`. On top of
+each edge in the graph sits the queues, where each queue is represented as a
+:class:`.QueueServer`. In our model, each checkout line is it's own ``QueueServer``.
+These checkout queues receive arrivals from people who are already in the store,
+not from people outside the store. This means the store serves as its own queue
+--- it receives arrivals from the neighborhood, and they get funneled into the
+checkout area. This is a relatively, simple network that is easy create using
+``queueing-tool``.
 
-The network is represented as a graph-tool :class:`~graph_tool.Graph`. On top of each edge in the graph sits the queues, where each queue is represented as a :class:`.QueueServer`. In our model, each checkout line is it's own ``QueueServer``. These checkout queues recieve arrivals from people who are already in the store, not from people outside the store. This means the store serves as its own queue --- it receives arrivals from the neighborhood, and they get funneled into the checkout area. This is a relatively, simple network that is easy create it using ``queueing-tool``.
-
-To create an the network you just need to specify an adjacency list (or adjacency matrix). In our toy example, we are going to assume the store has 20 checkout lines. Let's get started
+To create the network you need to specify an adjacency list (or adjacency 
+matrix). In our toy example, we are going to assume the store has 20 checkout
+lines. Let's get started
 
 .. testsetup::
 
@@ -43,36 +109,57 @@ To create an the network you just need to specify an adjacency list (or adjacenc
     >>> import numpy as np
     >>> adja_list = [[1], [k for k in range(2, 22)]]
 
-Now in our simple system there are three types of queues, the two important ones are: checkout queues, and the queue that represents the store. The third type represents Agents leaving the store and is handled automatically by ``queueing_tool``. To specify what type of queue sits on each edge, you specify an adjacency list like object:
+This says that node 0 points to node one, and node 1 points to nodes 2 through
+21. We could define out adjacency list more explicitly as follows:
+
+.. doctest::
+
+    >>> adja_list = {0 : 1, 1 : [k for k in range(2, 22)]}
+
+Now in our simple system there are three types of queues, the two important ones
+are: checkout queues, and the queue that represents the store shopping area. The
+third type represents agents leaving the store and is handled automatically by
+``queueing_tool``. To specify what type of queue sits on each edge, you specify
+an adjacency list like object:
 
 .. doctest::
 
     >>> edge_list = [[1], [2 for k in range(20)]]
 
-Now we can make our graph
+This says there are two main types of queues/edges, type ``1`` and type ``2``.
+All the checkout lines are of type ``2`` while the store queue (the edge
+connecting vertices zero to one) has it's type ``1``. The queue that represents
+agents leaving the store are type 0 queues, and is handled automatically. Now
+we can make our graph
 
 .. doctest::
 
     >>> g = qt.adjacency2graph(adjacency=adja_list, eType=edge_list)
 
-So we've created a graph where each edge has a type. There is one edge of type ``1``, the store, and 20 edges of type ``2``, the checkout counters. Since our edge of type ``1`` represents the store, it will accepts shoppers from outside the store. We will take the arrival process to be time varying and random (more specifically, we'll let it be a nonhomogeneous Poisson process), with a rate thats sinosoidal. To set that, run:
+So we've created a graph where each edge/queue has a type. Since our edge of
+type ``1`` represents the store, it will accepts shoppers from outside the store.
+We will take the arrival process to be time varying and random (more
+specifically, we'll let it be a non-homogeneous Poisson process), with a rate
+that's sinusoidal. To set that, run:
 
 .. doctest::
 
     >>> rate  = lambda t: 25 + 350 * np.sin(np.pi * t / 2)**2
     >>> arr_f = lambda t: qt.poisson_random_measure(rate, 375, t)
 
-Lastly, we need to specify the a departure process for each checkout counter. Lets choose the exponential distribution:
+Lastly, we need to specify the departure process for each checkout counter. Lets
+choose the exponential distribution:
 
 .. doctest ::
 
     >>> ser_f = lambda t: t + np.random.exponential(0.2 / 2.1 )
 
-Now is time to put this all together to make out queueing network. We do this with the following:
+Now is time to put this all together to make out queueing network. We do this
+with the following:
 
 .. doctest::
 
-    >>> q_classes = { 0 : qt.NullQueue, 1 : qt.QueueServer, 2 : qt.QueueServer}
+    >>> q_classes = { 1 : qt.QueueServer, 2 : qt.QueueServer}
     >>> q_args    = { 1 : {'arrival_f'  : arr_f,
     ...                    'service_f'  : lambda t: t,
     ...                    'AgentClass' : qt.GreedyAgent},
@@ -80,7 +167,10 @@ Now is time to put this all together to make out queueing network. We do this wi
     ...                    'service_f'  : ser_f} }
     >>> qn = qt.QueueNetwork(g=g, q_classes=q_classes, q_args=q_args, seed=13)
 
-For simplicity, we've made it so that when a customer enters the store, they shop ridiculously quickly and then checkout. The default layout was a little hard to discern so I changed it a little:
+For simplicity, we've made it so that when a customer enters the store, they
+shop ridiculously quickly and then checkout (they immediately try to checkout
+when they enter the store). The default layout was a little hard to discern so
+I changed it a little:
 
 .. doctest::
 
@@ -98,20 +188,31 @@ To view the model (using this layout), do the following:
 
 .. doctest::
 
-    >>> qn.draw(output="store.png", output_size=(700,200), pos=pos)
+    >>> qn.draw(geometry=(700,200), pos=pos)
     <...>
 
 .. figure:: store.png
     :align: center
 
-By default, each :class:`.QueueServer` starts with no arrivals from outside the network and it needs to be initialized before any simulations can run. You can specify which queues are allow arrivals from outside the system with
-:class:`QueueNetwork`'s :func:`.initialize` function. In this example, we only want agents arriving from the type ``1`` edge so we run the following code:
+Use the following code if you want to save this image to disk:
+
+.. doctest::
+
+    >>> qn.draw(output="store.png", output_size=(700,200), pos=pos)
+    <...>
+
+By default, each :class:`.QueueServer` starts with no arrivals from outside the
+network and it needs to be initialized before any simulations can run. You can
+specify which queues allow arrivals from outside the system with
+:class:`.QueueNetwork`\'s :meth:`~.QueueNetwork.initialize` function. In this
+example, we only want agents arriving from the type ``1`` edge so we do the
+following:
 
 .. doctest::
 
     >>> qn.initialize(eType=1)
 
-To simulate for a specified number of events run.
+To simulate for a specified amount of simulation time run:
 
 .. doctest::
 
@@ -124,7 +225,9 @@ To simulate for a specified number of events run.
 .. figure:: sim.png
     :align: center
 
-If you want to save the arrival, departure, and service start times of arrivals you have to tell it to do so. If we only care about data concerning those exiting the system we can specify that as well
+If you want to save the arrival, departure, and service start times of arrivals
+you have to tell it to do so. If we only care about data concerning those exiting
+the system we can specify that having type ``0`` edges collect data:
 
 .. doctest::
 
@@ -135,4 +238,3 @@ If you want to save the arrival, departure, and service start times of arrivals 
     (309, 5)
 
 See :meth:`.data_queues` and :meth:`.collect_data` for more on extracting data.
-

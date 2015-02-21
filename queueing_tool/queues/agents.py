@@ -9,9 +9,8 @@ class Agent :
     are instantiated by a queue, and once serviced the ``Agent`` moves on to
     another queue in the network. Each ``Agent`` *decides* where in the network
     it wants to arrive at next but choosing amongst its options randomly. The
-    probabilities are specified in :class:`.QueueNetwork`\'s ``routing_probs``
-    attribute. See :meth:`.set_routing_probs` for changing the routing
-    probabilities.
+    probabilities are specified in :class:`.QueueNetwork`\'s transition matrix.
+    See :meth:`.set_transition` for changing the routing  probabilities.
 
     Parameters
     ----------
@@ -20,14 +19,16 @@ class Agent :
         :class:`.QueueServer` that instantiates the ``Agent``\. The first slot
         is the :class:`.QueueServer`\'s edge index and the second slot is
         specifies the ``Agent``\'s instantiation number for that queue.
+    **kwargs :
+        Unused.
 
     Attributes
     ----------
-        issn : tuple
-            A unique identifier for an agent.
-        blocked : int
-            Specifies how many times an agent has been blocked by a finite
-            capacity queue.
+    issn : tuple
+        A unique identifier for an agent.
+    blocked : int
+        Specifies how many times an agent has been blocked by a finite
+        capacity queue.
     """
     def __init__(self, issn=(0,0), **kwargs) :
         self.issn     = issn
@@ -53,16 +54,6 @@ class Agent :
         return a._time >= b._time
 
 
-    def set_arrival(self, t) :
-        """Set the agents arrival time to a queue to ``t``."""
-        self._time = t
-
-
-    def set_departure(self, t) :
-        """Set the agents departure time from a queue to ``t``."""
-        self._time = t
-
-
     def add_loss(self, *args, **kwargs) :
         """Adds one to the number of times the agent has been blocked from
         entering a finite capacity queue.
@@ -75,22 +66,27 @@ class Agent :
         the network.
 
         An ``Agent`` chooses one of the out edges random. The probability that
-        the ``Agent`` will travel along a specific edge is specified in
-        :class:`.QueueNetwork`\'s ``route_prob`` attribute.
+        the ``Agent`` will travel along a specific edge is specified in the
+        :class:`.QueueNetwork`\'s transition matrix.
 
         Parameters
         ----------
         network : :class:`.QueueNetwork`
         edge : tuple
-            A 3-tuple indicating which edge this agent is located at. The first
+            A 4-tuple indicating which edge this agent is located at. The first
             two slots indicate the current edge's source and target vertices,
-            while the third slot indicates this edges ``edge_index``.
+            while the third slot indicates this edges ``edge_index``. The last
+            slot indicates the edge type of that edge
 
         Returns
         -------
         int
             Returns an the edge index corresponding to the agents next edge to
             visit in the network.
+
+        See Also
+        --------
+        transitions : transition probabilities for each vertex in the graph.
         """
         n   = len(network.out_edges[edge[1]])
         if n <= 1 :
@@ -119,7 +115,13 @@ class Agent :
 
 
 class GreedyAgent(Agent) :
-    """An agent that chooses the queue with the shortest line as his destination."""
+    """An agent that chooses the queue with the shortest line as his next
+    destination.
+
+    If there are any ties, the ``GreedyAgent`` chooses the first queue with
+    the shortest line (where the ordering is given by :class:`.QueueNetwork`\'s
+    ``out_edges`` attribute).
+    """
     def __init__(self, issn) :
         Agent.__init__(self, issn)
 
@@ -137,10 +139,11 @@ class GreedyAgent(Agent) :
         Parameters
         ----------
         network : :class:`.QueueNetwork`
-        edge : tuple
-            A 3-tuple indicating which edge this agent is located at. The first
+        edge : :class:`.tuple`
+            A 4-tuple indicating which edge this agent is located at. The first
             two slots indicate the current edge's source and target vertices,
-            while the third slot indicates this edges ``edge_index``.
+            while the third slot indicates this edges ``edge_index``\. The last
+            slot indicates the edges edge type.
 
         Returns
         -------

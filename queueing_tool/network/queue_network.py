@@ -4,7 +4,7 @@ import numbers
 import copy
 import sys
 
-from .. generation import prepare_graph
+from .. generation import _prepare_graph
 from .. queues     import NullQueue, QueueServer, LossQueue
 
 from .sorting      import oneBisectSort, bisectSort, oneSort, twoSort
@@ -29,39 +29,43 @@ class QueueNetwork :
     g : str or :class:`~graph_tool.Graph`
         The graph specifies the network on which the queues sit.
     q_classes : :class:`.dict` (optional)
-        Used to Specify the :class:`.QueueServer` class for each edge type.
+        Used to specify the :class:`.QueueServer` class for each edge type.
+        The keys are integers for the edge types, and the values are classes.
     q_args : :class:`.dict` (optional)
         Used to specify the class arguments for each type of
-        :class:`.QueueServer`\.
+        :class:`.QueueServer`\. The keys are integers for the edge types and
+        the values are the arguments that are passed when instantiating each
+        ``QueueServer`` created with that edge type.
     seed : int (optional)
         An integer used to initialize numpy's and graph-tool's psuedorandom
         number generators.
     colors : :class:`.dict` (optional)
-        A dictionary of colors used to color the graph. The keys are specified
-        in the Notes section. If a particular key is missing, then the default
-        value for that key is used.
+        A dictionary of RGBA colors used to color the graph. The keys are
+        specified in the Notes section. If this parameter is supplied and a
+        particular key is missing, then the default value for that key is used.
+    max_agents : int (optional, the default is 1000)
+        The maximum number of agents that can be in the network at any time.
     blocking : str ``{'BAS', 'RS'}`` (optional, the default is ``'BAS'``)
         Specifies the blocking behavior for the system. If ``blocking`` is not
         ``'RS'``, then it is assumed to be ``'BAS'``.
 
         ``'BAS'``
-            Blocking After Service: if an agent attempts to enter a
-            :class:`.LossQueue` that is at capacity, the agent is forced to
-            wait until an agent departs from that queue. The blocked agent
-            then enters the :class:`.LossQueue`\.
+            Blocking After Service: when an agent attempts to enter a
+            :class:`.LossQueue` that is at capacity the agent is forced to
+            wait at his current queue until an agent departs from the queue.
         ``'RS'``
-            Repetitive Service Blocking: if an agent attempts to enter a
+            Repetitive Service Blocking: when an agent attempts to enter a
             :class:`.LossQueue` that is at capacity, the agent is forced to
             receive another service from the queue it is departing from.
-            After the agent receives the service, he then checks to see if
-            the desired queue is still at capacity, and if it is, this process
-            is repeated.
+            After the agent receives the service, she then checks to see if
+            the desired queue is still at capacity, and if it is this process
+            is repeated, otherwise she enters the queue.
 
     Attributes
     ----------
     g : :class:`~graph_tool.Graph`
         The graph for the network.
-    blocking_type : str
+    blocking : str
         Specifies whether the system's blocking behavior is either Blocking
         After Service (BAS) or Repetitive Service Blocking (RS).
     in_edges : :class:`.dict`
@@ -70,7 +74,7 @@ class QueueNetwork :
         for all edges with the head of the edge at ``v``, where ``v`` is the
         the vertex's index number.
     out_edges : :class:`.dict`
-        A mapping between vertex indices and the in-edges at that vertex.
+        A mapping between vertex indices and the out-edges at that vertex.
         Specifically, ``out_edges[v]`` returns a list containing the edge index
         for all edges with the tail of the edge at ``v``, where ``v`` is the
         the vertex's index number.
@@ -80,7 +84,8 @@ class QueueNetwork :
     nAgents : :class:`~numpy.ndarray`
         A one-dimensional array where the ``k``'th entry corresponds to the
         total number of agents in the :class:`.QueueServer` with edge index
-        ``k``.
+        ``k``. This include agents that are scheduled to arrive at the queue
+        at some future time but haven't yet.
     nEdges : int
         The number of edges in the graph.
     nEvents : int
@@ -92,7 +97,7 @@ class QueueNetwork :
         The number of vertices in the graph.
     time : float
         The time of the last event.
-    max_agents : int (the default is 1000)
+    max_agents : int
         The maximum number of agents that can be in the network at any time.
     colors : :class:`.dict`
         A dictionary of colors used when drawing a graph. See the notes for the
@@ -101,66 +106,77 @@ class QueueNetwork :
     Raises
     ------
     TypeError
-        The parameter ``g`` must be either a :class:`~graph_tool.Graph`, a string or
-        file location to a graph, or ``None``. Raises a :exc:`~TypeError` otherwise.
+        The parameter ``g`` must be either a :class:`~graph_tool.Graph`, a
+        string of a file location to a graph, or ``None``.
 
     Notes
     -----
-    If only a :class:`~graph_tool.Graph` is passed when instantiating a 
-    ``QueueNetwork`` instance then the returned network is a `Jackson network`_
-    where the routing probability at a vertex ``v`` is ``1 / v.out_degree()``.
-    See
+    If only :class:`.Agent`\s enter the network, then ``QueueNetwork`` instance
+    is a `Jackson network`_. The default transition probabilities at a vertex 
+    ``v`` is ``1 / v.out_degree()`` for each adjacent vertex.
 
     * This class must be initialized before any simulations can take place. To
       initialize, call the :meth:`~initialize` method. If any of the queues are
       altered, make sure to re-run the ``initialize`` method again.
-    * When simulating the network, the departure of an agent coincides with an 
-      arrival to another queue. There is no time lag between these events.
+    * When simulating the network, the departure of an agent from one queue
+      coincides with an arrival to another queue. There is no time lag between
+      these events.
 
     .. _Jackson network: http://en.wikipedia.org/wiki/Jackson_network    
 
-    The default colors are:
 
-    >>> self.colors       = { 'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
-    ...                       'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
-    ...                       'vertex_highlight'  : [0.5, 0.5, 0.5, 1.0],
-    ...                       'edge_departure'    : [0, 0, 0, 1], 
-    ...                       'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
-    ...                       'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
-    ...                       'edge_active'       : [0.1, 0.1, 0.1, 1.0],
-    ...                       'edge_inactive'     : [0.8, 0.8, 0.8, 0.3],
-    ...                       'bg_color'          : [1, 1, 1, 1]}
+    The following properties are assigned as a :class:`~graph_tool.PropertyMap`
+    to the graph; their default values for each edge or vertex is shown:
+        
+        * ``vertex_pen_width``: ``1.1``,
+        * ``vertex_size``: ``8``,
+        * ``edge_control_points``: ``[]``
+        * ``edge_marker_size``: ``8``
+        * ``edge_pen_width``: ``1.25``
+
+    There are also property maps created for graph visualization, they are
+    ``vertex_color``\, ``vertex_fill_color``\, ``pos``\, and ``edge_color``\.
+    The default colors, which are used by various methods, are:
+
+    >>> default_colors = { 'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
+    ...                    'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
+    ...                    'vertex_highlight'  : [0.5, 0.5, 0.5, 1.0],
+    ...                    'edge_departure'    : [0, 0, 0, 1], 
+    ...                    'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
+    ...                    'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
+    ...                    'edge_active'       : [0.1, 0.1, 0.1, 1.0],
+    ...                    'edge_inactive'     : [0.8, 0.8, 0.8, 0.3],
+    ...                    'bg_color'          : [1, 1, 1, 1]}
 
     If the graph is not connected then there may be issues with ``Agents``
     that arrive at an edge that points to terminal vertex. If the graph was 
     created using :func:`.adjacency2graph` then this is not an issue, so
     long as ``q_classes`` key  ``0`` is a :class:`.NullQueue` (note that ``0``
-    does not need to be a key of the ``q_classess`` parameter, but if it is it
+    does not need to be a key of the ``q_classes`` parameter, but if it is it
     should be set to :class:`.NullQueue`).
 
     Examples
     --------
-    Unless specified, all examples in class method docstrings were generated
-    with the following code:
+    The following creates a queueing network with 100 vertices. 
 
     >>> g   = qt.generate_pagerank_graph(100, seed=13)
     >>> net = qt.QueueNetwork(g, seed=13)
     """
 
-    def __init__(self, g, q_classes=None, q_args=None, seed=None, colors=None, blocking='BAS') :
+    def __init__(self, g, q_classes=None, q_args=None, seed=None, colors=None, max_agents=1000, blocking='BAS') :
 
         if not isinstance(blocking, str) :
             raise TypeError("blocking must be a string")
 
-        self.nEvents        = 0
-        self.t              = 0
-        self.max_agents     = 1000
+        self.nEvents      = 0
+        self.t            = 0
+        self.max_agents   = max_agents
 
-        self._to_animate    = False
-        self._initialized   = False
-        self._prev_edge     = None
-        self._queues        = []
-        self._blocking_type = True if blocking.lower() != 'rs' else False
+        self._to_animate  = False
+        self._initialized = False
+        self._prev_edge   = None
+        self._queues      = []
+        self._blocking    = True if blocking.lower() != 'rs' else False
 
         if colors is None :
             colors = {}
@@ -217,7 +233,7 @@ class QueueNetwork :
 
         if g is not None :
             if isinstance(g, str) or isinstance(g, gt.Graph) :
-                g, qs = prepare_graph(g, self.colors, q_classes, q_args)
+                g, qs = _prepare_graph(g, self.colors, q_classes, q_args)
             else :
                 raise TypeError("The Parameter `g` needs to be either a graph-tool Graph, a string.")
 
@@ -275,25 +291,25 @@ class QueueNetwork :
         pass
 
     @property
-    def blocking_type(self):
-        return 'BAS' if self._blocking_type else 'RS'
-    @blocking_type.deleter
-    def blocking_type(self): 
+    def blocking(self):
+        return 'BAS' if self._blocking else 'RS'
+    @blocking.deleter
+    def blocking(self): 
         pass
-    @blocking_type.setter
-    def blocking_type(self, tmp):
+    @blocking.setter
+    def blocking(self, tmp):
         if not isinstance(tmp, str) :
             raise TypeError("blocking_type must be a string")
-        self._blocking_type = True if tmp.lower() != 'rs' else False
+        self._blocking = True if tmp.lower() != 'rs' else False
 
 
     def initialize(self, nActive=1, queues=None, edges=None, eType=None) :
         """Prepares the ``QueueNetwork`` for simulation.
 
-        Each :class:`.QueueServer` in the network starts inactive,
-        which means they do not accept arrivals from outside the network, and
-        they have no :class:`.Agent`\s in their system. Note that in order to
-        simulate the :class:`.QueueServer`\, there must be at least one
+        Each :class:`.QueueServer` in the network starts inactive, which
+        means they do not accept arrivals from outside the network, and
+        they have no agents in their system. Note that in order to
+        simulate the :class:`.QueueNetwork`\, there must be at least one
         :class:`.Agent` in the network. This method sets queues to active,
         which then allows agents to arrive from outside the network.
 
@@ -301,16 +317,15 @@ class QueueNetwork :
         ----------
         nActive : int (optional, the default is ``1``)
             The number of queues to set as active. The queues are selected randomly.
-        queues : *array_like* (optional)
-            Used to explicitly specify which queues to make active by passing
-            their edge index. Must be an iterable of integers representing
-            edges/queues in the graph.
+        queues : int *array_like* (optional)
+            The edge index (or an iterable of edge indices) identifying the
+            :class:`.QueueServer`\(s) to make active by.
         edges : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to make active. Must be either: a
             2-tuple of the edge's source and target vertex indices, an iterable
             of 2-tuples of the edge's source and target vertex indices, or an 
             iterable of :class:`~graph_tool.Edge`\(s).
-        eType : int or *array_like* (optional)
+        eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
 
@@ -356,14 +371,14 @@ class QueueNetwork :
         self._initialized  = True
 
 
-    def transitions(self, return_mat=True) :
+    def transitions(self, return_matrix=True) :
         """Returns the transition probabilities for each vertex in the graph.
 
         Parameters
         ----------
-        return_mat : bool (optional, the default is ``True``\)
+        return_matrix : bool (optional, the default is ``True``\)
             Specifies whether a :class:`~numpy.ndarray` is returned. If
-            ``False``, a :class:`.dict` is returned instead.
+            ``False``\, a :class:`.dict` is returned instead.
 
         Returns
         -------
@@ -373,14 +388,34 @@ class QueueNetwork :
             the probability of a transition from vertex ``v`` to vertex ``u``\.
             If ``out`` is a :class:`.dict` then ``out_edge[v][k]`` is the
             probability of moving from vertex ``v`` to the vertex at the head
-            of the ``k``\th out-edge.
+            of the ``k``\-th out-edge.
 
         Notes
         -----
         Use ``v.out_edges()`` to get a generator of all out edges from ``v``
         where ``v`` is a :class:`~graph_tool.Vertex`\.
+
+        Examples
+        --------
+        The default transition matrix is every out edge being equally likely. 
+        Lets change them randomly:
+
+        >>> g = qt.generate_random_graph(5, seed=96)
+        >>> mat = qt.generate_transition_matrix(g, seed=96)
+        >>> net = qt.QueueNetwork(g)
+        >>> net.set_transitions(mat)
+        >>> net.transitions(False)
+        {0: [0.195, 0.805], 1: [1.0], 2: [1.0], 3: [0.474, 0.526], 4: [0.855, 0.145]}
+        >>> qt.graph2dict(g)[0]
+        {0: [3, 1], 1: [0], 2: [4], 3: [4, 0], 4: [2, 3]}
+
+        What this shows is the following: when an :class:`.Agent` is at vertex
+        ``0`` they will transition to vertex ``1`` with probability ``0.805``
+        and route to vertex ``3`` probability ``0.195``\, when at vertex
+        ``3`` they will transition to vertex ``4`` with probability ``0.474``
+        and route back to vertex ``0`` probability ``0.526``,... etc.
         """
-        if return_mat :
+        if return_matrix :
             mat = np.zeros( (self.nV, self.nV) )
             for v in self.g.vertices() :
                 vi  = int(v)
@@ -400,7 +435,8 @@ class QueueNetwork :
         mat : :class:`.dict` or :class:`~numpy.ndarray`
             A transition routing matrix or transition dictionary. If passed a
             dictionary, the keys should be vertex indices and the values are
-            the probabilities for the each adjacent vertex.
+            the probabilities for each adjacent vertex, or all vertices 
+            adjacent or otherwise.
 
         Raises
         ------
@@ -428,8 +464,8 @@ class QueueNetwork :
         {0: [1.0], 1: [0.75, 0.25], 2: [0.333, 0.333, 0.333], 3: [1.0], 4: [1.0]}
 
         One can generate a transition matrix using 
-        :func:`.generate_transition_matrix`. To change all transition
-        probabilities with an :class:`~numpy.ndarray` do the following:
+        :func:`.generate_transition_matrix`\. You can change all transition
+        probabilities with an :class:`~numpy.ndarray`\:
 
         >>> mat = qt.generate_transition_matrix(g, seed=10)
         >>> net.set_transitions(mat)
@@ -468,21 +504,23 @@ class QueueNetwork :
 
 
     def collect_data(self, queues=None, edges=None, eType=None) :
-        """Tells the queues to collect data on agents.
+        """Tells the queues to collect data on agents' arrival, service start,
+        and departure times.
+
+        If none of the parameters are given then every :class:`.QueueServer`
+        will start collecting data.
 
         Parameters
         ----------
         queues : int, *array_like* (optional)
-            An integer (or any iterable of integers) identifying the
-            :class:`.QueueServer`\(s) that will start collecting data. If 
-            ``queues`` is not specified then every :class:`.QueueServer`\'s
-            data will start collecting data.
+            The edge index (or an iterable of edge indices) identifying the
+            :class:`.QueueServer`\(s) that will start collecting data.
         edges : 2-:class:`.tuple` of int or *array_like* (optional)
-            Explicitly specify which queues to make active. Must be either: a
-            2-tuple of the edge's source and target vertex indices, an iterable
-            of 2-tuples of the edge's source and target vertex indices, an 
-            iterable of :class:`~graph_tool.Edge`\(s).
-        eType : int or *array_like* (optional)
+            Explicitly specify which queues will collect data. Must be either:
+            a 2-tuple of the edge's source and target vertex indices, an
+            iterable of 2-tuples of the edge's source and target vertex
+            indices, an iterable of :class:`~graph_tool.Edge`\(s).
+        eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
         """
@@ -508,21 +546,22 @@ class QueueNetwork :
     def stop_collecting_data(self, queues=None, edges=None, eType=None) :
         """Tells the queues to stop collecting data on agents.
 
+        If none of the parameters are given then every :class:`.QueueServer`
+        will stop collecting data.
+
         Parameters
         ----------
         queues : int, *array_like* (optional)
-            An integer (or any iterable of integers) identifying the
-            :class:`.QueueServer`\(s) that will stop collecting data. If
-            ``queues`` is not specified then every :class:`.QueueServer`\'s
-            data will stop collecting data.
+            The edge index (or an iterable of edge indices) identifying the
+            :class:`.QueueServer`\(s) that will stop collecting data.
         edges : 2-:class:`.tuple` of int or *array_like* (optional)
-            Explicitly specify which queues to make active. Must be either: a
-            2-tuple of the edge's source and target vertex indices, an iterable
-            of 2-tuples of the edge's source and target vertex indices, an 
-            iterable of :class:`~graph_tool.Edge`\(s).
-        eType : int or *array_like* (optional)
+            Explicitly specify which queues will stop collecting data. Must be
+            either: a 2-tuple of the edge's source and target vertex indices,
+            an iterable of 2-tuples of the edge's source and target vertex
+            indices, an iterable of :class:`~graph_tool.Edge`\(s).
+        eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types
-            will be set active.
+            will stop collecting data.
         """
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
@@ -546,21 +585,22 @@ class QueueNetwork :
     def data_queues(self, queues=None, edges=None, eType=None) :
         """Fetches data from queues.
 
+        If none of the parameters are given then data from every
+        :class:`.QueueServer` is retrieved.
+
         Parameters
         ----------
         queues : int or an *array_like* of int, (optional)
-            An integer (or any iterable of integers) identifying the
-            :class:`.QueueServer`\(s) whose data will be retrieved. If 
-            ``queues`` is not specified then every :class:`.QueueServer`\'s 
-            data will be retrieved.
+            The edge index (or an iterable of edge indices) identifying the
+            :class:`.QueueServer`\(s) whose data will be retrieved.
         edges : 2-:class:`.tuple` of int or *array_like* (optional)
-            Explicitly specify which queues to make active. Must be either: a
-            2-tuple of the edge's source and target vertex indices, an iterable
-            of 2-tuples of the edge's source and target vertex indices, an 
-            iterable of :class:`~graph_tool.Edge`\(s).
-        eType : int or *array_like* (optional)
+            Explicitly specify which queues to retrieve data from. Must be
+            either: a 2-tuple of the edge's source and target vertex indices,
+            an iterable of 2-tuples of the edge's source and target vertex
+            indices, an iterable of :class:`~graph_tool.Edge`\(s).
+        eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types
-            will be set active.
+            to retrieve data from.
 
         Returns
         -------
@@ -570,7 +610,7 @@ class QueueNetwork :
             and departure times of each :class:`.Agent` that has visited the
             queue. The fourth column identifies how many other agents were in
             the queue upon arrival, and the fifth column identifies which queue
-            this occurred at.
+            this occurred at (by identifying it's edge index).
 
         Examples
         --------
@@ -578,6 +618,8 @@ class QueueNetwork :
         on (as well as initialize the network). The following returns data from
         queues with ``eType`` 1 or 3:
 
+        >>> g   = qt.generate_pagerank_graph(100, seed=13)
+        >>> net = qt.QueueNetwork(g, seed=13)
         >>> net.collect_data()
         >>> net.initialize(10)
         >>> net.simulate(2000)
@@ -589,7 +631,7 @@ class QueueNetwork :
 
         To get data from several edges do the following:
 
-        >>> data = net.data_queues(eType=[(1,3), (10,91), (90,90)])
+        >>> data = net.data_queues(edges=[(1,3), (10,91), (90,90)])
 
         You can specify the edge indices as well:
 
@@ -623,21 +665,22 @@ class QueueNetwork :
     def data_agents(self, queues=None, edges=None, eType=None) :
         """Fetches data from queues, and organizes it by agent.
 
+        If none of the parameters are given then data from every
+        :class:`.QueueServer` is retrieved.
+
         Parameters
         ----------
         queues : int or *array_like* (optional)
-            An integer (or any iterable of integers) identifying the
-            :class:`.QueueServer`\(s) whose data will be retrieved. If 
-            ``queues`` is not specified then every :class:`.QueueServer`\'s 
-            data will be retrieved.
+            The edge index (or an iterable of edge indices) identifying the
+            :class:`.QueueServer`\(s) whose data will be retrieved.
         edges : 2-:class:`.tuple` of int or *array_like* (optional)
-            Explicitly specify which queues to make active. Must be either: a
-            2-tuple of the edge's source and target vertex indices, an iterable
-            of 2-tuples of the edge's source and target vertex indices, an 
-            iterable of :class:`~graph_tool.Edge`\(s).
-        eType : int or *array_like* (optional)
+            Explicitly specify which queues to retrieve agent data from. Must
+            be either: a 2-tuple of the edge's source and target vertex
+            indices, an iterable of 2-tuples of the edge's source and target
+            vertex indices, an iterable of :class:`~graph_tool.Edge`\(s).
+        eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types
-            will be set active.
+            to retrieve agent data from.
 
         Returns
         -------
@@ -648,7 +691,8 @@ class QueueNetwork :
             represent, respectively, the arrival, service start, and departure
             times of that :class:`.Agent` at a queue; the fourth column
             identifies how many other agents were in the queue upon arrival,
-            and the fifth column identifies which queue this occurred at.
+            and the fifth column identifies which queue this occurred at (by
+            identifying it's edge index).
         """
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
@@ -691,25 +735,23 @@ class QueueNetwork :
 
         Parameters
         ----------
-        out_size : :class:`.tuple` (optional, the default is ``(700, 700)``).
-            Specifies the size of canvas. See graph-tool's `documentation`_.
+        update_colors : ``bool`` (optional, the default is ``True``).
+            Specifies whether all the colors are updated.
+        **kwargs
+            Any parameters to pass to :func:`~graph_tool.draw.graph_draw`.
+        output_size : :class:`.tuple` (optional, the default is ``(700, 700)``).
+            This is :func:`~graph_tool.draw.graph_draw` parameter for 
+            specifying the size of canvas.
         output : str (optional, the default is ``None``)
             Specifies the directory where the drawing is saved. If output is
             ``None``, then the results are drawn using GraphViz.
-        update_colors : ``bool`` (optional, the default is ``True``).
-            Specifies whether all the colors are updated.
-        kwargs
-            Any parameters to pass to :func:`~graph_tool.draw.graph_draw`.
-
-            .. _documentation: http://graph-tool.skewed.de/static/doc/index.html
 
         Notes
         -----
         There are several parameters passed to :func:`~graph_tool.draw.graph_draw`
-        by default. The following parameters are property maps that are 
-        automatically set to the graph when a ``QueueNetwork`` instance is
-        created (the maps are set using the :func:`.prepare_graph` function).
-        These property maps include:
+        by default. The following parameters are :class:`~graph_tool.PropertyMap`\s
+        that are automatically set to the graph when a ``QueueNetwork``
+        instance is created. These property maps include:
 
             * ``vertex_color``, ``vertex_fill_color``, ``vertex_size``,
               ``vertex_pen_width``, ``pos``.
@@ -728,6 +770,8 @@ class QueueNetwork :
         --------
         To draw the current state of the network, call:
 
+        >>> g   = qt.generate_pagerank_graph(100, seed=13)
+        >>> net = qt.QueueNetwork(g, seed=13)
         >>> net.draw()
 
         If you specify a file name and location, the drawing will be saved to
@@ -745,9 +789,9 @@ class QueueNetwork :
         default, the vertex that corresponds to a loop shows how many agents
         are in that loop.
 
-        there are several additional parameters that can be passed -- all
-        :func:`~graph_tool.draw.graph_draw` parameters are valid. For example
-        To show the vertex number in the graph, one could do the following:
+        There are several additional parameters that can be passed -- all
+        :func:`~graph_tool.draw.graph_draw` parameters are valid. For example,
+        to show the vertex number in the graph, one could do the following:
 
         >>> net.draw(vertex_text=net.g.vertex_index)
         """
@@ -758,13 +802,19 @@ class QueueNetwork :
 
         if 'output' not in kwargs :
             if 'geometry' not in kwargs :
-                kwargs.update( {'geometry' : output_size } )
+                if 'output_size' in kwargs :
+                    kwargs['geometry'] = kwargs['output_size']
+                else :
+                    kwargs['geometry'] = output_size
         else :
             if 'output_size' not in kwargs :
-                kwargs.update( {'output_size' : output_size } )
+                if 'geometry' in kwargs :
+                    kwargs['output_size'] = kwargs['geometry']
+                else :
+                    kwargs['output_size'] = output_size
             
-        vertex_params = set(['vertex_color', 'vertex_fill_color', 'vertex_size',
-                             'vertex_pen_width', 'pos'])
+        vertex_params = set(['vertex_color', 'vertex_fill_color', 'pos',
+                             'vertex_size', 'vertex_pen_width'])
 
         edge_params   = set(['edge_color', 'edge_control_points',
                              'edge_marker_size', 'edge_pen_width'])
@@ -781,7 +831,8 @@ class QueueNetwork :
 
 
     def show_active(self, **kwargs) :
-        """Draws the network, highlighting active queues.
+        """Draws the network, highlighting active queues (queues that accept
+        arrivals from outside the network).
 
         The colored vertices represent vertices that have at least one queue
         on an in-edge that is active. Dark edges represent queues that are
@@ -795,8 +846,8 @@ class QueueNetwork :
 
         Notes
         -----
-        The colors are defined by the class attribute ``colors`` as the keys
-        ``vertex_active``, ``vertex_inactive``, ``edge_active``,
+        The colors are defined by the class attribute ``colors``. The relevant
+        keys are ``vertex_active``, ``vertex_inactive``, ``edge_active``, and
         ``edge_inactive``.
         """
         for v in self.g.vertices() :
@@ -847,9 +898,11 @@ class QueueNetwork :
         Examples
         --------
         The following code highlights all edges with edge type ``2``. If the 
-        edge is a loop then the vertex is highlighted as well, and in this
-        case all edges with edge type ``2`` happen to be loops.
+        edge is a loop then the vertex is highlighted as well. In this case
+        all edges with edge type ``2`` happen to be loops.
 
+        >>> g   = qt.generate_pagerank_graph(100, seed=13)
+        >>> net = qt.QueueNetwork(g, seed=13)
         >>> net.show_type(2, output_size=(400,400), output='edge_type_2.png')
 
         .. figure:: edge_type_2.png
@@ -973,7 +1026,7 @@ class QueueNetwork :
     def _add_departure(self, ei, agent, t) :
         q   = self.edge2queue[ei]
         qt  = q._time
-        q._append_departure(agent, t)
+        q._add_departure(agent, t)
 
         if qt == infty and q._time < infty :
             self._queues.append(q)
@@ -987,7 +1040,7 @@ class QueueNetwork :
         if t is None :
             t = q._time + 1 if q._time < infty else self._queues[-1]._time + 1
 
-        agent.set_arrival(t)
+        agent._time = t
         q._add_arrival(agent)
 
         if qt == infty and q._time < infty :
@@ -998,12 +1051,12 @@ class QueueNetwork :
 
     def next_event_description(self) :
         """Returns whether the next event is either an arrival or a departure
-        and the edge index corresponding to that edge.
+        and the edge index corresponding to that queue.
 
         Returns
         -------
         des : str
-            Indicates whether the next event is an arrival a departure, or
+            Indicates whether the next event is an arrival, a departure, or
             nothing; returns ``'Arrival'``, ``'Departure'``, or ``'Nothing'``.
         edge : int or ``None``
             The edge index of the edge that this event will occur at. If there
@@ -1040,14 +1093,14 @@ class QueueNetwork :
             if q2.at_capacity() :
                 q2.nBlocked += 1
                 q1._departures[0].blocked += 1
-                if self._blocking_type :
+                if self._blocking :
                     t = q2._departures[0]._time + EPS
                     q1.delay_service(t)
                 else :
                     q1.delay_service()
             else :
                 agent = q1.next_event()
-                agent.set_arrival(q1t)
+                agent._time = q1t
 
                 q2._add_arrival(agent)
                 self.nAgents[e1] = q1._nTotal
@@ -1124,7 +1177,7 @@ class QueueNetwork :
 
             if self._to_disk :
                 pixbuf = self._window.get_pixbuf()
-                pixbuf.savev(self._outdir+'%d.' + self._fmt % self._count, self._fmt, [], [])
+                pixbuf.savev(self._outdir+'%s.' % (self._count) + self._fmt, self._fmt, [], [])
                 if self._count >= self._max_count :
                     Gtk.main_quit()
                 self._count += 1
@@ -1132,7 +1185,7 @@ class QueueNetwork :
             return True
 
 
-    def animate(self, out_dir=None, count=10, **kwargs) :
+    def animate(self, out=None, count=10, **kwargs) :
         """Animates the network as it's simulating.
 
         The animations can be saved to disk or view in interactive mode.
@@ -1140,37 +1193,37 @@ class QueueNetwork :
 
         Parameters
         ----------
-        out_dir : str (optional)
+        out : str (optional)
             The location where the frames for the images will be saved. If this
             parameter is not given, then the animation is shown in interactive
             mode.
         count : int (optional, the default is 10)
-            This parameter is only used if ``out_dir`` is passed. It indicates
-            the number of frames to save to disk.
-        kwargs :
-            Any extra parameters to pass to :class:`~graph_tool.draw.GraphWindow`.
+            Indicates the number of frames to save to disk. This parameter is
+            only used if ``out_dir`` is passed.
+        **kwargs :
+            This method calls :class:`~graph_tool.draw.GraphWindow`, ``kwargs``
+            allows you to specify any extra parameters to pass to it.
 
         Notes
         -----
-        There are several parameters passed to :func:`~graph_tool.draw.graph_draw`
-        by default. The following parameters are property maps that are 
+        There are several parameters passed to :func:`~graph_tool.draw.GraphWindow`
+        by default. The following parameters are property maps that are
         automatically set to the graph when a ``QueueNetwork`` instance is
-        created (the maps are set using the :func:`.prepare_graph` function).
-        These property maps include:
+        created. These property maps include:
 
             * ``vertex_color``, ``vertex_fill_color``, ``vertex_size``,
               ``vertex_pen_width``, ``pos``.
             * ``edge_color``, ``edge_control_points``, ``edge_marker_size``,
               ``edge_pen_width``.
 
-        Each of these properties are used by ``simulate`` to style the canvas.
+        Each of these properties are used by ``animate`` to style the canvas.
         Also, the ``bg_color`` parameter is defined in the :class:`.dict`
-        ``QueueNetwork.colors``. The ``output_size`` parameter defaults to
-        ``(700, 700)``.
+        ``QueueNetwork.colors``\. The ``output_size`` defaults to 
+        ``(700, 700)``\. If any of these parameters are supplied as arguments
+        then they are used over the defaults.
 
-        If any of these parameters are supplied as arguments to ``simulate``
-        then the passed arguments are used over the defaults.
-
+        See the documentation of :func:`~graph_tool.draw.graph_draw` for a 
+        more on the documentation of :class:`~graph_tool.draw.GraphWindow`
 
         Raises
         ------
@@ -1183,35 +1236,39 @@ class QueueNetwork :
         This function works similarly to ``QueueNetwork``\'s :meth:`.draw`
         method. To animate the network in interactive mode do the following:
 
-        >>> net.draw(count=15 output_size=(400,400))
+        >>> g   = qt.generate_pagerank_graph(100, seed=13)
+        >>> net = qt.QueueNetwork(g, seed=13)
+        >>> net.animate(output_size=(400,400))
 
-        Stop the animation just close the window. If you want write the frames
+        To stop the animation just close the window. If you want to write the frames
         to disk run something like the following:
 
-        >>> net.animate(out_dir="./test", count=25, output_size=(400,400), vertex_size=15)
+        >>> net.animate(out="./test", count=25, output_size=(400,400), vertex_size=15)
 
-        which outputs the frames in the current working directory and outputs
-        25 ``png`` images whose names start with ``test`` e.g. ``test0.png``\, 
-        ``test1.png``\, ... etc. Also, the vertex size for each vertex was
-        changed from the default (of 8) to 15.
+        The above code outputs the frames in the current working directory and
+        outputs 25 ``png`` images whose names start with ``test`` e.g.
+        ``test0.png``\, ``test1.png``\, ... etc. Also, the vertex size for each
+        vertex was changed from the default (of 8) to 15.
         """
-
-
         if not self._initialized :
             raise RuntimeError("Network has not been initialized. Call 'initialize()' first.")
 
         output_size = (700, 700)
 
-        if out_dir is None :
+        if out is None :
             if 'geometry' not in kwargs :
-                kwargs.update( {'geometry' : output_size } )
+                if 'output_size' in kwargs :
+                    kwargs['geometry'] = kwargs['output_size']
+                    del kwargs['output_size']
+                else :
+                    kwargs['geometry'] = output_size
         else :
-            if 'output_size' in kwargs :
-                output_size = kwargs['output_size']
-                del kwargs['output_size']
             if 'geometry' in kwargs :
                 output_size = kwargs['geometry']
                 del kwargs['geometry']
+            if 'output_size' in kwargs :
+                output_size = kwargs['output_size']
+                del kwargs['output_size']
             
         vertex_params = set(['vertex_color', 'vertex_fill_color', 'vertex_size',
                              'vertex_pen_width', 'pos'])
@@ -1230,14 +1287,15 @@ class QueueNetwork :
         self._to_animate = True
         self._update_all_colors()
 
-        if out_dir is None :
-            self._window = gt.GraphWindow(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
+        if out is None :
+            self._to_disk = False
+            self._window  = gt.GraphWindow(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
         else :
             self._fmt       = kwargs['fmt'] if 'fmt' in kwargs else 'png'
             self._count     = 0
             self._max_count = count
             self._to_disk   = True
-            self._outdir    = out_dir
+            self._outdir    = out
             self._window    = Gtk.OffscreenWindow()
             self._window.set_default_size(output_size[0], output_size[1])
             self._window.graph = gt.GraphWidget(self.g, bg_color=self.colors['bg_color'], **kwargs)
@@ -1254,13 +1312,13 @@ class QueueNetwork :
 
     def simulate(self, n=1, t=None) :
         """This method simulates the network forward for a specific number of
-        events ``n`` or for a specified amount of *system time* ``t``\.
+        events ``n`` or for a specified amount of simulation time ``t``\.
 
         Parameters
         ----------
         n : int (optional, the default is 1)
-            The number of events to simulate. If ``t`` is ``None`` (the default)
-            then this parameter is used.
+            The number of events to simulate. If ``t`` is not given then this
+            parameter is used.
         t : float (optional)
             The amount of simulation time to simulate forward. If given, ``t``
             is used instead of ``n``.
@@ -1278,6 +1336,8 @@ class QueueNetwork :
         from outside the network. To initialize with 2 (random chosen) edges
         accepting arrivals run:
 
+        >>> g   = qt.generate_pagerank_graph(100, seed=13)
+        >>> net = qt.QueueNetwork(g, seed=13)
         >>> net.initialize(2)
 
         To simulate the network 50000 events run:
@@ -1311,7 +1371,7 @@ class QueueNetwork :
 
 
     def reset_colors(self) :
-        """Sets all edge and vertex colors to their default values."""
+        """Resets all edge and vertex colors to their default values."""
         for k, e in enumerate(self.g.edges()) :
             self.g.ep['edge_color'][e]    = self.edge2queue[k].colors['edge_color']
         for k, v in enumerate(self.g.vertices()) :
@@ -1344,20 +1404,21 @@ class QueueNetwork :
     def clear_data(self, queues=None, edges=None, eType=None) :
         """Clears data from queues.
 
+        If none of the parameters are given then every queue's data is cleared.
+
         Parameters
         ----------
         queues : int or an iterable of int (optional)
-            An integer (or an iterable of integers) identifying the
-            :class:`.QueueServer` whose data will be cleared. If ``queues`` is
-            not specified then all :class:`.QueueServer`\'s data will be cleared.
+            The edge index (or an iterable of edge indices) identifying the
+            :class:`.QueueServer`\(s) whose data will be cleared.
         edges : 2-:class:`.tuple` of int or *array_like* (optional)
-            Explicitly specify which queues to make active. Must be either: a
+            Explicitly specify which queues' data to clear. Must be either: a
             2-tuple of the edge's source and target vertex indices, an iterable
             of 2-tuples of the edge's source and target vertex indices, an 
             iterable of :class:`~graph_tool.Edge`\(s).
-        eType : int or *array_like* (optional)
+        eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types
-            will be set active.
+            will have their data cleared.
         """
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
@@ -1392,7 +1453,7 @@ class QueueNetwork :
         net._initialized    = copy.copy(self._initialized)
         net._prev_edge      = copy.copy(self._prev_edge)
         net._to_animate     = copy.copy(self._to_animate)
-        net._blocking_type  = copy.copy(self._blocking_type)
+        net._blocking       = copy.copy(self._blocking)
         net.colors          = copy.deepcopy(self.colors)
         net.out_edges       = copy.deepcopy(self.out_edges)
         net.in_edges        = copy.deepcopy(self.in_edges)

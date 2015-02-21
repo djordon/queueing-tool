@@ -1,10 +1,51 @@
 import graph_tool.all as gt
-import numpy          as np
+import numpy   as np
 import numbers
 import copy
 
-from .graph_preparation import set_types_random, set_types_pagerank
 from .union_find        import UnionFind
+
+
+def _test_graph(g) :
+    """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or 
+     a string or file object to one.
+
+    Parameters
+    ----------
+    g : A **str** or a :class:`~graph_tool.Graph`.
+
+    Returns
+    -------
+    :class:`~graph_tool.Graph`
+        If ``g`` is a string or a file object then the output given by
+        ``graph_tool.load_graph(g, fmt='xml')``, if ``g`` is aready a 
+        :class:`~graph_tool.Graph` then it is returned unaltered.
+
+    Raises
+    ------
+    TypeError
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
+        or a :class:`~graph_tool.Graph`\.
+    """
+    if isinstance(g, str) :
+        g = gt.load_graph(g, fmt='xml')
+    elif not isinstance(g, gt.Graph) :
+        raise TypeError("Need to supply a graph-tool graph or the location of a graph")
+    return g
+
+
+def _calculate_distance(latlon1, latlon2) :
+    """Calculates the distance between two points on earth.
+    """
+    lat1, lon1  = latlon1
+    lat2, lon2  = latlon2
+    R     = 6371          # radius of the earth in kilometers
+    dlon  = lon2 - lon1
+    dlat  = lat2 - lat1
+    a     = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * (np.sin(dlon/2))**2
+    c     = 2 * np.pi * R * np.arctan2( np.sqrt(a), np.sqrt(1-a) ) / 180
+    return c
+
 
 def _matrix2dict(matrix) :
     """Takes an adjacency matrix and returns an adjacency list."""
@@ -52,19 +93,11 @@ def _list2dict(adj_list) :
     """Takes a dictionary representation of an adjacency list and returns
     a list based representation.
     """
-    vertices = set()
     adj_dict = {}
     for key, value in enumerate(adj_list) :
-        vertices.add(key)
-        vertices.update(value)
-  
-    for key, value in enumerate(adj_list) :
         adj_dict[key] = value
-    
-    for v in vertices :
-        if v not in adj_dict :
-            adj_dict[v] = []
-    
+
+    adj_dict = _dict2dict(adj_dict)
     return adj_dict
 
 
@@ -95,8 +128,9 @@ def _adjacency_adjust(adjacency, eType, adjust, is_directed) :
     """Takes an adjacency list and returns a (possibly) modified adjacency list."""
 
     if eType is None :
-        for adj in adjacency.values() :
-            eType.append([1 for k in adj])
+        eType = {}
+        for v, adj in adjacency.items() :
+            eType[v] = [1 for k in adj]
     else :
         if len(adjacency) != len(eType) :
             raise RuntimeError("Graph for edge types must match graph from adjacency list/matrix.")
@@ -105,7 +139,6 @@ def _adjacency_adjust(adjacency, eType, adjust, is_directed) :
                 raise RuntimeError("Graph for edge types must match graph from adjacency list/matrix.")
 
     ok_adj = True
-
     for v, adj in adjacency.items() :
         if len(adj) == 0 :
             if eType is None :
@@ -145,28 +178,31 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     The purpose of this function is take an adjacency list (or matrix) and
     return a :class:`~graph_tool.Graph` that can be used with
     :class:`.QueueNetwork`. The Graph returned has an ``eType`` edge property.
-    If the adjacency is directed and not connected, then the adjacency list is
-    altered.
+    If the adjacency is directed and not connected, then the adjacency list 
+    may be altered.
 
     Parameters
     ----------
-    adjacency : list, dict, or numpy.ndarray
+    adjacency : list, dict, or :class:`~numpy.ndarray`
         An adjacency list, dict, or matrix.
-    eType : list, dict, or numpy.ndarray (optional)
-        A mapping that corresponds to that edges ``eType``. For example, if
+    eType : list, dict, or :class:`~numpy.ndarray` (optional)
+        A mapping that identifies each edge's ``eType``. For example, if
         ``eType`` is a matrix, then ``eType[u, v]`` is the type of
-        queue along the edge between vertices ``u`` and ``v``. If ``eType``
-        is not supplied then all but terminal edges have type 1.
-    adjust : int (optional, the default is 0)
+        queue that lays along the edge between vertices ``u`` and ``v``. If
+        ``eType`` is not supplied then all but terminal edges have type 1,
+        terminal edges will have type 0.
+    adjust : int ``{0, 1}`` (optional, the default is 0)
         Specifies what to do when the graph has terminal vertices (nodes with
-        no out-edges). There are three choices:
+        no out-edges). Note that if ``adjust`` is not 0 or 1 then it assumed
+        to be 0. There are three choices:
 
-            ``adjust = 0``: A loop is added to each terminal node in the
-            graph, and their ``eType`` of that edge is set to 0.
-            ``adjust = 1``: All edges leading to terminal nodes have their
-            ``eType`` set to 0.
-
-        Note that if ``adjust`` is not 1 or 2 then it assumed to be 0.
+            ``adjust = 0``
+                A loop is added to each terminal node in the graph, and their
+                ``eType`` of that loop is set to 0.
+            ``adjust = 1``
+                All edges leading to terminal nodes have their ``eType`` set
+                to 0.
+        
     is_directed : bool (optional, the default is True)
         Sets whether the returned graph is directed or not.
 
@@ -182,32 +218,33 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
         :class:`.dict`\, :class:`~numpy.ndarray` the (``eType`` can be 
         ``None``\).
     RuntimeError
-        A :exc:`~RuntimeError` is raised if ``eType`` does not have the 
-        same dimensions as ``adjacency``\.
+        A :exc:`~RuntimeError` is raised if, when passed, the ``eType``
+        parameter does not have the same dimensions as ``adjacency``\.
 
     Examples
     --------
-    If terminal nodes are such that all in-edges have edge type 0 then nothing
-    is changed
+    If terminal nodes are such that all in-edges have edge type ``0`` then
+    nothing is changed
 
     >>> adj = { 0 : [1], 1 : [2], 2 : [3, 4], 3 : [2] }
     >>> eTy = { 0 : [1], 1 : [2], 2 : [4, 0], 3 : [3] }
     >>> g = qt.adjacency2graph(adj, eType=eTy)
     >>> ans = qt.graph2dict(g)
-    >>> ans[0]
+    >>> ans[0]    # This is the adjacency list
     {0: [1], 1: [2], 2: [3, 4], 3: [2], 4: []}
-    >>> ans[1]
+    >>> ans[1]    # This is the edge types
     {0: [1], 1: [2], 2: [4, 0], 3: [3], 4: []}
 
     If this is not the case, then the graph is adjusted by adding a loop with
-    eType 0 to the terminal edge:
+    eType 0 to terminal vertices. In this case, vertex 4 is terminal since it
+    does not have any out edges:
 
     >>> eTy = { 0 : [1], 1 : [2], 2 : [4, 5], 3 : [3] }
     >>> g = qt.adjacency2graph(adj, eType=eTy)
     >>> ans = qt.graph2dict(g)
-    >>> ans[0]
+    >>> ans[0]    # A loop was added to vertex 4
     {0: [1], 1: [2], 2: [3, 4], 3: [2], 4: [4]}
-    >>> ans[1]
+    >>> ans[1]    # The added loop has edge type 0
     {0: [1], 1: [2], 2: [4, 5], 3: [3], 4: [0]}
 
     Alternatively, you could have this function adjust the edges that lead to
@@ -216,9 +253,9 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     >>> eTy = { 0 : [1], 1 : [2], 2 : [4, 5], 3 : [3] }
     >>> g = qt.adjacency2graph(adj, eType=eTy, adjust=1)
     >>> ans = qt.graph2dict(g)
-    >>> ans[0]
-    {0: [1], 1: [2], 2: [3, 4], 3: [2], 4: [4]}
-    >>> ans[1]
+    >>> ans[0]    # The graph is unaltered
+    {0: [1], 1: [2], 2: [3, 4], 3: [2], 4: []}
+    >>> ans[1]    # The terminal edge's edge type was changed to 0
     {0: [1], 1: [2], 2: [4, 0], 3: [3], 4: []}
     """
     if isinstance(adjacency, np.ndarray) :
@@ -253,7 +290,7 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
 
 
 def generate_transition_matrix(g, seed=None) :
-    """Generates a random transition matrix for the graph g.
+    """Generates a random transition matrix for the graph ``g``\.
 
     Parameters
     ----------
@@ -308,14 +345,21 @@ def generate_random_graph(nVertices=250, **kwargs) :
     Returns
     -------
     :class:`~graph_tool.Graph`
-        A graph with a ``pos`` vertex property and the ``eType`` edge property.
+        A graph with a ``pos`` vertex property (these are the vertex positions)
+        and the ``eType`` edge property.
 
     Examples
     --------
     The following generates a directed graph with 50 vertices where half the
     edges are type 1 and 1/4th are type 2 and 1/4th are type 3:
 
-    >>> g = qt.generate_random_graph(nVertices=50, pTypes={1: 0.5, 2: 0.25, 3: 0.25})
+    >>> g = qt.generate_random_graph(50, pTypes={1: 0.5, 2: 0.25, 3: 0.25}, seed=15)
+    >>> np.sum(g.ep['eType'].a == 1) / g.num_edges()
+    0.5
+    >>> np.sum(g.ep['eType'].a == 2) / g.num_edges()
+    0.25147928994082841
+    >>> np.sum(g.ep['eType'].a == 3) / g.num_edges()
+    0.24852071005917159
 
     To make an undirected graph with 25 vertices where there are 4 different
     edge types with random proportions:
@@ -323,6 +367,10 @@ def generate_random_graph(nVertices=250, **kwargs) :
     >>> p = np.random.rand(4)
     >>> p = {k + 1: p[k] / sum(p) for k in range(4)}
     >>> g = qt.generate_random_graph(nVertices=25, is_directed=False, pTypes=p)
+
+    Note that none of the edge types in the above example are 0. It is
+    recommended let use edge type indices starting at 1, since 0 is typically
+    used for terminal edges.
     """
     g = minimal_random_graph(nVertices, **kwargs)
     g = set_types_random(g, **kwargs)
@@ -354,17 +402,7 @@ def generate_pagerank_graph(nVertices=250, **kwargs) :
 
 
 def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kwargs) :
-    """Creates a connected random graph.
-
-    This function first places ``nVertices`` points in the unit square
-    randomly. Then, for every vertex ``v``, all other vertices with Euclidean
-    distance less or equal to ``r`` are connect by an edge --- where ``r`` is
-    the smallest number such that the graph ends up connected at the end of
-    this process.
-
-    If the number of nodes is greater than 200 and ``sfdp`` is ``None`` (the
-    default) then the position of the nodes is altered  using graph-tool's
-    :func:`~graph_tool.draw.sfdp_layout` function (with its default arguments).
+    """Creates a connected graph by selecting vertex locations graphly.
 
     Parameters
     ----------
@@ -373,11 +411,11 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kw
     is_directed : bool (optional, the default is ``True``)
         Specifies whether the graph is directed or not.
     sfdp : bool or None (optional, the default is ``None``)
-        Specifies whether to run graph-tool's :
-        func:`~graph_tool.draw.sfdp_layout` function on the graph ``g``. If
-        ``True``, the vertex positions returned by
-        func:`~graph_tool.draw.sfdp_layout` are used to set the ``pos`` vertex
-        property.
+        Specifies whether to run graph-tool's
+        :func:`~graph_tool.draw.sfdp_layout` function on the graph ``g``.
+        If ``True``, the vertex positions returned by
+        :func:`~graph_tool.draw.sfdp_layout` are used to set the ``pos``
+        vertex property.
     seed : int (optional)
         An integer used to initialize numpy's and graph-tool's psuedorandom
         number generators.
@@ -388,6 +426,19 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kw
     -------
     :class:`~graph_tool.Graph`
         A graph with a ``pos`` vertex property for the vertex positions.
+
+    Notes
+    -----
+    This function first places ``nVertices`` points in the unit square
+    randomly. Then, for every vertex ``v``, all other vertices with Euclidean
+    distance less or equal to ``r`` are connect by an edge --- where ``r`` is
+    the smallest number such that the graph ends up connected at the end of
+    this process.
+
+    If the number of nodes is greater than 200 and ``sfdp`` is ``None`` (the
+    default) then the position of the nodes is altered  using graph-tool's
+    :func:`~graph_tool.draw.sfdp_layout` function (with ``max_iter=10000`` and
+    all other parameters set to their default value).
     """
     if isinstance(seed, numbers.Integral) :
         np.random.seed(seed)
@@ -432,4 +483,181 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kw
         pos = gt.sfdp_layout(g, max_iter=10000)
     
     g.vp['pos'] = pos
+    return g
+
+
+def set_types_random(g, pTypes=None, seed=None, **kwargs) :
+    """Randomly sets ``eType`` (edge type) properties of the graph.
+
+    This function randomly assigns each edge a type. The probability of an edge being 
+    a specific type is proscribed in the ``pTypes`` variable.
+
+    Parameters
+    ----------
+    g : A string or a :class:`~graph_tool.Graph`.
+    pTypes : dict (optional)
+        A dictionary of types and proportions, where the keys are the types
+        and the values are the proportion of edges that are expected to be of
+        that type. The values can be either proportions (that add to one) or
+        the exact number of edges that be set to a type. In the later case, the
+        sum of all the values must equal the total number of edges in the
+        :class:`~graph_tool.Graph`\.
+    seed : int (optional)
+        An integer used to initialize numpy's psuedorandom number generator.
+    **kwargs :
+        Unused.
+
+    Returns
+    -------
+    :class:`~graph_tool.Graph`
+        Returns the :class:`~graph_tool.Graph` ``g`` with an ``eType`` edge property.
+
+    Raises
+    ------
+    TypeError
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
+        or a :class:`~graph_tool.Graph`\.
+
+    RuntimeError
+        Raises a :exc:`~RuntimeError` if the ``pType`` values do not sum to one
+        or does not sum to the number of edges in the graph.
+    
+    Notes
+    -----
+    If ``pTypes`` is not explicitly specified in the arguments, then it defaults to three
+    types in the graph (types 1, 2, and 3) and sets their proportions to be 1/3 each.
+    """
+    g = _test_graph(g)
+
+    if isinstance(seed, numbers.Integral) :
+        np.random.seed(seed)
+
+    if pTypes is None :
+        pTypes = {k : 1/3 for k in range(1,4)}
+
+    nEdges  = g.num_edges()
+    edges   = [k for k in range(nEdges)]
+    cut_off = np.cumsum( list(pTypes.values()) )
+
+    if np.isclose(cut_off[-1], 1) :
+        cut_off = np.round(cut_off * nEdges, out=np.zeros(len(pTypes), int))
+    elif cut_off != nEdges :
+        raise RuntimeError("pTypes must sum to one, or sum to the number of edges in the graph")
+
+    np.random.shuffle(edges)
+    eTypes  = {}
+    for k, key in enumerate(pTypes.keys()) :
+        if k == 0 :
+            for ei in edges[:cut_off[k]] :
+                eTypes[ei] = key
+        else :
+            for ei in edges[cut_off[k-1]:cut_off[k]] :
+                eTypes[ei] = key
+
+    eType = g.new_edge_property("int")
+
+    for e in g.edges() :
+        eType[e] = eTypes[g.edge_index[e]]
+    
+    g.ep['eType'] = eType
+    return g
+
+
+def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
+    """Creates a stylized graph. Sets edge and types using `pagerank`_.
+
+    This function sets the edge types of a graph to be either 1, 2, or 3.
+    It sets the vertices to type 2 by selecting the top
+    ``pType2 * g.num_vertices()`` vertices given by the
+    :func:`~graph_tool.centrality.pagerank` of the graph. A loop is added
+    to all vertices identified this way (if one does not exist already). It
+    then randomly sets vertices close to the type 2 vertices as type 3, and
+    adds loops to these vertices as well. These loops then have edge types the
+    correspond to the vertices type. The rest of the edges are set to type 1.
+
+    .. _pagerank: http://en.wikipedia.org/wiki/PageRank
+
+    Parameters
+    ----------
+    g : A string or a :class:`~graph_tool.Graph`.
+    pType2 : float (optional, the default is 0.1)
+        Specifies the proportion of vertices that will be of type 2.
+    pType3 : float (optional, the default is 0.1)
+        Specifies the proportion of vertices that will be of type 3 and that
+        are near pType2 vertices.
+    seed : int (optional)
+        An integer used to initialize numpy's and graph-tool's psuedorandom
+        number generators.
+    **kwargs :
+        Unused.
+
+    Returns
+    -------
+    :class:`~graph_tool.Graph`
+        Returns the :class:`~graph_tool.Graph` ``g`` with the ``eType`` edge
+        property.
+
+    Raises
+    ------
+    TypeError
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
+        or a :class:`~graph_tool.Graph`\.
+    """
+    g = _test_graph(g)
+
+    if isinstance(seed, numbers.Integral) :
+        np.random.seed(seed)
+        gt.seed_rng(seed)
+
+    pagerank    = gt.pagerank(g)
+    tmp         = np.sort(np.array(pagerank.a))
+    nDests      = int(np.ceil(g.num_vertices() * pType2))
+    dests       = np.where(pagerank.a >= tmp[-nDests])[0]
+
+    if 'pos' not in g.vp :
+        pos = gt.sfdp_layout(g, max_iter=10000)
+        g.vp['pos'] = pos
+
+    dest_pos    = np.array([g.vp['pos'][g.vertex(k)] for k in dests])
+    nFCQ        = int(pType3 * g.num_vertices())
+    min_g_dist  = np.ones(nFCQ) * np.infty
+    ind_g_dist  = np.ones(nFCQ, int)
+    
+    r, theta    = np.random.random(nFCQ) / 500, np.random.random(nFCQ) * 360
+    xy_pos      = np.array([r * np.cos(theta), r * np.sin(theta)]).transpose()
+    g_pos       = xy_pos + dest_pos[np.array( np.mod(np.arange(nFCQ), nDests), int)]
+    
+    for v in g.vertices() :
+        if int(v) not in dests :
+            tmp = np.array([_calculate_distance(g.vp['pos'][v], g_pos[k, :]) for k in range(nFCQ)])
+            min_g_dist = np.min((tmp, min_g_dist), 0)
+            ind_g_dist[min_g_dist == tmp] = int(v)
+    
+    ind_g_dist  = np.unique(ind_g_dist)
+    fcqs        = ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )]
+    loop_type   = g.new_vertex_property("int")
+
+    for v in g.vertices() :
+        if int(v) in dests :
+            loop_type[v] = 3
+            if not isinstance(g.edge(v, v), gt.Edge) :
+                e = g.add_edge(source=v, target=v)
+        elif int(v) in fcqs :
+            loop_type[v] = 2
+            if not isinstance(g.edge(v, v), gt.Edge) :
+                e = g.add_edge(source=v, target=v)
+    
+    g.reindex_edges()
+    eType     = g.new_edge_property("int")
+    eType.a  += 1
+
+    for v in g.vertices() :
+        if loop_type[v] in [2, 3] :
+            e = g.edge(v, v)
+            if loop_type[v] == 2 :
+                eType[e] = 2
+            else :
+                eType[e] = 3
+    
+    g.ep['eType'] = eType
     return g

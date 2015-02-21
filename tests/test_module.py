@@ -1,13 +1,11 @@
 import numpy    as np
 import scipy    as sp
-import unittest
-
-import scipy.stats as stats
-
-from scipy.stats import poisson
+import scipy.stats   as stats
 
 import queueing_tool as qt
+import unittest
 
+from scipy.stats import poisson
 
 
 def empirical_cdf0(x, z) :
@@ -119,13 +117,13 @@ class TestQueueServer(unittest.TestCase) :
         qn.simulate(n=10000)
 
         nEvents = 1000
-        ans = zeros(nEvents, bool)
+        ans = np.zeros(nEvents, bool)
         for k in range(nEvents) :
             net_times   = np.array([q.time for q in qn._queues])
             queue_times = [q.time for q in qn.edge2queue]
             queue_times.sort()
             while queue_times[-1] == np.infty :
-                queue_times.pop()
+                tmp = queue_times.pop()
 
             queue_times.sort(reverse=True)
 

@@ -3,11 +3,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to queueing-tool's documentation!
-=========================================
+The Documentation
+=================
 
-
-Contents:
+Welcome to Queueing-tool's documentation!
++++++++++++++++++++++++++++++++++++++++++
 
 .. toctree::
    :maxdepth: 3
