@@ -894,13 +894,17 @@ class NullQueue(QueueServer) :
     """A terminal queue.
 
     A queue that is used by the :class:`.QueueNetwork` class to represent
-    agents leaving the network. It can collect data on agents that arrive, but
-    all arriving agents are deleted after they arrive.
+    agents leaving the network. It can collect the arrival times of every
+    agent that arrives. 
+
+    Since the ``NullQueue`` is used to represent agents leaving the network,
+    all agents that arrive to this queue are deleted.
 
     This class can collect data on arriving agents. With the exception of
     ``next_event_description``, ``nQueued``, and ``current_color``, all
     functions have been replaced with ``pass``. The methods
-    `.next_event_description` and `.nQueued` will always return ``0``.
+    :meth:`~QueueServer.next_event_description` and :meth:`~QueueServer.nQueued`
+    will always return ``0``.
     """
     def __init__(self, *args, **kwargs) :
 
@@ -937,9 +941,9 @@ class NullQueue(QueueServer) :
             if len(args) > 0 :
                 arrival = args[0]
                 if arrival.issn not in self.data :
-                    self.data[arrival.issn] = [[arrival._time, 0, 0, 0]]
+                    self.data[arrival.issn] = [[arrival._time, 0, 0, 0, 0]]
                 else :
-                    self.data[arrival.issn].append([arrival._time, 0, 0, 0])
+                    self.data[arrival.issn].append([arrival._time, 0, 0, 0, 0])
 
     def _add_departure(self, *args, **kwargs) :
         pass

@@ -132,7 +132,7 @@ class ResourceQueue(LossQueue) :
                 * If the :class:`.ResourceAgent` does not have a resource, then
                   ``nServers`` decreases by one and the agent then *has a resource*.
 
-        Use :meth:`QueueServer.simulate` for simulating instead.
+        Use :meth:`~QueueServer.simulate` for simulating instead.
         """
         if isinstance(self._arrivals[0], ResourceAgent) :
             if self._departures[0]._time < self._arrivals[0]._time :

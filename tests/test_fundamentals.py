@@ -134,12 +134,16 @@ class TestQueueServers(unittest.TestCase) :
 
 class TestQueueNetwork(unittest.TestCase) :
 
-    def setUp(self) :
-        self.g   = qt.generate_random_graph(200)
-        self.qn  = qt.QueueNetwork(self.g)
-        self.qn.max_agents = 2000
-        self.qn.initialize(50)
+    @classmethod
+    def setUpClass(cls) :
+        cls.g   = qt.generate_random_graph(200)
+        cls.qn  = qt.QueueNetwork(cls.g)
+        cls.qn.max_agents = 2000
+        cls.qn.initialize(50)
 
+    def tearDown(self) :
+        self.qn.clear()
+        self.qn.initialize(50)
 
     def test_QueueNetwork_sorting(self) :
 
@@ -228,7 +232,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
-    def test_QueueNetwork_routing(self) :
+    def test_QueueNetwork_Jackson_routing(self) :
 
         adj = {0 : 1, 1 : [2, 3]}
         g   = qt.adjacency2graph(adj)
@@ -250,6 +254,46 @@ class TestQueueNetwork(unittest.TestCase) :
         trans = qn.transitions(False)
 
         self.assertTrue( np.allclose(trans[1], [p1, p2], atol=0.01) )
+
+
+    def test_QueueNetwork_greedy_routing(self) :
+
+        lam = np.random.randint(1,10)
+        rho = np.random.uniform(0.75, 1)
+        nSe = np.random.randint(1, 10)
+        mu  = lam / (3 * rho * nSe)
+        arr = lambda t : t + np.random.exponential(1/lam)
+        ser = lambda t : t + np.random.exponential(1/mu)
+
+        adj = {0 : 1, 1 : [2, 3, 4]}
+        ety = {0 : 1, 1 : [2, 2, 2]}
+        g   = qt.adjacency2graph(adj, eType=ety)
+
+        qcl = {1 : qt.QueueServer, 2 : qt.QueueServer}
+        arg = {1 : {'arrival_f' : arr, 'service_f' : lambda t: t,
+                    'AgentClass': qt.GreedyAgent}, 
+               2 : {'service_f' : ser, 'nServers' : nSe} }
+
+        qn  = qt.QueueNetwork(g, q_classes=qcl, q_args=arg)
+        qn.initialize(edge=(0,1))
+        qn.max_agents = 5000
+
+        nEvents = 1000
+        ans = np.zeros(nEvents, bool)
+        e01 = qn.g.edge_index[qn.g.edge(0,1)]
+        edg = qn.edge2queue[e01].edge
+        c   = 0
+
+        while c < nEvents :
+            qn.simulate(n=1)
+            if qn.next_event_description() == ('Departure', e01) :
+                d0 = qn.edge2queue[e01]._departures[0].desired_destination(qn, edg)
+                a1 = np.argmin([qn.edge2queue[e].nQueued() for e in qn.out_edges[1]])
+                d1 = qn.out_edges[1][a1]
+                ans[c] = d0 == d1
+                c += 1
+
+        self.assertTrue( ans.all() )
 
 
 

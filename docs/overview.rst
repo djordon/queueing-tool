@@ -31,12 +31,13 @@ includes several different types of each class.
    instance of the network is created it starts empty. Agents are created by a
    queue and once serviced the agent moves on to another queue in the network.
    Each agent *decides* where in the network it wants to arrive at next. Two of
-   the agent implementation are:
+   the agent implementation are the following:
 
     - The :class:`.Agent` class routes itself throughout the network randomly.
       More specifically, when at node ``i`` in the network, the :class:`.Agent`
-      decides to transition to node ``j`` with probability :math:`p_{ij}`. These
-      transition probabilities are set by the by the :class:`.QueueNetwork` class.
+      decides to transition to node ``j`` with probability :math:`p_{ij}`. The
+      user has control over setting the transition probabilities, which can be 
+      done using the network's :meth:`~.QueueNetwork.set_transitions` method.
     - The :class:`.GreedyAgent` class routes itself by choosing the queue with
       the shortest line.
 
@@ -44,15 +45,15 @@ includes several different types of each class.
    queue. It can also manage congestion and blocking within the network. There are
    two blocking regimes implemented:
 
-    - Blocking After Service: when an agent attempts to enter a
+    - *Blocking After Service*: when an agent attempts to enter a
       :class:`.LossQueue` that is at capacity, the agent is forced to
       wait until an agent departs from that queue.
-    - Repetitive Service Blocking: when an agent attempts to enter a
+    - *Repetitive Service Blocking*: when an agent attempts to enter a
       :class:`.LossQueue` that is at capacity, the agent is forced to
       receive another service from the queue it is departing from.
       After the agent receives the service, he then checks to see if
-      the desired queue is still at capacity, and if it is this process
-      is repeated, otherwise he enters the queue.
+      the desired queue is still at capacity, and this process
+      is repeated if it is, otherwise the agent enters the queue.
 
    One can also limiting the maximum number of agents within the system for
    modeling closed networks.
@@ -61,8 +62,10 @@ includes several different types of each class.
 .. _finite capacity queue: http://en.wikipedia.org/wiki/M/M/c_queue#Finite_capacity
 .. _Kendall's notation: http://en.wikipedia.org/wiki/Kendall%27s_notation
 
-The package also contains visualization component, whereby the user can see
-queueing dynamics in real-time as the simulations take place.
+This package also contains visualization component, whereby the user can see
+queueing dynamics in real-time as the simulations take place. See
+:meth:`~.QueueNetwork.animate` and :meth:`~.QueueNetwork.draw` for more on
+this package's visualization capabilities.
 
 
 An example
@@ -110,7 +113,7 @@ lines. Let's get started
     >>> adja_list = [[1], [k for k in range(2, 22)]]
 
 This says that node 0 points to node one, and node 1 points to nodes 2 through
-21. We could define out adjacency list more explicitly as follows:
+21. We could define our adjacency list more explicitly as follows:
 
 .. doctest::
 
@@ -128,7 +131,7 @@ an adjacency list like object:
 
 This says there are two main types of queues/edges, type ``1`` and type ``2``.
 All the checkout lines are of type ``2`` while the store queue (the edge
-connecting vertices zero to one) has it's type ``1``. The queue that represents
+connecting vertices zero to one) is type ``1``. The queue that represents
 agents leaving the store are type 0 queues, and is handled automatically. Now
 we can make our graph
 
@@ -137,7 +140,7 @@ we can make our graph
     >>> g = qt.adjacency2graph(adjacency=adja_list, eType=edge_list)
 
 So we've created a graph where each edge/queue has a type. Since our edge of
-type ``1`` represents the store, it will accepts shoppers from outside the store.
+type ``1`` represents the store, it will accept shoppers from outside the network.
 We will take the arrival process to be time varying and random (more
 specifically, we'll let it be a non-homogeneous Poisson process), with a rate
 that's sinusoidal. To set that, run:
@@ -147,14 +150,14 @@ that's sinusoidal. To set that, run:
     >>> rate  = lambda t: 25 + 350 * np.sin(np.pi * t / 2)**2
     >>> arr_f = lambda t: qt.poisson_random_measure(rate, 375, t)
 
-Lastly, we need to specify the departure process for each checkout counter. Lets
+Lastly, we need to specify the departure process for each checkout counter. Let's
 choose the exponential distribution:
 
 .. doctest ::
 
     >>> ser_f = lambda t: t + np.random.exponential(0.2 / 2.1 )
 
-Now is time to put this all together to make out queueing network. We do this
+Now is time to put this all together to make out queueing network; we do this
 with the following:
 
 .. doctest::
@@ -167,10 +170,10 @@ with the following:
     ...                    'service_f'  : ser_f} }
     >>> qn = qt.QueueNetwork(g=g, q_classes=q_classes, q_args=q_args, seed=13)
 
-For simplicity, we've made it so that when a customer enters the store, they
-shop ridiculously quickly and then checkout (they immediately try to checkout
-when they enter the store). The default layout was a little hard to discern so
-I changed it a little:
+For simplicity, we've made it so that when a customer enters the store they 
+immediately try to checkout. 
+
+The default layout was a little hard on the eyes so I changed it a little:
 
 .. doctest::
 
@@ -188,18 +191,18 @@ To view the model (using this layout), do the following:
 
 .. doctest::
 
-    >>> qn.draw(geometry=(700,200), pos=pos)
+    >>> qn.draw(output_size=(700,200), pos=pos)
     <...>
 
 .. figure:: store.png
     :align: center
 
-Use the following code if you want to save this image to disk:
+The network is empty so the edges are light. Use the following code if you want
+to save this image to disk:
 
 .. doctest::
 
     >>> qn.draw(output="store.png", output_size=(700,200), pos=pos)
-    <...>
 
 By default, each :class:`.QueueServer` starts with no arrivals from outside the
 network and it needs to be initialized before any simulations can run. You can
@@ -225,16 +228,33 @@ To simulate for a specified amount of simulation time run:
 .. figure:: sim.png
     :align: center
 
+The darker edges represent greater congestion at that checkout counter.
+
 If you want to save the arrival, departure, and service start times of arrivals
-you have to tell it to do so. If we only care about data concerning those exiting
-the system we can specify that having type ``0`` edges collect data:
+you have to tell it to do so:
 
 .. doctest::
 
-    >>> qn.collect_data(eType=0)
+    >>> qn.collect_data()
     >>> qn.simulate(t=1.8)
+    >>> data = qn.data_queues()
+    >>> data.shape
+    (1139, 6)
+
+The above data also include the number of agent in the queue upon arrival to a
+queue (this includes the number of agents receiving service and the number of
+agents waiting). If we only care about data concerning those exiting the system
+we can specify that by having type ``0`` edges collect data:
+
+.. doctest::
+
+    >>> qn.clear_data()
+    >>> qn.collect_data(eType=0)
+    >>> qn.simulate(t=3)
     >>> data = qn.data_queues(eType=0)
     >>> data.shape
-    (309, 5)
+    (550, 6)
 
-See :meth:`.data_queues` and :meth:`.collect_data` for more on extracting data.
+The above code collected the departure times of every agent over the simulated
+period, it did not collect each agent's arrival or waiting time. See
+:meth:`.data_queues` and :meth:`.collect_data` for more on extracting data.
