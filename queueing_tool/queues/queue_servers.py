@@ -162,10 +162,11 @@ class QueueServer :
     data : dict
         Keeps track of each :class:`.Agent`\'s arrival, service start, and 
         departure times, as well as how many other agents were waiting to be
-        served upon arrival. The keys are the :class:`.Agent`\'s unique
-        ``issn``\, and the values is a list of lists. Each time an agent
-        arrives at the queue it appends this data to the end of the list. Use
-        :meth:`.fetch_data` to retrieve a formated version of this data.
+        served and the total number agents in the system (upon arrival). The
+        keys are the :class:`.Agent`\'s unique ``issn``\, and the values is a
+        list of lists. Each time an agent arrives at the queue it appends this
+        data to the end of the list. Use :meth:`.fetch_data` to retrieve a
+        formated version of this data.
 
     Examples
     --------
@@ -404,22 +405,23 @@ class QueueServer :
         Returns
         -------
         data : :class:`~numpy.ndarray`
-            A five column :class:`~numpy.ndarray` of all the data. The first,
+            A six column :class:`~numpy.ndarray` of all the data. The first,
             second, and third columns represent, respectively, the arrival,
             service start, and departure times of each ``Agent`` that has
             visited the queue. The fourth column identifies how many other
-            agents were waiting to be serviced upon arrival, and the fifth
-            column identifies this queue by its edge index.
+            agents were waiting to be serviced upon arrival, the fifth
+            column identifies the number of agents in the system, and the sixth
+            column specifies this queue by its edge index.
         """
 
         qdata = []
         for d in self.data.values() :
             qdata.extend(d)
 
-        dat = np.zeros( (len(qdata), 5) )
+        dat = np.zeros( (len(qdata), 6) )
         if len(qdata) > 0 :
-            dat[:,:4] = np.array(qdata)
-            dat[:, 4] = self.edge[2]
+            dat[:,:5] = np.array(qdata)
+            dat[:, 5] = self.edge[2]
 
         return dat
 
@@ -543,7 +545,7 @@ class QueueServer :
                 agent._time = self.service_f(self._current_t)
                 heappush(self._departures, agent)
 
-            new_depart.queue_action(self, 'departure')
+            new_depart.queue_action(self, 2)
 
             if self._arrivals[0]._time < self._departures[0]._time :
                 self._time = self._arrivals[0]._time
@@ -563,10 +565,11 @@ class QueueServer :
             self._nArrivals += 1
 
             if self.collect_data :
+                b = 0 if self.nSystem <= self.nServers else 1
                 if arrival.issn not in self.data :
-                    self.data[arrival.issn] = [[arrival._time, 0, 0, len(self._queue)]]
+                    self.data[arrival.issn] = [[arrival._time, 0, 0, len(self._queue)+b, self.nSystem]]
                 else :
-                    self.data[arrival.issn].append([arrival._time, 0, 0, len(self._queue)])
+                    self.data[arrival.issn].append([arrival._time, 0, 0, len(self._queue)+b, self.nSystem])
 
             if self.nSystem <= self.nServers :
                 if self.collect_data :
@@ -864,9 +867,9 @@ class LossQueue(QueueServer) :
 
                 if self.collect_data :
                     if arrival.issn in self.data :
-                        self.data[arrival.issn].append([arrival._time, 0, 0, len(self._queue)])
+                        self.data[arrival.issn].append([arrival._time, 0, 0, len(self._queue), self.nSystem])
                     else :
-                        self.data[arrival.issn] = [[arrival._time, 0, 0, len(self._queue)]]
+                        self.data[arrival.issn] = [[arrival._time, 0, 0, len(self._queue), self.nSystem]]
 
                 if self._arrivals[0]._time < self._departures[0]._time :
                     self._time = self._arrivals[0]._time

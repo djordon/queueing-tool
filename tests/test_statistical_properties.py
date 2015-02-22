@@ -25,15 +25,14 @@ class TestQueueServers(unittest.TestCase) :
 
     def test_Markovian_QueueServer(self) :
 
-        lam = np.random.randint(1,10)
         nSe = np.random.randint(1, 10)
         mu  = self.lam / (self.rho * nSe)
 
-        arr = lambda t : t + np.random.exponential(1/lam)
+        arr = lambda t : t + np.random.exponential(1/self.lam)
         ser = lambda t : t + np.random.exponential(1/mu)
 
         q   = qt.QueueServer(nServers=nSe, arrival_f=arr, service_f=ser)
-        n   = 5000
+        n   = 50000
 
         q.set_active()
         q.simulate(n=20000)    # Burn in period
@@ -60,7 +59,36 @@ class TestQueueServers(unittest.TestCase) :
         p1  = 1 - stats.chi2.cdf(Q, nbin-1)
         #p2 = 1 - stats.chi2.cdf(Q, nbin-2)
 
+        x, y = dep[1:], dep[:-1]
+        cc   = np.corrcoef(x,y)[0,1]
+        self.assertTrue( np.isclose(cc, 0, atol=0.01) )
         self.assertTrue( p1 > 0.05 )
+
+
+    def test_QueueServer_Littleslaw(self) :
+
+        nSe = np.random.randint(1, 10)
+        mu  = self.lam / (self.rho * nSe)
+
+        arr = lambda t : t + np.random.exponential(1/self.lam)
+        ser = lambda t : t + np.random.exponential(1/mu)
+
+        q   = qt.QueueServer(nServers=nSe, arrival_f=arr, service_f=ser)
+        n   = 500000
+
+        q.set_active()
+        q.simulate(n=n)    # Burn in period
+        q.collect_data = True
+        q.simulate(n=n+1)
+        data = q.fetch_data()
+        q.clear()
+
+        ind  = data[:,2] > 0
+        souj = data[ind, 2] - data[ind, 0]
+        wait = data[ind, 1] - data[ind, 0]
+        ans  = np.mean(wait) * self.lam - np.mean( data[:,3]) * self.rho
+        self.assertTrue( np.isclose(ans, 0, atol=0.01) )
+
 
     def test_LossQueue_blocking(self) :
 
@@ -79,17 +107,16 @@ class TestQueueServers(unittest.TestCase) :
         nA0 = q2.nArrivals[1]
         nB0 = q2.nBlocked
 
-        q2.collect_data = True
-        q2.simulate(n=500000)
+        q2.simulate(n=250000)
 
         nA1 = q2.nArrivals[1]
         nB1 = q2.nBlocked
 
         a   = self.lam / mu
 
-        erlangb = np.round(poisson.pmf(nSe , mu=a) / poisson.cdf(nSe, mu=a), 2)
-        p_block = np.round((nB1 - nB0) / (nA1 - nA0), 2)
-        self.assertTrue( np.isclose(erlangb, p_block) )
+        erlangb = poisson.pmf(nSe , mu=a) / poisson.cdf(nSe, mu=a)
+        p_block = (nB1 - nB0) / (nA1 - nA0)
+        self.assertTrue( np.isclose(erlangb, p_block, atol=0.005) )
 
 
 

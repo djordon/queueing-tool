@@ -1,7 +1,8 @@
-from .queue_servers   import QueueServer, LossQueue
-from .agents          import Agent
-from numpy.random     import randint, exponential
-from heapq            import heappush, heappop
+from .queue_servers import QueueServer, LossQueue
+from .agents        import Agent
+from numpy.random   import randint, exponential
+from heapq          import heappush, heappop
+from numpy          import logical_or, infty
 
 import numpy as np
 import copy
@@ -95,7 +96,7 @@ class ResourceQueue(LossQueue) :
         else :
             kwargs['colors'] = default_colors
 
-        LossQueue.__init__(self, nServers, AgentClass, qbuffer, **kwargs)
+        LossQueue.__init__(self, nServers=nServers, AgentClass=AgentClass, qbuffer=qbuffer, **kwargs)
 
         self.max_servers  = 2 * nServers
         self.over_max     = 0
@@ -134,12 +135,21 @@ class ResourceQueue(LossQueue) :
         Use :meth:`QueueServer.simulate` for simulating instead.
         """
         if isinstance(self._arrivals[0], ResourceAgent) :
-            if self._arrivals[0]._time < self._departures[0]._time :
+            if self._departures[0]._time < self._arrivals[0]._time :
+                return QueueServer.next_event(self)
+            elif self._arrivals[0]._time < infty :
                 if self._arrivals[0]._has_resource :
                     new_arrival   = heappop(self._arrivals)
                     self._current_t = new_arrival._time
                     self._nTotal  -= 1
                     self.set_nServers(self.nServers+1)
+
+                    if self.collect_data :
+                        t = arrival._time
+                        if arrival.issn not in self.data :
+                            self.data[arrival.issn] = [[t, t, t, len(self._queue), self.nSystem]]
+                        else :
+                            self.data[arrival.issn].append([t, t, t, len(self._queue), self.nSystem])
 
                     if self._arrivals[0]._time < self._departures[0]._time :
                         self._time = self._arrivals[0]._time
@@ -156,13 +166,16 @@ class ResourceQueue(LossQueue) :
                     new_arrival      = heappop(self._arrivals)
                     self._current_t  = new_arrival._time
 
+                    if self.collect_data :
+                        if arrival.issn not in self.data :
+                            self.data[arrival.issn] = [[arrival._time, 0, 0, len(self._queue), self.nSystem]]
+                        else :
+                            self.data[arrival.issn].append([arrival._time, 0, 0, len(self._queue), self.nSystem])
+
                     if self._arrivals[0]._time < self._departures[0]._time :
                         self._time = self._arrivals[0]._time
                     else :
                         self._time = self._departures[0]._time
-
-            elif self._departures[0]._time < self._arrivals[0]._time :
-                return QueueServer.next_event(self)
         else :
             return LossQueue.next_event(self)
 
@@ -243,42 +256,6 @@ class InfoAgent(Agent) :
         return self.net_data[:, 2]
 
 
-    def _set_dest(self, net=None, dest=None) :
-        if dest != None :
-            self.dest = int(dest)
-        else :
-            nodes   = net.g.gp['node_index']['dest_road']
-            dLen    = net.dest_count
-            rLen    = net.nV - dLen - net.fcq_count
-            probs   = [0.3 / dLen for k in range(dLen)]
-            probs.extend([0.7/rLen for k in range(rLen)])
-            dest    = int(choice(nodes, size=1, p=probs))
-
-            if self.old_dest != None :
-                while dest == int(self.old_dest) :
-                    dest = int(choice(nodes, size=1, p=probs))
-            self.dest = dest
-
-
-    def desired_destination(self, network, edge, **kwargs) :
-        if self.dest != None and edge[1] == self.dest :
-            self.old_dest   = self.dest
-            self.dest       = None
-            self.trip_t[1] += network.t - self.trip_t[0] 
-            self.trips     += 1
-            self._set_dest(net = network)
-
-        elif self.dest == None :
-            self.trip_t[0]  = network.t
-            self._set_dest(net = network)
-            while self.dest == edge[1] :
-                self._set_dest(net = network)
-        
-        z   = network.shortest_path[edge[1], self.dest]
-        z   = network.g.edge(edge[1], z)
-        return z
-
-
     def queue_action(self, queue, *args, **kwargs) :
         if isinstance(queue, InfoQueue) :
             ### update information
@@ -287,8 +264,9 @@ class InfoAgent(Agent) :
 
             ### stamp this information
             n   = queue.edge[2]    # This is the edge_index of the queue
-            self.stats[n, 0]    = self.stats[n, 0] + (queue.data[self.issn][-1][1] - queue.data[self.issn][-1][0])
-            self.stats[n, 1]   += 1 if (queue.data[self.issn][-1][1] - queue.data[self.issn][-1][0]) > 0 else 0
+            if self.issn in queue.data :
+                self.stats[n, 0]    = self.stats[n, 0] + (queue.data[self.issn][-1][1] - queue.data[self.issn][-1][0])
+                self.stats[n, 1]   += 1 if (queue.data[self.issn][-1][1] - queue.data[self.issn][-1][0]) > 0 else 0
             self.net_data[n, :] = queue._current_t, queue.nServers, queue.nSystem / queue.nServers
 
 
@@ -324,7 +302,7 @@ class InfoQueue(LossQueue) :
         Extra parameters to pass to :class:`.LossQueue`.
     """
     def __init__(self, net_size=1, AgentClass=InfoAgent, qbuffer=np.infty, **kwargs) :
-        LossQueue.__init__(self, AgentClass, qbuffer, **kwargs)
+        LossQueue.__init__(self, AgentClass=AgentClass, qbuffer=qbuffer, **kwargs)
 
         self.networking(net_size)
 
@@ -346,31 +324,30 @@ class InfoQueue(LossQueue) :
             self.net_data[a, :] = agent.net_data[a, :]
 
 
-    def _add_arrival(self, *args) :
-        if len(args) > 0 :
+    def _add_arrival(self, agent=None) :
+        if agent is not None :
             self._nTotal += 1
-            heappush(self._arrivals, args[0])
+            heappush(self._arrivals, agent)
         else : 
             if self._current_t >= self._next_ct :
-                self._nTotal  += 1
                 self._next_ct = self.arrival_f(self._current_t)
 
                 if self._next_ct >= self.deactive_t :
                     self.active = False
                     return
 
-                new_arrival   = self.AgentClass(self.edge, len(self.net_data))
-                new_arrival._time = self._next_ct
-                heappush(self._arrivals, new_arrival)
+                self._nTotal += 1
+                new_agent = self.AgentClass((self.edge[2], self._oArrivals), len(self.net_data))
+                new_agent._time = self._next_ct
+                heappush(self._arrivals, new_agent)
 
                 self._oArrivals += 1
+
                 if self._oArrivals >= self.active_cap :
-                    self.active = False
+                    self._active = False
 
         if self._arrivals[0]._time < self._departures[0]._time :
             self._time = self._arrivals[0]._time
-        else :
-            self._time = self._departures[0]._time
 
 
     def _add_departure(self, agent, t) :
@@ -380,9 +357,9 @@ class InfoQueue(LossQueue) :
 
     def next_event(self) :
         if self._arrivals[0]._time < self._departures[0]._time :
-            self.extract_informaInfoAgention(self._arrivals[0])
+            self.extract_information(self._arrivals[0])
 
-        LossQueue.next_event(self)
+        return LossQueue.next_event(self)
 
 
     def clear(self) :

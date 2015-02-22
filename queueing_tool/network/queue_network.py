@@ -605,11 +605,12 @@ class QueueNetwork :
         Returns
         -------
         :class:`~numpy.ndarray`
-            A five column ``np.array`` of all the data. The first, second, and
-            third columns represent, respectively, the arrival, service start,
-            and departure times of each :class:`.Agent` that has visited the
-            queue. The fourth column identifies how many other agents were in
-            the queue upon arrival, and the fifth column identifies which queue
+            A six column ``np.array`` of the data. The first, second, and third
+            columns represent, respectively, the arrival, service start, and
+            departure times of each :class:`.Agent` that has visited the queue.
+            The fourth column identifies how many other agents were in the
+            queue upon arrival,  the fifth column identifies the number of
+            agents in the system, and the sixth column specifies which queue
             this occurred at (by identifying it's edge index).
 
         Examples
@@ -652,12 +653,12 @@ class QueueNetwork :
             else :
                 queues = range(self.nE)
 
-        data = np.zeros( (0,5) )
+        data = np.zeros( (0,6) )
         for q in queues :
             dat = self.edge2queue[q].fetch_data()
 
             if len(dat) > 0 :
-                data      = np.vstack( (data, dat) )
+                data = np.vstack( (data, dat) )
 
         return data
 
@@ -689,10 +690,10 @@ class QueueNetwork :
             ``issn`` and the values are :class:`~numpy.ndarray`\s for that
             :class:`.Agent`\'s data. The first, second, and third columns
             represent, respectively, the arrival, service start, and departure
-            times of that :class:`.Agent` at a queue; the fourth column
-            identifies how many other agents were in the queue upon arrival,
-            and the fifth column identifies which queue this occurred at (by
-            identifying it's edge index).
+            times of that :class:`.Agent` at a queue; The fourth column
+            identifies how many other agents were waiting to be serviced upon
+            arrival, the fifth column identifies the number of agents in the
+            system, and the sixth column specifies this queue by its edge index.
         """
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
@@ -712,15 +713,15 @@ class QueueNetwork :
         data = {}
         for q in queues :
             for issn, dat in self.edge2queue[q].data.items() :
-                datum = np.zeros( (len(dat), 5) )
-                datum[:,:4] = np.array(dat)
-                datum[:, 4] = q
+                datum = np.zeros( (len(dat), 6) )
+                datum[:,:5] = np.array(dat)
+                datum[:, 5] = q
                 if issn in data :
                     data[issn] = np.vstack( (data[issn], datum) )
                 else :
                     data[issn] = datum
 
-        dType = [('a', float), ('s', float), ('d', float), ('q', float), ('id', float)]
+        dType = [('a', float), ('s', float), ('d', float), ('q', float), ('n', float), ('id', float)]
         for issn, dat in data.items() :
             datum = np.array([tuple(d) for d in dat.tolist()], dtype=dType)
             datum = np.sort(datum, order='a')
