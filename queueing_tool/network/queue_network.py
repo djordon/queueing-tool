@@ -238,7 +238,7 @@ class QueueNetwork :
                 raise TypeError("The Parameter `g` needs to be either a graph-tool Graph, a string.")
 
             self.edge2queue   = qs
-            self.nAgents      = np.zeros( g.num_edges() )
+            self.nAgents      = np.zeros(g.num_edges(), int)
             self.out_edges    = {}
             self.in_edges     = {}
             self._route_probs = {}
@@ -303,7 +303,7 @@ class QueueNetwork :
         self._blocking = True if tmp.lower() != 'rs' else False
 
 
-    def initialize(self, nActive=1, queues=None, edges=None, eType=None) :
+    def initialize(self, nActive=1, queues=None, edge=None, eType=None) :
         """Prepares the ``QueueNetwork`` for simulation.
 
         Each :class:`.QueueServer` in the network starts inactive, which
@@ -320,7 +320,7 @@ class QueueNetwork :
         queues : int *array_like* (optional)
             The edge index (or an iterable of edge indices) identifying the
             :class:`.QueueServer`\(s) to make active by.
-        edges : 2-:class:`.tuple` of int or *array_like* (optional)
+        edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to make active. Must be either: a
             2-tuple of the edge's source and target vertex indices, an iterable
             of 2-tuples of the edge's source and target vertex indices, or an 
@@ -339,13 +339,13 @@ class QueueNetwork :
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
-            if edges is not None :
-                if not isinstance(edges[0], numbers.Integral) :
-                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edges]
-                elif isinstance(edges[0], gt.Edge) :
-                    queues = [self.g.edge_index[e] for e in edges]
+            if edge is not None :
+                if not isinstance(edge[0], numbers.Integral) :
+                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edge]
+                elif isinstance(edge[0], gt.Edge) :
+                    queues = [self.g.edge_index[e] for e in edge]
                 else :
-                    queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
+                    queues = [self.g.edge_index[self.g.edge(edge[0], edge[1])]]
             elif eType is not None :
                 queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
             elif nActive >= 1 and isinstance(nActive, numbers.Integral) :
@@ -503,7 +503,7 @@ class QueueNetwork :
                     self._route_probs[k].append( np.float64(p) )
 
 
-    def collect_data(self, queues=None, edges=None, eType=None) :
+    def collect_data(self, queues=None, edge=None, eType=None) :
         """Tells the queues to collect data on agents' arrival, service start,
         and departure times.
 
@@ -515,7 +515,7 @@ class QueueNetwork :
         queues : int, *array_like* (optional)
             The edge index (or an iterable of edge indices) identifying the
             :class:`.QueueServer`\(s) that will start collecting data.
-        edges : 2-:class:`.tuple` of int or *array_like* (optional)
+        edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues will collect data. Must be either:
             a 2-tuple of the edge's source and target vertex indices, an
             iterable of 2-tuples of the edge's source and target vertex
@@ -527,13 +527,13 @@ class QueueNetwork :
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
-            if edges is not None :
-                if not isinstance(edges[0], numbers.Integral) :
-                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edges]
-                elif isinstance(edges[0], gt.Edge) :
-                    queues = [self.g.edge_index[e] for e in edges]
+            if edge is not None :
+                if not isinstance(edge[0], numbers.Integral) :
+                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edge]
+                elif isinstance(edge[0], gt.Edge) :
+                    queues = [self.g.edge_index[e] for e in edge]
                 else :
-                    queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
+                    queues = [self.g.edge_index[self.g.edge(edge[0], edge[1])]]
             elif eType is not None :
                 queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
             else :
@@ -543,7 +543,7 @@ class QueueNetwork :
             self.edge2queue[k].collect_data = True
 
 
-    def stop_collecting_data(self, queues=None, edges=None, eType=None) :
+    def stop_collecting_data(self, queues=None, edge=None, eType=None) :
         """Tells the queues to stop collecting data on agents.
 
         If none of the parameters are given then every :class:`.QueueServer`
@@ -554,7 +554,7 @@ class QueueNetwork :
         queues : int, *array_like* (optional)
             The edge index (or an iterable of edge indices) identifying the
             :class:`.QueueServer`\(s) that will stop collecting data.
-        edges : 2-:class:`.tuple` of int or *array_like* (optional)
+        edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues will stop collecting data. Must be
             either: a 2-tuple of the edge's source and target vertex indices,
             an iterable of 2-tuples of the edge's source and target vertex
@@ -566,13 +566,13 @@ class QueueNetwork :
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
-            if edges is not None :
-                if not isinstance(edges[0], numbers.Integral) :
-                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edges]
-                elif isinstance(edges[0], gt.Edge) :
-                    queues = [self.g.edge_index[e] for e in edges]
+            if edge is not None :
+                if not isinstance(edge[0], numbers.Integral) :
+                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edge]
+                elif isinstance(edge[0], gt.Edge) :
+                    queues = [self.g.edge_index[e] for e in edge]
                 else :
-                    queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
+                    queues = [self.g.edge_index[self.g.edge(edge[0], edge[1])]]
             elif eType is not None :
                 queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
             else :
@@ -582,7 +582,7 @@ class QueueNetwork :
             self.edge2queue[k].collect_data = False
 
 
-    def data_queues(self, queues=None, edges=None, eType=None) :
+    def data_queues(self, queues=None, edge=None, eType=None) :
         """Fetches data from queues.
 
         If none of the parameters are given then data from every
@@ -593,7 +593,7 @@ class QueueNetwork :
         queues : int or an *array_like* of int, (optional)
             The edge index (or an iterable of edge indices) identifying the
             :class:`.QueueServer`\(s) whose data will be retrieved.
-        edges : 2-:class:`.tuple` of int or *array_like* (optional)
+        edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to retrieve data from. Must be
             either: a 2-tuple of the edge's source and target vertex indices,
             an iterable of 2-tuples of the edge's source and target vertex
@@ -627,11 +627,11 @@ class QueueNetwork :
 
         To get data from an edge connecting two vertices do the following:
 
-        >>> data = net.data_queues(edges=(1,50))
+        >>> data = net.data_queues(edge=(1,50))
 
         To get data from several edges do the following:
 
-        >>> data = net.data_queues(edges=[(1,3), (10,91), (90,90)])
+        >>> data = net.data_queues(edge=[(1,3), (10,91), (90,90)])
 
         You can specify the edge indices as well:
 
@@ -640,13 +640,13 @@ class QueueNetwork :
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
-            if edges is not None :
-                if not isinstance(edges[0], numbers.Integral) :
-                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edges]
-                elif isinstance(edges[0], gt.Edge) :
-                    queues = [self.g.edge_index[e] for e in edges]
+            if edge is not None :
+                if not isinstance(edge[0], numbers.Integral) :
+                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edge]
+                elif isinstance(edge[0], gt.Edge) :
+                    queues = [self.g.edge_index[e] for e in edge]
                 else :
-                    queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
+                    queues = [self.g.edge_index[self.g.edge(edge[0], edge[1])]]
             elif eType is not None :
                 queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
             else :
@@ -662,7 +662,7 @@ class QueueNetwork :
         return data
 
 
-    def data_agents(self, queues=None, edges=None, eType=None) :
+    def data_agents(self, queues=None, edge=None, eType=None) :
         """Fetches data from queues, and organizes it by agent.
 
         If none of the parameters are given then data from every
@@ -673,7 +673,7 @@ class QueueNetwork :
         queues : int or *array_like* (optional)
             The edge index (or an iterable of edge indices) identifying the
             :class:`.QueueServer`\(s) whose data will be retrieved.
-        edges : 2-:class:`.tuple` of int or *array_like* (optional)
+        edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to retrieve agent data from. Must
             be either: a 2-tuple of the edge's source and target vertex
             indices, an iterable of 2-tuples of the edge's source and target
@@ -697,13 +697,13 @@ class QueueNetwork :
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
-            if edges is not None :
-                if not isinstance(edges[0], numbers.Integral) :
-                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edges]
-                elif isinstance(edges[0], gt.Edge) :
-                    queues = [self.g.edge_index[e] for e in edges]
+            if edge is not None :
+                if not isinstance(edge[0], numbers.Integral) :
+                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edge]
+                elif isinstance(edge[0], gt.Edge) :
+                    queues = [self.g.edge_index[e] for e in edge]
                 else :
-                    queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
+                    queues = [self.g.edge_index[self.g.edge(edge[0], edge[1])]]
             elif eType is not None :
                 queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
             else :
@@ -1391,7 +1391,7 @@ class QueueNetwork :
         """
         self.t            = 0
         self.nEvents      = 0
-        self.nAgents      = np.zeros(self.nE)
+        self.nAgents      = np.zeros(self.nE, int)
         self._queues      = []
         self._to_animate  = False
         self._prev_edge   = None
@@ -1401,7 +1401,7 @@ class QueueNetwork :
             q.clear()
 
 
-    def clear_data(self, queues=None, edges=None, eType=None) :
+    def clear_data(self, queues=None, edge=None, eType=None) :
         """Clears data from queues.
 
         If none of the parameters are given then every queue's data is cleared.
@@ -1411,7 +1411,7 @@ class QueueNetwork :
         queues : int or an iterable of int (optional)
             The edge index (or an iterable of edge indices) identifying the
             :class:`.QueueServer`\(s) whose data will be cleared.
-        edges : 2-:class:`.tuple` of int or *array_like* (optional)
+        edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues' data to clear. Must be either: a
             2-tuple of the edge's source and target vertex indices, an iterable
             of 2-tuples of the edge's source and target vertex indices, an 
@@ -1423,13 +1423,13 @@ class QueueNetwork :
         if isinstance(queues, numbers.Integral) :
             queues = [queues]
         elif queues is None :
-            if edges is not None :
-                if not isinstance(edges[0], numbers.Integral) :
-                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edges]
-                elif isinstance(edges[0], gt.Edge) :
-                    queues = [self.g.edge_index[e] for e in edges]
+            if edge is not None :
+                if not isinstance(edge[0], numbers.Integral) :
+                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edge]
+                elif isinstance(edge[0], gt.Edge) :
+                    queues = [self.g.edge_index[e] for e in edge]
                 else :
-                    queues = [self.g.edge_index[self.g.edge(edges[0], edges[1])]]
+                    queues = [self.g.edge_index[self.g.edge(edge[0], edge[1])]]
             elif eType is not None :
                 queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
             else :

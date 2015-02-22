@@ -304,7 +304,7 @@ class QueueServer :
     @current_time.deleter
     def current_time(self): 
         pass
-    @time.setter
+    @current_time.setter
     def current_time(self, tmp): 
         pass
 
@@ -425,8 +425,8 @@ class QueueServer :
 
 
     def _add_arrival(self, agent=None) :
-        self._nTotal += 1
         if agent is not None :
+            self._nTotal += 1
             heappush(self._arrivals, agent)
         else : 
             if self._current_t >= self._next_ct :
@@ -436,6 +436,7 @@ class QueueServer :
                     self._active = False
                     return
 
+                self._nTotal += 1
                 new_agent = self.AgentClass( (self.edge[2], self._oArrivals) )
                 new_agent._time = self._next_ct
                 heappush(self._arrivals, new_agent)
@@ -501,12 +502,10 @@ class QueueServer :
             departure: ``1`` corresponds to an arrival, ``2`` corresponds to a
             departure, and ``0`` corresponds to nothing scheduled to occur.
         """
-        if self._arrivals[0]._time < self._departures[0]._time :
+        if self._departures[0]._time < self._arrivals[0]._time :
+            return 2
+        elif self._arrivals[0]._time < infty :
             return 1
-        elif self._departures[0]._time < self._arrivals[0]._time :
-            return 2
-        elif self._departures[0]._time < infty :
-            return 2
         else :
             return 0
 
@@ -526,7 +525,34 @@ class QueueServer :
         --------
         :meth:`.simulate` : Simulates the queue forward.
         """
-        if self._arrivals[0]._time < self._departures[0]._time :
+        if self._departures[0]._time < self._arrivals[0]._time :
+            new_depart        = heappop(self._departures)
+            self._current_t   = new_depart._time
+            self._nTotal     -= 1
+            self.nSystem     -= 1
+            self.nDepartures += 1
+
+            if self.collect_data and new_depart.issn in self.data :
+                self.data[new_depart.issn][-1][2] = self._current_t
+
+            if len(self._queue) > 0 :
+                agent = self._queue.popleft()
+                if self.collect_data and agent.issn in self.data :
+                    self.data[agent.issn][-1][1] = self._current_t
+
+                agent._time = self.service_f(self._current_t)
+                heappush(self._departures, agent)
+
+            new_depart.queue_action(self, 'departure')
+
+            if self._arrivals[0]._time < self._departures[0]._time :
+                self._time = self._arrivals[0]._time
+            else :
+                self._time = self._departures[0]._time
+
+            return new_depart
+
+        elif self._arrivals[0]._time < infty :
             arrival = heappop(self._arrivals)
             self._current_t = arrival._time
 
@@ -556,33 +582,6 @@ class QueueServer :
             else :
                 self._time = self._departures[0]._time
                 
-        elif self._departures[0]._time < infty :
-            new_depart        = heappop(self._departures)
-            self._current_t   = new_depart._time
-            self.nDepartures += 1
-            self._nTotal     -= 1
-            self.nSystem     -= 1
-
-            if self.collect_data and new_depart.issn in self.data :
-                self.data[new_depart.issn][-1][2] = self._current_t
-
-            if len(self._queue) > 0 :
-                agent = self._queue.popleft()
-                if self.collect_data and agent.issn in self.data :
-                    self.data[agent.issn][-1][1] = self._current_t
-
-                agent._time = self.service_f(self._current_t)
-                heappush(self._departures, agent)
-
-            new_depart.queue_action(self, 'departure')
-
-            if self._arrivals[0]._time < self._departures[0]._time :
-                self._time = self._arrivals[0]._time
-            else :
-                self._time = self._departures[0]._time
-
-            return new_depart
-
 
     def simulate(self, n=1, t=None, nA=None, nD=None) :
         """This method simulates the queue forward for a specified amount of
@@ -813,8 +812,8 @@ class LossQueue(QueueServer) :
 
 
     def __repr__(self) :
-        tmp = "LossQueue: %s. servers: %s, queued: %s, arrivals: %s, departures:\
-               %s, next time: %s" \
+        tmp = "LossQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: " +\
+              "%s, next time: %s" \
             %  (self.edge[2], self.nServers, len(self._queue), self.nArrivals, \
                 self.nDepartures, np.round(self._time, 3))
         return tmp
@@ -846,14 +845,14 @@ class LossQueue(QueueServer) :
             If the next event is a departure then the departing agent is
             returned, otherwise nothing is returned.
         """
-        if self._arrivals[0]._time < self._departures[0]._time :
+        if self._departures[0]._time < self._arrivals[0]._time :
+            return QueueServer.next_event(self)
+        elif self._arrivals[0]._time < infty :
             if self.nSystem < self.nServers + self.buffer :
                 QueueServer.next_event(self)
             else :
                 self.nBlocked += 1
                 self._nTotal  -= 1
-                self._nArrivals += 1
-
 
                 arrival = heappop(self._arrivals)
                 arrival.add_loss(self.edge)
@@ -873,9 +872,6 @@ class LossQueue(QueueServer) :
                     self._time = self._arrivals[0]._time
                 else :
                     self._time = self._departures[0]._time
-
-        elif self._departures[0]._time < infty :
-            return QueueServer.next_event(self)
 
 
     def clear(self) :

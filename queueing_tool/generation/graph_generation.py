@@ -71,20 +71,21 @@ def _dict2dict(adj_dict) :
         else :
             vertices.update(value)
 
-    if min(vertices) == 1 :
-        adjacency = {}
-        for key, value in adj_dict.items() :
-            adjacency[key-1] = [k-1 for k in value]
+    adjacency = {}
+    vertices  = list(vertices)
+    vertices.sort()
 
-        for v in vertices :
-            if v - 1 not in adjacency :
-                adjacency[v-1] = []
-    else :
-        adjacency = adj_dict.copy()
+    vs = {v : k for k, v in enumerate(vertices)}
 
-        for v in vertices :
-            if v not in adjacency :
-                adjacency[v] = []
+    for key, value in adj_dict.items() :
+        if not hasattr(value, '__iter__') :
+            adjacency[vs[key]] = [vs[value]]
+        else :
+            adjacency[vs[key]] = [vs[v] for v in value]
+
+    for v in vertices :
+        if vs[v] not in adjacency :
+            adjacency[vs[v]] = []
 
     return adjacency
 
@@ -97,8 +98,7 @@ def _list2dict(adj_list) :
     for key, value in enumerate(adj_list) :
         adj_dict[key] = value
 
-    adj_dict = _dict2dict(adj_dict)
-    return adj_dict
+    return _dict2dict(adj_dict)
 
 
 def _other2dict(adj_dict, other) :
@@ -120,6 +120,11 @@ def _other2dict(adj_dict, other) :
                 other_dict[k] = []
     else :
         raise TypeError('eType must by either a dict, list, or numpy.ndarray')
+
+    tmp = copy.deepcopy(other_dict)
+    for key, value in tmp.items() :
+        if not hasattr(value, '__iter__') :
+            other_dict[key] = [value]
 
     return other_dict
 
@@ -444,7 +449,7 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kw
         np.random.seed(seed)
         gt.seed_rng(seed)
 
-    points  = np.random.random((nVertices, 2)) * 10
+    points  = np.random.random((nVertices, 2)) * np.float(10)
     nEdges  = nVertices * (nVertices - 1) // 2
     edges   = []
 
@@ -454,7 +459,7 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kw
             edges.append( (k, j, v[0]**2 + v[1]**2) )
 
     cluster = 2
-    mytype  = [('n1', int), ('n2', int), ('distance', float)]
+    mytype  = [('n1', int), ('n2', int), ('distance', np.float)]
     edges   = np.array(edges, dtype=mytype)
     edges   = np.sort(edges, order='distance')
     unionF  = UnionFind([k for k in range(nVertices)])
@@ -535,12 +540,12 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
     if pTypes is None :
         pTypes = {k : 1/3 for k in range(1,4)}
 
-    nEdges  = g.num_edges()
+    nEdges  = g.num_edges() 
     edges   = [k for k in range(nEdges)]
-    cut_off = np.cumsum( list(pTypes.values()) )
+    cut_off = np.cumsum( np.array(list(pTypes.values())) )
 
-    if np.isclose(cut_off[-1], 1) :
-        cut_off = np.round(cut_off * nEdges, out=np.zeros(len(pTypes), int))
+    if np.isclose(cut_off[-1], 1.0) :
+        cut_off = np.array(np.round(cut_off * nEdges)).astype(int)
     elif cut_off != nEdges :
         raise RuntimeError("pTypes must sum to one, or sum to the number of edges in the graph")
 
