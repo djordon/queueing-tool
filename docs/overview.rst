@@ -6,7 +6,7 @@ The simulations are event based, where events are comprised as arrivals and
 departures of agents that move from queue to queue in the network. The network
 is represented as a graph, which is handled by graph-tool.
 
-There are three major components to ``queueing-tool``: the :class:`.QueueServer`
+There are three major components to queueing-tool: the :class:`.QueueServer`
 classes, :class:`.Agent` classes, and :class:`.QueueNetwork` class. This package
 includes several different types of each class.
 
@@ -71,7 +71,7 @@ this package's visualization capabilities.
 An example
 ----------
 
-Its probably best to become acquainted with ``queueing-tool`` by way of an example.
+Its probably best to become acquainted with queueing-tool by way of an example.
 
 Lets model the checkout process of a busy grocery store. People enter the store
 according to some random process, shop around for some time, and then checkout.
@@ -80,7 +80,7 @@ to checkout customers choose their checkout line by searching for the shortest
 line. They wait in line before receiving service from the checkout counter and
 when they're done they leave the store.
 
-In ``queueing-tool``, each *person* entering the system is represented as an
+In queueing-tool, each *person* entering the system is represented as an
 :class:`.Agent`\. Each ``Agent`` decides how they navigate in the network. In
 this system an ``Agent`` chooses the shortest queue to enter at whenever they
 choose which queue to arrive at next. The :class:`.GreedyAgent` class is built
@@ -93,7 +93,7 @@ These checkout queues receive arrivals from people who are already in the store,
 not from people outside the store. This means the store serves as its own queue
 --- it receives arrivals from the neighborhood, and they get funneled into the
 checkout area. This is a relatively, simple network that is easy create using
-``queueing-tool``.
+queueing-tool.
 
 To create the network you need to specify an adjacency list (or adjacency 
 matrix). In our toy example, we are going to assume the store has 20 checkout

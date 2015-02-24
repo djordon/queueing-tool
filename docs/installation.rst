@@ -1,7 +1,7 @@
 Installation
 ============
 
-The ``queueing-tool`` module provides a framework for creating, simulating, and
+The queueing-tool module provides a framework for creating, simulating, and
 visualizing queueing networks. The network visualizations are handled by graph-tool,
 which is required in order to use this package. You will also need numpy (and
 scipy to run tests). The package works with python versions 2.7 and 3.2 or greater.
@@ -12,14 +12,14 @@ distributions of Linux. For graph-tool, there are precompiled `packages`_ made
 for Debian & Ubuntu, as well as `Macports`_ portfiles for those using Mac OS X.
 Unfortunately, there does not seem to be any options available for Windows users.
 
-You can obtain ``queueing-tool`` from it's `github repository`_. If you follow
+You can obtain queueing-tool from it's `github repository`_. If you follow
 the link you can download a zip file of the package. Alternatively, you can clone
 it to your desktop using git::
 
     $ git clone https://github.com/djordon/queueing-tool
 
 Once you have the package locally on your computer, change directories to the
-``queueing-tool`` directory in your terminal and install using::
+queueing-tool directory in your terminal and install using::
 
     $ sudo python3 setup.py install
 
