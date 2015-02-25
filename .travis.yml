@@ -1,6 +1,12 @@
 language: python
 python:
+  - 2.7
   - 3.2
+  - 3.3
+  - 3.4
+env:
+  - CYTHON=true
+  - CYTHON=false
 before_install:
   - echo 'deb http://downloads.skewed.de/apt/precise precise universe' | sudo tee -a /etc/apt/sources.list
   - sudo add-apt-repository ppa:takluyver/python3 -y
@@ -8,15 +14,17 @@ before_install:
   - sudo add-apt-repository ppa:mapnik/boost -y
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
-  - sudo apt-get install -y python3-numpy python3-scipy python3-setuptools
   # --allow-unauthenticated
+  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y python-numpy python-scipy python-setuptools; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y --allow-unauthenticated python-graph-tool; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y python3-numpy python3-scipy python3-setuptools; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y --allow-unauthenticated python3-graph-tool; fi
 install:
-  - pip install numpy
-  - pip install -e .
+  - if [[ $CYTHON == true ]] then pip install numpy cython; fi
+  - if [[ $CYTHON == false ]] then pip install numpy; fi
+  - pip install .
   - pip install coveralls
 script:
- - coverage run --source=queueing_tool setup.py test
+  - coverage run -m unittest discover -v -s tests/
 after_success:
   - coveralls
