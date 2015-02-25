@@ -8,7 +8,7 @@ python:
 before_install:
   - echo 'deb http://downloads.skewed.de/apt/precise precise universe' | sudo tee -a /etc/apt/sources.list
   - echo 'deb-src http://downloads.skewed.de/apt/precise precise universe' | sudo tee -a /etc/apt/sources.list
-  - sudo add-apt-repository ppa:boost-latest/ppa
+  - sudo add-apt-repository ppa:boost-latest/ppa -y
   - sudo apt-get update -qq
 install:
   # --allow-unauthenticated
