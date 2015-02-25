@@ -8,8 +8,8 @@ Features
 --------
 
 - **Easy to use**. The setup process is designed to be quick and painless, while still giving you complete control over the design of your network. This allows you to design your queueing networks quickly, which comes in handy when modeling and analyzing larger networks.
-- **Large feature set**. You can use general functions (including time dependent functions) for the arrival and departure functions for each queue. Queueing-tool also includes allows for probabilistic routing for modeling [Jackson networks][], finite capacity queues and 2 different blocking protocols for studying [loss networks][], as well as specialty queues for modeling more exotic networks.
-- **Fast simulation**. Queueing-tool is designed to run very quickly. The core algorithms were written using [cython][], which exports C-extensions of these routines, and the underlying graph utilizes [graph-tool][], a fast and powerful graph package.
+- **Large feature set**. You can use general functions (including time dependent functions) for the arrival and departure functions for each queue. Queueing-tool networks allow for probabilistic routing for modeling [Jackson networks][], finite capacity queues and 2 different blocking protocols for studying [loss networks][], as well as specialty queues for modeling more exotic networks.
+- **Fast simulation**. Queueing-tool is designed to run very quickly. The core algorithms were written using [cython][], which exports C-extensions of those routines, and the underlying graph utilizes [graph-tool][], a fast and powerful graph package.
 - **Beautiful visualizations**. There are several tools that allow you to easily view congestion and movement within your network. This includes ready made functions for animating network dynamics, such as congestion, while your simulations take place. These features use graph-tool's powerful visualization capabilities and can accommodate many of its visualization features.
 - **Full documentation**. Every function and class is fully documented both [online][] and in the docstrings. There are also worked out examples included in the source.
 
