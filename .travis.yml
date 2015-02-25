@@ -2,7 +2,6 @@ language: python
 python:
   - 3.2
 before_install:
-  - sudo apt-get update -qq
   - sudo apt-get install -y python3-numpy
   - sudo apt-get install -y python3-scipy
   - echo 'deb http://downloads.skewed.de/apt/precise precise universe' | sudo tee -a /etc/apt/sources.list
