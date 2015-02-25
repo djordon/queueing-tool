@@ -12,8 +12,8 @@ before_install:
   #- sudo apt-get -qq -f install libboost-iostreams1.54-dev libboost-python1.54-dev libboost-regex1.54-dev
   #- side apt-get -qq -f install libboost-graph1.54-dev libboost-system1.54-dev libboost-thread1.54-dev
   # --allow-unauthenticated
-  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y -f python-graph-tool; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y -f python3-graph-tool; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y --allow-unauthenticated python-graph-tool; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y --allow-unauthenticated python3-graph-tool; fi
 install:
   - pip install -r requirements.txt
   - pip install coveralls
