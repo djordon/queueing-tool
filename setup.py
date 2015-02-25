@@ -36,7 +36,7 @@ with open('README', 'r') as a_file :
     long_description = a_file.read()
 
 with open('VERSION', 'r') as a_file :
-    version = a_file.read()
+    version = a_file.read()[:-1]
 
 
 setup(
