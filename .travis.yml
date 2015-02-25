@@ -10,10 +10,12 @@ before_install:
   - echo 'deb-src http://downloads.skewed.de/apt/precise precise universe' | sudo tee -a /etc/apt/sources.list
   - sudo add-apt-repository ppa:boost-latest/ppa -y
   - sudo apt-get update -qq
-install:
+  - sudo apt-get -qq install libboost-iostreams1.55-dev libboost-python1.55-dev libboost-regex1.55-dev 
+  - side apt-get -qq install libboost-graph1.55-dev libboost-system1.55-dev libboost-thread1.55-dev
   # --allow-unauthenticated
   - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y python-graph-tool; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y python3-graph-tool; fi
+install:
   - pip install -r requirements.txt
   - pip install coveralls
 script:
