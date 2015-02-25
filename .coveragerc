@@ -1,0 +1,10 @@
+[report]
+omit =  
+    */python?.?/*
+    */site-packages/nose/*
+    *__init__*
+
+exclude_lines =
+    def __repr__
+    raise TypeError
+    raise RuntimeError

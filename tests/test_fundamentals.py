@@ -246,14 +246,17 @@ class TestQueueNetwork(unittest.TestCase) :
         qn.simulate(100000)
 
         data = qn.data_queues(edge=[(1,2), (1,3)])
-        e1, e2 = qn.out_edges[1]
+        e0, e1 = qn.out_edges[1]
 
+        p0 = np.sum(data[:, 5] == e0) / data.shape[0]
         p1 = np.sum(data[:, 5] == e1) / data.shape[0]
-        p2 = np.sum(data[:, 5] == e2) / data.shape[0]
 
         trans = qn.transitions(False)
 
-        self.assertTrue( np.allclose(trans[1], [p1, p2], atol=0.01) )
+        # np.allclose(trans[1], [p0, p1], atol=0.01) )
+
+        self.assertAlmostEqual( trans[1][0], p0, 2)
+        self.assertAlmostEqual( trans[1][1], p1, 2)
 
 
     def test_QueueNetwork_greedy_routing(self) :

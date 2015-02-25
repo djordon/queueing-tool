@@ -20,11 +20,11 @@ before_install:
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y python3-numpy python3-scipy python3-setuptools; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y --allow-unauthenticated python3-graph-tool; fi
 install:
-  - if [[ $CYTHON == true ]] then pip install numpy cython; fi
-  - if [[ $CYTHON == false ]] then pip install numpy; fi
+  - if [[ $CYTHON == true ]]; then pip install numpy cython; fi
+  - if [[ $CYTHON == false ]]; then pip install numpy; fi
   - pip install .
   - pip install coveralls
 script:
-  - coverage run -m unittest discover -v -s tests/
+  - nosetests --with-coverage --cover-package=queueing_tool
 after_success:
   - coveralls

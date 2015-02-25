@@ -87,7 +87,10 @@ class TestQueueServers(unittest.TestCase) :
         souj = data[ind, 2] - data[ind, 0]
         wait = data[ind, 1] - data[ind, 0]
         ans  = np.mean(wait) * self.lam - np.mean( data[:,3]) * self.rho
-        self.assertTrue( np.isclose(ans, 0, atol=0.01) )
+
+        #self.assertTrue( np.isclose(ans, 0, atol=0.01) )
+
+        self.assertAlmostEqual(ans, 0, 2)
 
 
     def test_LossQueue_blocking(self) :
