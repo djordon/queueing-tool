@@ -1,4 +1,5 @@
 import sys
+import numpy
 
 try :
     from setuptools import setup, Extension
@@ -21,14 +22,14 @@ ext_modules = []
 
 if use_cython:
     ext_modules.extend([
-        Extension('queueing_tool.network.sorting', ['queueing_tool/network/sorting.pyx']),
-        Extension('queueing_tool.queues.choice', ['queueing_tool/queues/choice.pyx'])
+        Extension('queueing_tool.network.sorting', ['queueing_tool/network/sorting.pyx'], include_dirs=[numpy.get_include()]),
+        Extension('queueing_tool.queues.choice', ['queueing_tool/queues/choice.pyx'], include_dirs=[numpy.get_include()])
     ])
     cmdclass.update({ 'build_ext': build_ext })
 else:
     ext_modules.extend([
-        Extension('queueing_tool.network.sorting', ['queueing_tool/network/sorting.c']),
-        Extension('queueing_tool.queues.choice', ['queueing_tool/queues/choice.c'])
+        Extension('queueing_tool.network.sorting', ['queueing_tool/network/sorting.c'], include_dirs=[numpy.get_include()]),
+        Extension('queueing_tool.queues.choice', ['queueing_tool/queues/choice.c'], include_dirs=[numpy.get_include()])
     ])
 
 

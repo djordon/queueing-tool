@@ -21,7 +21,7 @@ before_install:
   - ./miniconda.sh -b
   - export PATH=/home/travis/miniconda/bin:$PATH
   - conda update --yes conda
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy
   # --allow-unauthenticated
   # python3-numpy python3-numpy-dev
   #- if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y python-setuptools; fi
