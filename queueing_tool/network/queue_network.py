@@ -4,8 +4,8 @@ import numbers
 import copy
 import sys
 
-from .. generation import _prepare_graph
-from .. queues     import NullQueue, QueueServer, LossQueue
+from ..generation  import _prepare_graph
+from ..queues      import NullQueue, QueueServer, LossQueue
 
 from .sorting      import oneBisectSort, bisectSort, oneSort, twoSort
 
@@ -111,22 +111,33 @@ class QueueNetwork :
 
     Notes
     -----
-    If only :class:`.Agent`\s enter the network, then ``QueueNetwork`` instance
-    is a `Jackson network`_. The default transition probabilities at a vertex 
-    ``v`` is ``1 / v.out_degree()`` for each adjacent vertex.
-
+    * If only :class:`.Agent`\s enter the network, then the ``QueueNetwork``
+      instance is a `Jackson network`_. The default transition probabilities
+      at any vertex ``v`` is ``1 / v.out_degree()`` for each adjacent vertex.
     * This class must be initialized before any simulations can take place. To
-      initialize, call the :meth:`~initialize` method. If any of the queues are
-      altered, make sure to re-run the ``initialize`` method again.
+      initialize, call the :meth:`~initialize` method.
     * When simulating the network, the departure of an agent from one queue
-      coincides with an arrival to another queue. There is no time lag between
+      coincides with their arrival to another. There is no time lag between
       these events.
+    * When defining your ``q_classes`` you should not assign queues with edge
+      type ``0`` to anything other than the :class:`.NullQueue` class.  Edges
+      with edge type ``0`` are treated by ``QueueNetwork`` as terminal edges
+      (edges that point to a terminal vertex).
+    * If an edge type is used in your network but not given in ``q_classes`` 
+      parameter then the defaults are used, where the defaults are:
 
-    .. _Jackson network: http://en.wikipedia.org/wiki/Jackson_network    
+      >>> default_classes = {0 : qt.NullQueue, 1 : qt.QueueServer, 2 : qt.LossQueue,
+      ...                    3 : qt.LossQueue, 4 : qt.LossQueue}
 
+      For example, if your network has type ``0``\, ``1``\, and ``2`` edges but
+      your ``q_classes`` parameter looks like:
 
-    The following properties are assigned as a :class:`~graph_tool.PropertyMap`
-    to the graph; their default values for each edge or vertex is shown:
+      >>> my_classes = {1 : qt.ResourceQueue} 
+
+      then each type ``0`` or type ``2`` edge is a :class:`.NullQueue` or
+      :class:`.LossQueue` respectively.
+    * The following properties are assigned as a :class:`~graph_tool.PropertyMap`
+      to the graph; their default values for each edge or vertex is shown:
         
         * ``vertex_pen_width``: ``1.1``,
         * ``vertex_size``: ``8``,
@@ -134,33 +145,64 @@ class QueueNetwork :
         * ``edge_marker_size``: ``8``
         * ``edge_pen_width``: ``1.25``
 
-    There are also property maps created for graph visualization, they are
-    ``vertex_color``\, ``vertex_fill_color``\, ``pos``\, and ``edge_color``\.
-    The default colors, which are used by various methods, are:
+      There are also property maps created for graph visualization, they are
+      ``vertex_color``\, ``vertex_fill_color``\, ``pos``\, and ``edge_color``\.
+      The default colors, which are used by various methods, are:
 
-    >>> default_colors = { 'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
-    ...                    'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
-    ...                    'vertex_highlight'  : [0.5, 0.5, 0.5, 1.0],
-    ...                    'edge_departure'    : [0, 0, 0, 1], 
-    ...                    'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
-    ...                    'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
-    ...                    'edge_active'       : [0.1, 0.1, 0.1, 1.0],
-    ...                    'edge_inactive'     : [0.8, 0.8, 0.8, 0.3],
-    ...                    'bg_color'          : [1, 1, 1, 1]}
+      >>> default_colors = { 'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
+      ...                    'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
+      ...                    'vertex_highlight'  : [0.5, 0.5, 0.5, 1.0],
+      ...                    'edge_departure'    : [0, 0, 0, 1], 
+      ...                    'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
+      ...                    'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
+      ...                    'edge_active'       : [0.1, 0.1, 0.1, 1.0],
+      ...                    'edge_inactive'     : [0.8, 0.8, 0.8, 0.3],
+      ...                    'bg_color'          : [1, 1, 1, 1]}
 
     If the graph is not connected then there may be issues with ``Agents``
-    that arrive at an edge that points to terminal vertex. If the graph was 
-    created using :func:`.adjacency2graph` then this is not an issue, so
-    long as ``q_classes`` key  ``0`` is a :class:`.NullQueue` (note that ``0``
-    does not need to be a key of the ``q_classes`` parameter, but if it is it
-    should be set to :class:`.NullQueue`).
+    that arrive at an edge that points to terminal vertex. If the graph was
+    created using :func:`.adjacency2graph` then this is not an issue so
+    long as ``q_classes`` key  ``0`` is a :class:`.NullQueue` (or not given).
+
+    .. _Jackson network: http://en.wikipedia.org/wiki/Jackson_network
 
     Examples
     --------
-    The following creates a queueing network with 100 vertices. 
+    The following creates a queueing network with 100 vertices:
 
-    >>> g   = qt.generate_pagerank_graph(100, seed=13)
-    >>> net = qt.QueueNetwork(g, seed=13)
+    >>> g = qt.generate_pagerank_graph(100, seed=13)
+    >>> q_cl = {2 : qt.QueueServer}
+    >>> arr  = lambda t: t + np.random.gamma(4, 0.0025)
+    >>> ser2 = lambda t: t + np.random.exponential(0.025)
+    >>> ser3 = lambda t: t + np.random.exponential(4)
+    >>> q_ar = {2 : {'arrival_f' : arr, 'service_f' : ser2, 'nServers' : 5},
+                3 : {'service_f' : ser3, 'nServers' : 10}}
+    >>> net  = qt.QueueNetwork(g, q_classes=q_cl, q_args=q_ar, seed=13)
+
+    To specify that arrivals enter from type 2 edges and simulate run:
+
+    >>> net.initialize(eType=2)
+    >>> net.simulate(n=1000)
+
+    Now we'd like to see how many agents are in type 2 edges:
+
+    >>> nA = [(q.nSystem, q.edge[2]) for q in net.edge2queue if q.edge[3] == 2]
+    >>> nA.sort(reverse=True)
+    >>> nA[:5]
+    [(7, 213), (5, 553), (5, 528), (4, 424), (4, 165)]
+    >>> q = net.edge2queue[213]
+    >>> q.nSystem, q.nServers
+    (7, 5)
+
+    To view the state of the network do the following (note, your
+    graph may be rotated):
+
+    >>> pos = gt.sfdp_layout(g, max_iter=100000)
+    >>> net.draw(output="my_network.png", pos=pos, output_size=(700,300))
+    <...>
+
+    .. figure:: my_network.png
+       :align: center
     """
 
     def __init__(self, g, q_classes=None, q_args=None, seed=None, colors=None, max_agents=1000, blocking='BAS') :
@@ -938,41 +980,35 @@ class QueueNetwork :
             e = self.g.edge(q.edge[0], q.edge[1])
             v = self.g.vertex(q.edge[1])
             if q.edge[0] == q.edge[1] :
-                ep['edge_color'][e]        = q._current_color(1)
-                vp['vertex_color'][v]      = q._current_color(2)
-                if q.edge[3] == 0 :
-                    nSy = 0
-                    cap = 0
-                    for vi in self.in_edges[q.edge[1]] :
-                        nSy += self.edge2queue[vi].nSystem
-                        cap += self.edge2queue[vi].nServers
-
-                    tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
-
-                    color    = [ i * tmp / 0.9 for i in q.colors['vertex_fill_color'] ]
-                    color[3] = 1.0 - tmp
-                    vp['vertex_fill_color'][v] = color
-                else :
+                ep['edge_color'][e]   = q._current_color(1)
+                vp['vertex_color'][v] = q._current_color(2)
+                if q.edge[3] != 0 :
                     vp['vertex_fill_color'][v] = q._current_color()
             else :
                 ep['edge_color'][e] = q._current_color()
                 if do[q.edge[1]] :
-                    nSy = 0
-                    cap = 0
-                    for vi in self.in_edges[q.edge[1]] :
-                        nSy += self.edge2queue[vi].nSystem
-                        cap += self.edge2queue[vi].nServers
+                    ee  = self.g.edge(v, v)
+                    eei = self.g.edge_index[ee] if ee is not None else 0
 
-                    tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+                    if ee is None or (ee is not None and self.edge2queue[eei].edge[3] == 0) :
+                        nSy = 0
+                        cap = 0
+                        for ei in self.in_edges[q.edge[1]] :
+                            nSy += self.edge2queue[ei].nSystem
+                            cap += self.edge2queue[ei].nServers
 
-                    color    = [ i * tmp / 0.9 for i in q.colors['vertex_fill_color'] ]
-                    color[3] = 1.0 - tmp
-                    vp['vertex_fill_color'][v]  = color
-                    vp['vertex_color'][v]       = self.colors['vertex_color']
-                    do[q.edge[1]] = False
+                        tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (2 * cap), 0.9)
+
+                        color    = [i * tmp / 0.9 for i in self.colors['vertex_fill_color']]
+                        color[3] = 1.0 - tmp
+                        vp['vertex_fill_color'][v] = color
+                        if ee is None :
+                            vp['vertex_color'][v] = self.colors['vertex_color']
+
+                        do[q.edge[1]] = False
 
 
-    def _update_graph_colors(self, ad, qedge) :
+    def _update_graph_colors(self, qedge) :
         e   = self.g.edge(qedge[0], qedge[1])
         v   = e.target()
         ep  = self.g.ep
@@ -984,44 +1020,57 @@ class QueueNetwork :
             q   = self.edge2queue[self._prev_edge[2]]
 
             if pe.target() == pe.source() :
-                ep['edge_color'][pe]        = q._current_color(1)
-                vp['vertex_color'][pv]      = q._current_color(2)
-                vp['vertex_fill_color'][pv] = q._current_color()
+                ep['edge_color'][pe]   = q._current_color(1)
+                vp['vertex_color'][pv] = q._current_color(2)
+                if q.edge[3] != 0 :
+                    vp['vertex_fill_color'][v] = q._current_color()
+
             else :
                 ep['edge_color'][pe] = q._current_color()
-                nSy = 0
-                cap = 0
-                for vi in self.in_edges[self._prev_edge[1]] :
-                    nSy += self.edge2queue[vi].nSystem
-                    cap += self.edge2queue[vi].nServers
+                ee  = self.g.edge(pv, pv)
+                eei = self.g.edge_index[ee] if ee is not None else 0
 
-                tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+                if ee is None or (ee is not None and self.edge2queue[eei].edge[3] == 0) :
+                    nSy = 0
+                    cap = 0
+                    for ei in self.in_edges[q.edge[1]] :
+                        nSy += self.edge2queue[ei].nSystem
+                        cap += self.edge2queue[ei].nServers
 
-                color    = [ i * tmp / 0.9 for i in self.colors['vertex_fill_color'] ]
-                color[3] = 1.0 - tmp
-                vp['vertex_fill_color'][pv] = color
-                vp['vertex_color'][pv]      = self.colors['vertex_color']
+                    tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (2 * cap), 0.9)
+
+                    color    = [i * tmp / 0.9 for i in self.colors['vertex_fill_color']]
+                    color[3] = 1.0 - tmp
+                    vp['vertex_fill_color'][pv] = color
+                    if ee is None :
+                        vp['vertex_color'][pv] = self.colors['vertex_color']
 
         q   = self.edge2queue[qedge[2]]
         if qedge[0] == qedge[1] :
-            ep['edge_color'][e]         = q._current_color(1)
-            vp['vertex_fill_color'][v]  = q._current_color()
-            vp['vertex_color'][v]       = q._current_color(2)
+            ep['edge_color'][e]   = q._current_color(1)
+            vp['vertex_color'][v] = q._current_color(2)
+            if q.edge[3] != 0 :
+                vp['vertex_fill_color'][v] = q._current_color()
 
         else :
             ep['edge_color'][e] = q._current_color()
-            nSy = 0
-            cap = 0
-            for vi in self.in_edges[qedge[1]] :
-                nSy += self.edge2queue[vi].nSystem
-                cap += self.edge2queue[vi].nServers
+            ee  = self.g.edge(v, v)
+            eei = self.g.edge_index[ee] if ee is not None else 0
 
-            tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (3 * cap), 0.9)
+            if ee is None or (ee is not None and self.edge2queue[eei].edge[3] == 0) :
+                nSy = 0
+                cap = 0
+                for ei in self.in_edges[qedge[1]] :
+                    nSy += self.edge2queue[ei].nSystem
+                    cap += self.edge2queue[ei].nServers
 
-            color    = [ i * tmp / 0.9 for i in self.colors['vertex_fill_color'] ]
-            color[3] = 1.0 - tmp
-            vp['vertex_fill_color'][v] = color
-            vp['vertex_color'][v]  = self.colors['vertex_color']
+                tmp = 0.9 - min(nSy / 5, 0.9) if cap <= 1 else 0.9 - min(nSy / (2 * cap), 0.9)
+
+                color    = [i * tmp / 0.9 for i in self.colors['vertex_fill_color']]
+                color[3] = 1.0 - tmp
+                vp['vertex_fill_color'][v] = color
+                if ee is None :
+                    vp['vertex_color'][v] = self.colors['vertex_color']
 
 
     def _add_departure(self, ei, agent, t) :
@@ -1108,7 +1157,7 @@ class QueueNetwork :
                 self.nAgents[e2] = q2._nTotal
 
                 if slow :
-                    self._update_graph_colors(ad='departure', qedge=q1.edge)
+                    self._update_graph_colors(qedge=q1.edge)
                     self._prev_edge = q1.edge
 
                 if q2._active and np.sum(self.nAgents) > self.max_agents - 1 :
@@ -1118,7 +1167,7 @@ class QueueNetwork :
                 self.nAgents[e2] = q2._nTotal
 
                 if slow :
-                    self._update_graph_colors(ad='arrival', qedge=q2.edge)
+                    self._update_graph_colors(qedge=q2.edge)
                     self._prev_edge = q2.edge
 
             if q1._time < infty :
@@ -1163,7 +1212,7 @@ class QueueNetwork :
             self.nAgents[e1] = q1._nTotal
 
             if slow :
-                self._update_graph_colors(ad='arrival', qedge=q1.edge)
+                self._update_graph_colors(qedge=q1.edge)
                 self._prev_edge  = q1.edge
 
             if q1._time < infty :

@@ -923,6 +923,7 @@ class NullQueue(QueueServer) :
             kwargs['edge'] = (0,0,0,0)
 
         QueueServer.__init__(self, **kwargs)
+        self.nServers = 0
 
     def __repr__(self) :
         return "NullQueue: %s." %  (self.edge[2])
