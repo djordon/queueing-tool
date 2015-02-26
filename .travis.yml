@@ -5,7 +5,6 @@ python:
   - 3.3
   - 3.4
 env:
-  - CYTHON=true
   - CYTHON=false
 before_install:
   - echo 'deb http://downloads.skewed.de/apt/precise precise universe' | sudo tee -a /etc/apt/sources.list
@@ -21,7 +20,7 @@ before_install:
   #- conda update --yes conda
 install:
   #- conda install --yes python=$TRAVIS_PYTHON_VERSION numpy
-  - pip install numpy;
+  #- pip install numpy;
   # --allow-unauthenticated
   # python3-numpy python3-numpy-dev
   #- if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y python-setuptools; fi
@@ -32,9 +31,9 @@ install:
   #- if [[ $TRAVIS_PYTHON_VERSION == 3* && $CYTHON == true ]]; then sudo apt-get install -y cython3; fi
   - if [[ $CYTHON == true ]]; then pip install cython; fi
   #- if [[ $CYTHON == false ]]; then pip install numpy; fi
-  - pip install -e .
-  #- python setup.py install
   - pip install coveralls
+  #- python setup.py install
+  - pip install .
 script:
   - nosetests --with-coverage --cover-package=queueing_tool
 after_success:
