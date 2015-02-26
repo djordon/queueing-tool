@@ -13,11 +13,11 @@ before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
 install:
+  - sudo apt-get install -y $PYTHON-setuptools $PYTHON-dev
   - sudo apt-get install -y $PYTHONDEV
-  - sudo apt-get install -y $PYTHON-setuptools
   - sudo apt-get install -y $PYTHON-numpy
-  - sudo easy_install$PYSUF pip
   - sudo apt-get install -y --allow-unauthenticated $PYTHON-graph-tool
+  - sudo easy_install$PYSUF pip
   - sudo pip$PYSUF install coveralls nose
   - sudo $PYTHON setup.py develop
 script:
