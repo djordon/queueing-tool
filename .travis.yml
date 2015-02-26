@@ -33,8 +33,8 @@ install:
   #- if [[ $TRAVIS_PYTHON_VERSION == 3* && $CYTHON == true ]]; then sudo apt-get install -y cython3; fi
   - if [[ $CYTHON == true ]]; then pip install cython; fi
   - if [[ $CYTHON == false ]]; then pip install numpy; fi
-  #- pip install -e .
-  - python setup.py install
+  - pip install -e .
+  #- python setup.py install
   - pip install coveralls
 script:
   - nosetests --with-coverage --cover-package=queueing_tool
