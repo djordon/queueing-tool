@@ -25,13 +25,13 @@ before_install:
   # --allow-unauthenticated
   # python3-numpy python3-numpy-dev python3-scipy
   #- if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y python-setuptools; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y --allow-unauthenticated python-setuptools python-graph-tool; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y --allow-unauthenticated python-numpy-dev python-setuptools python-graph-tool; fi
   #- if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y python3-setuptools; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y --allow-unauthenticated python3-setuptools python3-graph-tool; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y --allow-unauthenticated python3-numpy-dev python3-setuptools python3-graph-tool; fi
 install:
-  - if [[ $TRAVIS_PYTHON_VERSION == 2* && $CYTHON == true ]]; then sudo apt-get install -y cython; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 3* && $CYTHON == true ]]; then sudo apt-get install -y cython3; fi
-  #- if [[ $CYTHON == true ]]; then pip install cython; fi
+  #- if [[ $TRAVIS_PYTHON_VERSION == 2* && $CYTHON == true ]]; then sudo apt-get install -y cython; fi
+  #- if [[ $TRAVIS_PYTHON_VERSION == 3* && $CYTHON == true ]]; then sudo apt-get install -y cython3; fi
+  - if [[ $CYTHON == true ]]; then pip install cython; fi
   - pip install -e .
   - pip install coveralls
 script:
