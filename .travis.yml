@@ -1,39 +1,25 @@
-language: python
-python:
-  - 2.7
-  - 3.2
-  - 3.3
-  - 3.4
+language: c
 env:
-  - CYTHON=false
+  - PYTHON=python PYSUF='' PYVER=2.7 PYTHONDEV=python-dev
+  - PYTHON=python3 PYSUF='3' PYVER=3.2 PYTHONDEV=python3-dev
+  - PYTHON=python3 PYSUF='3' PYVER=3.3 PYTHONDEV=python3.3
+  - PYTHON=python3 PYSUF='3' PYVER=3.4 PYTHONDEV=python3.4
 before_install:
   - echo 'deb http://downloads.skewed.de/apt/precise precise universe' | sudo tee -a /etc/apt/sources.list
+  - sudo add-apt-repository ppa:fkrull/deadsnakes -y
   - sudo add-apt-repository ppa:takluyver/python3 -y
   - sudo add-apt-repository ppa:boost-latest/ppa -y
   - sudo add-apt-repository ppa:mapnik/boost -y
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
-  #- wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-  #- chmod +x miniconda.sh
-  #- ./miniconda.sh -b
-  #- export PATH=/home/travis/miniconda/bin:$PATH
-  #- conda update --yes conda
 install:
-  #- conda install --yes python=$TRAVIS_PYTHON_VERSION numpy
-  #- pip install numpy;
-  # --allow-unauthenticated
-  # python3-numpy python3-numpy-dev
-  #- if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y python-setuptools; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y --allow-unauthenticated python-numpy-dev python-setuptools python-graph-tool; fi
-  #- if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y python3-setuptools; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y --allow-unauthenticated python3-numpy-dev python3-setuptools python3-graph-tool; fi
-  #- if [[ $TRAVIS_PYTHON_VERSION == 2* && $CYTHON == true ]]; then sudo apt-get install -y cython; fi
-  #- if [[ $TRAVIS_PYTHON_VERSION == 3* && $CYTHON == true ]]; then sudo apt-get install -y cython3; fi
-  - if [[ $CYTHON == true ]]; then pip install cython; fi
-  #- if [[ $CYTHON == false ]]; then pip install numpy; fi
-  - pip install coveralls
-  - python setup.py develop
-  #- pip install .
+  - sudo apt-get install -y $PYTHONDEV
+  - sudo apt-get install -y $PYTHON-setuptools
+  - sudo apt-get install -y $PYTHON-numpy
+  - sudo easy_install-$PYVER pip
+  - sudo apt-get install -y --allow-unauthenticated $PYTHON-graph-tool
+  - sudo pip-$PYVER install coveralls nose
+  - sudo $PYTHON setup.py develop
 script:
   - nosetests --with-coverage --cover-package=queueing_tool
 after_success:
