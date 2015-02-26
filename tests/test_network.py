@@ -121,8 +121,8 @@ class TestQueueNetwork(unittest.TestCase) :
         data = qn.data_queues(edge=[(1,2), (1,3)])
         e0, e1 = qn.out_edges[1]
 
-        p0 = np.sum(data[:, 5] == e0) / data.shape[0]
-        p1 = np.sum(data[:, 5] == e1) / data.shape[0]
+        p0 = np.sum(data[:, 5] == e0, dtype=float) / data.shape[0]
+        p1 = np.sum(data[:, 5] == e1, dtype=float) / data.shape[0]
 
         trans = qn.transitions(False)
 
@@ -134,7 +134,7 @@ class TestQueueNetwork(unittest.TestCase) :
 
     def test_QueueNetwork_greedy_routing(self) :
 
-        lam = np.random.randint(1,10)
+        lam = np.random.randint(1,10) + 0.0
         rho = np.random.uniform(0.75, 1)
         nSe = np.random.randint(1, 10)
         mu  = lam / (3 * rho * nSe)

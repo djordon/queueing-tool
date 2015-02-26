@@ -165,8 +165,8 @@ def _adjacency_adjust(adjacency, eType, adjust, is_directed) :
                     null_nodes.add(k)
 
             for k, adj in adjacency.items() :
-                et = eType[k].copy()
-                eType[k] = [0 if v in null_nodes else et[j] for j, v in enumerate(adj)]
+                #et = eType[k]
+                eType[k] = [0 if v in null_nodes else eType[k][j] for j, v in enumerate(adj)]
 
         else :
             for k, adj in adjacency.items() :
@@ -538,7 +538,7 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
         np.random.seed(seed)
 
     if pTypes is None :
-        pTypes = {k : 1/3 for k in range(1,4)}
+        pTypes = {k : 1.0/3 for k in range(1,4)}
 
     nEdges  = g.num_edges() 
     edges   = [k for k in range(nEdges)]
@@ -546,7 +546,7 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
 
     if np.isclose(cut_off[-1], 1.0) :
         cut_off = np.array(np.round(cut_off * nEdges)).astype(int)
-    elif cut_off != nEdges :
+    elif cut_off[-1] != nEdges :
         raise RuntimeError("pTypes must sum to one, or sum to the number of edges in the graph")
 
     np.random.shuffle(edges)

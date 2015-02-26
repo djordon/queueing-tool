@@ -2,8 +2,8 @@ language: c
 env:
   - PYTHON=python PYSUF='' PYVER=2.7 PYTHONDEV=python-dev
   - PYTHON=python3 PYSUF='3' PYVER=3.2 PYTHONDEV=python3-dev
-  - PYTHON=python3 PYSUF='3' PYVER=3.3 PYTHONDEV=python3.3
-  - PYTHON=python3 PYSUF='3' PYVER=3.4 PYTHONDEV=python3.4
+  - PYTHON=python3 PYSUF='3' PYVER=3.3 PYTHONDEV=python3.3-dev
+  - PYTHON=python3 PYSUF='3' PYVER=3.4 PYTHONDEV=python3.4-dev
 before_install:
   - echo 'deb http://downloads.skewed.de/apt/precise precise universe' | sudo tee -a /etc/apt/sources.list
   - sudo add-apt-repository ppa:fkrull/deadsnakes -y

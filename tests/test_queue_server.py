@@ -7,7 +7,7 @@ import unittest
 class TestQueueServers(unittest.TestCase) :
 
     def setUp(self) :
-        self.lam = np.random.randint(1,10)
+        self.lam = np.random.randint(1,10) + 0.0
         self.rho = np.random.uniform(0.5, 1)
 
 

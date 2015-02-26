@@ -10,7 +10,7 @@ import copy
 
 
 def poisson_random_measure(rate, rate_max, t) :
-    u"""A function that returns the arrival time of the next arrival for a
+    """A function that returns the arrival time of the next arrival for a
     Poisson random measure.
 
     Parameters

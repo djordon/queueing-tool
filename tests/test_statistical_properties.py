@@ -22,7 +22,7 @@ def chi2_cdf(q, k, n=1000000, ns=1) :
 class TestQueueServers(unittest.TestCase) :
 
     def setUp(self) :
-        self.lam = np.random.randint(1,10)
+        self.lam = np.random.randint(1,10) + 0.0
         self.rho = np.random.uniform(0.5, 1)
 
 
@@ -49,7 +49,7 @@ class TestQueueServers(unittest.TestCase) :
 
         n = len(dep)
         lamh = 1 / np.mean(dep)
-        upb  = - np.log( 6 / n) / lamh
+        upb  = - np.log( 6.0 / n) / lamh
         nbin = n // 6 - 1 #np.floor( np.exp( lam * upb) - 1 )
         bins = np.zeros(nbin+2)
         bins[1:-1] = upb - np.log( np.arange(nbin, 0, -1)) / lamh
