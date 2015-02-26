@@ -32,8 +32,8 @@ install:
   - if [[ $CYTHON == true ]]; then pip install cython; fi
   #- if [[ $CYTHON == false ]]; then pip install numpy; fi
   - pip install coveralls
-  #- python setup.py install
-  - pip install .
+  - python setup.py develop
+  #- pip install .
 script:
   - nosetests --with-coverage --cover-package=queueing_tool
 after_success:
