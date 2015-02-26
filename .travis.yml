@@ -1,14 +1,14 @@
 language: python
 python:
   - 2.7
+  - "2.7_with_system_site_packages"
   - 3.2
+  - "3.2_with_system_site_packages"
   - 3.3
   - 3.4
 env:
   - CYTHON=true
   - CYTHON=false
-virtualenv:
-  system_site_packages: true
 before_install:
   - echo 'deb http://downloads.skewed.de/apt/precise precise universe' | sudo tee -a /etc/apt/sources.list
   - sudo add-apt-repository ppa:takluyver/python3 -y

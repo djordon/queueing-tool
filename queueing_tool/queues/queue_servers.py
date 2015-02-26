@@ -43,7 +43,7 @@ def poisson_random_measure(rate, rate_max, t) :
     6 of [3]_ for more on the mathematics behind Poisson random measures; the
     book's publisher, Springer, has that chapter available online (`pdf`_\).
 
-    A Poisson random measure is sometimes called a nonhomogeneous Poisson
+    A Poisson random measure is sometimes called a non-homogeneous Poisson
     process. A Poisson process is a special type of Poisson random measure.
 
     .. _pdf: http://www.springer.com/cda/content/document/cda_downloaddocument/9780387878584-c1.pdf
@@ -59,7 +59,7 @@ def poisson_random_measure(rate, rate_max, t) :
 
     References
     ----------
-    .. [3] Çınlar, Erhan. *Probability and stochastics*. Graduate Texts in\
+    .. [3] Cinlar, Erhan. *Probability and stochastics*. Graduate Texts in\
            Mathematics. Vol. 261. Springer, New York, 2011.\
            :doi:`10.1007/978-0-387-87859-1`
     """
