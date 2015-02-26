@@ -1,13 +1,12 @@
 import numpy    as np
-import scipy    as sp
-import scipy.stats    as stats
 import queueing_tool  as qt
 import graph_tool.all as gt
 
 import unittest
 import numbers
+import math
 
-from scipy.stats  import poisson, expon
+from math import factorial
 from numpy.random import randint
 
 def empirical_cdf0(x, z, n) :
@@ -15,6 +14,10 @@ def empirical_cdf0(x, z, n) :
 
 empirical_cdf = np.vectorize(empirical_cdf0, excluded={1, 2})
 
+# removed dependency on scipy
+def chi2_cdf(q, k, n=1000000, ns=1) :
+    return np.mean([empirical_cdf(q, np.random.chisquare(k, n), n) for i in range(ns)])
+    
 
 class TestQueueServers(unittest.TestCase) :
 
@@ -53,11 +56,12 @@ class TestQueueServers(unittest.TestCase) :
         bins[-1]   = np.infty
 
         N   = np.histogram(dep, bins=bins)[0]
-        pp  = expon.cdf(bins, scale=1/lamh )
+        pp  = 1 - np.exp(-lamh * bins)
         pr  = n*(pp[1:] - pp[:-1])
         Q   = np.sum((N - pr)**2 / pr)
-        p1  = 1 - stats.chi2.cdf(Q, nbin-1)
-        #p2 = 1 - stats.chi2.cdf(Q, nbin-2)
+        p1  = 1 - chi2_cdf(Q, nbin-1)
+        #p1  = 1 - chi2_cdf(Q, nbin-1)
+        #p2  = 1 - chi2_cdf(Q, nbin-2)
 
         x, y = dep[1:], dep[:-1]
         cc   = np.corrcoef(x,y)[0,1]
@@ -117,9 +121,10 @@ class TestQueueServers(unittest.TestCase) :
 
         a   = self.lam / mu
 
-        erlangb = poisson.pmf(nSe , mu=a) / poisson.cdf(nSe, mu=a)
+        pois_pmf = np.exp(-a) * a**nSe / factorial(nSe)
+        pois_cdf = np.sum(np.exp(-a) * a**np.arange(nSe+1) / np.array([factorial(j) for j in range(nSe+1)]))
         p_block = (nB1 - nB0) / (nA1 - nA0)
-        self.assertTrue( np.isclose(erlangb, p_block, atol=0.005) )
+        self.assertTrue( np.isclose(pois_pmf / pois_cdf, p_block, atol=0.005) )
 
 
 
@@ -161,13 +166,14 @@ class TestRandomMeasure(unittest.TestCase) :
         
         for i, sample in enumerate(rvs) :
             for k in range(df[i]-1) :
-                pi_hat  = nSamp * poisson.pmf(k, mus[i])
+                pi_hat  = nSamp * np.exp(-mus[i]) * mus[i]**k / factorial(k)
                 Q[k, i] = (np.sum(sample == k) - pi_hat)**2 / pi_hat
-            
-            Q[k+1, i] = nSamp * (1 - poisson.cdf(k+1, mus[i]))
+
+            pois_cdf = np.sum(np.exp(-mus[i]) * mus[i]**np.arange(k+1) / np.array([factorial(j) for j in range(k+1)]))            
+            Q[k+1, i] = nSamp * (1 - pois_cdf)
         
         Qs  = np.sum(Q, axis=0)
-        p   = np.array([1 - stats.chi2.cdf(Qs[i], df[i]-2) for i in range(len(rvs))])
+        p   = np.array([1 - chi2_cdf(Qs[i], df[i]-2) for i in range(len(rvs))])
         self.assertTrue( (p > 0.1).any() )
 
 

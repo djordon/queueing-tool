@@ -23,7 +23,7 @@ before_install:
   - conda update --yes conda
   - conda install --yes python=$TRAVIS_PYTHON_VERSION numpy scipy
   # --allow-unauthenticated
-  # python3-numpy python3-numpy-dev python3-scipy
+  # python3-numpy python3-numpy-dev
   #- if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y python-setuptools; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y --allow-unauthenticated python-numpy-dev python-setuptools python-graph-tool; fi
   #- if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y python3-setuptools; fi
@@ -32,7 +32,9 @@ install:
   #- if [[ $TRAVIS_PYTHON_VERSION == 2* && $CYTHON == true ]]; then sudo apt-get install -y cython; fi
   #- if [[ $TRAVIS_PYTHON_VERSION == 3* && $CYTHON == true ]]; then sudo apt-get install -y cython3; fi
   - if [[ $CYTHON == true ]]; then pip install cython; fi
-  - pip install -e .
+  - if [[ $CYTHON == false ]]; then pip install numpy; fi
+  #- pip install -e .
+  - python setup.py install
   - pip install coveralls
 script:
   - nosetests --with-coverage --cover-package=queueing_tool
