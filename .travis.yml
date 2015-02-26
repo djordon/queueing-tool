@@ -18,7 +18,7 @@ install:
   - sudo apt-get install -y $PYTHON-numpy
   - sudo easy_install$PYSUF pip
   - sudo apt-get install -y --allow-unauthenticated $PYTHON-graph-tool
-  - sudo pip-$PYVER install coveralls nose
+  - sudo pip$PYSUF install coveralls nose
   - sudo $PYTHON setup.py develop
 script:
   - nosetests --with-coverage --cover-package=queueing_tool
