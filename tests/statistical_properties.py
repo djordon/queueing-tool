@@ -60,12 +60,10 @@ class TestQueueServers(unittest.TestCase) :
         pr  = n*(pp[1:] - pp[:-1])
         Q   = np.sum((N - pr)**2 / pr)
         p1  = 1 - chi2_cdf(Q, nbin-1)
-        #p1  = 1 - chi2_cdf(Q, nbin-1)
-        #p2  = 1 - chi2_cdf(Q, nbin-2)
 
         x, y = dep[1:], dep[:-1]
         cc   = np.corrcoef(x,y)[0,1]
-        self.assertTrue( np.isclose(cc, 0, atol=0.01) )
+        self.assertAlmostEqual( cc, 0, 1)
         self.assertTrue( p1 > 0.05 )
 
 
@@ -123,8 +121,8 @@ class TestQueueServers(unittest.TestCase) :
 
         pois_pmf = np.exp(-a) * a**nSe / factorial(nSe)
         pois_cdf = np.sum(np.exp(-a) * a**np.arange(nSe+1) / np.array([factorial(j) for j in range(nSe+1)]))
-        p_block = (nB1 - nB0) / (nA1 - nA0)
-        self.assertTrue( np.isclose(pois_pmf / pois_cdf, p_block, atol=0.005) )
+        p_block = (nB1 - nB0 + 0.0) / (nA1 - nA0)
+        self.assertAlmostEqual(pois_pmf / pois_cdf, p_block, 2)
 
 
 

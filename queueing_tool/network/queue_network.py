@@ -1,5 +1,6 @@
 import graph_tool.all as gt
 import numpy   as np
+import collections
 import numbers
 import copy
 import sys
@@ -206,7 +207,6 @@ class QueueNetwork :
     """
 
     def __init__(self, g, q_classes=None, q_args=None, seed=None, colors=None, max_agents=1000, blocking='BAS') :
-
         if not isinstance(blocking, str) :
             raise TypeError("blocking must be a string")
 
@@ -378,24 +378,15 @@ class QueueNetwork :
             ``nActive`` is not an integer or is less than 1 then a 
             :exc:`~RuntimeError` is raised.
         """
-        if isinstance(queues, numbers.Integral) :
-            queues = [queues]
-        elif queues is None :
-            if edge is not None :
-                if not isinstance(edge[0], numbers.Integral) :
-                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edge]
-                elif isinstance(edge[0], gt.Edge) :
-                    queues = [self.g.edge_index[e] for e in edge]
-                else :
-                    queues = [self.g.edge_index[self.g.edge(edge[0], edge[1])]]
-            elif eType is not None :
-                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
-            elif nActive >= 1 and isinstance(nActive, numbers.Integral) :
+        if queues is None and edge is None and eType is None :
+            if nActive >= 1 and isinstance(nActive, numbers.Integral) :
                 queues = np.arange(self.nE)  
                 np.random.shuffle(queues)
                 queues = queues[:nActive]
             else :
                 raise RuntimeError("If queues is None, then nActive must be a strictly positive int.")
+        else :
+            queues = _get_queues(self.g, queues, edge, eType)
 
         if len(queues) > self.max_agents - np.sum(self.nAgents) :
             queues = queues[:self.max_agents]
@@ -566,20 +557,7 @@ class QueueNetwork :
             A integer, or a collection of integers identifying which edge types
             will be set active.
         """
-        if isinstance(queues, numbers.Integral) :
-            queues = [queues]
-        elif queues is None :
-            if edge is not None :
-                if not isinstance(edge[0], numbers.Integral) :
-                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edge]
-                elif isinstance(edge[0], gt.Edge) :
-                    queues = [self.g.edge_index[e] for e in edge]
-                else :
-                    queues = [self.g.edge_index[self.g.edge(edge[0], edge[1])]]
-            elif eType is not None :
-                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
-            else :
-                queues = range(self.nE)
+        queues = _get_queues(self.g, queues, edge, eType)
 
         for k in queues :
             self.edge2queue[k].collect_data = True
@@ -605,20 +583,7 @@ class QueueNetwork :
             A integer, or a collection of integers identifying which edge types
             will stop collecting data.
         """
-        if isinstance(queues, numbers.Integral) :
-            queues = [queues]
-        elif queues is None :
-            if edge is not None :
-                if not isinstance(edge[0], numbers.Integral) :
-                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edge]
-                elif isinstance(edge[0], gt.Edge) :
-                    queues = [self.g.edge_index[e] for e in edge]
-                else :
-                    queues = [self.g.edge_index[self.g.edge(edge[0], edge[1])]]
-            elif eType is not None :
-                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
-            else :
-                queues = range(self.nE)
+        queues = _get_queues(self.g, queues, edge, eType)
 
         for k in queues :
             self.edge2queue[k].collect_data = False
@@ -680,20 +645,7 @@ class QueueNetwork :
 
         >>> data = net.data_queues(queues=(20, 14, 0, 4))
         """
-        if isinstance(queues, numbers.Integral) :
-            queues = [queues]
-        elif queues is None :
-            if edge is not None :
-                if not isinstance(edge[0], numbers.Integral) :
-                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edge]
-                elif isinstance(edge[0], gt.Edge) :
-                    queues = [self.g.edge_index[e] for e in edge]
-                else :
-                    queues = [self.g.edge_index[self.g.edge(edge[0], edge[1])]]
-            elif eType is not None :
-                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
-            else :
-                queues = range(self.nE)
+        queues = _get_queues(self.g, queues, edge, eType)
 
         data = np.zeros( (0,6) )
         for q in queues :
@@ -737,20 +689,7 @@ class QueueNetwork :
             arrival, the fifth column identifies the number of agents in the
             system, and the sixth column specifies this queue by its edge index.
         """
-        if isinstance(queues, numbers.Integral) :
-            queues = [queues]
-        elif queues is None :
-            if edge is not None :
-                if not isinstance(edge[0], numbers.Integral) :
-                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edge]
-                elif isinstance(edge[0], gt.Edge) :
-                    queues = [self.g.edge_index[e] for e in edge]
-                else :
-                    queues = [self.g.edge_index[self.g.edge(edge[0], edge[1])]]
-            elif eType is not None :
-                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
-            else :
-                queues = range(self.nE)
+        queues = _get_queues(self.g, queues, edge, eType)
 
         data = {}
         for q in queues :
@@ -1470,20 +1409,7 @@ class QueueNetwork :
             A integer, or a collection of integers identifying which edge types
             will have their data cleared.
         """
-        if isinstance(queues, numbers.Integral) :
-            queues = [queues]
-        elif queues is None :
-            if edge is not None :
-                if not isinstance(edge[0], numbers.Integral) :
-                    queues = [self.g.edge_index[self.g.edge(u,v)] for u,v in edge]
-                elif isinstance(edge[0], gt.Edge) :
-                    queues = [self.g.edge_index[e] for e in edge]
-                else :
-                    queues = [self.g.edge_index[self.g.edge(edge[0], edge[1])]]
-            elif eType is not None :
-                queues = np.where(np.in1d(np.array(self.g.ep['eType'].a), eType) )[0]
-            else :
-                queues = range(self.nE)
+        queues = _get_queues(self.g, queues, edge, eType)
 
         for k in queues :
             self.edge2queue[k].data = {}
@@ -1517,3 +1443,26 @@ class QueueNetwork :
 
             net.queues.sort(reverse=True)
         return net
+
+
+
+def _get_queues(g, queues, edge, eType) :
+    """Used to specify edge indices from different types of arguments."""
+    if isinstance(queues, numbers.Integral) :
+        queues = [queues]
+    elif queues is None :
+        if edge is not None :
+            if isinstance(edge, gt.Edge) :
+                queues = [g.edge_index[edge]]
+            elif isinstance(edge[0], gt.Edge) :
+                queues = [g.edge_index[e] for e in edge]
+            elif isinstance(edge[0], collections.Iterable) and np.array([len(e) == 2 for e in edge]).all() :
+                queues = [g.edge_index[g.edge(u,v)] for u,v in edge]
+            else :
+                queues = [g.edge_index[g.edge(edge[0], edge[1])]]
+        elif eType is not None :
+            queues = np.where(np.in1d(np.array(g.ep['eType'].a), eType) )[0]
+        else :
+            queues = range(g.num_edges())
+
+    return queues

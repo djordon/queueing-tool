@@ -1,25 +1,27 @@
-language: c
+language: python
+python:
+  - 2.7
+  #- 3.2
+  #- 3.3
+  #- 3.4
 env:
-  - PYTHON=python PYSUF='' PYVER=2.7 PYTHONDEV=python-dev
-  - PYTHON=python3 PYSUF='3' PYVER=3.2 PYTHONDEV=python3-dev
-  - PYTHON=python3 PYSUF='3' PYVER=3.3 PYTHONDEV=python3.3-dev
-  - PYTHON=python3 PYSUF='3' PYVER=3.4 PYTHONDEV=python3.4-dev
+  - CYTHON=false
+virtualenv:
+  system_site_packages: true
 before_install:
   - echo 'deb http://downloads.skewed.de/apt/precise precise universe' | sudo tee -a /etc/apt/sources.list
-  - sudo add-apt-repository ppa:fkrull/deadsnakes -y
   - sudo add-apt-repository ppa:takluyver/python3 -y
   - sudo add-apt-repository ppa:boost-latest/ppa -y
   - sudo add-apt-repository ppa:mapnik/boost -y
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
 install:
-  - sudo apt-get install -y $PYTHON-setuptools $PYTHON-dev
-  - sudo apt-get install -y $PYTHONDEV
-  - sudo apt-get install -y $PYTHON-numpy
-  - sudo apt-get install -y --allow-unauthenticated $PYTHON-graph-tool
-  - sudo easy_install$PYSUF pip
-  - sudo pip$PYSUF install coveralls nose
-  - sudo $PYTHON setup.py develop
+  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y --allow-unauthenticated python-setuptools python-graph-tool; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y --allow-unauthenticated python3-setuptools python3-graph-tool; fi
+  - if [[ $CYTHON == true ]]; then pip install cython; fi
+  - pip install -e .
+  #- python setup.py install
+  - pip install coveralls
 script:
   - nosetests --with-coverage --cover-package=queueing_tool
 after_success:

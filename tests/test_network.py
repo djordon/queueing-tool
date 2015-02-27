@@ -105,6 +105,80 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
+    def test_QueueNetwork_initialization(self) :
+
+        # Single edge index
+        k = np.random.randint(0, self.qn.nE)
+        self.qn.clear()
+        self.qn.initialize(queues=k)
+
+        ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
+        self.assertTrue(ans == [k])
+
+        # Multiple edge indices
+        k = np.unique(np.random.randint(0, self.qn.nE, 5))
+        self.qn.clear()
+        self.qn.initialize(queues=k)
+
+        ans = np.array([q.edge[2] for q in self.qn.edge2queue if q.active])
+        ans.sort()
+        self.assertTrue( (ans == k).all() )
+
+        # Single edge as edge
+        k = np.random.randint(0, self.qn.nE)
+        e = self.g.edge(self.qn.edge2queue[k].edge[0], self.qn.edge2queue[k].edge[1])
+        self.qn.clear()
+        self.qn.initialize(edge=e)
+
+        ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
+        self.assertTrue(ans == [k])
+
+        # Single edge as tuple
+        k  = np.random.randint(0, self.qn.nE)
+        e  = self.g.edge(self.qn.edge2queue[k].edge[0], self.qn.edge2queue[k].edge[1])
+        ee = (int(e.source()), int(e.target()))
+        self.qn.clear()
+        self.qn.initialize(edge=ee)
+
+        ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
+        self.assertTrue(ans == [k])
+
+        # Multiple edges as tuples
+        k   = np.unique(np.random.randint(0, self.qn.nE, 5))
+        es  = [self.g.edge(self.qn.edge2queue[i].edge[0], self.qn.edge2queue[i].edge[1]) for i in k]
+        ees = [(int(e.source()), int(e.target())) for e in es]
+        self.qn.clear()
+        self.qn.initialize(edge=ees)
+
+        ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
+        self.assertTrue( (ans == k).all() )
+
+        # Multple edges as edges
+        k   = np.unique(np.random.randint(0, self.qn.nE, 5))
+        es  = [self.g.edge(self.qn.edge2queue[i].edge[0], self.qn.edge2queue[i].edge[1]) for i in k]
+        self.qn.clear()
+        self.qn.initialize(edge=es)
+
+        ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
+        self.assertTrue( (ans == k).all() )
+
+        # Single eType
+        k  = np.random.randint(1, 4)
+        self.qn.clear()
+        self.qn.initialize(eType=k)
+
+        ans = np.array([q.edge[3] == k for q in self.qn.edge2queue if q.active])
+        self.assertTrue(ans.all())
+
+        # Multiple eTypes
+        k   = np.unique(np.random.randint(1, 4, 3))
+        self.qn.clear()
+        self.qn.initialize(eType=k)
+
+        ans = np.array([q.edge[3] in k for q in self.qn.edge2queue if q.active])
+        self.assertTrue( ans.all() )
+
+
     def test_QueueNetwork_Jackson_routing(self) :
 
         adj = {0 : 1, 1 : [2, 3]}
