@@ -347,7 +347,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
-    def test_QueueNetwork_drawing_animation(self) :
+    def test_QueueNetwork_add_arrival(self) :
 
         self.qn.simulate(1000)
 
@@ -375,6 +375,7 @@ class TestQueueNetwork(unittest.TestCase) :
         net_times   = np.array([q.time for q in self.qn._queues])
         queue_times = [q.time for q in self.qn.edge2queue]
         queue_times.sort()
+
         while queue_times[-1] == np.infty :
             tmp = queue_times.pop()
 
