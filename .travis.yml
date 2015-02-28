@@ -1,11 +1,6 @@
 language: python
 python:
   - 2.7
-  #- 3.2
-  #- 3.3
-  #- 3.4
-env:
-  - CYTHON=false
 virtualenv:
   system_site_packages: true
 before_install:
@@ -16,11 +11,8 @@ before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
 install:
-  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then sudo apt-get install -y --allow-unauthenticated python-setuptools python-graph-tool; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then sudo apt-get install -y --allow-unauthenticated python3-setuptools python3-graph-tool; fi
-  - if [[ $CYTHON == true ]]; then pip install cython; fi
+  - sudo apt-get install -y --allow-unauthenticated python-setuptools python-graph-tool
   - pip install -e .
-  #- python setup.py install
   - pip install coveralls
 script:
   - nosetests --with-coverage --cover-package=queueing_tool
