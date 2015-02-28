@@ -180,7 +180,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
-    def test_QueueNetwork_Jackson_routing(self) :
+    def test_QueueNetwork_add_arrival(self) :
 
         adj = {0 : 1, 1 : [2, 3]}
         g   = qt.adjacency2graph(adj)
