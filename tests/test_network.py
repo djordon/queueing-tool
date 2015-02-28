@@ -3,14 +3,15 @@ import queueing_tool  as qt
 import graph_tool.all as gt
 import unittest
 import numbers
+import os
 
 
 class TestQueueNetwork(unittest.TestCase) :
 
     @classmethod
     def setUpClass(cls) :
-        cls.g   = qt.generate_random_graph(200)
-        cls.qn  = qt.QueueNetwork(cls.g)
+        cls.g  = qt.generate_pagerank_graph(200)
+        cls.qn = qt.QueueNetwork(cls.g)
         cls.qn.max_agents = 2000
         cls.qn.initialize(50)
 
@@ -190,7 +191,7 @@ class TestQueueNetwork(unittest.TestCase) :
         qn.initialize(edge=(0,1))
         qn.collect_data(edge=[(1,2), (1,3)])
 
-        qn.simulate(100000)
+        qn.simulate(150000)
 
         data = qn.data_queues(edge=[(1,2), (1,3)])
         e0, e1 = qn.out_edges[1]
@@ -204,6 +205,46 @@ class TestQueueNetwork(unittest.TestCase) :
 
         self.assertAlmostEqual( trans[1][0], p0, 2)
         self.assertAlmostEqual( trans[1][1], p1, 2)
+
+
+    def test_QueueNetwork_transitions(self) :
+
+        degree = [len(self.qn.out_edges[k]) for k in range(self.qn.nV)]
+        k, deg = np.argmax(degree), max(degree)
+
+        trans  = np.random.uniform(size=deg)
+        trans  = trans / sum(trans)
+
+        self.qn.set_transitions({k : trans})
+        mat = self.qn.transitions()
+        v   = self.qn.g.vertex(k)
+        tra = mat[k, [int(e.target()) for e in v.out_edges()]]
+
+        self.assertTrue( (tra == trans).all() )
+
+
+    def test_QueueNetwork_data_agents(self) :
+
+        self.qn.clear()
+        self.qn.initialize(queues=1)
+        self.qn.collect_data()
+        self.qn.simulate(n=20000)
+
+        data = self.qn.data_agents()
+        dat0 = data[(1,0)]
+
+        a = dat0[:,0]
+        b = dat0[dat0[:,1] > 0, 1]
+        c = dat0[dat0[:,2] > 0, 2]
+
+        a.sort()
+        b.sort()
+        c.sort()
+
+        self.assertTrue( (a == dat0[:,0]).all() )
+        self.assertTrue( (b == dat0[dat0[:,1] > 0, 1]).all() )
+        self.assertTrue( (c == dat0[dat0[:,2] > 0, 2]).all() )
+        self.assertTrue( (dat0[1:, 0] == dat0[dat0[:,2] > 0, 2]).all() )
 
 
     def test_QueueNetwork_greedy_routing(self) :
@@ -246,6 +287,110 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
+    def test_QueueNetwork_copy(self) :
+
+        nV  = 100
+        ps  = np.random.uniform(0, 5, size=(nV, 2))
+
+        g, pos = gt.geometric_graph(ps, 1)
+        g = qt.set_types_random(g, pTypes={k : 0.2 for k in range(1,6)})
+        q_cls = {1 : qt.LossQueue, 2 : qt.QueueServer, 3 : qt.InfoQueue, 
+                 4 : qt.ResourceQueue, 5 : qt.ResourceQueue}
+        q_arg = {3 : {'net_size' : g.num_edges()}, 4 : {'nServers' : 500}}
+
+        qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
+        qn.max_agents = np.infty
+        qn.initialize(queues=range(g.num_edges()))
+        qn.collect_data()
+
+        qn.simulate(n=50000)
+        stamp = [(q.nArrivals, q.time) for q in qn.edge2queue]
+
+        qn2 = qn.copy()
+        qn.simulate(n=50000)
+
+        self.assertFalse( qn.time == qn2.time )
+
+        ans = []
+        for k, q in enumerate(qn.edge2queue) :
+            if stamp[k][1] != q.time :
+                ans.append(q.time != qn2.edge2queue[k].time)
+
+        self.assertTrue( np.array(ans).all() )
+
+
+    def test_QueueNetwork_drawing_animation(self) :
+
+        ct  = np.random.randint(2,12)
+        ans = np.zeros(ct+7, bool)
+        self.qn.animate(out='test', count=ct, output_size=(200,200))
+
+        for k in range(ct+1) :
+            ans[k] = os.path.isfile('test%s.png' % (k))
+            if ans[k] :
+                os.remove('test%s.png' % (k))
+
+        for k in range(1, 5) :
+            ans[ct+k] = not os.path.isfile('test%s.png' % (ct+k))
+
+        self.qn.show_type(2, output='types.png', geometry=(200,200))
+        self.qn.show_active(output='active.png', output_size=(200,200))
+
+        ans[ct+5] = os.path.isfile('types.png')
+        ans[ct+6] = os.path.isfile('active.png')
+
+        if ans[ct+5] :
+            os.remove('types.png')
+        if ans[ct+6] :
+            os.remove('active.png')
+
+        self.assertTrue( ans.all() )
+
+
+    def test_QueueNetwork_drawing_animation(self) :
+
+        self.qn.simulate(1000)
+
+        ag1 = qt.Agent( (-1,0) )
+        ag2 = qt.Agent( (-1,1) )
+
+        t1  = [q.edge[2] for q in self.qn.edge2queue if q.edge[3] == 1]
+        t2  = [q.edge[2] for q in self.qn.edge2queue if q.edge[3] == 2]
+
+        q1  = t1[np.random.randint(len(t1))]
+        q2  = t2[np.random.randint(len(t2))]
+        
+        self.qn._add_arrival(q1, ag1)
+        self.qn._add_arrival(q2, ag2)
+
+        arrivals = self.qn.edge2queue[q1]._arrivals
+        an1 = np.array([ag1.issn == ag.issn for ag in arrivals if isinstance(ag, qt.Agent)])
+
+        arrivals = self.qn.edge2queue[q2]._arrivals
+        an2 = np.array([ag2.issn == ag.issn for ag in arrivals if isinstance(ag, qt.Agent)])
+
+        self.assertTrue( an1.any() )
+        self.assertTrue( an2.any() )
+
+        net_times   = np.array([q.time for q in self.qn._queues])
+        queue_times = [q.time for q in self.qn.edge2queue]
+        queue_times.sort()
+        while queue_times[-1] == np.infty :
+            tmp = queue_times.pop()
+
+        queue_times.sort(reverse=True)
+
+        self.assertTrue( (queue_times == net_times).all() )
+
+        self.qn.simulate(10000)
+        net_times   = np.array([q.time for q in self.qn._queues])
+        queue_times = [q.time for q in self.qn.edge2queue]
+        queue_times.sort()
+        while queue_times[-1] == np.infty :
+            tmp = queue_times.pop()
+
+        queue_times.sort(reverse=True)
+        self.assertTrue( (queue_times == net_times).all() )
 
 if __name__ == '__main__':
     unittest.main()

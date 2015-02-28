@@ -54,7 +54,8 @@ def _matrix2dict(matrix) :
     for k in range(n) :
         for j in range(n) :
             if matrix[k, j] :
-                adj[k].append(j)
+                for i in range(matrix[k,j]) :
+                    adj[k].append(j)
     
     return adj
 
@@ -286,9 +287,15 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     eT = g.new_edge_property("int")
 
     for u, adj in adjacency.items() :
-        for j, v in enumerate(adj) :
-            e = g.add_edge(u, v)
-            eT[e] = eType[u][j]
+        if is_directed :
+            for j, v in enumerate(adj) :
+                e = g.add_edge(u, v)
+                eT[e] = eType[u][j]
+        else :
+            for j, v in enumerate(adj) :
+                if len(g.edge(u,v,True)) < adj.count(v) :
+                    e = g.add_edge(u, v)
+                    eT[e] = eType[u][j]
 
     g.ep['eType'] = eT
     return g
@@ -561,8 +568,8 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
 
     eType = g.new_edge_property("int")
 
-    for e in g.edges() :
-        eType[e] = eTypes[g.edge_index[e]]
+    for k, e in enumerate(g.edges()) :
+        eType[e] = eTypes[k]
     
     g.ep['eType'] = eType
     return g

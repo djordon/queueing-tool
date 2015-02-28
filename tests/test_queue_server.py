@@ -125,6 +125,42 @@ class TestQueueServers(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
+    def test_ResourceQueue_network(self) :
+
+        nV  = 100
+        ps  = np.random.uniform(0, 5, size=(nV, 2))
+
+        g, pos = gt.geometric_graph(ps, 1)
+        q_cls = {1 : qt.ResourceQueue, 2 : qt.ResourceQueue}
+        q_arg = {1 : {'nServers' : 50}, 2 : {'nServers' : 500}}
+
+        qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg)
+        qn.max_agents = 400000
+        qn.initialize(queues=range(g.num_edges()))
+        qn.simulate(n=50000)
+
+        nServ = {1 : 50, 2 : 500}
+        ans   = np.array([q.nServers != nServ[q.edge[3]] for q in qn.edge2queue])
+        self.assertTrue( ans.any() )
+
+
+    def test_InfoQueue_network(self) :
+
+        nV  = 100
+        ps  = np.random.uniform(0, 5, size=(nV, 2))
+
+        g, pos = gt.geometric_graph(ps, 1)
+        q_cls = {1 : qt.InfoQueue}
+        q_arg = {1 : {'net_size' : g.num_edges()} }
+
+        qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
+        qn.max_agents = 40000
+        qn.initialize(queues=range(g.num_edges()))
+        qn.simulate(n=2000)
+
+        # Finish this
+        self.assertTrue( True )
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -19,7 +19,7 @@ class ResourceAgent(Agent) :
     to that queue by adding increasing the number of servers there by one; the
     ``ResourceAgent`` is then deleted.
     """
-    def __init__(self, issn) :
+    def __init__(self, issn=(0,0)) :
         Agent.__init__(self, issn)
         self._has_resource = False
         self._had_resource = False
@@ -139,8 +139,8 @@ class ResourceQueue(LossQueue) :
                 return QueueServer.next_event(self)
             elif self._arrivals[0]._time < infty :
                 if self._arrivals[0]._has_resource :
-                    new_arrival   = heappop(self._arrivals)
-                    self._current_t = new_arrival._time
+                    arrival   = heappop(self._arrivals)
+                    self._current_t = arrival._time
                     self._nTotal  -= 1
                     self.set_nServers(self.nServers+1)
 
@@ -163,8 +163,8 @@ class ResourceQueue(LossQueue) :
                     self.nBlocked   += 1
                     self._nArrivals += 1
                     self._nTotal    -= 1
-                    new_arrival      = heappop(self._arrivals)
-                    self._current_t  = new_arrival._time
+                    arrival          = heappop(self._arrivals)
+                    self._current_t  = arrival._time
 
                     if self.collect_data :
                         if arrival.issn not in self.data :

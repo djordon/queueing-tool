@@ -34,78 +34,6 @@ def _test_graph(g) :
     return g
 
 
-def osm_edge_types(g) :
-    """A function that takes graphs created using open street maps and formsts
-    them for use with the :class:`.QueueNetwork` class.
-
-    Made specifically for a :class:`~graph_tool.Graph` created using data from
-    `openstreetmaps <www.openstreetmaps.org>`_. Graphs from openstreetmaps
-    sometimes have tags for certain nodes (like the latitude and longitude),
-    or whether a location is an attraction. This function uses some of that
-    information to set a :class:`~graph_tool.Graph`'s ``eType`` and
-    ``edge_length`` edge properties.
-
-    Parameters
-    ----------
-    g : A **str** or a :class:`~graph_tool.Graph`.
-
-    Returns
-    -------
-    :class:`~graph_tool.Graph`
-        Returns the :class:`~graph_tool.Graph` ``g`` with the ``eType`` and
-        ``edge_length`` edge properties.
-
-    Raises
-    ------
-    TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
-        or a :class:`~graph_tool.Graph`\.
-    """
-    g = _test_graph(g)
-
-    g.reindex_edges()
-    vertex_props = set()
-    for key in g.vertex_properties.keys() :
-        vertex_props.add(key)
-
-    edge_props = set()
-    for key in g.edge_properties.keys() :
-        edge_props.add(key)
-
-    has_garage  = 'garage' in vertex_props
-    has_destin  = 'destination' in vertex_props
-    has_light   = 'light' in vertex_props
-    has_egarage = 'garage' in edge_props
-    has_edestin = 'destination' in edge_props
-    has_elight  = 'light' in edge_props
-
-    eType   = g.new_edge_property("int")
-    for v in g.vertices() :
-        if has_garage and g.vp['garage'][v] :
-            e = g.edge(v,v)
-            if isinstance(e, gt.Edge) :
-                eType[e]  = 1
-        if has_destin and g.vp['destination'][v] :
-            e = g.edge(v,v)
-            if isinstance(e, gt.Edge) :
-                eType[e]  = 2
-        if has_light and g.vp['light'][v] :
-            e = g.edge(v,v)
-            if isinstance(e, gt.Edge) :
-                eType[e]  = 3
-
-    for e in g.edges() :
-        if has_egarage and g.ep['garage'][e] :
-            eType[e]  = 1
-        if has_edestin and g.ep['destination'][e] :
-            eType[e]  = 2
-        if has_elight and g.ep['light'][e] :
-            eType[e]  = 3
-
-    g.ep['eType'].a = eType.a + 1
-    return add_edge_lengths(g)
-
-
 def _calculate_distance(latlon1, latlon2) :
     """Calculates the distance between two points on earth.
     """
@@ -234,7 +162,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
 
     if 'eType' not in edge_props :
         ans = graph2dict(g)
-        g   = adjacency2graph(ans[0], adjust=1)
+        g   = adjacency2graph(ans[0], adjust=1, is_directed=g.is_directed())
 
     queues  = _set_queues(g, q_cls, q_arg, 'cap' in vertex_props)
 

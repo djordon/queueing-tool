@@ -71,7 +71,7 @@ def graph2dict(g) :
         More specifically, ``eType[v][k]`` is the edge type of the edge
         ``adj[v][k]``.
     """
-    adj = {int(v) : [int(e.target()) for e in v.out_edges()] for v in g.vertices()}
+    adj = {int(v) : [int(u) for u in v.out_neighbours()] for v in g.vertices()}
     if 'eType' in g.ep :
         eTypes = {}
         for key, value in adj.items() :
@@ -84,9 +84,12 @@ def graph2dict(g) :
     return adj, eTypes
 
 
-def shortest_paths_distances(g) :
+def shortest_paths(g) :
     """Returns the shortest paths between every two vertices in the graph ``g``,
     as well as the total distances along those distances.
+
+    This function assumes an ``edge_length`` edge property is attached to the
+    graph.
 
     Parameters
     ----------
@@ -112,17 +115,15 @@ def shortest_paths_distances(g) :
     g = _test_graph(g)
 
     v_props = set()
-    for key in self.Qn.g.vertex_properties.keys() :
+    for key in g.vertex_properties.keys() :
         v_props = v_props.union([key])
 
     nV    = g.num_vertices()
-    dist  = zeros((nV, nV))
+    dist  = np.zeros((nV, nV))
     short = np.ones( (nV, nV), int)
     spath = np.ones( (nV, nV), int)
 
     if 'dist' not in v_props :        
-        dist  = zeros((nV, nV))
-
         for ve in g.vertices() :
             for we in g.vertices() :
                 v,w  = int(ve), int(we)

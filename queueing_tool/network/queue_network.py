@@ -261,6 +261,10 @@ class QueueNetwork :
                           'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
                           'vertex_color'      : v_pens[k]} for k in range(5)}
 
+        for keys in q_args.keys() :
+            if keys not in q_colors :
+                q_colors[keys] = q_colors[1]
+
         for key, args in q_args.items() :
             if 'colors' not in args :
                 args['colors'] = q_colors[key]
@@ -341,7 +345,7 @@ class QueueNetwork :
     @blocking.setter
     def blocking(self, tmp):
         if not isinstance(tmp, str) :
-            raise TypeError("blocking_type must be a string")
+            raise TypeError("blocking must be a string")
         self._blocking = True if tmp.lower() != 'rs' else False
 
 
@@ -786,12 +790,14 @@ class QueueNetwork :
             if 'geometry' not in kwargs :
                 if 'output_size' in kwargs :
                     kwargs['geometry'] = kwargs['output_size']
+                    del kwargs['output_size']
                 else :
                     kwargs['geometry'] = output_size
         else :
             if 'output_size' not in kwargs :
                 if 'geometry' in kwargs :
                     kwargs['output_size'] = kwargs['geometry']
+                    del kwargs['geometry']
                 else :
                     kwargs['output_size'] = output_size
             
@@ -857,15 +863,15 @@ class QueueNetwork :
         self._update_all_colors()
 
 
-    def show_type(self, n, **kwargs) :
+    def show_type(self, eType, **kwargs) :
         """Draws the network, highlighting queues of a certain type.
 
-        The colored vertices represent self loops of type ``n``. Dark edges
-        represent queues of type ``n``.
+        The colored vertices represent self loops of type ``eType``. Dark edges
+        represent queues of type ``eType``.
 
         Parameters
         ----------
-        n : int
+        eType : int
             The type of vertices and edges to be shown.
         **kwargs
             Any additional parameters to pass to :meth:`.draw`, and
@@ -892,7 +898,7 @@ class QueueNetwork :
         """
         for v in self.g.vertices() :
             e   = self.g.edge(v, v)
-            if isinstance(e, gt.Edge) and self.g.ep['eType'][e] == n :
+            if isinstance(e, gt.Edge) and self.g.ep['eType'][e] == eType :
                 ei  = self.g.edge_index[e]
                 self.g.vp['vertex_fill_color'][v] = self.colors['vertex_highlight']
                 self.g.vp['vertex_color'][v]      = self.edge2queue[ei].colors['vertex_color']
@@ -902,7 +908,7 @@ class QueueNetwork :
 
         for e in self.g.edges() :
             ei = self.g.edge_index[e]
-            if self.g.ep['eType'][e] == n :
+            if self.g.ep['eType'][e] == eType :
                 self.g.ep['edge_color'][e] = self.colors['edge_active']
             else :
                 self.g.ep['edge_color'][e] = self.colors['edge_inactive']
@@ -1012,18 +1018,20 @@ class QueueNetwork :
                     vp['vertex_color'][v] = self.colors['vertex_color']
 
 
-    def _add_departure(self, ei, agent, t) :
-        q   = self.edge2queue[ei]
-        qt  = q._time
-        q._add_departure(agent, t)
-
-        if qt == infty and q._time < infty :
-            self._queues.append(q)
-
-        self._queues.sort(reverse=True)
-
-
     def _add_arrival(self, ei, agent, t=None) :
+        """Used to force an arrival to a queue.
+
+        Parameters
+        ----------
+        ei : int
+            Identifies which queue the agent is going to be added; is the
+            queue's edge index.
+        agent : ``Agent``
+            The agent that is to be added to the queue.
+        t : float (optional)
+            The arrival time of the agent. If not given then it is set to that
+            queue's time-of-next-event (its ``time``\) plus ``1``\.
+        """
         q   = self.edge2queue[ei]
         qt  = q._time
         if t is None :
@@ -1099,7 +1107,7 @@ class QueueNetwork :
                     self._update_graph_colors(qedge=q1.edge)
                     self._prev_edge = q1.edge
 
-                if q2._active and np.sum(self.nAgents) > self.max_agents - 1 :
+                if q2._active and self.max_agents < infty and np.sum(self.nAgents) > self.max_agents - 1 :
                     q2._active = False
 
                 q2.next_event()
@@ -1144,7 +1152,7 @@ class QueueNetwork :
                         bisectSort(self._queues, q2, n-1)
 
         elif event == 1 : # This is an arrival
-            if q1._active and np.sum(self.nAgents) > self.max_agents - 1 :
+            if q1._active and self.max_agents < infty and np.sum(self.nAgents) > self.max_agents - 1 :
                 q1._active = False
 
             q1.next_event()
@@ -1167,8 +1175,9 @@ class QueueNetwork :
             if self._to_disk :
                 pixbuf = self._window.get_pixbuf()
                 pixbuf.savev(self._outdir+'%s.' % (self._count) + self._fmt, self._fmt, [], [])
-                if self._count >= self._max_count :
+                if self._count > self._max_count - 1 :
                     Gtk.main_quit()
+                    return False
                 self._count += 1
 
             return True
@@ -1425,7 +1434,6 @@ class QueueNetwork :
         net.nE              = copy.copy(self.nE)
         net.nAgents         = copy.copy(self.nAgents)
         net.nEvents         = copy.copy(self.nEvents)
-        net.shortest_path   = copy.copy(self.shortest_path)
         net._initialized    = copy.copy(self._initialized)
         net._prev_edge      = copy.copy(self._prev_edge)
         net._to_animate     = copy.copy(self._to_animate)

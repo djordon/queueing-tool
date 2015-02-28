@@ -452,20 +452,6 @@ class QueueServer :
             self._time = self._arrivals[0]._time
 
 
-    def _add_departure(self, agent, t) :
-        self.nSystem    += 1
-        self._nArrivals += 1
-
-        if self.nSystem <= self.nServers :
-            agent._time = self.service_f(t)
-            heappush(self._departures, agent)
-        else :
-            self._queue.append(agent)
-
-        if self._arrivals[0]._time >= self._departures[0]._time :
-            self._time = self._departures[0]._time
-
-
     def delay_service(self, t=None) :
         """Adds an extra service time to the next departing agent's service
         time.
@@ -937,17 +923,12 @@ class NullQueue(QueueServer) :
     def nQueued(self) :
         return 0
 
-    def _add_arrival(self, *args, **kwargs) :
+    def _add_arrival(self, agent) :
         if self.collect_data :
-            if len(args) > 0 :
-                arrival = args[0]
-                if arrival.issn not in self.data :
-                    self.data[arrival.issn] = [[arrival._time, 0, 0, 0, 0]]
-                else :
-                    self.data[arrival.issn].append([arrival._time, 0, 0, 0, 0])
-
-    def _add_departure(self, *args, **kwargs) :
-        pass
+            if agent.issn not in self.data :
+                self.data[agent.issn] = [[agent._time, 0, 0, 0, 0]]
+            else :
+                self.data[agent.issn].append([agent._time, 0, 0, 0, 0])
 
     def delay_service(self) :
         pass

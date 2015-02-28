@@ -1,6 +1,7 @@
 from numpy          import infty, argmin
 from numpy.random   import uniform
 from .choice        import _choice
+import copy
 
 class Agent :
     """The base class for an agent.
