@@ -41,7 +41,7 @@ for v in g.vertices() :
     elif vi == 1 :
         pos[v] = [0, -0.125]
     else :
-        pos[v] = [-0.5 + (vi - 2) / 20, 0]
+        pos[v] = [-0.5 + (vi - 2.0) / 20, 0]
 
 # List the maximum number of agents from the default of 1000 to infinity
 qn.max_agents = np.infty

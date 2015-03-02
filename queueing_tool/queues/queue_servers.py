@@ -63,7 +63,7 @@ def poisson_random_measure(rate, rate_max, t) :
            Mathematics. Vol. 261. Springer, New York, 2011.\
            :doi:`10.1007/978-0-387-87859-1`
     """
-    scale = 1 / rate_max
+    scale = 1.0 / rate_max
     t     = t + exponential(scale)
     while rate_max * uniform() > rate(t) :
         t   = t + exponential(scale)

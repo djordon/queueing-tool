@@ -322,26 +322,33 @@ class TestQueueNetwork(unittest.TestCase) :
     def test_QueueNetwork_drawing_animation(self) :
 
         ct  = np.random.randint(2,12)
-        ans = np.zeros(ct+7, bool)
-        self.qn.animate(out='test', count=ct, output_size=(200,200))
+        ans = np.zeros(ct+4, bool)
+        self.qn.animate(out='test', n=ct, output_size=(200,200))
 
         for k in range(ct+1) :
             ans[k] = os.path.isfile('test%s.png' % (k))
             if ans[k] :
                 os.remove('test%s.png' % (k))
 
-        for k in range(1, 5) :
+        for k in range(4) :
             ans[ct+k] = not os.path.isfile('test%s.png' % (ct+k))
+
+        self.assertTrue( ans.all() )
+
+
+    def test_QueueNetwork_show_type_active(self) :
+
+        ans = np.zeros(2, bool)
 
         self.qn.show_type(2, output='types.png', geometry=(200,200))
         self.qn.show_active(output='active.png', output_size=(200,200))
 
-        ans[ct+5] = os.path.isfile('types.png')
-        ans[ct+6] = os.path.isfile('active.png')
+        ans[0] = os.path.isfile('types.png')
+        ans[1] = os.path.isfile('active.png')
 
-        if ans[ct+5] :
+        if ans[0] :
             os.remove('types.png')
-        if ans[ct+6] :
+        if ans[1] :
             os.remove('active.png')
 
         self.assertTrue( ans.all() )
@@ -392,6 +399,7 @@ class TestQueueNetwork(unittest.TestCase) :
 
         queue_times.sort(reverse=True)
         self.assertTrue( (queue_times == net_times).all() )
+
 
 if __name__ == '__main__':
     unittest.main()

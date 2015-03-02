@@ -739,9 +739,9 @@ class QueueNetwork :
         that are automatically set to the graph when a ``QueueNetwork``
         instance is created. These property maps include:
 
-            * ``vertex_color``, ``vertex_fill_color``, ``vertex_size``,
+          * ``vertex_color``, ``vertex_fill_color``, ``vertex_size``,
               ``vertex_pen_width``, ``pos``.
-            * ``edge_color``, ``edge_control_points``, ``edge_marker_size``,
+          * ``edge_color``, ``edge_control_points``, ``edge_marker_size``,
               ``edge_pen_width``.
 
         Each of these properties are used by ``draw`` to style the canvas.
@@ -751,6 +751,9 @@ class QueueNetwork :
 
         If any of these parameters are supplied as arguments to ``draw`` then
         the passed arguments are used over the defaults.
+
+        Drawing output may differ between Python 2 and Python 3. Use Python 3
+        for with better output.
 
         Examples
         --------
@@ -784,38 +787,8 @@ class QueueNetwork :
         if update_colors :
             self._update_all_colors()
 
-        output_size = (700, 700)
-
-        if 'output' not in kwargs :
-            if 'geometry' not in kwargs :
-                if 'output_size' in kwargs :
-                    kwargs['geometry'] = kwargs['output_size']
-                    del kwargs['output_size']
-                else :
-                    kwargs['geometry'] = output_size
-        else :
-            if 'output_size' not in kwargs :
-                if 'geometry' in kwargs :
-                    kwargs['output_size'] = kwargs['geometry']
-                    del kwargs['geometry']
-                else :
-                    kwargs['output_size'] = output_size
-            
-        vertex_params = set(['vertex_color', 'vertex_fill_color', 'pos',
-                             'vertex_size', 'vertex_pen_width'])
-
-        edge_params   = set(['edge_color', 'edge_control_points',
-                             'edge_marker_size', 'edge_pen_width'])
-
-        for param in vertex_params :
-            if param not in kwargs :
-                kwargs[param] = self.g.vp[param]
-
-        for param in edge_params :
-            if param not in kwargs :
-                kwargs[param] = self.g.ep[param]
-
-        ans = gt.graph_draw(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
+        kwargs = self._update_kwargs(kwargs, out='output' in kwargs, update_props=True)
+        ans    = gt.graph_draw(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
 
 
     def show_active(self, **kwargs) :
@@ -1168,22 +1141,20 @@ class QueueNetwork :
                 else :
                     bisectSort(self._queues, q1, n-1 )
 
-        if self._to_animate :
-            self._window.graph.regenerate_surface(lazy=False)
-            self._window.graph.queue_draw()
 
+        if self._to_animate :
             if self._to_disk :
-                pixbuf = self._window.get_pixbuf()
-                pixbuf.savev(self._outdir+'%s.' % (self._count) + self._fmt, self._fmt, [], [])
-                if self._count > self._max_count - 1 :
-                    Gtk.main_quit()
-                    return False
+                self._kwargs['output'] = self._outdir + '%s.' % (self._count) + self._fmt
+                self.draw(update_colors=False, **self._kwargs)
                 self._count += 1
+            else :
+                self._window.graph.regenerate_surface(lazy=False)
+                self._window.graph.queue_draw()
 
             return True
 
 
-    def animate(self, out=None, count=10, **kwargs) :
+    def animate(self, out=None, n=10, t=None, **kwargs) :
         """Animates the network as it's simulating.
 
         The animations can be saved to disk or view in interactive mode.
@@ -1195,9 +1166,12 @@ class QueueNetwork :
             The location where the frames for the images will be saved. If this
             parameter is not given, then the animation is shown in interactive
             mode.
-        count : int (optional, the default is 10)
+        n : int (optional, the default is 10)
             Indicates the number of frames to save to disk. This parameter is
-            only used if ``out_dir`` is passed.
+            only used if ``out`` is passed.
+        t : float (optional)
+            The amount of simulation time to simulate forward. If given, and
+            ``out`` is given, ``t`` is used instead of ``n``.
         **kwargs :
             This method calls :class:`~graph_tool.draw.GraphWindow`, ``kwargs``
             allows you to specify any extra parameters to pass to it.
@@ -1222,6 +1196,9 @@ class QueueNetwork :
 
         See the documentation of :func:`~graph_tool.draw.graph_draw` for a 
         more on the documentation of :class:`~graph_tool.draw.GraphWindow`
+
+        Drawing output may differ between Python 2 and Python 3. Use Python 3
+        for with better output.
 
         Raises
         ------
@@ -1250,59 +1227,35 @@ class QueueNetwork :
         """
         if not self._initialized :
             raise RuntimeError("Network has not been initialized. Call 'initialize()' first.")
-
-        output_size = (700, 700)
-
-        if out is None :
-            if 'geometry' not in kwargs :
-                if 'output_size' in kwargs :
-                    kwargs['geometry'] = kwargs['output_size']
-                    del kwargs['output_size']
-                else :
-                    kwargs['geometry'] = output_size
-        else :
-            if 'geometry' in kwargs :
-                output_size = kwargs['geometry']
-                del kwargs['geometry']
-            if 'output_size' in kwargs :
-                output_size = kwargs['output_size']
-                del kwargs['output_size']
             
-        vertex_params = set(['vertex_color', 'vertex_fill_color', 'vertex_size',
-                             'vertex_pen_width', 'pos'])
-
-        edge_params   = set(['edge_color', 'edge_control_points',
-                             'edge_marker_size', 'edge_pen_width'])
-
-        for param in vertex_params :
-            if param not in kwargs :
-                kwargs[param] = self.g.vp[param]
-
-        for param in edge_params :
-            if param not in kwargs :
-                kwargs[param] = self.g.ep[param]
-
         self._to_animate = True
         self._update_all_colors()
 
         if out is None :
+            kwargs = self._update_kwargs(kwargs, out=False, update_props=True)
+
             self._to_disk = False
             self._window  = gt.GraphWindow(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
-        else :
-            self._fmt       = kwargs['fmt'] if 'fmt' in kwargs else 'png'
-            self._count     = 0
-            self._max_count = count
-            self._to_disk   = True
-            self._outdir    = out
-            self._window    = Gtk.OffscreenWindow()
-            self._window.set_default_size(output_size[0], output_size[1])
-            self._window.graph = gt.GraphWidget(self.g, bg_color=self.colors['bg_color'], **kwargs)
-            self._window.add(self._window.graph)
 
-        cid = GObject.idle_add(self._simulate_next_event)
-        self._window.connect("delete_event", Gtk.main_quit)
-        self._window.show_all()
-        Gtk.main()
+            cid = GObject.idle_add(self._simulate_next_event)
+            self._window.connect("delete_event", Gtk.main_quit)
+            self._window.show_all()
+            Gtk.main()
+        else :
+            kwargs = self._update_kwargs(kwargs, out=True, update_props=False)
+            self._fmt     = kwargs['fmt'] if 'fmt' in kwargs else 'png'
+            self._count   = 0
+            self._to_disk = True
+            self._outdir  = out
+            self._kwargs  = kwargs
+
+            if t is None :
+                for k in range(n) :
+                    self._simulate_next_event(slow=True)
+            else :
+                now = self.t
+                while self.t < now + t :
+                    self._simulate_next_event(slow=True)
 
         self._to_animate = False
         self._to_disk    = False
@@ -1366,6 +1319,39 @@ class QueueNetwork :
             while self.t < now + t :
                 self._simulate_next_event(slow=False)
 
+
+    def _update_kwargs(self, kwargs, out=False, update_props=True) :
+
+        output_size = (700, 700)
+
+        arg1 = 'geometry' if out else 'output_size'
+        arg2 = 'output_size' if out else 'geometry'
+
+        if arg1 in kwargs :
+            if arg2 not in kwargs :
+                kwargs[arg2] = kwargs[arg1]
+
+            del kwargs[arg1]
+
+        if arg2 not in kwargs :
+            kwargs[arg2] = output_size
+            
+        if update_props :
+            vertex_props = set(['vertex_color', 'vertex_fill_color', 'vertex_size',
+                                'vertex_pen_width', 'pos'])
+
+            edge_props   = set(['edge_color', 'edge_control_points',
+                                'edge_marker_size', 'edge_pen_width'])
+
+            for param in vertex_props :
+                if param not in kwargs :
+                    kwargs[param] = self.g.vp[param]
+
+            for param in edge_props :
+                if param not in kwargs :
+                    kwargs[param] = self.g.ep[param]
+
+        return kwargs
 
 
     def reset_colors(self) :
