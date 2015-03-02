@@ -15,7 +15,7 @@ from gi.repository import Gtk, GObject
 
 EPS = np.float64(1e-10)
 
-class QueueNetwork :
+class QueueNetwork(object) :
     """A class that simulates a network of queues.
 
     Takes a graph-tool :class:`~graph_tool.Graph` and places queues on each
@@ -1060,7 +1060,7 @@ class QueueNetwork :
             q2  = self.edge2queue[e2]
             q2t = q2._time
 
-            if q2.at_capacity() :
+            if q2.at_capacity() and e2 != e1 :
                 q2.nBlocked += 1
                 q1._departures[0].blocked += 1
                 if self._blocking :

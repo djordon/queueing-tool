@@ -3,7 +3,7 @@ from numpy.random   import uniform
 from .choice        import _choice
 import copy
 
-class Agent :
+class Agent(object) :
     """The base class for an agent.
 
     ``Agent``\s are the objects that move throughout the network. ``Agents``
@@ -37,7 +37,7 @@ class Agent :
         self._time    = 0         # agents arrival or departure time
 
     def __repr__(self) :
-        return "Agent. edge: %s, time: %s" % (self.issn, self._time)
+        return "Agent; issn:{0}. time: {1}".format(self.issn, round(self._time, 3))
 
     def __lt__(a, b) :
         return a._time < b._time
@@ -127,7 +127,7 @@ class GreedyAgent(Agent) :
         Agent.__init__(self, issn)
 
     def __repr__(self) :
-        return "GreedyAgent. edge: %s, time: %s" % (self.issn, self._time)
+        return "GreedyAgent; issn:{0}. time: {1}".format(self.issn, round(self._time, 3))
 
     def desired_destination(self, network, edge) :
         """Returns the agents next destination given their current location on
@@ -157,7 +157,7 @@ class GreedyAgent(Agent) :
         return adjacent_edges[d]
 
 
-class InftyAgent :
+class InftyAgent(object) :
     """An special agent that only operates within the :class:`.QueueServer` class.
 
     This agent never interacts with the :class:`.QueueNetwork`.

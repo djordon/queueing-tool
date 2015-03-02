@@ -71,7 +71,7 @@ def poisson_random_measure(rate, rate_max, t) :
 
 
 
-class QueueServer :
+class QueueServer(object) :
     """The base queue-server class.
 
     Built to work with the :class:`.QueueNetwork` class, but can stand alone
@@ -320,11 +320,11 @@ class QueueServer :
         pass
 
     def __repr__(self) :
-        my_str = "QueueServer: %s. servers: %s, queued: %s, arrivals: %s, " + \
-                 "departures: %s, next time: %s"
-        tmp =  my_str % (self.edge[2], self.nServers, len(self._queue), self.nArrivals,\
-                         self.nDepartures, np.round(self._time, 3))
-        return tmp
+        my_str = "QueueServer:{0}. Servers: {1}, queued: {2}, arrivals: {3}, " + \
+                 "departures: {4}, next time: {5}"
+        arg = (self.edge[2], self.nServers, len(self._queue), self.nArrivals,\
+               self.nDepartures, round(self._time, 3))
+        return my_str.format(*arg)
 
     def __lt__(a, b) :
         return a._time < b._time
@@ -801,11 +801,11 @@ class LossQueue(QueueServer) :
 
 
     def __repr__(self) :
-        tmp = "LossQueue: %s. servers: %s, queued: %s, arrivals: %s, departures: " +\
-              "%s, next time: %s" \
-            %  (self.edge[2], self.nServers, len(self._queue), self.nArrivals, \
-                self.nDepartures, np.round(self._time, 3))
-        return tmp
+        tmp = "LossQueue:{0}. Servers: {1}, queued: {2}, arrivals: {3}, " +\
+              "departures: {4}, next time: {5}"
+        arg = (self.edge[2], self.nServers, len(self._queue), self.nArrivals,\
+               self.nDepartures, round(self._time, 3))
+        return tmp.format(*arg)
 
 
     def at_capacity(self) :
@@ -912,7 +912,7 @@ class NullQueue(QueueServer) :
         self.nServers = 0
 
     def __repr__(self) :
-        return "NullQueue: %s." %  (self.edge[2])
+        return "NullQueue:{0}.".format(self.edge[2])
 
     def initialize(self, *args, **kwargs) :
         pass
@@ -923,8 +923,8 @@ class NullQueue(QueueServer) :
     def nQueued(self) :
         return 0
 
-    def _add_arrival(self, agent) :
-        if self.collect_data :
+    def _add_arrival(self, agent=None) :
+        if self.collect_data and agent is not None :
             if agent.issn not in self.data :
                 self.data[agent.issn] = [[agent._time, 0, 0, 0, 0]]
             else :

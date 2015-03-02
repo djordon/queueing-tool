@@ -19,6 +19,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.qn.clear()
         self.qn.initialize(50)
 
+
     def test_QueueNetwork_sorting(self) :
 
         nEvents = 1000
@@ -104,6 +105,19 @@ class TestQueueNetwork(unittest.TestCase) :
                 na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q._queue) - 2
 
         self.assertTrue( ans.all() )
+
+
+    def test_QueueNetwork_simulate(self) :
+
+        g  = qt.generate_pagerank_graph(50)
+        qn = qt.QueueNetwork(g)
+        qn.max_agents = 2000
+        qn.initialize(50)
+        t0 = np.random.uniform(30, 50)
+        qn.max_agents = 2000
+        qn.simulate(t=t0)
+
+        self.assertTrue( qn.time > t0 )
 
 
     def test_QueueNetwork_initialization(self) :
@@ -222,6 +236,12 @@ class TestQueueNetwork(unittest.TestCase) :
 
         self.assertTrue( (tra == trans).all() )
 
+        mat = qt.generate_transition_matrix(self.g)
+        self.qn.set_transitions(mat)
+        tra = self.qn.transitions()
+
+        self.assertTrue( np.allclose(tra, mat) )
+
 
     def test_QueueNetwork_data_agents(self) :
 
@@ -245,6 +265,31 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( (b == dat0[dat0[:,1] > 0, 1]).all() )
         self.assertTrue( (c == dat0[dat0[:,2] > 0, 2]).all() )
         self.assertTrue( (dat0[1:, 0] == dat0[dat0[:,2] > 0, 2]).all() )
+
+
+    def test_QueueNetwork_data_queues(self) :
+
+        nV  = 50
+        ps  = np.random.uniform(0, 2, size=(nV, 2))
+
+        g, pos = gt.geometric_graph(ps, 1)
+        g = qt.set_types_random(g, pTypes={1 : 1})
+        q_cls = {1 : qt.QueueServer}
+
+        qn  = qt.QueueNetwork(g, q_classes=q_cls, seed=17)
+        k   = np.random.randint(10000, 20000)
+
+        qn.max_agents = 4000
+        qn.initialize(queues=range(qn.nE))
+        qn.collect_data()
+        qn.simulate(n=k)
+
+        data = qn.data_queues()
+        self.assertTrue( data.shape == (k, 6) )
+        qn.clear_data()
+
+        ans = np.array([q.data == {} for q in qn.edge2queue])
+        self.assertTrue( ans.all() )
 
 
     def test_QueueNetwork_greedy_routing(self) :
@@ -287,6 +332,26 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
+    def test_QueueNetwork_blocking(self) :
+
+        nV  = 100
+        ps  = np.random.uniform(0, 5, size=(nV, 2))
+
+        g, pos = gt.geometric_graph(ps, 1)
+        g = qt.set_types_random(g, pTypes={k : 1.0/6 for k in range(1,7)})
+        q_cls = {1 : qt.LossQueue, 2 : qt.QueueServer, 3 : qt.InfoQueue, 
+                 4 : qt.ResourceQueue, 5 : qt.ResourceQueue, 6 : qt.QueueServer}
+        q_arg = {3 : {'net_size' : g.num_edges()}, 4 : {'nServers' : 500}, 6 : {'AgentClass' : qt.GreedyAgent}}
+
+        qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
+        qn.blocking = 'RS'
+        self.assertTrue(qn.blocking == 'RS')
+        self.assertTrue(qn._blocking == False)
+
+        qn.clear()
+        self.assertTrue( qn._initialized == False )
+
+
     def test_QueueNetwork_copy(self) :
 
         nV  = 100
@@ -321,7 +386,7 @@ class TestQueueNetwork(unittest.TestCase) :
 
     def test_QueueNetwork_drawing_animation(self) :
 
-        ct  = np.random.randint(25, 52)
+        ct  = np.random.randint(15, 22)
         ans = np.zeros(ct+4, bool)
         self.qn.animate(out='test', n=ct, output_size=(200,200))
 

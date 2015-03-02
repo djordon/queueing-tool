@@ -1,4 +1,4 @@
-class UnionFind :
+class UnionFind(object) :
     """The union-find data structure with union by rank and path compression.
 
     The UnionFind data structure is a collection of objects that supports

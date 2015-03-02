@@ -25,7 +25,7 @@ class ResourceAgent(Agent) :
         self._had_resource = False
 
     def __repr__(self) :
-        return "ResourceAgent. issn: %s, time: %s" % (self.issn, self._time)
+        return "ResourceAgent; issn:{0}. Time: {1}".format(self.issn, round(self._time, 3))
 
 
     def queue_action(self, queue, *args, **kwargs) :
@@ -103,11 +103,11 @@ class ResourceQueue(LossQueue) :
 
 
     def __repr__(self) :
-        my_str = "ResourceQueue: %s. servers: %s, max servers: %s, " + \
-                 "arrivals: %s, departures: %s, next time: %s"
-        tmp =  my_str % (self.edge[2], self.nServers, self.max_servers,\
-                         self.nArrivals, self.nDepartures, np.round(self._time, 3))
-        return tmp
+        my_str = "ResourceQueue:{0}. Servers: {1}, max servers: {2}, " + \
+                 "arrivals: {3}, departures: {4}, next time: {5}"
+        arg = (self.edge[2], self.nServers, self.max_servers,\
+               self.nArrivals, self.nDepartures, round(self._time, 3))
+        return my_str.format(*arg)
 
 
     def set_nServers(self, n) :
@@ -245,7 +245,7 @@ class InfoAgent(Agent) :
         self.net_data = np.ones((net_size, 3)) * -1
 
     def __repr__(self) :
-        return "InfoAgent. issn: %s, time: %s" % (self.issn, self._time)
+        return "InfoAgent; issn:{0}. Time: {1}".format(self.issn, round(self._time, 3))
 
 
     def add_loss(self, qedge, *args, **kwargs) : # qedge[2] is the edge_index of the queue
@@ -307,11 +307,11 @@ class InfoQueue(LossQueue) :
         self.networking(net_size)
 
     def __repr__(self) :
-        my_str = "InfoQueue: %s. servers: %s, queued: %s, " + \
-                 "arrivals: %s, departures: %s, next time: %s"
-        tmp =  my_str % (self.edge[2], self.nServers, len(self._queue),\
-                         self.nArrivals, self.nDepartures, np.round(self._time, 3))
-        return tmp
+        my_str = "InfoQueue:{0}. Servers: {1}, queued: {2}, " + \
+                 "arrivals: {3}, departures: {4}, next time: {5}"
+        arg =  my_str % (self.edge[2], self.nServers, len(self._queue),\
+                         self.nArrivals, self.nDepartures, round(self._time, 3))
+        return my_str.format(*arg)
 
 
     def networking(self, network_size) :
@@ -348,11 +348,6 @@ class InfoQueue(LossQueue) :
 
         if self._arrivals[0]._time < self._departures[0]._time :
             self._time = self._arrivals[0]._time
-
-
-    def _add_departure(self, agent, t) :
-        self.extract_information(agent)
-        LossQueue._add_departure(self, agent, t)
 
 
     def next_event(self) :

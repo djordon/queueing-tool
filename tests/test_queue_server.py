@@ -2,6 +2,7 @@ import numpy as np
 import queueing_tool  as qt
 import graph_tool.all as gt
 import unittest
+import os
 
 
 class TestQueueServers(unittest.TestCase) :
@@ -144,6 +145,34 @@ class TestQueueServers(unittest.TestCase) :
         self.assertTrue( ans.any() )
 
 
+    def test_ResourceQueue_animation(self) :
+
+        nV  = 100
+        ps  = np.random.uniform(0, 5, size=(nV, 2))
+
+        g, pos = gt.geometric_graph(ps, 1)
+        q_cls = {1 : qt.ResourceQueue, 2 : qt.ResourceQueue}
+        q_arg = {1 : {'nServers' : 50}, 2 : {'nServers' : 500}}
+
+        qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg)
+        qn.max_agents = 400000
+        qn.initialize(queues=range(g.num_edges()))
+
+        ct  = np.random.randint(25, 52)
+        ans = np.zeros(ct+4, bool)
+        qn.animate(out='test', n=ct, output_size=(200,200))
+
+        for k in range(ct+1) :
+            ans[k] = os.path.isfile('test%s.png' % (k))
+            if ans[k] :
+                os.remove('test%s.png' % (k))
+
+        for k in range(4) :
+            ans[ct+k] = not os.path.isfile('test%s.png' % (ct+k))
+
+        self.assertTrue( ans.all() )
+
+
     def test_InfoQueue_network(self) :
 
         nV  = 100
@@ -160,6 +189,22 @@ class TestQueueServers(unittest.TestCase) :
 
         # Finish this
         self.assertTrue( True )
+
+
+    def test_Agent_compare(self) :
+
+        a0 = qt.Agent()
+        a1 = qt.Agent()
+        self.assertTrue( a0 == a1 )
+
+        a1._time = 10
+        self.assertTrue( a0 <= a1 )
+        self.assertTrue( a0 <  a1 )
+
+        a0._time = 20
+        self.assertTrue( a0 >= a1 )
+        self.assertTrue( a0 >  a1 )
+
 
 
 if __name__ == '__main__':
