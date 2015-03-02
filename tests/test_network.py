@@ -321,7 +321,7 @@ class TestQueueNetwork(unittest.TestCase) :
 
     def test_QueueNetwork_drawing_animation(self) :
 
-        ct  = np.random.randint(2,12)
+        ct  = np.random.randint(25, 52)
         ans = np.zeros(ct+4, bool)
         self.qn.animate(out='test', n=ct, output_size=(200,200))
 

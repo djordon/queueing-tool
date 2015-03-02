@@ -33,6 +33,14 @@ class TestGraphFunctions(unittest.TestCase) :
         self.assertTrue('edge_length' in edge_props)
 
 
+    def test_generate_transition(self) :
+        g   = qt.generate_random_graph(20)
+        mat = qt.generate_transition_matrix(g)
+
+        ans = np.sum(mat, axis=1)
+        self.assertTrue( np.allclose(ans, 1) )
+
+
     def test_adjacency2graph(self) :
 
         # Test adjacency argument using ndarray work
@@ -57,14 +65,14 @@ class TestGraphFunctions(unittest.TestCase) :
 
         # Test adjacency argument types dict
         adj = {0 : 1, 1 : [2, 3]}
-        eTy = {0 : 5, 1 : [9, 14]}
+        eTy = [5, [9, 14]]
         g   = qt.adjacency2graph(adj, eType=eTy, adjust=1)
         ans = qt.graph2dict(g)
         self.assertTrue(ans[1] == {0 : [5], 1 : [0, 0], 2 : [], 3 : []})
 
         # Test adjacency argument types list
         adj = [1, [2, 3]]
-        eTy = {0 : 5, 1 : [9, 14]}
+        eTy = [[5], [9, 14]]
         g   = qt.adjacency2graph(adj, eType=eTy, adjust=1)
         ans = qt.graph2dict(g)
         self.assertTrue(ans[1] == {0 : [5], 1 : [0, 0], 2 : [], 3 : []})
@@ -129,7 +137,7 @@ class TestGraphFunctions(unittest.TestCase) :
 
     def test_shortest_path(self) :
 
-        nV  = 14
+        nV  = 30
         ps  = np.random.uniform(0, 2, size=(nV, 2))
 
         g, pos = gt.geometric_graph(ps, 1)

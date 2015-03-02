@@ -15,6 +15,6 @@ install:
   - pip install -e .
   - pip install coveralls
 script:
-  - nosetests --with-coverage --cover-package=queueing_tool
+  - nosetests --with-coverage --cover-package=queueing_tool -v
 after_success:
   - coveralls
