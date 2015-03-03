@@ -2,6 +2,8 @@ include README
 include VERSION
 include LICENSE
 include MANIFEST.in
+include tests/test_*.py
+include examples/*.py
 include queueing_tool/__init__.py
 include queueing_tool/network/*.py
 include queueing_tool/network/sorting.pyx

@@ -20,9 +20,9 @@ Features
 Installation
 ------------
 
-**Prerequisites:** Queueing-tool runs on Python 2.7, 3.2, 3.3, and 3.4. It requires [graph-tool][] and [numpy][]. 
+**Prerequisites:** Queueing-tool runs on Python 2.7 and 3.4 and it requires [graph-tool][] and [numpy][]. It should work on Python 3.2 and 3.3 as well but it has not been tested in those environments.
 
-**Platforms**: Queueing tool should work on Windows and any unix-like platform such as Linux or Mac OS X. The developers of [numpy][2] have compiled binary packages for Windows, Mac OS X, and several other unix-like operating systems, while the developers of [graph-tool][1] have binaries for Mac OS X and several linux distributions but not Windows.
+**Platforms**: Queueing tool should work on Windows and any unix-like platform such as Linux or Mac OS X. The developers of [numpy][2] have compiled binary packages for Windows, Mac OS X, and several other unix-like operating systems, while the developers of [graph-tool][1] have made binaries for Mac OS X and several linux distributions but not Windows.
 
 **Manual installation**: Download the latest release from github and do the the following
 
