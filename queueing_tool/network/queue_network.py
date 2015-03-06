@@ -479,10 +479,11 @@ class QueueNetwork(object) :
         ------
         RuntimeError
             A :exc:`.RuntimeError` is raised if: the keys in the :class:`.dict`
-            don't match with a vertex index in the graph; or the sum of the
-            transition probabilities out of a vertex is not 1 (for non-terminal
-            edges); or if the a :class:`~numpy.ndarray` is passed with the
-            wrong shape, must be (``nVertices``, ``nVertices``).
+            don't match with a vertex index in the graph; or if the
+            :class:`~numpy.ndarray` is passed with the wrong shape, must be
+            (``nVertices``, ``nVertices``); or the values passed are not
+            probabilities (for each vertex they are positive and sum to 1);
+
 
         Examples
         --------
@@ -515,6 +516,8 @@ class QueueNetwork(object) :
                     raise RuntimeError("One of the keys don't correspond to a vertex.")
                 elif len(self.out_edges[key]) > 0 and not np.isclose(np.sum(value), 1) :
                     raise RuntimeError("Sum of transition probabilities at a vertex was not 1.")
+                elif (np.array(value) < 0).any() :
+                    raise RuntimeError("Some transition probabilities were negative.")
 
                 if len(value) == self.nV :
                     self._route_probs[key] = []
@@ -532,6 +535,8 @@ class QueueNetwork(object) :
                 raise RuntimeError("Matrix is the wrong shape, should be %s x %s." % (self.nV, self.nV))
             elif not np.allclose(np.sum(mat[non_terminal,:], axis=1), 1) :
                 raise RuntimeError("Sum of transition probabilities at a vertex was not 1.")
+            elif (mat < 0).any() :
+                raise RuntimeError("Some transition probabilities were negative.")
 
             for k in range(self.nV) :
                 self._route_probs[k] = []

@@ -155,7 +155,7 @@ choose the exponential distribution:
 
 .. doctest ::
 
-    >>> ser_f = lambda t: t + np.random.exponential(0.2 / 2.1 )
+    >>> ser_f = lambda t: t + np.random.exponential(0.2 / 2.1)
 
 Now is time to put this all together to make out queueing network; we do this
 with the following:
@@ -185,7 +185,7 @@ The default layout was a little hard on the eyes so I changed it a little:
     >>>     elif vi == 1 :
     >>>         pos[v] = [0, -0.125]
     >>>     else :
-    >>>         pos[v] = [-0.5 + (vi - 2) / 20, 0]
+    >>>         pos[v] = [-0.5 + (vi - 2.0) / 20, 0]
 
 To view the model (using this layout), do the following:
 
