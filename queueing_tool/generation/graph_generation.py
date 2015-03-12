@@ -54,8 +54,7 @@ def _matrix2dict(matrix) :
     for k in range(n) :
         for j in range(n) :
             if matrix[k, j] :
-                for i in range(matrix[k,j]) :
-                    adj[k].append(j)
+                adj[k].extend([j for i in range(int(matrix[k,j]))])
     
     return adj
 
@@ -104,8 +103,6 @@ def _list2dict(adj_list) :
 
 def _other2dict(adj_dict, other) :
     other_dict = {}
-    if isinstance(other, np.ndarray) :
-        other = _matrix2dict(other)
 
     if isinstance(other, dict) :
         for k, value in adj_dict.items() :
@@ -119,6 +116,11 @@ def _other2dict(adj_dict, other) :
                 other_dict[k] = other[k]
             else :
                 other_dict[k] = []
+    elif isinstance(other, np.ndarray) :
+        other_dict = copy.deepcopy(adj_dict)
+        for k, value in adj_dict.items() :
+            for i, j in enumerate(value) :
+                other_dict[k][i] = other[k, j]
     else :
         raise TypeError('eType must by either a dict, list, or numpy.ndarray')
 

@@ -793,7 +793,10 @@ class QueueNetwork(object) :
             self._update_all_colors()
 
         kwargs = self._update_kwargs(kwargs, out='output' in kwargs, update_props=True)
-        ans    = gt.graph_draw(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
+        if 'bg_color' in kwargs :
+            ans = gt.graph_draw(g=self.g, **kwargs)
+        else :
+            ans = gt.graph_draw(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
 
 
     def show_active(self, **kwargs) :

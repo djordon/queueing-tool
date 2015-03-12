@@ -67,9 +67,10 @@ def graph2dict(g) :
         connected to ``v`` by an edge.
     eTypes : :class:`.dict` or ``None``
         A dictionary where a key is the vertex index for a vertex ``v`` and the
-        values are :class:`.list`\s of each adjacent edge's edge type.
-        More specifically, ``eType[v][k]`` is the edge type of the edge
-        ``adj[v][k]``.
+        values are :class:`.list`\s of each adjacent edge's edge type. More
+        specifically, ``eType[v][k]`` is the edge type of the edge
+        ``adj[v][k]``. This dictionary is returned whenever the ``eType`` edge
+        property is in the graph, otherwise ``None`` is returned.
     """
     adj = {int(v) : [int(u) for u in v.out_neighbours()] for v in g.vertices()}
     if 'eType' in g.ep :
