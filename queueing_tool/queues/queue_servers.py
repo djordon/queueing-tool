@@ -282,42 +282,19 @@ class QueueServer(object) :
     @property
     def active(self):
         return self._active
-    @active.deleter
-    def active(self): 
-        pass
-    @active.setter
-    def active(self, tmp): 
-        pass
 
     @property
     def time(self):
         return self._time
-    @time.deleter
-    def time(self): 
-        pass
-    @time.setter
-    def time(self, tmp): 
-        pass
 
     @property
     def current_time(self):
         return self._current_t
-    @current_time.deleter
-    def current_time(self): 
-        pass
-    @current_time.setter
-    def current_time(self, tmp): 
-        pass
 
     @property
     def nArrivals(self):
         return [self._nArrivals, self._oArrivals]
-    @nArrivals.deleter
-    def nArrivals(self): 
-        pass
-    @nArrivals.setter
-    def nArrivals(self, tmp): 
-        pass
+
 
     def __repr__(self) :
         my_str = "QueueServer:{0}. Servers: {1}, queued: {2}, arrivals: {3}, " + \

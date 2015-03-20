@@ -53,6 +53,27 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
+    def test_QueueNetwork_sorting2(self) :
+
+        nEvents = 100
+        ans = np.zeros(nEvents, bool)
+        self.qn.clear()
+        self.qn.initialize(1)
+        for k in range(nEvents) :
+            net_times   = np.array([q.time for q in self.qn._queues])
+            queue_times = [q.time for q in self.qn.edge2queue]
+            queue_times.sort()
+            while queue_times[-1] == np.infty :
+                tmp = queue_times.pop()
+
+            queue_times.sort(reverse=True)
+
+            ans[k] = (queue_times == net_times).all()
+            self.qn.simulate(n=1)
+
+        self.assertTrue( ans.all() )
+
+
     def test_QueueNetwork_closedness(self) :
 
         nEvents = 2500
@@ -236,11 +257,21 @@ class TestQueueNetwork(unittest.TestCase) :
 
         self.assertTrue( (tra == trans).all() )
 
+        tra = self.qn.transitions(return_matrix=False)
+
+        self.assertTrue( (tra[k] == trans).all() )
+
         mat = qt.generate_transition_matrix(self.g)
         self.qn.set_transitions(mat)
         tra = self.qn.transitions()
 
         self.assertTrue( np.allclose(tra, mat) )
+
+        mat = qt.generate_transition_matrix(self.g)
+        self.qn.set_transitions({k : mat[k]})
+        tra = self.qn.transitions()
+
+        self.assertTrue( np.allclose(tra[k], mat[k]) )
 
 
     def test_QueueNetwork_data_agents(self) :
@@ -286,6 +317,7 @@ class TestQueueNetwork(unittest.TestCase) :
 
         data = qn.data_queues()
         self.assertTrue( data.shape == (k, 6) )
+        qn.stop_collecting_data()
         qn.clear_data()
 
         ans = np.array([q.data == {} for q in qn.edge2queue])

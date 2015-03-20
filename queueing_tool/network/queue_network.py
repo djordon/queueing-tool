@@ -211,7 +211,7 @@ class QueueNetwork(object) :
             raise TypeError("blocking must be a string")
 
         self.nEvents      = 0
-        self.t            = 0
+        self._t           = 0
         self.max_agents   = max_agents
 
         self._to_animate  = False
@@ -309,32 +309,14 @@ class QueueNetwork(object) :
     @property
     def nVertices(self):
         return self.nV
-    @nVertices.deleter
-    def nVertices(self): 
-        pass
-    @nVertices.setter
-    def nVertices(self, tmp): 
-        pass
 
     @property
     def nEdges(self):
         return self.nE
-    @nEdges.deleter
-    def nEdges(self): 
-        pass
-    @nEdges.setter
-    def nEdges(self, tmp): 
-        pass
 
     @property
     def time(self):
-        return self.t
-    @time.deleter
-    def time(self): 
-        pass
-    @time.setter
-    def time(self, tmp): 
-        pass
+        return self._t
 
     @property
     def blocking(self):
@@ -384,9 +366,7 @@ class QueueNetwork(object) :
         """
         if queues is None and edge is None and eType is None :
             if nActive >= 1 and isinstance(nActive, numbers.Integral) :
-                queues = np.arange(self.nE)  
-                np.random.shuffle(queues)
-                queues = queues[:nActive]
+                queues = np.random.choice(self.nE, size=nActive, replace=False)
             else :
                 raise RuntimeError("If queues is None, then nActive must be a strictly positive int.")
         else :
@@ -1052,15 +1032,15 @@ class QueueNetwork(object) :
     def _simulate_next_event(self, slow=True) :
         n   = len(self._queues)
         if n == 0 :
-            self.t  = infty
+            self._t = infty
             return
 
         q1  = self._queues.pop()
         q1t = q1._time
         e1  = q1.edge[2]
 
-        event  = q1.next_event_description()
-        self.t = q1t
+        event   = q1.next_event_description()
+        self._t = q1t
         self.nEvents += 1
 
         if event == 2 : # This is a departure
@@ -1261,8 +1241,8 @@ class QueueNetwork(object) :
                 for k in range(n) :
                     self._simulate_next_event(slow=True)
             else :
-                now = self.t
-                while self.t < now + t :
+                now = self._t
+                while self._t < now + t :
                     self._simulate_next_event(slow=True)
 
         self._to_animate = False
@@ -1323,8 +1303,8 @@ class QueueNetwork(object) :
             for k in range(n) :
                 self._simulate_next_event(slow=False)
         else :
-            now = self.t
-            while self.t < now + t :
+            now = self._t
+            while self._t < now + t :
                 self._simulate_next_event(slow=False)
 
 
@@ -1381,7 +1361,7 @@ class QueueNetwork(object) :
         -----
         ``QueueNetwork`` must be re-initialized before any simulations can run.
         """
-        self.t            = 0
+        self._t           = 0
         self.nEvents      = 0
         self.nAgents      = np.zeros(self.nE, int)
         self._queues      = []
@@ -1422,12 +1402,12 @@ class QueueNetwork(object) :
         """Returns a deep copy of self."""
         net                 = QueueNetwork(None)
         net.g               = self.g.copy()
-        net.t               = copy.copy(self.t)
         net.max_agents      = copy.copy(self.max_agents)
         net.nV              = copy.copy(self.nV)
         net.nE              = copy.copy(self.nE)
         net.nAgents         = copy.copy(self.nAgents)
         net.nEvents         = copy.copy(self.nEvents)
+        net._t              = copy.copy(self._t)
         net._initialized    = copy.copy(self._initialized)
         net._prev_edge      = copy.copy(self._prev_edge)
         net._to_animate     = copy.copy(self._to_animate)

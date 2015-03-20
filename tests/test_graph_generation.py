@@ -119,10 +119,7 @@ class TestGraphFunctions(unittest.TestCase) :
 
         g, pos = gt.geometric_graph(ps, 1)
 
-        eType = np.arange(5, 100)
-        np.random.shuffle(eType)
-        eType = eType[:nT]
-
+        eType = np.random.choice(np.arange(5, 100), size=nT, replace=False)
         prob  = np.random.uniform(size=nT)
         prob  = prob / sum(prob)
 
