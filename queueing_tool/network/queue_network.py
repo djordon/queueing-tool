@@ -321,9 +321,6 @@ class QueueNetwork(object) :
     @property
     def blocking(self):
         return 'BAS' if self._blocking else 'RS'
-    @blocking.deleter
-    def blocking(self): 
-        pass
     @blocking.setter
     def blocking(self, tmp):
         if not isinstance(tmp, str) :
