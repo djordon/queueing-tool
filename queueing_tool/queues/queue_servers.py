@@ -400,6 +400,11 @@ class QueueServer(object) :
             dat[:,:5] = np.array(qdata)
             dat[:, 5] = self.edge[2]
 
+            dType = [('a', float), ('s', float), ('d', float), ('q', float), ('n', float), ('id', float)]
+            dat = np.array([tuple(d) for d in dat], dtype=dType)
+            dat = np.sort(dat, order='a')
+            dat = np.array([tuple(d) for d in dat])
+
         return dat
 
 
@@ -612,15 +617,15 @@ class QueueServer(object) :
                 tmp = self.next_event()
         elif t is not None :
             then = self._current_t + t
-            while self._current_t < then :
+            while self._current_t < then and self._time < infty :
                 tmp = self.next_event()
         elif nD is not None :
             nDepartures = self.nDepartures + nD
-            while self.nDepartures < nDepartures :
+            while self.nDepartures < nDepartures and self._time < infty :
                 tmp = self.next_event()
         elif nA is not None :
             nArrivals = self._oArrivals + nA
-            while self._oArrivals < nArrivals :
+            while self._oArrivals < nArrivals and self._time < infty :
                 tmp = self.next_event()
 
 

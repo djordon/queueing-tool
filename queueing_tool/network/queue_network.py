@@ -96,8 +96,10 @@ class QueueNetwork(object) :
         as one event.
     nVertices : int
         The number of vertices in the graph.
-    time : float
+    current_time : float
         The time of the last event.
+    time : float
+        The time of the next event.
     max_agents : int
         The maximum number of agents that can be in the network at any time.
     colors : :class:`.dict`
@@ -315,8 +317,16 @@ class QueueNetwork(object) :
         return self.nE
 
     @property
-    def time(self):
+    def current_time(self):
         return self._t
+
+    @property
+    def time(self):
+        if len(self._queues) > 0 :
+            t = self._queues[-1]._time
+        else :
+            t = np.infty
+        return t
 
     @property
     def blocking(self):
@@ -522,7 +532,7 @@ class QueueNetwork(object) :
                     self._route_probs[k].append( np.float64(p) )
 
 
-    def collect_data(self, queues=None, edge=None, eType=None) :
+    def start_collecting_data(self, queues=None, edge=None, eType=None) :
         """Tells the queues to collect data on agents' arrival, service start,
         and departure times.
 
@@ -614,7 +624,7 @@ class QueueNetwork(object) :
 
         >>> g   = qt.generate_pagerank_graph(100, seed=13)
         >>> net = qt.QueueNetwork(g, seed=13)
-        >>> net.collect_data()
+        >>> net.start_collecting_data()
         >>> net.initialize(10)
         >>> net.simulate(2000)
         >>> data = net.data_queues(eType=(1,3))
@@ -678,11 +688,11 @@ class QueueNetwork(object) :
         queues = _get_queues(self.g, queues, edge, eType)
 
         data = {}
-        for q in queues :
-            for issn, dat in self.edge2queue[q].data.items() :
+        for qid in queues :
+            for issn, dat in self.edge2queue[qid].data.items() :
                 datum = np.zeros( (len(dat), 6) )
                 datum[:,:5] = np.array(dat)
-                datum[:, 5] = q
+                datum[:, 5] = qid
                 if issn in data :
                     data[issn] = np.vstack( (data[issn], datum) )
                 else :
@@ -1027,7 +1037,7 @@ class QueueNetwork(object) :
 
 
     def _simulate_next_event(self, slow=True) :
-        n   = len(self._queues)
+        n = len(self._queues)
         if n == 0 :
             self._t = infty
             return
@@ -1286,9 +1296,9 @@ class QueueNetwork(object) :
         To simulate the network for at least 25 simulation time units run:
 
         >>> nE0 = net.nEvents
-        >>> t0  = net.time
+        >>> t0  = net.current_time
         >>> net.simulate(t=75)
-        >>> t1  = net.time
+        >>> t1  = net.current_time
         >>> round(t1 - t0, 3)
         75.005
         >>> net.nEvents - nE0

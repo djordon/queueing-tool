@@ -53,7 +53,7 @@ qn.initialize(eType=1)
 
 # Data is not collected by default. This makes all queues collect data as the
 # simulations take place.
-qn.collect_data()
+qn.start_collecting_data()
 
 # Simulate the network 1.8 simulation time units
 qn.simulate(t=1.8)

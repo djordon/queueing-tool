@@ -138,7 +138,7 @@ class TestQueueNetwork(unittest.TestCase) :
         qn.max_agents = 2000
         qn.simulate(t=t0)
 
-        self.assertTrue( qn.time > t0 )
+        self.assertTrue( qn.current_time > t0 )
 
 
     def test_QueueNetwork_initialization(self) :
@@ -224,7 +224,7 @@ class TestQueueNetwork(unittest.TestCase) :
         qn.set_transitions(mat)
 
         qn.initialize(edge=(0,1))
-        qn.collect_data(edge=[(1,2), (1,3)])
+        qn.start_collecting_data(edge=[(1,2), (1,3)])
 
         qn.simulate(150000)
 
@@ -278,7 +278,7 @@ class TestQueueNetwork(unittest.TestCase) :
 
         self.qn.clear()
         self.qn.initialize(queues=1)
-        self.qn.collect_data()
+        self.qn.start_collecting_data()
         self.qn.simulate(n=20000)
 
         data = self.qn.data_agents()
@@ -312,7 +312,7 @@ class TestQueueNetwork(unittest.TestCase) :
 
         qn.max_agents = 4000
         qn.initialize(queues=range(qn.nE))
-        qn.collect_data()
+        qn.start_collecting_data()
         qn.simulate(n=k)
 
         data = qn.data_queues()
@@ -398,7 +398,7 @@ class TestQueueNetwork(unittest.TestCase) :
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
         qn.max_agents = np.infty
         qn.initialize(queues=range(g.num_edges()))
-        qn.collect_data()
+        qn.start_collecting_data()
 
         qn.simulate(n=50000)
         stamp = [(q.nArrivals, q.time) for q in qn.edge2queue]
@@ -406,6 +406,7 @@ class TestQueueNetwork(unittest.TestCase) :
         qn2 = qn.copy()
         qn.simulate(n=50000)
 
+        self.assertFalse( qn.current_time == qn2.current_time )
         self.assertFalse( qn.time == qn2.time )
 
         ans = []

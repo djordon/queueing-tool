@@ -200,10 +200,12 @@ class TestQueueServers(unittest.TestCase) :
 
     def test_ResourceQueue_animation(self) :
 
-        nV  = 100
-        ps  = np.random.uniform(0, 5, size=(nV, 2))
+        nV = 100
+        ps = np.random.uniform(0, 5, size=(nV, 2))
 
         g, pos = gt.geometric_graph(ps, 1)
+        e = g.add_edge(1, 1)
+
         q_cls = {1 : qt.ResourceQueue, 2 : qt.ResourceQueue}
         q_arg = {1 : {'nServers' : 50}, 2 : {'nServers' : 500}}
 
