@@ -21,6 +21,7 @@ it to your desktop using git::
 Once you have the package locally on your computer, change directories to the
 queueing-tool directory in your terminal and install using::
 
+    $ python3 setup.py build
     $ sudo python3 setup.py install
 
 Alternatively, you could install it locally with::
