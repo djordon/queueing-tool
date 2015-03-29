@@ -1406,7 +1406,7 @@ class QueueNetwork(object) :
 
 
     def copy(self) :
-        """Returns a deep copy of self."""
+        """Returns a deep copy of itself."""
         net                 = QueueNetwork(None)
         net.g               = self.g.copy()
         net.max_agents      = copy.copy(self.max_agents)

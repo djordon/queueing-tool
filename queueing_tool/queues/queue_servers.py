@@ -680,8 +680,8 @@ class QueueServer(object) :
     def clear(self) :
         """Clears out the queue. Removes all arrivals, departures, and queued
         agents from the ``QueueServer``\, resets ``nArrivals``\, ``nDepartures``\,
-        and ``nSystem`` to zero, and clears any stored ``data``. If the server
-        is set to inactive.
+        ``nSystem``\, and the clock to zero. It also clears any stored ``data``
+        and the server is then set to inactive.
         """
         self.data        = {}
         self._nArrivals  = 0
@@ -700,7 +700,7 @@ class QueueServer(object) :
 
 
     def copy(self) :
-        """Returns a deep copy of ``self``\."""
+        """Returns a deep copy of itself."""
         return copy.deepcopy(self)
 
 

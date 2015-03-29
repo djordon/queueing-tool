@@ -26,6 +26,7 @@ queueing-tool directory in your terminal and install using::
 
 Alternatively, you could install it locally with::
 
+    $ python3 setup.py build
     $ python3 setup.py install --user
 
 Note that this package was tested using numpy version 1.9.1 and graph-tool 
