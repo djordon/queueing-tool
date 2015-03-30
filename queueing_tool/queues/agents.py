@@ -1,6 +1,6 @@
-from numpy          import infty, argmin
+from numpy          import infty
 from numpy.random   import uniform
-from .choice        import _choice
+from .choice        import _choice, _argmin
 import copy
 
 class Agent(object) :
@@ -153,7 +153,7 @@ class GreedyAgent(Agent) :
             visit in the network. 
         """
         adjacent_edges = network.out_edges[edge[1]]
-        d = argmin([network.edge2queue[d].nQueued() for d in adjacent_edges])
+        d = _argmin([network.edge2queue[d].nQueued() for d in adjacent_edges])
         return adjacent_edges[d]
 
 

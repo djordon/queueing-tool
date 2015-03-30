@@ -11,9 +11,10 @@ from ..queues      import NullQueue, QueueServer, LossQueue
 from .sorting      import oneBisectSort, bisectSort, oneSort, twoSort
 
 from numpy         import infty
+from numpy.random  import uniform
 from gi.repository import Gtk, GObject
 
-EPS = np.float64(1e-10)
+EPS = np.float64(1e-7)
 
 class QueueNetwork(object) :
     """A class that simulates a network of queues.
@@ -1059,7 +1060,7 @@ class QueueNetwork(object) :
                 q2.nBlocked += 1
                 q1._departures[0].blocked += 1
                 if self._blocking :
-                    t = q2._departures[0]._time + EPS
+                    t = q2._departures[0]._time + EPS * uniform(0.33, 0.66)
                     q1.delay_service(t)
                 else :
                     q1.delay_service()

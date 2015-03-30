@@ -19,3 +19,16 @@ def _choice(list pr, np.float64_t u, Py_ssize_t n) :
                 z  += pr[k]
 
     return k
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def _argmin(list a) :
+    cdef int minv, amin, k, v
+    minv = a[0]
+    amin = -1
+    for k, v in enumerate(a[1:]) :
+        if v < minv :
+            minv = v
+            amin = k
+    return amin + 1
