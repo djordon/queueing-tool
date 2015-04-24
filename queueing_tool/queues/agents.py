@@ -123,7 +123,7 @@ class GreedyAgent(Agent) :
     the shortest line (where the ordering is given by :class:`.QueueNetwork`\'s
     ``out_edges`` attribute).
     """
-    def __init__(self, issn) :
+    def __init__(self, issn=(0,0)) :
         Agent.__init__(self, issn)
 
     def __repr__(self) :

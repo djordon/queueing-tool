@@ -19,10 +19,14 @@ class UnionFind(object) :
         The number of clusters contained in the data-structure.
     """
     def __init__(self, S) :
-        self._leader     = dict( (s, s)   for s in S)
-        self._size       = dict( (s, 1)   for s in S)
-        self._rank       = dict( (s, 0)   for s in S)
-        self.nClusters  = len(S)
+        self._leader   = dict((s, s) for s in S)
+        self._size     = dict((s, 1) for s in S)
+        self._rank     = dict((s, 0) for s in S)
+        self.nClusters = len(self._leader)
+
+
+    def __repr__(self) :
+        return "UnionFind: contains {0} clusters.".format(self.nClusters)
 
 
     def size(self, s):
@@ -55,8 +59,8 @@ class UnionFind(object) :
         object
             The leader of the set that contains ``s``.
         """
-        pSet    = [s]
-        parent  = self._leader[s]
+        pSet   = [s]
+        parent = self._leader[s]
 
         while parent != self._leader[parent] :
             pSet.append(parent)
@@ -77,12 +81,12 @@ class UnionFind(object) :
         a, b : objects
             Two objects whose sets are to be merged.
         """
-        s1, s2  = self.find(a), self.find(b)
+        s1, s2 = self.find(a), self.find(b)
         if s1 != s2 :
             r1, r2  = self._rank[s1], self._rank[s2]
             if r2 > r1 :
-                r1, r2  = r2, r1
-                s1, s2  = s2, s1
+                r1, r2 = r2, r1
+                s1, s2 = s2, s1
             if r1 == r2 :
                 self._rank[s1]  += 1
 
