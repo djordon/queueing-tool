@@ -6,7 +6,7 @@ from . import network
 from . import generation
 
 __all__     = []
-__version__ = '0.1.0'
+__version__ = '1.0.2'
 
 __all__.extend(['__version__'])
 __all__.extend(queues.__all__)

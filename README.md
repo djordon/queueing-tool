@@ -5,8 +5,9 @@ Queueing-tool
 [![Build Status](https://travis-ci.org/djordon/queueing-tool.svg?branch=master)](https://travis-ci.org/djordon/queueing-tool) [![Coverage Status](https://coveralls.io/repos/djordon/queueing-tool/badge.svg?branch=master)](https://coveralls.io/r/djordon/queueing-tool?branch=master)
 
 
-
 Queueing-tool is a package for simulating and analyzing networks of [queues][] that is written in Python. It also includes a visualization component for seeing network dynamics.
+
+The package documentation can be found online [here](http://queueing-tool.readthedocs.org/).
 
 Features
 --------
