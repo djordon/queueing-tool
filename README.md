@@ -7,7 +7,7 @@ Queueing-tool
 
 Queueing-tool is a package for simulating and analyzing networks of [queues][] that is written in Python. It also includes a visualization component for seeing network dynamics.
 
-The package documentation can be found online [here](http://queueing-tool.readthedocs.org/).
+The package documentation can be found [here](http://queueing-tool.readthedocs.org/).
 
 Features
 --------
