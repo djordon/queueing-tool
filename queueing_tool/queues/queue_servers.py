@@ -235,7 +235,8 @@ class QueueServer(object) :
                     deactive_t=infty, colors=None, seed=None, **kwargs) :
 
         if (not isinstance(nServers, numbers.Integral) and nServers is not infty) or nServers <= 0 :
-            raise RuntimeError("nServers must be a positive integer or infinity.\n%s" % (str(self)) )
+            the_str = "nServers must be a positive integer or infinity.\n{0}"
+            raise RuntimeError( the_str.format(str(self)) )
 
         self.edge         = edge
         self.nServers     = nServers

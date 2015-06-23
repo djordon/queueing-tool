@@ -307,7 +307,8 @@ class QueueNetwork(object) :
             self.nE = g.num_edges()
 
     def __repr__(self) :
-        return 'QueueNetwork. # nodes: %s, edges: %s, agents: %s' % (self.nV, self.nE, np.sum(self.nAgents))
+        the_string = 'QueueNetwork. # nodes: {0}, edges: {1}, agents: {2}'
+        return  the_string.format(self.nV, self.nE, np.sum(self.nAgents))
 
     @property
     def nVertices(self):
@@ -733,14 +734,14 @@ class QueueNetwork(object) :
         instance is created. These property maps include:
 
           * ``vertex_color``, ``vertex_fill_color``, ``vertex_size``,
-              ``vertex_pen_width``, ``pos``.
+            ``vertex_pen_width``, ``pos``.
           * ``edge_color``, ``edge_control_points``, ``edge_marker_size``,
-              ``edge_pen_width``.
+            ``edge_pen_width``.
 
         Each of these properties are used by ``draw`` to style the canvas.
-        Also, the ``bg_color`` parameter is defined in the :class:`.dict`
-        ``QueueNetwork.colors``. The ``output_size`` parameter defaults to
-        ``(700, 700)``.
+        There is also a parameter that sets the background color of the canvas,
+        which is the ``bg_color`` parameter. This color is defined in the class
+        property ``QueueNetwork.colors`` (which is a :class:`.dict`).
 
         If any of these parameters are supplied as arguments to ``draw`` then
         the passed arguments are used over the defaults.

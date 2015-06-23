@@ -66,9 +66,9 @@ class Agent(object) :
         """Returns the agents next destination given their current location on
         the network.
 
-        An ``Agent`` chooses one of the out edges random. The probability that
-        the ``Agent`` will travel along a specific edge is specified in the
-        :class:`.QueueNetwork`\'s transition matrix.
+        An ``Agent`` chooses one of the out edges at random. The probability
+        that the ``Agent`` will travel along a specific edge is specified in
+        the :class:`.QueueNetwork`\'s transition matrix.
 
         Parameters
         ----------
@@ -87,7 +87,8 @@ class Agent(object) :
 
         See Also
         --------
-        transitions : transition probabilities for each vertex in the graph.
+        :meth:`.transitions` : :class:`.QueueNetwork`\'s method that returns\
+        the transition probabilities for each edge in the graph.
         """
         n   = len(network.out_edges[edge[1]])
         if n <= 1 :

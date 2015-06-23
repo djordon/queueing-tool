@@ -342,8 +342,27 @@ tt.literal {
     background-color: #F0F0F0;
 }
 
+code {
+    padding: 2px 4px;
+    color: #4E4E4E;
+    background-color: #F0F0F0;
+}
+
+code.descclassname {
+    padding-right: 0;
+}
+
+code.descname {
+    margin-left: 0;
+    padding: 0;
+}
+
 div.body a.reference {
     text-decoration: none;
+}
+
+a > span {
+    float: right;
 }
 
 tt.descname, tt.descclassname, tt.xref {
@@ -451,6 +470,18 @@ div.warning ul, div.warning ol {
     font-family: 'Open Sans', 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva',
                  'Verdana', sans-serif;
 }
+
+/*
+.viewcode-link {
+  float: right;
+  display: inherit;
+}
+
+dt > a.reference.internal {
+    float: right;
+    display: initial;
+}
+*/
 
 div.viewcode-block:target {
     background-color: #f4debf;

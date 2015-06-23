@@ -21,4 +21,4 @@ Miscellaneous functions
     .. autofunction:: graph2dict
     .. autofunction:: vertices2edge
     .. autofunction:: add_edge_lengths
-    .. autofunction:: shortest_paths_distances
+    .. autofunction:: shortest_paths
