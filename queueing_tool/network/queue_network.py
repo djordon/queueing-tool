@@ -10,7 +10,6 @@ from ..queues      import NullQueue, QueueServer, LossQueue
 
 from .sorting      import oneBisectSort, bisectSort, oneSort, twoSort
 
-from numpy         import infty
 from numpy.random  import uniform
 from gi.repository import Gtk, GObject
 
@@ -390,7 +389,7 @@ class QueueNetwork(object) :
 
         self._queues = [q for q in self.edge2queue]
         self._queues.sort()
-        while self._queues[-1]._time == infty :
+        while self._queues[-1]._time == np.infty :
             self._queues.pop()
 
         self._queues.sort(reverse=True)
@@ -1005,12 +1004,12 @@ class QueueNetwork(object) :
         q   = self.edge2queue[ei]
         qt  = q._time
         if t is None :
-            t = q._time + 1 if q._time < infty else self._queues[-1]._time + 1
+            t = q._time + 1 if q._time < np.infty else self._queues[-1]._time + 1
 
         agent._time = t
         q._add_arrival(agent)
 
-        if qt == infty and q._time < infty :
+        if qt == np.infty and q._time < np.infty :
             self._queues.append(q)
 
         self._queues.sort(reverse=True)
@@ -1041,7 +1040,7 @@ class QueueNetwork(object) :
     def _simulate_next_event(self, slow=True) :
         n = len(self._queues)
         if n == 0 :
-            self._t = infty
+            self._t = np.infty
             return
 
         q1  = self._queues.pop()
@@ -1077,7 +1076,7 @@ class QueueNetwork(object) :
                     self._update_graph_colors(qedge=q1.edge)
                     self._prev_edge = q1.edge
 
-                if q2._active and self.max_agents < infty and np.sum(self.nAgents) > self.max_agents - 1 :
+                if q2._active and self.max_agents < np.infty and np.sum(self.nAgents) > self.max_agents - 1 :
                     q2._active = False
 
                 q2.next_event()
@@ -1087,8 +1086,8 @@ class QueueNetwork(object) :
                     self._update_graph_colors(qedge=q2.edge)
                     self._prev_edge = q2.edge
 
-            if q1._time < infty :
-                if q2._time < q2t < infty and e2 != e1 :
+            if q1._time < np.infty :
+                if q2._time < q2t < np.infty and e2 != e1 :
                     if n > 2 :
                         oneBisectSort(self._queues, q1, q2t, n-1)
                     else :
@@ -1112,7 +1111,7 @@ class QueueNetwork(object) :
                     else :
                         bisectSort(self._queues, q1, n-1)
             else :
-                if q2._time < q2t < infty :
+                if q2._time < q2t < np.infty :
                     if n > 2 :
                         oneSort(self._queues, q2t, n-1)
                 elif q2._time < q2t :
@@ -1122,7 +1121,7 @@ class QueueNetwork(object) :
                         bisectSort(self._queues, q2, n-1)
 
         elif event == 1 : # This is an arrival
-            if q1._active and self.max_agents < infty and np.sum(self.nAgents) > self.max_agents - 1 :
+            if q1._active and self.max_agents < np.infty and np.sum(self.nAgents) > self.max_agents - 1 :
                 q1._active = False
 
             q1.next_event()
@@ -1132,7 +1131,7 @@ class QueueNetwork(object) :
                 self._update_graph_colors(qedge=q1.edge)
                 self._prev_edge  = q1.edge
 
-            if q1._time < infty :
+            if q1._time < np.infty :
                 if n == 1 :
                     self._queues.append(q1)
                 else :
@@ -1427,12 +1426,12 @@ class QueueNetwork(object) :
         net.edge2queue      = copy.deepcopy(self.edge2queue)
 
         if net._initialized :
-            net.queues = [q for q in net.edge2queue]
-            net.queues.sort()
-            while net.queues[-1]._time == infty :
-                net.queues.pop()
+            net._queues = [q for q in net.edge2queue]
+            net._queues.sort()
+            while net._queues[-1]._time == np.infty :
+                net._queues.pop()
 
-            net.queues.sort(reverse=True)
+            net._queues.sort(reverse=True)
         return net
 
 
