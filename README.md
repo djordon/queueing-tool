@@ -25,7 +25,7 @@ Installation
 
 **Platforms**: Queueing tool should work on Windows and any unix-like platform such as Linux or Mac OS X. The developers of [numpy][2] have compiled binary packages for Windows, Mac OS X, and several other unix-like operating systems, while the developers of [graph-tool][1] have made binaries for Mac OS X and several linux distributions but not Windows.
 
-**Manual installation**: Download the latest release from github and do the the following
+**Manual installation**: Download the latest release from github and run the following commands in a terminal:
 
 ```bash
 tar xzvf queueing_tool-[VERSION].zip
@@ -34,7 +34,7 @@ python setup.py build
 sudo python setup.py install
 ```
 
-To install locally use the following
+To install locally run the following command in a terminal:
 
 ```bash
 python setup.py install --user
