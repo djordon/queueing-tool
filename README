@@ -50,7 +50,7 @@ several other unix-like operating systems, while the developers of
 distributions but not Windows.
 
 **Manual installation**: Download the latest release from github and do
-the the following
+the following
 
 ```bash
 tar xzvf queueing_tool-[VERSION].zip
@@ -62,7 +62,7 @@ sudo python setup.py install
 To install locally use the following
 
 ```bash
-python setup.py install --user
+python setup.py develop --user
 ```
 
 Copyright and license

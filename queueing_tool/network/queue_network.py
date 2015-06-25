@@ -69,12 +69,12 @@ class QueueNetwork(object) :
     blocking : str
         Specifies whether the system's blocking behavior is either Blocking
         After Service (BAS) or Repetitive Service Blocking (RS).
-    in_edges : :class:`.dict`
+    in_edges : :class:`.list`
         A mapping between vertex indices and the in-edges at that vertex.
         Specifically, ``in_edges[v]`` returns a list containing the edge index
         for all edges with the head of the edge at ``v``, where ``v`` is the
         the vertex's index number.
-    out_edges : :class:`.dict`
+    out_edges : :class:`.list`
         A mapping between vertex indices and the out-edges at that vertex.
         Specifically, ``out_edges[v]`` returns a list containing the edge index
         for all edges with the tail of the edge at ``v``, where ``v`` is the
@@ -287,9 +287,9 @@ class QueueNetwork(object) :
 
             self.edge2queue   = qs
             self.nAgents      = np.zeros(g.num_edges(), int)
-            self.out_edges    = {}
-            self.in_edges     = {}
-            self._route_probs = {}
+            self.out_edges    = [0 for v in g.vertices()]
+            self.in_edges     = [0 for v in g.vertices()]
+            self._route_probs = [0 for v in g.vertices()]
 
             def edge_index(e) :
                 return g.edge_index[e]
@@ -447,7 +447,7 @@ class QueueNetwork(object) :
                 ind = [int(e.target()) for e in v.out_edges()]
                 mat[vi, ind] = self._route_probs[vi]
         else :
-            mat = copy.deepcopy(self._route_probs)
+            mat = {k: value for k, value in enumerate(self._route_probs)}
 
         return mat
 
@@ -500,7 +500,7 @@ class QueueNetwork(object) :
         """
         if isinstance(mat, dict) :
             for key, value in mat.items() :
-                if key not in self._route_probs :
+                if key > self.nV or key < 0 :
                     raise RuntimeError("One of the keys don't correspond to a vertex.")
                 elif len(self.out_edges[key]) > 0 and not np.isclose(np.sum(value), 1) :
                     raise RuntimeError("Sum of transition probabilities at a vertex was not 1.")
@@ -1424,6 +1424,7 @@ class QueueNetwork(object) :
         net.out_edges       = copy.deepcopy(self.out_edges)
         net.in_edges        = copy.deepcopy(self.in_edges)
         net.edge2queue      = copy.deepcopy(self.edge2queue)
+        net._route_probs    = copy.deepcopy(self._route_probs)
 
         if net._initialized :
             net._queues = [q for q in net.edge2queue]
@@ -1432,6 +1433,7 @@ class QueueNetwork(object) :
                 net._queues.pop()
 
             net._queues.sort(reverse=True)
+
         return net
 
 

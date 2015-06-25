@@ -398,21 +398,20 @@ class TestQueueNetwork(unittest.TestCase) :
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
         qn.max_agents = np.infty
         qn.initialize(queues=range(g.num_edges()))
-        qn.start_collecting_data()
 
         qn.simulate(n=50000)
-        stamp = [(q.nArrivals, q.time) for q in qn.edge2queue]
-
         qn2 = qn.copy()
-        qn.simulate(n=50000)
+
+        stamp = [(q.nArrivals, q.time) for q in qn2.edge2queue]
+        qn2.simulate(n=25000)
 
         self.assertFalse( qn.current_time == qn2.current_time )
         self.assertFalse( qn.time == qn2.time )
 
         ans = []
-        for k, q in enumerate(qn.edge2queue) :
+        for k, q in enumerate(qn2.edge2queue) :
             if stamp[k][1] != q.time :
-                ans.append(q.time != qn2.edge2queue[k].time)
+                ans.append(q.time != qn.edge2queue[k].time)
 
         self.assertTrue( np.array(ans).all() )
 

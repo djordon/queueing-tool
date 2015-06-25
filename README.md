@@ -37,7 +37,7 @@ sudo python setup.py install
 To install locally run the following command in a terminal:
 
 ```bash
-python setup.py install --user
+python setup.py develop --user
 ```
 
 
