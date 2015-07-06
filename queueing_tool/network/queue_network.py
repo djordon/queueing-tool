@@ -3,7 +3,6 @@ import numpy   as np
 import collections
 import numbers
 import copy
-import sys
 
 from ..generation  import _prepare_graph
 from ..queues      import NullQueue, QueueServer, LossQueue
@@ -126,7 +125,7 @@ class QueueNetwork(object) :
       type ``0`` to anything other than the :class:`.NullQueue` class.  Edges
       with edge type ``0`` are treated by ``QueueNetwork`` as terminal edges
       (edges that point to a terminal vertex).
-    * If an edge type is used in your network but not given in ``q_classes`` 
+    * If an edge type is used in your network but not given in ``q_classes``
       parameter then the defaults are used, where the defaults are:
 
       >>> default_classes = {0 : qt.NullQueue, 1 : qt.QueueServer, 2 : qt.LossQueue,
@@ -135,13 +134,13 @@ class QueueNetwork(object) :
       For example, if your network has type ``0``\, ``1``\, and ``2`` edges but
       your ``q_classes`` parameter looks like:
 
-      >>> my_classes = {1 : qt.ResourceQueue} 
+      >>> my_classes = {1 : qt.ResourceQueue}
 
       then each type ``0`` or type ``2`` edge is a :class:`.NullQueue` or
       :class:`.LossQueue` respectively.
     * The following properties are assigned as a :class:`~graph_tool.PropertyMap`
       to the graph; their default values for each edge or vertex is shown:
-        
+
         * ``vertex_pen_width``: ``1.1``,
         * ``vertex_size``: ``8``,
         * ``edge_control_points``: ``[]``
@@ -155,7 +154,7 @@ class QueueNetwork(object) :
       >>> default_colors = { 'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
       ...                    'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
       ...                    'vertex_highlight'  : [0.5, 0.5, 0.5, 1.0],
-      ...                    'edge_departure'    : [0, 0, 0, 1], 
+      ...                    'edge_departure'    : [0, 0, 0, 1],
       ...                    'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
       ...                    'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
       ...                    'edge_active'       : [0.1, 0.1, 0.1, 1.0],
@@ -208,7 +207,9 @@ class QueueNetwork(object) :
        :align: center
     """
 
-    def __init__(self, g, q_classes=None, q_args=None, seed=None, colors=None, max_agents=1000, blocking='BAS') :
+    def __init__(self, g, q_classes=None, q_args=None, seed=None, colors=None,
+                    max_agents=1000, blocking='BAS') :
+
         if not isinstance(blocking, str) :
             raise TypeError("blocking must be a string")
 
@@ -359,7 +360,7 @@ class QueueNetwork(object) :
         edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to make active. Must be either: a
             2-tuple of the edge's source and target vertex indices, an iterable
-            of 2-tuples of the edge's source and target vertex indices, or an 
+            of 2-tuples of the edge's source and target vertex indices, or an
             iterable of :class:`~graph_tool.Edge`\(s).
         eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types
@@ -368,8 +369,8 @@ class QueueNetwork(object) :
         Raises
         ------
         RuntimeError
-            If ``queues``, ``egdes``, and ``eType`` are all ``None`` and 
-            ``nActive`` is not an integer or is less than 1 then a 
+            If ``queues``, ``egdes``, and ``eType`` are all ``None`` and
+            ``nActive`` is not an integer or is less than 1 then a
             :exc:`~RuntimeError` is raised.
         """
         if queues is None and edge is None and eType is None :
@@ -422,7 +423,7 @@ class QueueNetwork(object) :
 
         Examples
         --------
-        The default transition matrix is every out edge being equally likely. 
+        The default transition matrix is every out edge being equally likely.
         Lets change them randomly:
 
         >>> g = qt.generate_random_graph(5, seed=96)
@@ -460,7 +461,7 @@ class QueueNetwork(object) :
         mat : :class:`.dict` or :class:`~numpy.ndarray`
             A transition routing matrix or transition dictionary. If passed a
             dictionary, the keys should be vertex indices and the values are
-            the probabilities for each adjacent vertex, or all vertices 
+            the probabilities for each adjacent vertex, or all vertices
             adjacent or otherwise.
 
         Raises
@@ -489,7 +490,7 @@ class QueueNetwork(object) :
         >>> net.transitions(False)
         {0: [1.0], 1: [0.75, 0.25], 2: [0.333, 0.333, 0.333], 3: [1.0], 4: [1.0]}
 
-        One can generate a transition matrix using 
+        One can generate a transition matrix using
         :func:`.generate_transition_matrix`\. You can change all transition
         probabilities with an :class:`~numpy.ndarray`\:
 
@@ -677,7 +678,7 @@ class QueueNetwork(object) :
         Returns
         -------
         :class:`.dict`
-            Returns a ``dict`` where the keys are the :class:`.Agent`\'s 
+            Returns a ``dict`` where the keys are the :class:`.Agent`\'s
             ``issn`` and the values are :class:`~numpy.ndarray`\s for that
             :class:`.Agent`\'s data. The first, second, and third columns
             represent, respectively, the arrival, service start, and departure
@@ -709,7 +710,7 @@ class QueueNetwork(object) :
 
 
     def draw(self, update_colors=True, **kwargs) :
-        """Draws the network. The coloring of the network corresponds to the 
+        """Draws the network. The coloring of the network corresponds to the
         number of agents at each queue.
 
         Parameters
@@ -719,7 +720,7 @@ class QueueNetwork(object) :
         **kwargs
             Any parameters to pass to :func:`~graph_tool.draw.graph_draw`.
         output_size : :class:`.tuple` (optional, the default is ``(700, 700)``).
-            This is :func:`~graph_tool.draw.graph_draw` parameter for 
+            This is :func:`~graph_tool.draw.graph_draw` parameter for
             specifying the size of canvas.
         output : str (optional, the default is ``None``)
             Specifies the directory where the drawing is saved. If output is
@@ -854,7 +855,7 @@ class QueueNetwork(object) :
 
         Examples
         --------
-        The following code highlights all edges with edge type ``2``. If the 
+        The following code highlights all edges with edge type ``2``. If the
         edge is a loop then the vertex is highlighted as well. In this case
         all edges with edge type ``2`` happen to be loops.
 
@@ -1186,11 +1187,11 @@ class QueueNetwork(object) :
 
         Each of these properties are used by ``animate`` to style the canvas.
         Also, the ``bg_color`` parameter is defined in the :class:`.dict`
-        ``QueueNetwork.colors``\. The ``output_size`` defaults to 
+        ``QueueNetwork.colors``\. The ``output_size`` defaults to
         ``(700, 700)``\. If any of these parameters are supplied as arguments
         then they are used over the defaults.
 
-        See the documentation of :func:`~graph_tool.draw.graph_draw` for a 
+        See the documentation of :func:`~graph_tool.draw.graph_draw` for a
         more on the documentation of :class:`~graph_tool.draw.GraphWindow`
 
         Drawing output may differ between Python 2 and Python 3. Use Python 3
@@ -1223,7 +1224,7 @@ class QueueNetwork(object) :
         """
         if not self._initialized :
             raise RuntimeError("Network has not been initialized. Call 'initialize()' first.")
-            
+
         self._to_animate = True
         self._update_all_colors()
 
@@ -1331,7 +1332,7 @@ class QueueNetwork(object) :
 
         if arg2 not in kwargs :
             kwargs[arg2] = output_size
-            
+
         if update_props :
             vertex_props = set(['vertex_color', 'vertex_fill_color', 'vertex_size',
                                 'vertex_pen_width', 'pos'])
@@ -1394,7 +1395,7 @@ class QueueNetwork(object) :
         edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues' data to clear. Must be either: a
             2-tuple of the edge's source and target vertex indices, an iterable
-            of 2-tuples of the edge's source and target vertex indices, an 
+            of 2-tuples of the edge's source and target vertex indices, an
             iterable of :class:`~graph_tool.Edge`\(s).
         eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types

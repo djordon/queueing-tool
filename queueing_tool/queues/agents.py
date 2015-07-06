@@ -59,7 +59,7 @@ class Agent(object) :
         """Adds one to the number of times the agent has been blocked from
         entering a finite capacity queue.
         """
-        self.blocked   += 1 
+        self.blocked   += 1
 
 
     def desired_destination(self, network, edge) :
@@ -102,8 +102,12 @@ class Agent(object) :
 
 
     def queue_action(self, queue, *args, **kwargs) :
-        """A function that acts on the queue that it is departing from. By
-        default it does nothing to the queue.
+        """A method that acts on the queue the Agent is at. This method is
+        called when the Agent arrives at the queue (where args[0] == 0), when
+        service starts for the Agent (where args[0] == 1), and when the Agent
+        departs from the queue (where args[0] == 2). By default, this method
+        does nothing to the queue, but is here if the Agent class is extended
+        and this method is overwritten.
         """
         pass
 
@@ -151,7 +155,7 @@ class GreedyAgent(Agent) :
         -------
         int
             Returns an the edge index corresponding to the agents next edge to
-            visit in the network. 
+            visit in the network.
         """
         adjacent_edges = network.out_edges[edge[1]]
         d = _argmin([network.edge2queue[d].nQueued() for d in adjacent_edges])
