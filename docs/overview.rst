@@ -2,7 +2,7 @@ Overview
 ========
 
 Queueing-tool is an Python simulation package for analyzing networks of queues.
-The simulations are event based, where events are comprised as arrivals and 
+The simulations are event based, where events are comprised as arrivals and
 departures of agents that move from queue to queue in the network. The network
 is represented as a graph, which is handled by graph-tool.
 
@@ -20,8 +20,8 @@ includes several different types of each class.
     - The :class:`.QueueServer` class can have any positive number of servers
       (including infinitely many). There can also be a maximum number of potential
       arrivals to the queue. In `Kendall's notation`_, these are
-      :math:`\text{GI}_t/\text{GI}_t/c/\infty/N/\text{FIFO}` queues. 
-    - The :class:`.LossQueue` class is an implementation of a 
+      :math:`\text{GI}_t/\text{GI}_t/c/\infty/N/\text{FIFO}` queues.
+    - The :class:`.LossQueue` class is an implementation of a
       `finite capacity queue`_\. It has all the features of the :class:`.QueueServer`
       class but also implements blocking (or loss). This class can be used to
       simulate `loss networks`_\. In Kendall's notation, these are
@@ -36,7 +36,7 @@ includes several different types of each class.
     - The :class:`.Agent` class routes itself throughout the network randomly.
       More specifically, when at node ``i`` in the network, the :class:`.Agent`
       decides to transition to node ``j`` with probability :math:`p_{ij}`. The
-      user has control over setting the transition probabilities, which can be 
+      user has control over setting the transition probabilities, which can be
       done using the network's :meth:`~.QueueNetwork.set_transitions` method.
     - The :class:`.GreedyAgent` class routes itself by choosing the queue with
       the shortest line.
@@ -95,7 +95,7 @@ not from people outside the store. This means the store serves as its own queue
 checkout area. This is a relatively, simple network that is easy create using
 queueing-tool.
 
-To create the network you need to specify an adjacency list (or adjacency 
+To create the network you need to specify an adjacency list (or adjacency
 matrix). In our toy example, we are going to assume the store has 20 checkout
 lines. Let's get started
 
@@ -162,16 +162,16 @@ with the following:
 
 .. doctest::
 
-    >>> q_classes = { 1 : qt.QueueServer, 2 : qt.QueueServer}
-    >>> q_args    = { 1 : {'arrival_f'  : arr_f,
-    ...                    'service_f'  : lambda t: t,
-    ...                    'AgentClass' : qt.GreedyAgent},
-    ...               2 : {'nServers'   : 1,
-    ...                    'service_f'  : ser_f} }
+    >>> q_classes = {1 : qt.QueueServer, 2 : qt.QueueServer}
+    >>> q_args    = {1 : {'arrival_f'  : arr_f,
+    ...                   'service_f'  : lambda t: t,
+    ...                   'AgentClass' : qt.GreedyAgent},
+    ...              2 : {'nServers'   : 1,
+    ...                   'service_f'  : ser_f} }
     >>> qn = qt.QueueNetwork(g=g, q_classes=q_classes, q_args=q_args, seed=13)
 
-For simplicity, we've made it so that when a customer enters the store they 
-immediately try to checkout. 
+For simplicity, we've made it so that when a customer enters the store they
+immediately try to checkout.
 
 The default layout was a little hard on the eyes so I changed it a little:
 

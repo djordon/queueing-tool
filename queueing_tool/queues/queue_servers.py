@@ -670,7 +670,7 @@ class QueueServer(object) :
         else :
             nSy = self.nSystem
             cap = self.nServers
-            tmp = 0.9 - min(nSy / self._black_cap * cap, 0.9)
+            tmp = 0.9 - min(nSy / (self._black_cap * cap), 0.9)
 
             if self.edge[0] == self.edge[1] :
                 color    = [ i * tmp / 0.9 for i in self.colors['vertex_fill_color'] ]
@@ -782,9 +782,9 @@ class LossQueue(QueueServer) :
 
         QueueServer.__init__(self, **kwargs)
 
-        self.nBlocked     = 0
-        self.buffer       = qbuffer
-        self._black_cap   = 1
+        self.nBlocked   = 0
+        self.buffer     = qbuffer
+        self._black_cap = 1
 
 
     def __repr__(self) :
