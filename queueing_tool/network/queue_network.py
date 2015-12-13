@@ -226,24 +226,29 @@ class QueueNetwork(object) :
         if colors is None :
             colors = {}
 
-        default_colors    = { 'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
-                              'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
-                              'vertex_highlight'  : [0.5, 0.5, 0.5, 1.0],
-                              'edge_departure'    : [0, 0, 0, 1],
-                              'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
-                              'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
-                              'edge_active'       : [0.1, 0.1, 0.1, 1.0],
-                              'edge_inactive'     : [0.8, 0.8, 0.8, 0.3],
-                              'bg_color'          : [1, 1, 1, 1]}
+        default_colors = {
+            'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
+            'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
+            'vertex_highlight'  : [0.5, 0.5, 0.5, 1.0],
+            'edge_departure'    : [0, 0, 0, 1],
+            'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
+            'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
+            'edge_active'       : [0.1, 0.1, 0.1, 1.0],
+            'edge_inactive'     : [0.8, 0.8, 0.8, 0.3],
+            'bg_color'          : [1, 1, 1, 1]
+        }
 
-        for key, value in default_colors.items() :
-            if key not in colors :
-                colors[key] = value
+        colors.update(default_colors)
 
         self.colors = colors
 
-        default_classes = {0 : NullQueue, 1 : QueueServer, 2 : LossQueue,
-                           3 : LossQueue, 4 : LossQueue}
+        default_classes = {
+            0 : NullQueue,
+            1 : QueueServer,
+            2 : LossQueue,
+            3 : LossQueue,
+            4 : LossQueue
+        }
 
         if q_classes is None :
             q_classes = default_classes
@@ -257,8 +262,13 @@ class QueueNetwork(object) :
             for k in set(q_classes.keys()) - set(q_args.keys()) :
                 q_args[k] = {}
 
-        v_pens    = [[0.5, 0.5, 0.5, 0.5], [0, 0.5, 1, 1], [0.133, 0.545, 0.133, 1],
-                     [0.282, 0.239, 0.545, 1], [1, 0.135, 0, 1]]
+        v_pens    = [
+            [0.5, 0.5, 0.5, 0.5],
+            [0, 0.5, 1, 1],
+            [0.133, 0.545, 0.133, 1],
+            [0.282, 0.239, 0.545, 1],
+            [1, 0.135, 0, 1]
+        ]
         q_colors  = {k : {'edge_loop_color'   : [0, 0, 0, 0],
                           'edge_color'        : [0.7, 0.7, 0.7, 0.5],
                           'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
@@ -700,7 +710,14 @@ class QueueNetwork(object) :
                 else :
                     data[issn] = datum
 
-        dType = [('a', float), ('s', float), ('d', float), ('q', float), ('n', float), ('id', float)]
+        dType = [
+            ('a', float),
+            ('s', float),
+            ('d', float),
+            ('q', float),
+            ('n', float),
+            ('id', float)
+        ]
         for issn, dat in data.items() :
             datum = np.array([tuple(d) for d in dat.tolist()], dtype=dType)
             datum = np.sort(datum, order='a')

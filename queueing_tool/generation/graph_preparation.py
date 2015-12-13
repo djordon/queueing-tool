@@ -7,7 +7,7 @@ from .graph_functions  import graph2dict
 
 
 def _test_graph(g) :
-    """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or 
+    """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or
      a string or file object to one.
 
     Parameters
@@ -18,7 +18,7 @@ def _test_graph(g) :
     -------
     :class:`~graph_tool.Graph`
         If ``g`` is a string or a file object then the output given by
-        ``graph_tool.load_graph(g, fmt='xml')``, if ``g`` is aready a 
+        ``graph_tool.load_graph(g, fmt='xml')``, if ``g`` is aready a
         :class:`~graph_tool.Graph` then it is returned unaltered.
 
     Raises
@@ -182,7 +182,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
             vertex_fill_color[v]  = queues[g.edge_index[e]]._current_color()
         else :
             vertex_color[v]       = g_colors['vertex_color']
-            vertex_fill_color[v]  = g_colors['vertex_fill_color'] 
+            vertex_fill_color[v]  = g_colors['vertex_fill_color']
 
     edge_pen_width.a   = 1.25
     edge_marker_size.a = 8
@@ -197,7 +197,8 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
         'edge_control_points' : edge_control_points,
         'edge_marker_size' : edge_marker_size,
         'edge_pen_width' : edge_pen_width,
-        'edge_color' : edge_color}
+        'edge_color' : edge_color
+    }
 
     props = vertex_props.union(edge_props)
     for key, value in properties.items() :

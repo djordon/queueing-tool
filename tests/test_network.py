@@ -1,9 +1,14 @@
-import numpy as np
-import queueing_tool  as qt
-import graph_tool.all as gt
+import unittest.mock as mock
 import unittest
 import numbers
+import sys
 import os
+
+import numpy as np
+
+import queueing_tool  as qt
+import graph_tool.all as gt
+
 
 
 class TestQueueNetwork(unittest.TestCase) :
@@ -339,7 +344,7 @@ class TestQueueNetwork(unittest.TestCase) :
 
         qcl = {1 : qt.QueueServer, 2 : qt.QueueServer}
         arg = {1 : {'arrival_f' : arr, 'service_f' : lambda t: t,
-                    'AgentClass': qt.GreedyAgent}, 
+                    'AgentClass': qt.GreedyAgent},
                2 : {'service_f' : ser, 'nServers' : nSe} }
 
         qn  = qt.QueueNetwork(g, q_classes=qcl, q_args=arg)
@@ -371,7 +376,7 @@ class TestQueueNetwork(unittest.TestCase) :
 
         g, pos = gt.geometric_graph(ps, 1)
         g = qt.set_types_random(g, pTypes={k : 1.0/6 for k in range(1,7)})
-        q_cls = {1 : qt.LossQueue, 2 : qt.QueueServer, 3 : qt.InfoQueue, 
+        q_cls = {1 : qt.LossQueue, 2 : qt.QueueServer, 3 : qt.InfoQueue,
                  4 : qt.ResourceQueue, 5 : qt.ResourceQueue, 6 : qt.QueueServer}
         q_arg = {3 : {'net_size' : g.num_edges()}, 4 : {'nServers' : 500}, 6 : {'AgentClass' : qt.GreedyAgent}}
 
@@ -391,9 +396,16 @@ class TestQueueNetwork(unittest.TestCase) :
 
         g, pos = gt.geometric_graph(ps, 1)
         g = qt.set_types_random(g, pTypes={k : 0.2 for k in range(1,6)})
-        q_cls = {1 : qt.LossQueue, 2 : qt.QueueServer, 3 : qt.InfoQueue, 
-                 4 : qt.ResourceQueue, 5 : qt.ResourceQueue}
-        q_arg = {3 : {'net_size' : g.num_edges()}, 4 : {'nServers' : 500}}
+        q_cls = {
+            1: qt.LossQueue,
+            2: qt.QueueServer,
+            3: qt.InfoQueue,
+            4: qt.ResourceQueue,
+            5: qt.ResourceQueue
+        }
+
+        q_arg = {3: {'net_size' : g.num_edges()},
+                 4: {'nServers' : 500}}
 
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
         qn.max_agents = np.infty
