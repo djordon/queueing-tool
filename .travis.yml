@@ -7,13 +7,16 @@ python:
 virtualenv:
   system_site_packages: true
 before_install:
+addons:
+  apt:
+    sources:
   - echo 'deb http://downloads.skewed.de/apt/trusty trusty universe' | sudo tee -a /etc/apt/sources.list
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
   - sudo apt-get install -y --allow-unauthenticated python-setuptools python-graph-tool python3-graph-tool
 install:
   - pip install -e .
-  - pip install coveralls
+  - pip install numpy coveralls
 script:
   - nosetests --with-coverage --cover-package=queueing_tool -v
 after_success:
