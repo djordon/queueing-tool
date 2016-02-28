@@ -1,5 +1,6 @@
 import graph_tool.all as gt
-import numpy   as np
+import networkx as nx
+import numpy as np
 import collections
 import numbers
 import copy
@@ -284,37 +285,34 @@ class QueueNetwork(object) :
 
         if isinstance(seed, numbers.Integral) :
             np.random.seed(seed)
-            gt.seed_rng(seed)
 
         for k in range(5) :
             if k not in q_args :
                 q_args[k] = {}
 
         if g is not None :
-            if isinstance(g, str) or isinstance(g, gt.Graph) :
-                g, qs = _prepare_graph(g, self.colors, q_classes, q_args)
-            else :
-                raise TypeError("The Parameter `g` needs to be either a graph-tool Graph, a string.")
+            g, qs = _prepare_graph(g, self.colors, q_classes, q_args)
+
+            self.nV = g.num_vertices()
+            self.nE = g.num_edges()
 
             self.edge2queue   = qs
             self.nAgents      = np.zeros(g.num_edges(), int)
-            self.out_edges    = [0 for v in g.vertices()]
-            self.in_edges     = [0 for v in g.vertices()]
-            self._route_probs = [0 for v in g.vertices()]
+            self.out_edges    = [0 for v in range(self.nV)]
+            self.in_edges     = [0 for v in range(self.nV)]
+            self._route_probs = [0 for v in range(self.nV)]
 
             def edge_index(e) :
                 return g.edge_index[e]
 
             for v in g.vertices() :
                 vi  = int(v)
-                vod = v.out_degree()
-                self.out_edges[vi]    = [i for i in map(edge_index, list(v.out_edges()))]
-                self.in_edges[vi]     = [i for i in map(edge_index, list(v.in_edges()))]
+                vod = g.out_degree(v)
+                self.out_edges[vi] = [i for i in map(edge_index, g.out_edges(v))]
+                self.in_edges[vi]  = [i for i in map(edge_index, g.in_edges(v))]
                 self._route_probs[vi] = [np.float64(1 / vod) for i in range(vod)]
 
-            self.g  = g
-            self.nV = g.num_vertices()
-            self.nE = g.num_edges()
+            self.g = g
 
     def __repr__(self) :
         the_string = 'QueueNetwork. # nodes: {0}, edges: {1}, agents: {2}'
@@ -455,7 +453,7 @@ class QueueNetwork(object) :
             mat = np.zeros( (self.nV, self.nV) )
             for v in self.g.vertices() :
                 vi  = int(v)
-                ind = [int(e.target()) for e in v.out_edges()]
+                ind = [e[1] for e in self.g.out_edges(v)]
                 mat[vi, ind] = self._route_probs[vi]
         else :
             mat = {k: value for k, value in enumerate(self._route_probs)}
@@ -520,27 +518,30 @@ class QueueNetwork(object) :
 
                 if len(value) == self.nV :
                     self._route_probs[key] = []
-                    for e in self.g.vertex(key).out_edges() :
-                        p = value[ int(e.target()) ]
-                        self._route_probs[key].append( np.float64(p) )
+                    for e in self.g.out_edges(key):
+                        p = value[e[1]]
+                        self._route_probs[key].append(np.float64(p))
                 elif len(value) == len(self._route_probs[key]) :
                     self._route_probs[key] = []
                     for p in value :
-                        self._route_probs[key].append( np.float64(p) )
+                        self._route_probs[key].append(np.float64(p))
 
         elif isinstance(mat, np.ndarray) :
-            non_terminal = np.array([v.out_degree() > 0 for v in self.g.vertices()])
+            non_terminal = np.array([self.g.out_degree(v) > 0 for v in self.g.vertices()])
             if mat.shape != (self.nV, self.nV) :
-                raise RuntimeError("Matrix is the wrong shape, should be %s x %s." % (self.nV, self.nV))
+                msg = ("Matrix is the wrong shape, should "
+                       "be {0} x {1}.").format(self.nV, self.nV)
+                raise RuntimeError(msg)
             elif not np.allclose(np.sum(mat[non_terminal,:], axis=1), 1) :
-                raise RuntimeError("Sum of transition probabilities at a vertex was not 1.")
+                msg = "Sum of transition probabilities at a vertex was not 1."
+                raise RuntimeError(msg)
             elif (mat < 0).any() :
                 raise RuntimeError("Some transition probabilities were negative.")
 
             for k in range(self.nV) :
                 self._route_probs[k] = []
-                for e in self.g.vertex(k).out_edges() :
-                    p = mat[k, int(e.target())]
+                for e in self.g.out_edges(k):
+                    p = mat[k, e[1]]
                     self._route_probs[k].append( np.float64(p) )
 
 
@@ -799,10 +800,10 @@ class QueueNetwork(object) :
             self._update_all_colors()
 
         kwargs = self._update_kwargs(kwargs, out='output' in kwargs, update_props=True)
-        if 'bg_color' in kwargs :
-            ans = gt.graph_draw(g=self.g, **kwargs)
-        else :
-            ans = gt.graph_draw(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
+        if 'bg_color' not in kwargs:
+            kwargs['bg_color'] = self.colors['bg_color']
+
+        ans = self.g.graph_draw(**kwargs)
 
 
     def show_active(self, **kwargs) :
@@ -1153,7 +1154,7 @@ class QueueNetwork(object) :
                 if n == 1 :
                     self._queues.append(q1)
                 else :
-                    bisectSort(self._queues, q1, n-1 )
+                    bisectSort(self._queues, q1, n - 1)
 
 
         if self._to_animate :

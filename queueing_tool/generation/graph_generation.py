@@ -3,11 +3,12 @@ import numpy   as np
 import numbers
 import copy
 
-from .union_find        import UnionFind
+from .. graph import GraphWrapper
+from .union_find import UnionFind
 
 
 def _test_graph(g) :
-    """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or 
+    """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or
      a string or file object to one.
 
     Parameters
@@ -18,7 +19,7 @@ def _test_graph(g) :
     -------
     :class:`~graph_tool.Graph`
         If ``g`` is a string or a file object then the output given by
-        ``graph_tool.load_graph(g, fmt='xml')``, if ``g`` is aready a 
+        ``graph_tool.load_graph(g, fmt='xml')``, if ``g`` is aready a
         :class:`~graph_tool.Graph` then it is returned unaltered.
 
     Raises
@@ -27,11 +28,21 @@ def _test_graph(g) :
         Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
         or a :class:`~graph_tool.Graph`\.
     """
-    if isinstance(g, str) :
-        g = gt.load_graph(g, fmt='xml')
-    elif not isinstance(g, gt.Graph) :
-        raise TypeError("Need to supply a graph-tool graph or the location of a graph")
+    if not isinstance(g, GraphWrapper):
+        if not isinstance(g, nx.DiGraph):
+            try:
+                import graph_tool.all as gt
+            except ImportError:
+                msg = ("Graph given was not a networkx DiGraph or graph_tool "
+                       "graph.")
+                raise ImportError(msg)
+            if not isinstance(g, gt.Graph) :
+                msg = "Need to supply a graph-tool Graph or networkx DiGraph"
+                raise TypeError(msg)
+
+        g = GraphWrapper(g)
     return g
+
 
 
 def _calculate_distance(latlon1, latlon2) :
@@ -61,33 +72,15 @@ def _matrix2dict(matrix) :
 
 def _dict2dict(adj_dict) :
     """Takes a dictionary representation of an adjacency list and returns
-    a list based representation.
+    a dict of dicts based representation.
     """
-    vertices = set()
-    for key, value in adj_dict.items() :
-        vertices.add(key)
-        if isinstance(value, numbers.Integral) :
-            vertices.add(value)
-        else :
-            vertices.update(value)
+    item = adj_dict.popitem()
+    adj_dict[item[0]] = item[1]
+    if not isinstance(item[1], dict):
+        for key, value in adj_dict.items() :
+            value = {v: {} for v in value}
 
-    adjacency = {}
-    vertices  = list(vertices)
-    vertices.sort()
-
-    vs = {v : k for k, v in enumerate(vertices)}
-
-    for key, value in adj_dict.items() :
-        if not hasattr(value, '__iter__') :
-            adjacency[vs[key]] = [vs[value]]
-        else :
-            adjacency[vs[key]] = [vs[v] for v in value]
-
-    for v in vertices :
-        if vs[v] not in adjacency :
-            adjacency[vs[v]] = []
-
-    return adjacency
+    return adj_dict
 
 
 def _list2dict(adj_list) :
@@ -96,9 +89,9 @@ def _list2dict(adj_list) :
     """
     adj_dict = {}
     for key, value in enumerate(adj_list) :
-        adj_dict[key] = value
+        adj_dict[key] = {v: {} for v in value}
 
-    return _dict2dict(adj_dict)
+    return adj_dict
 
 
 def _other2dict(adj_dict, other) :
@@ -132,52 +125,33 @@ def _other2dict(adj_dict, other) :
     return other_dict
 
 
-def _adjacency_adjust(adjacency, eType, adjust, is_directed) :
+def _adjacency_adjust(adjacency, adjust, is_directed) :
     """Takes an adjacency list and returns a (possibly) modified adjacency list."""
 
-    if eType is None :
-        eType = {}
-        for v, adj in adjacency.items() :
-            eType[v] = [1 for k in adj]
-    else :
-        if len(adjacency) != len(eType) :
-            raise RuntimeError("Graph for edge types must match graph from adjacency list/matrix.")
-        for k in adjacency.keys() :
-            if len(adjacency[k]) != len(eType[k]) :
-                raise RuntimeError("Graph for edge types must match graph from adjacency list/matrix.")
+    for v, adj in adjacency.items():
+        for u, properties in adj.items():
+            if 'eType' not in properties:
+                properties['eType'] = 1
 
-    ok_adj = True
-    for v, adj in adjacency.items() :
-        if len(adj) == 0 :
-            if eType is None :
-                ok_adj = False
-                break
-            else :
-                for u, adj2 in adjacency.items() :
-                    for k, w in enumerate(adj2) :
-                        if v == w and eType[u][k] != 0 :
-                            ok_adj = False
-                            break
-
-    if not ok_adj and is_directed :
-        if adjust == 1 :
+    if is_directed:
+        if adjust == 1:
             null_nodes = set()
 
-            for k, adj in adjacency.items() :
-                if len(adj) == 0 :
+            for k, adj in adjacency.items():
+                if len(adj) == 0:
                     null_nodes.add(k)
 
-            for k, adj in adjacency.items() :
-                #et = eType[k]
-                eType[k] = [0 if v in null_nodes else eType[k][j] for j, v in enumerate(adj)]
+            for k, adj in adjacency.items():
+                for v in adj.keys():
+                    if v in null_nodes:
+                        adj[v]['eType'] = 0
 
-        else :
-            for k, adj in adjacency.items() :
-                if len(adj) == 0 :
-                    adjacency[k].append(k)
-                    eType[k].append(0)
+        else:
+            for k, adj in adjacency.items():
+                if len(adj) == 0:
+                    adj[k] = {k: {'eType': 0}}
 
-    return adjacency, eType
+    return adjacency
 
 
 def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
@@ -186,7 +160,7 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     The purpose of this function is take an adjacency list (or matrix) and
     return a :class:`~graph_tool.Graph` that can be used with
     :class:`.QueueNetwork`. The Graph returned has an ``eType`` edge property.
-    If the adjacency is directed and not connected, then the adjacency list 
+    If the adjacency is directed and not connected, then the adjacency list
     may be altered.
 
     Parameters
@@ -223,7 +197,7 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     ------
     TypeError
         Is raised if ``adjacency`` or ``eType`` is not a :class:`.list`\,
-        :class:`.dict`\, :class:`~numpy.ndarray` the (``eType`` can be 
+        :class:`.dict`\, :class:`~numpy.ndarray` the (``eType`` can be
         ``None``\).
     RuntimeError
         A :exc:`~RuntimeError` is raised if, when passed, the ``eType``
@@ -278,28 +252,10 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     if eType is not None :
         eType = _other2dict(adjacency, eType)
 
-    adjacency, eType = _adjacency_adjust(adjacency, eType, adjust, is_directed)
+    adjacency = _adjacency_adjust(adjacency, adjust, is_directed)
 
-    nV  = len(adjacency)
-    g   = gt.Graph()
-    vs  = g.add_vertex(nV)
+    g   = nx.from_dict_of_dicts(adjacency)
 
-    g.set_directed(is_directed)
-
-    eT = g.new_edge_property("int")
-
-    for u, adj in adjacency.items() :
-        if is_directed :
-            for j, v in enumerate(adj) :
-                e = g.add_edge(u, v)
-                eT[e] = eType[u][j]
-        else :
-            for j, v in enumerate(adj) :
-                if len(g.edge(u,v,True)) < adj.count(v) :
-                    e = g.add_edge(u, v)
-                    eT[e] = eType[u][j]
-
-    g.ep['eType'] = eT
     return g
 
 
@@ -343,7 +299,7 @@ def generate_transition_matrix(g, seed=None) :
 
 
 def generate_random_graph(nVertices=250, **kwargs) :
-    """Creates a random graph where the edge and vertex types are selected 
+    """Creates a random graph where the edge and vertex types are selected
     using the :func:`~set_types_random` method.
 
     Calls :func:`~minimal_random_graph` and then calls :func:`~set_types_random`.
@@ -392,7 +348,7 @@ def generate_random_graph(nVertices=250, **kwargs) :
 
 
 def generate_pagerank_graph(nVertices=250, **kwargs) :
-    """Creates a random graph where the edge and vertex types are selected 
+    """Creates a random graph where the edge and vertex types are selected
     using the :func:`.set_types_pagerank` method.
 
     Calls :func:`.minimal_random_graph` and then calls :func:`.set_types_pagerank`.
@@ -503,7 +459,7 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kw
 def set_types_random(g, pTypes=None, seed=None, **kwargs) :
     """Randomly sets ``eType`` (edge type) properties of the graph.
 
-    This function randomly assigns each edge a type. The probability of an edge being 
+    This function randomly assigns each edge a type. The probability of an edge being
     a specific type is proscribed in the ``pTypes`` variable.
 
     Parameters
@@ -549,7 +505,7 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
     if pTypes is None :
         pTypes = {k : 1.0/3 for k in range(1,4)}
 
-    nEdges  = g.num_edges() 
+    nEdges  = g.num_edges()
     edges   = [k for k in range(nEdges)]
     cut_off = np.cumsum( np.array(list(pTypes.values())) )
 

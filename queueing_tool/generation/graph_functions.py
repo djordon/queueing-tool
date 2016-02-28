@@ -3,7 +3,7 @@ import numpy as np
 
 
 def _test_graph(g) :
-    """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or 
+    """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or
      a string or file object to one.
 
     Parameters
@@ -14,7 +14,7 @@ def _test_graph(g) :
     -------
     :class:`~graph_tool.Graph`
         If ``g`` is a string or a file object then the output given by
-        ``graph_tool.load_graph(g, fmt='xml')``, if ``g`` is aready a 
+        ``graph_tool.load_graph(g, fmt='xml')``, if ``g`` is aready a
         :class:`~graph_tool.Graph` then it is returned unaltered.
 
     Raises
@@ -23,11 +23,21 @@ def _test_graph(g) :
         Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
         or a :class:`~graph_tool.Graph`\.
     """
-    if isinstance(g, str) :
-        g = gt.load_graph(g, fmt='xml')
-    elif not isinstance(g, gt.Graph) :
-        raise TypeError("Need to supply a graph-tool graph or the location of a graph")
+    if not isinstance(g, GraphWrapper):
+        if not isinstance(g, nx.DiGraph):
+            try:
+                import graph_tool.all as gt
+            except ImportError:
+                msg = ("Graph given was not a networkx DiGraph or graph_tool "
+                       "graph.")
+                raise ImportError(msg)
+            if not isinstance(g, gt.Graph) :
+                msg = "Need to supply a graph-tool Graph or networkx DiGraph"
+                raise TypeError(msg)
+
+        g = GraphWrapper(g)
     return g
+
 
 
 def vertices2edge(g, u, v) :
@@ -62,27 +72,15 @@ def graph2dict(g) :
     Returns
     -------
     adj : :class:`.dict`
-        A dictionary where a key is the vertex index for a vertex ``v`` and the
+        An adjacency representation of graph as a dictionary of dictionaries,
+        where a key is the vertex index for a vertex ``v`` and the
         values are :class:`.list`\s of vertex indices where that vertex is
         connected to ``v`` by an edge.
-    eTypes : :class:`.dict` or ``None``
-        A dictionary where a key is the vertex index for a vertex ``v`` and the
-        values are :class:`.list`\s of each adjacent edge's edge type. More
-        specifically, ``eType[v][k]`` is the edge type of the edge
-        ``adj[v][k]``. This dictionary is returned whenever the ``eType`` edge
-        property is in the graph, otherwise ``None`` is returned.
     """
-    adj = {int(v) : [int(u) for u in v.out_neighbours()] for v in g.vertices()}
-    if 'eType' in g.ep :
-        eTypes = {}
-        for key, value in adj.items() :
-            eTypes[key] = []
-            for v in value :
-                e = g.edge(key, v)
-                eTypes[key].append( g.ep['eType'][e] )
-    else :
-        eTypes = None                
-    return adj, eTypes
+    if not isinstance(g, GraphWrapper):
+        g = GraphWrapper(g)
+
+    return g.graph2dict()
 
 
 def shortest_paths(g) :
@@ -110,7 +108,7 @@ def shortest_paths(g) :
     Raises
     ------
     TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object, or a 
+        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object, or a
         :class:`~graph_tool.Graph`.
     """
     g = _test_graph(g)
@@ -124,7 +122,7 @@ def shortest_paths(g) :
     short = np.ones( (nV, nV), int)
     spath = np.ones( (nV, nV), int)
 
-    if 'dist' not in v_props :        
+    if 'dist' not in v_props :
         for ve in g.vertices() :
             for we in g.vertices() :
                 v,w  = int(ve), int(we)

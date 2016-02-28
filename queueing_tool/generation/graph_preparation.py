@@ -1,7 +1,8 @@
-import graph_tool.all as gt
-import numpy   as np
+import networkx as nx
+import numpy as np
 import numbers
 
+from .. graph import GraphWrapper
 from .graph_generation import adjacency2graph
 from .graph_functions  import graph2dict
 
@@ -27,10 +28,19 @@ def _test_graph(g) :
         Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
         or a :class:`~graph_tool.Graph`\.
     """
-    if isinstance(g, str) :
-        g = gt.load_graph(g, fmt='xml')
-    elif not isinstance(g, gt.Graph) :
-        raise TypeError("Need to supply a graph-tool graph or the location of a graph")
+    if not isinstance(g, GraphWrapper):
+        if not isinstance(g, nx.DiGraph):
+            try:
+                import graph_tool.all as gt
+            except ImportError:
+                msg = ("Graph given was not a networkx DiGraph or graph_tool "
+                       "graph.")
+                raise ImportError(msg)
+            if not isinstance(g, gt.Graph) :
+                msg = "Need to supply a graph-tool Graph or networkx DiGraph"
+                raise TypeError(msg)
+
+        g = GraphWrapper(g)
     return g
 
 
@@ -140,8 +150,9 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
         or a :class:`~graph_tool.Graph`.
     """
     g = _test_graph(g)
+    if isinstance(g, GraphWrapper):
+        return g
 
-    g.reindex_edges()
     vertex_color        = g.new_vertex_property("vector<double>")
     vertex_fill_color   = g.new_vertex_property("vector<double>")
     vertex_pen_width    = g.new_vertex_property("double")
@@ -216,10 +227,10 @@ def _set_queues(g, q_cls, q_arg, has_cap) :
 
     for e in g.edges() :
         eType = g.ep['eType'][e]
-        qedge = (int(e.source()), int(e.target()), g.edge_index[e], eType)
+        qedge = (e[0], e[1], g.edge_index[e], eType)
 
         if has_cap and 'nServers' not in q_arg[eType] :
-            q_arg[eType]['nServers'] = max(g.vp['cap'][e.target()], 1)
+            q_arg[eType]['nServers'] = max(g.vp['cap'][e[1]], 1)
 
         queues[qedge[2]] = q_cls[eType](edge=qedge, **q_arg[eType])
 

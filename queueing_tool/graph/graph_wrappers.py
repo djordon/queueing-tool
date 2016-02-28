@@ -1,46 +1,128 @@
+import networkx as nx
 
+
+gt2nx_attr = {
+    'vertices': 'nodes',
+    'num_vertices': 'number_of_nodes',
+    'num_edges': 'number_of_edges',
+}
+nx2gt_attr = {value: key for key, value in gt2nx_attr.items()}
 
 
 class GraphWrapper(object):
+    gt2nx_attr = gt2nx_attr
+    nx2gt_attr = nx2gt_attr
 
     def __init__(self, g):
-        pass
+        if isinstance(g, nx.DiGraph):
+            self.is_nx_graph = True
+            edge_index = {e: k for k, e in enumerate(g.edges())}
+            setattr(g, 'edge_index', edge_index)
+        else:
+            msg = "Must be given a networkx DiGraph or a graph-tool Graph"
+            try:
+                import graph_tool.all as gt
+            except ImportError:
+                raise ImportError(msg)
+
+            if not isinstance(g, gt.Graph):
+                raise TypeError(msg)
+
+            g.reindex_edges()
+            self.is_nx_graph = False
+            setattr(g, 'successors', self._successors)
+            setattr(g, 'predecessors', self._predecessors)
+            setattr(g, 'out_degree', self._out_degree)
+            setattr(g, 'out_edges', self._out_edges)
+            setattr(g, 'in_edges', self._in_edges)
+
+        self.g = g
+
+    def __getattr__(self, attr):
+        if attr in self.gt2nx_attr and not self.is_nx_graph:
+            return getattr(self.g, self.gt2nx_attr[attr])
+        elif attr in self.nx2gt_attr and self.is_nx_graph:
+            return getattr(self.g, self.nx2gt_attr[attr])
+        else:
+            return getattr(self.g, attr)
+
+    def _successors(self, v):
+        v = self.g.vertex(v)
+        return [int(e.target()) for e in v.out_edges()]
+
+    def _predecessors(self, v):
+        v = self.g.vertex(v)
+        return [int(e.source()) for e in v.in_edges()]
+
+    def _out_edges(self, v):
+        v = self.g.vertex(v)
+        return [(int(e.source()), int(e.target())) for e in v.out_edges()]
+
+    def _in_edges(self, v):
+        v = self.g.vertex(v)
+        return [(int(e.source()), int(e.target())) for e in v.in_edges()]
+
+    def _out_degree(self, v):
+        return v.out_degree()
 
     def vertices(self):
-        pass
+        if self.is_nx_graph:
+            return self.g.nodes()
+        else:
+            return [int(v) for v in self.g.vertices()]
 
-    def vertice(self, v):
-        pass
+    def graph_draw(self, **kwargs):
+        if self.is_nx_graph:
+            nx.draw_networkx(self.g, **kwargs)
+        else:
+            gt.graph_draw(g=self.g, **kwargs)
 
-    def edges(self):
-        pass
+    def out_neighbours(self, v):
+        if self.is_nx_graph:
+            return [e[1] for e in self.g.out_edges(v)]
+        else:
+            v = self.g.vertex(v)
+            return [int(u) for u in v.out_neighbours()]
 
-    def edge(self, e0, e1):
-        pass
+    def edges(self, *args, **kwargs):
+        if self.is_nx_graph:
+            return self.g.edges(*args, **kwargs)
+        else:
+            return [(int(e.source()), int(e.target()) for e in self.g.edges()]
 
-    def out_edges(self):
-        pass
+    def graph2dict(self):
+        """Takes a graph and returns an adjacency list.
 
-    def out_degree(self):
-        pass
+        Returns
+        -------
+        adj : :class:`.dict`
+            An adjacency representation of graph as a dictionary of dictionaries,
+            where a key is the vertex index for a vertex ``v`` and the
+            values are :class:`.list`\s of vertex indices where that vertex is
+            connected to ``v`` by an edge.
+        """
+        if self.is_nx_graph:
+            return nx.to_dict_of_dicts(self.g)
+        else:
+            adj = {}
+            if 'eType' not in g.ep
+                for v in self.g.vertices()
+                    adj[int(v)] = {int(u): {} for u in v.out_neighbours()}
+            else:
+                et = self.g.ep['eType']
+                for v in self.g.vertices()
+                    adj[int(v)] = {int(e.target()): {'eType': et[e]} for e in v.out_edges()}
 
-    def is_directed(self):
-        pass
-
-    def in_edges(self):
-        pass
-
-    def ep(self):
-        pass
-
-    def vp(self):
-        pass
+            return adj
 
     @property
-    def edge_index(self):
-        pass
+    def ep(self):
+        if self.is_nx_graph:
+            pass
+        else:
+            pass
 
-    def copy(self):
+    def vp(self):
         pass
 
     def new_edge_property(self):
@@ -57,3 +139,24 @@ class GraphWrapper(object):
 
     def add_edge(self, source, target):
         pass
+
+
+def __create_graph():
+    vs  = g.add_vertex(nV)
+
+    g.set_directed(is_directed)
+
+    eT = g.new_edge_property("int")
+
+    for u, adj in adjacency.items() :
+        if is_directed :
+            for j, v in enumerate(adj) :
+                e = g.add_edge(u, v)
+                eT[e] = eType[u][j]
+        else :
+            for j, v in enumerate(adj) :
+                if len(g.edge(u,v,True)) < adj.count(v) :
+                    e = g.add_edge(u, v)
+                    eT[e] = eType[u][j]
+
+    g.ep['eType'] = eT
