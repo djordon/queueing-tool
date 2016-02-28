@@ -148,9 +148,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
         Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
         or a :class:`~graph_tool.Graph`.
     """
-    g  = _test_graph(g)
-    ep = g.set_ep
-    vp = g.set_vp
+    g = _test_graph(g)
 
     g.new_vertex_property('vertex_color', 'vector<double>')
     g.new_vertex_property('vertex_fill_color', 'vector<double>')
@@ -172,23 +170,23 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
         g.set_pos()
 
     for k, e in enumerate(g.edges()):
-        ep(e, 'edge_pen_width', 1.25)
-        ep(e, 'edge_marker_size', 8)
+        g.set_ep(e, 'edge_pen_width', 1.25)
+        g.set_ep(e, 'edge_marker_size', 8)
         if e[0] == e[1]:
-            ep(e, 'edge_color', queues[k].colors['edge_loop_color'])
+            g.set_ep(e, 'edge_color', queues[k].colors['edge_loop_color'])
         else :
-            ep(e, 'edge_color', queues[k].colors['edge_color'])
+            g.set_ep(e, 'edge_color', queues[k].colors['edge_color'])
 
     for v in g.vertices() :
-        vp(v, 'vertex_pen_width', 1.1)
-        vp(v, 'vertex_size', 8)
+        g.set_vp(v, 'vertex_pen_width', 1.1)
+        g.set_vp(v, 'vertex_size', 8)
         e = (v, v)
         if g.is_edge(e):
-            vp(v, 'vertex_color', queues[g.edge_index[e]]._current_color(2))
-            vp(v, 'vertex_fill_color', queues[g.edge_index[e]]._current_color())
+            g.set_vp(v, 'vertex_color', queues[g.edge_index[e]]._current_color(2))
+            g.set_vp(v, 'vertex_fill_color', queues[g.edge_index[e]]._current_color())
         else:
-            vp(v, 'vertex_color', g_colors['vertex_color'])
-            vp(v, 'vertex_fill_color', g_colors['vertex_fill_color'])
+            g.set_vp(v, 'vertex_color', g_colors['vertex_color'])
+            g.set_vp(v, 'vertex_fill_color', g_colors['vertex_fill_color'])
 
     return g, queues
 

@@ -824,10 +824,8 @@ class QueueNetwork(object) :
         ``edge_inactive``.
         """
         g  = self.g
-        ep = self.g.set_ep
-        vp = self.g.set_vp
         for v in g.vertices():
-            vp(v, 'vertex_color', [0, 0, 0, 0.9])
+            self.g.set_vp(v, 'vertex_color', [0, 0, 0, 0.9])
             is_active = False
             my_iter   = g.in_edges(v) if g.is_directed() else g.out_edges(v)
             for e in my_iter:
@@ -836,16 +834,16 @@ class QueueNetwork(object) :
                     is_active = True
                     break
             if is_active:
-                vp(v, 'vertex_fill_color', self.colors['vertex_active'])
+                self.g.set_vp(v, 'vertex_fill_color', self.colors['vertex_active'])
             else:
-                vp(v, 'vertex_fill_color', self.colors['vertex_inactive'])
+                self.g.set_vp(v, 'vertex_fill_color', self.colors['vertex_inactive'])
 
         for e in g.edges():
             ei = g.edge_index[e]
             if self.edge2queue[ei]._active:
-                ep(e, 'edge_color', self.colors['edge_active'])
+                self.g.set_ep(e, 'edge_color', self.colors['edge_active'])
             else :
-                ep(e, 'edge_color', self.colors['edge_inactive'])
+                self.g.set_ep(e, 'edge_color', self.colors['edge_inactive'])
 
         self.draw(update_colors=False, **kwargs)
         self._update_all_colors()
@@ -884,43 +882,39 @@ class QueueNetwork(object) :
         .. figure:: edge_type_2.png
            :align: center
         """
-        ep = self.g.set_ep
-        vp = self.g.set_vp
         for v in self.g.vertices():
             e = (v, v)
-            if isinstance(e, gt.Edge) and self.g.ep['eType'][e] == eType:
+            if self.is_edge(e) and self.g.ep(e, 'eType') == eType:
                 ei = self.g.edge_index[e]
-                vp(v, 'vertex_fill_color', self.colors['vertex_highlight'])
-                vp(v, 'vertex_color', self.edge2queue[ei].colors['vertex_color'])
+                self.g.set_vp(v, 'vertex_fill_color', self.colors['vertex_highlight'])
+                self.g.set_vp(v, 'vertex_color', self.edge2queue[ei].colors['vertex_color'])
             else:
-                vp(v, 'vertex_fill_color', self.colors['vertex_inactive'])
-                vp(v, 'vertex_color', [0, 0, 0, 0.9])
+                self.g.set_vp(v, 'vertex_fill_color', self.colors['vertex_inactive'])
+                self.g.set_vp(v, 'vertex_color', [0, 0, 0, 0.9])
 
         for e in self.g.edges():
             ei = self.g.edge_index[e]
             if self.g.ep(e, 'eType') == eType:
-                ep(e, 'edge_color', self.colors['edge_active'])
+                self.g.set_ep(e, 'edge_color', self.colors['edge_active'])
             else :
-                ep(e, 'edge_color', self.colors['edge_inactive'])
+                self.g.set_ep(e, 'edge_color', self.colors['edge_inactive'])
 
         self.draw(update_colors=False, **kwargs)
         self._update_all_colors()
 
 
     def _update_all_colors(self):
-        ep  = self.g.set_ep
-        vp  = self.g.set_vp
         do  = [True for v in range(self.nV)]
         for q in self.edge2queue :
             e = q.edge[:2]
             v = q.edge[1]
             if q.edge[0] == q.edge[1] :
-                ep(e, 'edge_color', q._current_color(1))
-                vp(v, 'vertex_color', q._current_color(2))
+                self.g.set_ep(e, 'edge_color', q._current_color(1))
+                self.g.set_vp(v, 'vertex_color', q._current_color(2))
                 if q.edge[3] != 0 :
-                    vp(v, 'vertex_fill_color', q._current_color())
+                    self.g.set_vp(v, 'vertex_fill_color', q._current_color())
             else :
-                ep(e, 'edge_color', q._current_color())
+                self.g.set_ep(e, 'edge_color', q._current_color())
                 if do[q.edge[1]] :
                     ee  = (v, v)
                     eei = self.g.edge_index[ee] if ee is not None else 0
@@ -937,9 +931,9 @@ class QueueNetwork(object) :
 
                         color = [i * tmp / 0.9 for i in self.colors['vertex_fill_color']]
                         color[3] = 1.0 - tmp
-                        vp(v, 'vertex_fill_color', color)
+                        self.g.set_vp(v, 'vertex_fill_color', color)
                         if ee is None :
-                            vp(v, 'vertex_color', self.colors['vertex_color'])
+                            self.g.set_vp(v, 'vertex_color', self.colors['vertex_color'])
 
                         do[q.edge[1]] = False
 
@@ -947,22 +941,19 @@ class QueueNetwork(object) :
     def _update_graph_colors(self, qedge):
         e  = qedge[:2]
         v  = qedge[1]
-        ep = self.g.set_ep
-        vp = self.g.set_vp
-
         if self._prev_edge is not None:
             pe = self._prev_edge[:2]
             pv = self._prev_edge[1]
             q  = self.edge2queue[self._prev_edge[2]]
 
             if pe.target() == pe.source():
-                ep(pe, 'edge_color', q._current_color(1))
-                vp(pv, 'vertex_color', q._current_color(2))
+                self.g.set_ep(pe, 'edge_color', q._current_color(1))
+                self.g.set_vp(pv, 'vertex_color', q._current_color(2))
                 if q.edge[3] != 0:
-                    vp(v, 'vertex_fill_color', q._current_color())
+                    self.g.set_vp(v, 'vertex_fill_color', q._current_color())
 
             else:
-                ep(pe, 'edge_color', q._current_color())
+                self.g.set_ep(pe, 'edge_color', q._current_color())
                 ee  = (pv, pv)
                 eei = self.g.edge_index[ee] if ee is not None else 0
 
@@ -978,19 +969,19 @@ class QueueNetwork(object) :
 
                     color    = [i * tmp / 0.9 for i in self.colors['vertex_fill_color']]
                     color[3] = 1.0 - tmp
-                    vp(pv, 'vertex_fill_color', color)
+                    self.g.set_vp(pv, 'vertex_fill_color', color)
                     if ee is None :
-                        vp(pv, 'vertex_color', self.colors['vertex_color'])
+                        self.g.set_vp(pv, 'vertex_color', self.colors['vertex_color'])
 
         q = self.edge2queue[qedge[2]]
         if qedge[0] == qedge[1]:
-            ep(e, 'edge_color', q._current_color(1))
-            vp(v, 'vertex_color', q._current_color(2))
+            self.g.set_ep(e, 'edge_color', q._current_color(1))
+            self.g.set_vp(v, 'vertex_color', q._current_color(2))
             if q.edge[3] != 0:
-                vp(v, 'vertex_fill_color', q._current_color())
+                self.g.set_vp(v, 'vertex_fill_color', q._current_color())
 
         else:
-            ep(e, 'edge_color', q._current_color())
+            self.g.set_ep(e, 'edge_color', q._current_color())
             ee  = (v, v)
             eei = self.g.edge_index[ee] if ee is not None else 0
 
@@ -1006,9 +997,9 @@ class QueueNetwork(object) :
 
                 color    = [i * tmp / 0.9 for i in self.colors['vertex_fill_color']]
                 color[3] = 1.0 - tmp
-                vp(v ,'vertex_fill_color', color)
+                self.g.set_vp(v ,'vertex_fill_color', color)
                 if ee is None:
-                    vp(v, 'vertex_color', self.colors['vertex_color'])
+                    self.g.set_vp(v, 'vertex_color', self.colors['vertex_color'])
 
 
     def _add_arrival(self, ei, agent, t=None):
