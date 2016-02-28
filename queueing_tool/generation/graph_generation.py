@@ -245,7 +245,8 @@ def adjacency2graph(adjacency, adjust=0, is_directed=True) :
         raise TypeError("If the adjacency parameter is supplied it must be a list, dict, or a numpy.ndarray.")
 
     adjacency = _adjacency_adjust(adjacency, adjust, is_directed)
-    return nx.from_dict_of_dicts(adjacency)
+    g = nx.from_dict_of_dicts(adjacency, create_using=nx.DiGraph())
+    return GraphWrapper(g)
 
 
 def generate_transition_matrix(g, seed=None):
@@ -491,7 +492,7 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
         np.random.seed(seed)
 
     if pTypes is None :
-        pTypes = {k : 1.0/3 for k in range(1,4)}
+        pTypes = {k : 1.0/3 for k in range(1, 4)}
 
     nEdges  = g.num_edges()
     edges   = [k for k in range(nEdges)]
@@ -499,8 +500,10 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
 
     if np.isclose(cut_off[-1], 1.0) :
         cut_off = np.array(np.round(cut_off * nEdges)).astype(int)
-    elif cut_off[-1] != nEdges :
-        raise RuntimeError("pTypes must sum to one, or sum to the number of edges in the graph")
+    elif cut_off[-1] != nEdges:
+        msg = ("pTypes must sum to one, or sum to the number of "
+               "edges in the graph")
+        raise RuntimeError(msg)
 
     np.random.shuffle(edges)
     eTypes  = {}

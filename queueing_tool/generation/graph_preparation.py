@@ -81,14 +81,13 @@ def add_edge_lengths(g) :
 
     """
     g = _test_graph(g)
-    elength   = g.new_edge_property("double")
+    g.new_edge_property('elength', 'double')
 
     for e in g.edges() :
-        latlon1     = g.vp['pos'][e.target()]
-        latlon2     = g.vp['pos'][e.source()]
-        elength[e]  = np.round(_calculate_distance(latlon1, latlon2), 3)
+        latlon1 = g.vp(e[1], 'pos')
+        latlon2 = g.vp(e[0], 'pos')
+        g.set_ep(e, 'elength', np.round(_calculate_distance(latlon1, latlon2), 3))
     
-    g.ep['edge_length'] = elength
     return g
 
 
@@ -149,83 +148,55 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
         Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
         or a :class:`~graph_tool.Graph`.
     """
-    g = _test_graph(g)
-    if isinstance(g, GraphWrapper):
-        return g
+    g  = _test_graph(g)
+    ep = g.set_ep
+    vp = g.set_vp
 
-    vertex_color        = g.new_vertex_property("vector<double>")
-    vertex_fill_color   = g.new_vertex_property("vector<double>")
-    vertex_pen_width    = g.new_vertex_property("double")
-    vertex_size         = g.new_vertex_property("double")
+    g.new_vertex_property('vertex_color', 'vector<double>')
+    g.new_vertex_property('vertex_fill_color', 'vector<double>')
+    g.new_vertex_property('vertex_pen_width', 'double')
+    g.new_vertex_property('vertex_size', 'double')
 
-    edge_control_points = g.new_edge_property("vector<double>")
-    edge_color          = g.new_edge_property("vector<double>")
-    edge_marker_size    = g.new_edge_property("double")
-    edge_pen_width      = g.new_edge_property("double")
+    g.new_edge_property('edge_control_points', 'vector<double>')
+    g.new_edge_property('edge_color', 'vector<double>')
+    g.new_edge_property('edge_marker_size', 'double')
+    g.new_edge_property('edge_pen_width', 'double')
 
-    vertex_props = set()
-    for key in g.vertex_properties.keys() :
-        vertex_props.add(key)
+    if 'eType' not in g.edge_properties :
+        ans = g.graph2dict()
+        g   = adjacency2graph(ans, adjust=1, is_directed=g.is_directed())
 
-    edge_props = set()
-    for key in g.edge_properties.keys() :
-        edge_props.add(key)
+    queues = _set_queues(g, q_cls, q_arg, 'cap' in g.vertex_properties)
 
-    if 'eType' not in edge_props :
-        ans = graph2dict(g)
-        g   = adjacency2graph(ans[0], adjust=1, is_directed=g.is_directed())
-
-    queues = _set_queues(g, q_cls, q_arg, 'cap' in vertex_props)
-
-    if 'pos' not in vertex_props :
-        g.vp['pos'] = gt.sfdp_layout(g, epsilon=1e-2, cooling_step=0.95)
+    if 'pos' not in g.vertex_properties:
+        g.set_pos()
 
     for k, e in enumerate(g.edges()):
+        ep(e, 'edge_pen_width', 1.25)
+        ep(e, 'edge_marker_size', 8)
         if e[0] == e[1]:
-            edge_color[e] = queues[k].colors['edge_loop_color']
+            ep(e, 'edge_color', queues[k].colors['edge_loop_color'])
         else :
-            edge_color[e] = queues[k].colors['edge_color']
+            ep(e, 'edge_color', queues[k].colors['edge_color'])
 
     for v in g.vertices() :
+        vp(v, 'vertex_pen_width', 1.1)
+        vp(v, 'vertex_size', 8)
         e = (v, v)
-        if isinstance(e, g.edge_index) :
-            vertex_color[v]       = queues[g.edge_index[e]]._current_color(2)
-            vertex_fill_color[v]  = queues[g.edge_index[e]]._current_color()
-        else :
-            vertex_color[v]       = g_colors['vertex_color']
-            vertex_fill_color[v]  = g_colors['vertex_fill_color']
-
-    edge_pen_width.a   = 1.25
-    edge_marker_size.a = 8
-    vertex_pen_width.a = 1.1
-    vertex_size.a      = 8
-
-    properties = {
-        'vertex_fill_color' : vertex_fill_color,
-        'vertex_pen_width' : vertex_pen_width,
-        'vertex_color' : vertex_color,
-        'vertex_size' : vertex_size,
-        'edge_control_points' : edge_control_points,
-        'edge_marker_size' : edge_marker_size,
-        'edge_pen_width' : edge_pen_width,
-        'edge_color' : edge_color
-    }
-
-    props = vertex_props.union(edge_props)
-    for key, value in properties.items() :
-        if key not in props :
-            if key[:4] == 'edge' :
-                g.ep[key] = value
-            else :
-                g.vp[key] = value
+        if g.is_edge(e):
+            vp(v, 'vertex_color', queues[g.edge_index[e]]._current_color(2))
+            vp(v, 'vertex_fill_color', queues[g.edge_index[e]]._current_color())
+        else:
+            vp(v, 'vertex_color', g_colors['vertex_color'])
+            vp(v, 'vertex_fill_color', g_colors['vertex_fill_color'])
 
     return g, queues
 
 
-def _set_queues(g, q_cls, q_arg, has_cap) :
+def _set_queues(g, q_cls, q_arg, has_cap):
     queues = [0 for k in range(g.num_edges())]
 
-    for e in g.edges() :
+    for e in g.edges():
         eType = g.ep(e, 'eType')
         qedge = (e[0], e[1], g.edge_index[e], eType)
 

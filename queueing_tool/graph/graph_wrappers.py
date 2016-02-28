@@ -19,6 +19,13 @@ class GraphWrapper(object):
             edge_index = {e: k for k, e in enumerate(g.edges())}
             setattr(g, 'edge_index', edge_index)
             nx.freeze(g)
+            #values = {}
+            #for e in g.edges():
+            #    if 'eType' not in g.edge[e[0]][e[1]]:
+            #        values[e] = 1
+
+            #if len(values) > 0:
+            #    nx.set_edge_attributes(g, 'eType', values)
         else:
             msg = "Must be given a networkx DiGraph or a graph-tool Graph"
             try:
@@ -36,6 +43,11 @@ class GraphWrapper(object):
             setattr(g, 'out_degree', self._out_degree)
             setattr(g, 'out_edges', self._out_edges)
             setattr(g, 'in_edges', self._in_edges)
+
+            if 'eType' not in g.ep:
+                eType = g.new_edge_property('int')
+                eType.a = 1
+                g.ep['eType'] = eType
 
         self.g = g
 
@@ -111,41 +123,94 @@ class GraphWrapper(object):
                 for v in self.g.vertices():
                     adj[int(v)] = {int(u): {} for u in v.out_neighbours()}
             else:
-                et = self.g.ep['eType']
+                ep = self.g.ep
                 for v in self.g.vertices():
-                    adj[int(v)] = {int(e.target()): {'eType': et[e]} for e in v.out_edges()}
+                    tmp = {}
+                    for e in v.out_edges():
+                        tmp[int(e.target())] = {p: ep[e] for p in self.g.vp.keys()}
+
+                    adj[int(v)] = tmp
 
             return adj
 
     def ep(self, e, edge_property):
         if self.is_nx_graph:
-            return self.g.edge[e[0]][e[1]][edge_property]
+            return self.g.edge[e[0]][e[1]].get(edge_property)
         else:
-            return self.g.ep[edge_property][e]
-
-    def vp(self, v, vertex_property):
-        if self.is_nx_graph:
-            return self.g.node[v].get(vertex_property)
-        else:
-            if vertex_property not in self.g.vp:
+            if edge_property not in self.g.ep:
                 return None
             else:
-                return self.g.vp[vertex_property][v]
+                return self.g.ep[edge_property][e]
+
+    def set_ep(self, e, edge_property, value):
+        if self.is_nx_graph:
+            self.g.edge[e[0]][e[1]][edge_property] = value
+        else:
+            self.g.ep[edge_property][e] = value
+
+    def set_vp(self, v, vertex_property, value):
+        if self.is_nx_graph:
+            self.g.node[v][vertex_property] = value
+        else:
+            self.g.vp[vertex_property][v] = value
+
+    def graph_draw(self, **kwargs):
+        if self.is_nx_graph:
+            pass
+        else:
+            for key in kwargs.keys():
+                if key in self.g.ep:
+                    kwargs[key] = self.g.ep[key]
+
+            gt.graph_draw(g, **kwargs)
 
     @property
     def vertex_properties(self):
         if self.is_nx_graph:
-            return self.g.node[0]
+            props = set()
+            for v in self.g.nodes():
+                props.update(self.g.node[v].keys())
+            return props
         else:
-            self.g.vertex_properties
+            return set(self.g.vertex_properties.keys())
 
-    def new_edge_property(self):
-        pass
+    @property
+    def edge_properties(self):
+        if self.is_nx_graph:
+            props = set()
+            for e in self.g.edges():
+                props.update(self.g.edge[e[0]][e[1]].keys())
+            return props
+        else:
+            return set(self.g.edge_properties.keys())
 
-    def new_edge_property(self):
-        pass
+    def new_vertex_property(self, name, property_type):
+        if self.is_nx_graph:
+            values = {v: None for v in self.g.nodes()}
+            nx.set_node_attributes(self.g, name, values)
+        else:
+            self.g.vp[name] = g.new_vertex_property(property_type)
 
+    def new_edge_property(self, name, property_type):
+        if self.is_nx_graph:
+            values = {v: None for v in self.g.edges()}
+            nx.set_edge_attributes(self.g, name, values)
+        else:
+            self.g.ep[name] = g.new_edge_property(property_type)
 
+    def set_pos(self):
+        if self.is_nx_graph:
+            pos = nx.spring_layout(self.g)
+            nx.set_node_attributes(self.g, 'pos', pos)
+        else:
+            pos = gt.sfdp_layout(self.g, epsilon=1e-2, cooling_step=0.95)
+            self.g.vp['pos'] = pos
+
+    def is_edge(self, e):
+        if self.is_nx_graph:
+            return e in self.g.edge_index
+        else:
+            return self.g.edge(*e) is not None
 
 def __create_graph():
     vs  = g.add_vertex(nV)
