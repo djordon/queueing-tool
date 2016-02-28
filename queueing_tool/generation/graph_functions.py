@@ -59,7 +59,7 @@ def vertices2edge(g, u, v) :
         If there is an edge connecting ``u`` and ``v`` then its edge index is
         returned, otherwise ``None`` is returned.
     """
-    return g.edge_index[g.edge(u, v)]
+    return g.edge_index[(u, v)]
 
 
 def graph2dict(g) :

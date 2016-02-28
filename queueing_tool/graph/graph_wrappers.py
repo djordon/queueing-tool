@@ -1,12 +1,12 @@
 import networkx as nx
 
 
-gt2nx_attr = {
+nx2gt_attr = {
     'vertices': 'nodes',
     'num_vertices': 'number_of_nodes',
     'num_edges': 'number_of_edges',
 }
-nx2gt_attr = {value: key for key, value in gt2nx_attr.items()}
+gt2nx_attr = {value: key for key, value in nx2gt_attr.items()}
 
 
 class GraphWrapper(object):
@@ -18,6 +18,7 @@ class GraphWrapper(object):
             self.is_nx_graph = True
             edge_index = {e: k for k, e in enumerate(g.edges())}
             setattr(g, 'edge_index', edge_index)
+            nx.freeze(g)
         else:
             msg = "Must be given a networkx DiGraph or a graph-tool Graph"
             try:
@@ -63,11 +64,12 @@ class GraphWrapper(object):
         return [(int(e.source()), int(e.target())) for e in v.in_edges()]
 
     def _out_degree(self, v):
+        v = self.g.vertex(v)
         return v.out_degree()
 
-    def vertices(self):
+    def vertices(self, *args, **kwargs):
         if self.is_nx_graph:
-            return self.g.nodes()
+            return self.g.nodes(*args, **kwargs)
         else:
             return [int(v) for v in self.g.vertices()]
 
@@ -88,7 +90,7 @@ class GraphWrapper(object):
         if self.is_nx_graph:
             return self.g.edges(*args, **kwargs)
         else:
-            return [(int(e.source()), int(e.target()) for e in self.g.edges()]
+            return [(int(e.source()), int(e.target())) for e in self.g.edges()]
 
     def graph2dict(self):
         """Takes a graph and returns an adjacency list.
@@ -105,25 +107,37 @@ class GraphWrapper(object):
             return nx.to_dict_of_dicts(self.g)
         else:
             adj = {}
-            if 'eType' not in g.ep
-                for v in self.g.vertices()
+            if 'eType' not in g.ep:
+                for v in self.g.vertices():
                     adj[int(v)] = {int(u): {} for u in v.out_neighbours()}
             else:
                 et = self.g.ep['eType']
-                for v in self.g.vertices()
+                for v in self.g.vertices():
                     adj[int(v)] = {int(e.target()): {'eType': et[e]} for e in v.out_edges()}
 
             return adj
 
-    @property
-    def ep(self):
+    def ep(self, e, edge_property):
         if self.is_nx_graph:
-            pass
+            return self.g.edge[e[0]][e[1]][edge_property]
         else:
-            pass
+            return self.g.ep[edge_property][e]
 
-    def vp(self):
-        pass
+    def vp(self, v, vertex_property):
+        if self.is_nx_graph:
+            return self.g.node[v].get(vertex_property)
+        else:
+            if vertex_property not in self.g.vp:
+                return None
+            else:
+                return self.g.vp[vertex_property][v]
+
+    @property
+    def vertex_properties(self):
+        if self.is_nx_graph:
+            return self.g.node[0]
+        else:
+            self.g.vertex_properties
 
     def new_edge_property(self):
         pass
@@ -131,14 +145,6 @@ class GraphWrapper(object):
     def new_edge_property(self):
         pass
 
-    def num_edges(self):
-        pass
-
-    def num_vertices(self):
-        pass
-
-    def add_edge(self, source, target):
-        pass
 
 
 def __create_graph():

@@ -228,15 +228,15 @@ class QueueNetwork(object) :
             colors = {}
 
         default_colors = {
-            'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
-            'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
-            'vertex_highlight'  : [0.5, 0.5, 0.5, 1.0],
-            'edge_departure'    : [0, 0, 0, 1],
-            'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
-            'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
-            'edge_active'       : [0.1, 0.1, 0.1, 1.0],
-            'edge_inactive'     : [0.8, 0.8, 0.8, 0.3],
-            'bg_color'          : [1, 1, 1, 1]
+            'vertex_fill_color': [0.9, 0.9, 0.9, 1.0],
+            'vertex_color'     : [0.0, 0.5, 1.0, 1.0],
+            'vertex_highlight' : [0.5, 0.5, 0.5, 1.0],
+            'edge_departure'   : [0, 0, 0, 1],
+            'vertex_active'    : [0.1, 1.0, 0.5, 1.0],
+            'vertex_inactive'  : [0.9, 0.9, 0.9, 0.8],
+            'edge_active'      : [0.1, 0.1, 0.1, 1.0],
+            'edge_inactive'    : [0.8, 0.8, 0.8, 0.3],
+            'bg_color'         : [1, 1, 1, 1]
         }
 
         colors.update(default_colors)
@@ -244,53 +244,53 @@ class QueueNetwork(object) :
         self.colors = colors
 
         default_classes = {
-            0 : NullQueue,
-            1 : QueueServer,
-            2 : LossQueue,
-            3 : LossQueue,
-            4 : LossQueue
+            0: NullQueue,
+            1: QueueServer,
+            2: LossQueue,
+            3: LossQueue,
+            4: LossQueue
         }
 
-        if q_classes is None :
+        if q_classes is None:
             q_classes = default_classes
-        else :
-            for k in set(default_classes.keys()) - set(q_classes.keys()) :
+        else:
+            for k in set(default_classes.keys()) - set(q_classes.keys()):
                 q_classes[k] = default_classes[k]
 
-        if q_args is None :
-            q_args  = {k : {} for k in range(5)}
-        else :
-            for k in set(q_classes.keys()) - set(q_args.keys()) :
+        if q_args is None:
+            q_args  = {k: {} for k in range(5)}
+        else:
+            for k in set(q_classes.keys()) - set(q_args.keys()):
                 q_args[k] = {}
 
-        v_pens    = [
+        v_pens = [
             [0.5, 0.5, 0.5, 0.5],
             [0, 0.5, 1, 1],
             [0.133, 0.545, 0.133, 1],
             [0.282, 0.239, 0.545, 1],
             [1, 0.135, 0, 1]
         ]
-        q_colors  = {k : {'edge_loop_color'   : [0, 0, 0, 0],
-                          'edge_color'        : [0.7, 0.7, 0.7, 0.5],
-                          'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
-                          'vertex_color'      : v_pens[k]} for k in range(5)}
+        q_colors  = {k: {'edge_loop_color'   : [0, 0, 0, 0],
+                          'edge_color'       : [0.7, 0.7, 0.7, 0.5],
+                          'vertex_fill_color': [0.9, 0.9, 0.9, 1.0],
+                          'vertex_color'     : v_pens[k]} for k in range(5)}
 
-        for keys in q_args.keys() :
-            if keys not in q_colors :
+        for keys in q_args.keys():
+            if keys not in q_colors:
                 q_colors[keys] = q_colors[1]
 
-        for key, args in q_args.items() :
-            if 'colors' not in args :
+        for key, args in q_args.items():
+            if 'colors' not in args:
                 args['colors'] = q_colors[key]
 
-        if isinstance(seed, numbers.Integral) :
+        if isinstance(seed, numbers.Integral):
             np.random.seed(seed)
 
-        for k in range(5) :
-            if k not in q_args :
+        for k in range(5):
+            if k not in q_args:
                 q_args[k] = {}
 
-        if g is not None :
+        if g is not None:
             g, qs = _prepare_graph(g, self.colors, q_classes, q_args)
 
             self.nV = g.num_vertices()
@@ -302,15 +302,14 @@ class QueueNetwork(object) :
             self.in_edges     = [0 for v in range(self.nV)]
             self._route_probs = [0 for v in range(self.nV)]
 
-            def edge_index(e) :
+            def edge_index(e):
                 return g.edge_index[e]
 
-            for v in g.vertices() :
-                vi  = int(v)
+            for v in g.vertices():
                 vod = g.out_degree(v)
-                self.out_edges[vi] = [i for i in map(edge_index, g.out_edges(v))]
-                self.in_edges[vi]  = [i for i in map(edge_index, g.in_edges(v))]
-                self._route_probs[vi] = [np.float64(1 / vod) for i in range(vod)]
+                self.out_edges[v] = [i for i in map(edge_index, g.out_edges(v))]
+                self.in_edges[v]  = [i for i in map(edge_index, g.in_edges(v))]
+                self._route_probs[v] = [np.float64(1 / vod) for i in range(vod)]
 
             self.g = g
 
@@ -367,9 +366,8 @@ class QueueNetwork(object) :
             :class:`.QueueServer`\(s) to make active by.
         edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to make active. Must be either: a
-            2-tuple of the edge's source and target vertex indices, an iterable
-            of 2-tuples of the edge's source and target vertex indices, or an
-            iterable of :class:`~graph_tool.Edge`\(s).
+            2-tuple of the edge's source and target vertex indices or an iterable
+            of 2-tuples of the edge's source and target vertex indices.
         eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
@@ -452,9 +450,8 @@ class QueueNetwork(object) :
         if return_matrix :
             mat = np.zeros( (self.nV, self.nV) )
             for v in self.g.vertices() :
-                vi  = int(v)
                 ind = [e[1] for e in self.g.out_edges(v)]
-                mat[vi, ind] = self._route_probs[vi]
+                mat[v, ind] = self._route_probs[v]
         else :
             mat = {k: value for k, value in enumerate(self._route_probs)}
 
@@ -559,9 +556,9 @@ class QueueNetwork(object) :
             :class:`.QueueServer`\(s) that will start collecting data.
         edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues will collect data. Must be either:
-            a 2-tuple of the edge's source and target vertex indices, an
+            a 2-tuple of the edge's source and target vertex indices, or an
             iterable of 2-tuples of the edge's source and target vertex
-            indices, an iterable of :class:`~graph_tool.Edge`\(s).
+            indices.
         eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types
             will be set active.
@@ -586,8 +583,8 @@ class QueueNetwork(object) :
         edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues will stop collecting data. Must be
             either: a 2-tuple of the edge's source and target vertex indices,
-            an iterable of 2-tuples of the edge's source and target vertex
-            indices, an iterable of :class:`~graph_tool.Edge`\(s).
+            or an iterable of 2-tuples of the edge's source and target
+            vertex indices.
         eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types
             will stop collecting data.
@@ -612,8 +609,8 @@ class QueueNetwork(object) :
         edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to retrieve data from. Must be
             either: a 2-tuple of the edge's source and target vertex indices,
-            an iterable of 2-tuples of the edge's source and target vertex
-            indices, an iterable of :class:`~graph_tool.Edge`\(s).
+            or an iterable of 2-tuples of the edge's source and target vertex
+            indices.
         eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types
             to retrieve data from.
@@ -680,8 +677,8 @@ class QueueNetwork(object) :
         edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues to retrieve agent data from. Must
             be either: a 2-tuple of the edge's source and target vertex
-            indices, an iterable of 2-tuples of the edge's source and target
-            vertex indices, an iterable of :class:`~graph_tool.Edge`\(s).
+            indices, or an iterable of 2-tuples of the edge's source and target
+            vertex indices.
         eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types
             to retrieve agent data from.
@@ -1156,7 +1153,6 @@ class QueueNetwork(object) :
                 else :
                     bisectSort(self._queues, q1, n - 1)
 
-
         if self._to_animate :
             if self._to_disk :
                 self._kwargs['output'] = self._outdir + '%s.' % (self._count) + self._fmt
@@ -1249,8 +1245,11 @@ class QueueNetwork(object) :
         if out is None :
             kwargs = self._update_kwargs(kwargs, out=False, update_props=True)
 
+            if 'bg_color' not in kwargs:
+                kwargs['bg_color'] = self.colors['bg_color']
+
             self._to_disk = False
-            self._window  = gt.GraphWindow(g=self.g, bg_color=self.colors['bg_color'], **kwargs)
+            self._window  = gt.GraphWindow(g=self.g, **kwargs)
 
             cid = GObject.idle_add(self._simulate_next_event)
             self._window.connect("delete_event", Gtk.main_quit)
@@ -1412,9 +1411,8 @@ class QueueNetwork(object) :
             :class:`.QueueServer`\(s) whose data will be cleared.
         edge : 2-:class:`.tuple` of int or *array_like* (optional)
             Explicitly specify which queues' data to clear. Must be either: a
-            2-tuple of the edge's source and target vertex indices, an iterable
-            of 2-tuples of the edge's source and target vertex indices, an
-            iterable of :class:`~graph_tool.Edge`\(s).
+            2-tuple of the edge's source and target vertex indices or an iterable
+            of 2-tuples of the edge's source and target vertex indices.
         eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which edge types
             will have their data cleared.
@@ -1457,23 +1455,27 @@ class QueueNetwork(object) :
 
 
 
-def _get_queues(g, queues, edge, eType) :
+def _get_queues(g, queues, edge, eType):
     """Used to specify edge indices from different types of arguments."""
-    if isinstance(queues, numbers.Integral) :
+    INT = numbers.Integral
+    if isinstance(queues, INT):
         queues = [queues]
-    elif queues is None :
-        if edge is not None :
-            if isinstance(edge, gt.Edge) :
+
+    elif queues is None:
+        if edge is not None:
+            if isinstance(edge, tuple):
+                if isinstance(edge[0], INT) and isinstance(edge[1], INT):
+                    queues = [g.edge_index[edge]]
+            elif isinstance(edge[0], collections.Iterable):
+                if np.array([len(e) == 2 for e in edge]).all():
+                    queues = [g.edge_index[e] for e in edge]
+            else:
                 queues = [g.edge_index[edge]]
-            elif isinstance(edge[0], gt.Edge) :
-                queues = [g.edge_index[e] for e in edge]
-            elif isinstance(edge[0], collections.Iterable) and np.array([len(e) == 2 for e in edge]).all() :
-                queues = [g.edge_index[g.edge(u,v)] for u,v in edge]
-            else :
-                queues = [g.edge_index[g.edge(edge[0], edge[1])]]
-        elif eType is not None :
-            queues = np.where(np.in1d(np.array(g.ep['eType'].a), eType) )[0]
-        else :
+        elif eType is not None:
+            tmp = np.array([g.ep(e, 'eType') for e in g.edges()])
+            queues = np.where(np.in1d(tmp, eType) )[0]
+
+        if queues is None:
             queues = range(g.num_edges())
 
     return queues

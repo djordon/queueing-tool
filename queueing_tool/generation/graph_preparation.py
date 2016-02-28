@@ -175,20 +175,20 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
         ans = graph2dict(g)
         g   = adjacency2graph(ans[0], adjust=1, is_directed=g.is_directed())
 
-    queues  = _set_queues(g, q_cls, q_arg, 'cap' in vertex_props)
+    queues = _set_queues(g, q_cls, q_arg, 'cap' in vertex_props)
 
     if 'pos' not in vertex_props :
         g.vp['pos'] = gt.sfdp_layout(g, epsilon=1e-2, cooling_step=0.95)
 
-    for k, e in enumerate(g.edges()) :
-        if e.target() == e.source() :
+    for k, e in enumerate(g.edges()):
+        if e[0] == e[1]:
             edge_color[e] = queues[k].colors['edge_loop_color']
         else :
             edge_color[e] = queues[k].colors['edge_color']
 
     for v in g.vertices() :
-        e = g.edge(v, v)
-        if isinstance(e, gt.Edge) :
+        e = (v, v)
+        if isinstance(e, g.edge_index) :
             vertex_color[v]       = queues[g.edge_index[e]]._current_color(2)
             vertex_fill_color[v]  = queues[g.edge_index[e]]._current_color()
         else :
@@ -226,11 +226,12 @@ def _set_queues(g, q_cls, q_arg, has_cap) :
     queues = [0 for k in range(g.num_edges())]
 
     for e in g.edges() :
-        eType = g.ep['eType'][e]
+        eType = g.ep(e, 'eType')
         qedge = (e[0], e[1], g.edge_index[e], eType)
 
-        if has_cap and 'nServers' not in q_arg[eType] :
-            q_arg[eType]['nServers'] = max(g.vp['cap'][e[1]], 1)
+        if has_cap and 'nServers' not in q_arg[eType]:
+            cap = g.vp(e[1], 'cap') if g.vp(e[1], 'cap') is not None else 0
+            q_arg[eType]['nServers'] = max(cap, 1)
 
         queues[qedge[2]] = q_cls[eType](edge=qedge, **q_arg[eType])
 

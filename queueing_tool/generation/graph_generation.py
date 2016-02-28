@@ -1,5 +1,6 @@
 import graph_tool.all as gt
-import numpy   as np
+import networkx as nx
+import numpy as np
 import numbers
 import copy
 
@@ -48,8 +49,8 @@ def _test_graph(g) :
 def _calculate_distance(latlon1, latlon2) :
     """Calculates the distance between two points on earth.
     """
-    lat1, lon1  = latlon1
-    lat2, lon2  = latlon2
+    lat1, lon1 = latlon1
+    lat2, lon2 = latlon2
     R     = 6371          # radius of the earth in kilometers
     dlon  = lon2 - lon1
     dlat  = lat2 - lat1
@@ -60,12 +61,12 @@ def _calculate_distance(latlon1, latlon2) :
 
 def _matrix2dict(matrix) :
     """Takes an adjacency matrix and returns an adjacency list."""
-    n   = len(matrix)
-    adj = {k : [] for k in range(n)}
-    for k in range(n) :
-        for j in range(n) :
-            if matrix[k, j] :
-                adj[k].extend([j for i in range(int(matrix[k,j]))])
+    n = len(matrix)
+    adj = {k : {} for k in range(n)}
+    for k in range(n):
+        for j in range(n):
+            if matrix[k, j] != 0:
+                adj[k][j] = {}
     
     return adj
 
@@ -154,7 +155,7 @@ def _adjacency_adjust(adjacency, adjust, is_directed) :
     return adjacency
 
 
-def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
+def adjacency2graph(adjacency, adjust=0, is_directed=True) :
     """Takes an adjacency list, dict, or matrix and returns a graph.
 
     The purpose of this function is take an adjacency list (or matrix) and
@@ -167,12 +168,6 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     ----------
     adjacency : list, dict, or :class:`~numpy.ndarray`
         An adjacency list, dict, or matrix.
-    eType : list, dict, or :class:`~numpy.ndarray` (optional)
-        A mapping that identifies each edge's ``eType``. For example, if
-        ``eType`` is a matrix, then ``eType[u, v]`` is the type of
-        queue that lays along the edge between vertices ``u`` and ``v``. If
-        ``eType`` is not supplied then all but terminal edges have type 1,
-        terminal edges will have type 0.
     adjust : int ``{0, 1}`` (optional, the default is 0)
         Specifies what to do when the graph has terminal vertices (nodes with
         no out-edges). Note that if ``adjust`` is not 0 or 1 then it assumed
@@ -196,7 +191,7 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     Raises
     ------
     TypeError
-        Is raised if ``adjacency`` or ``eType`` is not a :class:`.list`\,
+        Is raised if ``adjacency`` is not a :class:`.list`\,
         :class:`.dict`\, :class:`~numpy.ndarray` the (``eType`` can be
         ``None``\).
     RuntimeError
@@ -249,17 +244,11 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     else :
         raise TypeError("If the adjacency parameter is supplied it must be a list, dict, or a numpy.ndarray.")
 
-    if eType is not None :
-        eType = _other2dict(adjacency, eType)
-
     adjacency = _adjacency_adjust(adjacency, adjust, is_directed)
-
-    g   = nx.from_dict_of_dicts(adjacency)
-
-    return g
+    return nx.from_dict_of_dicts(adjacency)
 
 
-def generate_transition_matrix(g, seed=None) :
+def generate_transition_matrix(g, seed=None):
     """Generates a random transition matrix for the graph ``g``\.
 
     Parameters
@@ -271,28 +260,27 @@ def generate_transition_matrix(g, seed=None) :
     Returns
     -------
     mat : :class:`~numpy.ndarray`
-        Returns a transition matrix where ``mat[i,j]`` is the probability of
+        Returns a transition matrix where ``mat[i, j]`` is the probability of
         transitioning from vertex ``i`` to vertex ``j``\. If there is no edge
-        connecting vertex ``i`` to vertex ``j`` then ``mat[i,j] = 0``\.
+        connecting vertex ``i`` to vertex ``j`` then ``mat[i, j] = 0``\.
     """
-    if isinstance(seed, numbers.Integral) :
+    if isinstance(seed, numbers.Integral):
         np.random.seed(seed)
 
     nV  = g.num_vertices()
     mat = np.zeros( (nV, nV) )
 
-    for v in g.vertices() :
-        vi  = int(v)
-        ind = [int(e.target()) for e in v.out_edges()]
+    for v in g.vertices():
+        ind = [e[1] for e in g.out_edges(v)]
         deg = len(ind)
-        if deg == 1 :
-            mat[vi, ind] = 1
-        elif deg > 1 :
+        if deg == 1:
+            mat[v, ind] = 1
+        elif deg > 1:
             probs = np.ceil(np.random.rand(deg) * 100) / 100
-            if np.isclose(np.sum(probs), 0) :
+            if np.isclose(np.sum(probs), 0):
                 probs[np.random.randint(deg)]  = 1
 
-            mat[vi, ind] = probs / np.sum(probs)
+            mat[v, ind] = probs / np.sum(probs)
 
     return mat
             
