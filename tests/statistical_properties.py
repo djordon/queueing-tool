@@ -1,13 +1,13 @@
-import numpy    as np
-import queueing_tool  as qt
-import graph_tool.all as gt
-
-import unittest
-import numbers
-import math
-
 from math import factorial
+import math
+import numbers
+import unittest
+
 from numpy.random import randint
+import numpy as np
+
+import queueing_tool as qt
+
 
 def empirical_cdf0(x, z, n) :
     return np.sum(z <= x) / n
@@ -167,7 +167,7 @@ class TestRandomMeasure(unittest.TestCase) :
                 pi_hat  = nSamp * np.exp(-mus[i]) * mus[i]**k / factorial(k)
                 Q[k, i] = (np.sum(sample == k) - pi_hat)**2 / pi_hat
 
-            pois_cdf = np.sum(np.exp(-mus[i]) * mus[i]**np.arange(k+1) / np.array([factorial(j) for j in range(k+1)]))            
+            pois_cdf = np.sum(np.exp(-mus[i]) * mus[i]**np.arange(k+1) / np.array([factorial(j) for j in range(k+1)]))
             Q[k+1, i] = nSamp * (1 - pois_cdf)
         
         Qs  = np.sum(Q, axis=0)

@@ -10,7 +10,7 @@ Summary
     generate_pagerank_graph
     minimal_random_graph
     generate_transition_matrix
-    set_types_pagerank
+    set_types_rank
     set_types_random
     graph2dict
     vertices2edge
@@ -25,7 +25,7 @@ from queueing_tool.generation.graph_generation import (
     adjacency2graph,
     minimal_random_graph,
     set_types_random,
-    set_types_pagerank,
+    set_types_rank,
     generate_transition_matrix
 )
 from queueing_tool.generation.graph_preparation import (
@@ -43,7 +43,7 @@ __all__ = [
     'generate_pagerank_graph',
     'generate_transition_matrix',
     'adjacency2graph',
-    'set_types_pagerank',
+    'set_types_rank',
     'set_types_random',
     '_prepare_graph',
     'shortest_paths',

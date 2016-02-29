@@ -1,8 +1,8 @@
+import numbers
+import os
 import unittest.mock as mock
 import unittest
-import numbers
 import sys
-import os
 
 import networkx as nx
 import numpy as np

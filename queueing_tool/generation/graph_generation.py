@@ -1,7 +1,6 @@
 import numbers
 import copy
 
-#import graph_tool.all as gt
 import networkx as nx
 import numpy as np
 
@@ -156,7 +155,7 @@ def _adjacency_adjust(adjacency, adjust, is_directed) :
     return adjacency
 
 
-def adjacency2graph(adjacency, adjust=0, is_directed=True) :
+def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     """Takes an adjacency list, dict, or matrix and returns a graph.
 
     The purpose of this function is take an adjacency list (or matrix) and
@@ -339,9 +338,9 @@ def generate_random_graph(nVertices=250, **kwargs) :
 
 def generate_pagerank_graph(nVertices=250, **kwargs) :
     """Creates a random graph where the edge and vertex types are selected
-    using the :func:`.set_types_pagerank` method.
+    using the :func:`.set_types_rank` method.
 
-    Calls :func:`.minimal_random_graph` and then calls :func:`.set_types_pagerank`.
+    Calls :func:`.minimal_random_graph` and then calls :func:`.set_types_rank`.
 
     Parameters
     ----------
@@ -349,7 +348,7 @@ def generate_pagerank_graph(nVertices=250, **kwargs) :
         The number of vertices in the graph.
     **kwargs :
         Any parameters to send to :func:`.minimal_random_graph` or
-        :func:`.set_types_pagerank`.
+        :func:`.set_types_rank`.
 
     Returns
     -------
@@ -357,19 +356,20 @@ def generate_pagerank_graph(nVertices=250, **kwargs) :
         A graph with a ``pos`` vertex property and the ``eType`` edge property.
     """
     g = minimal_random_graph(nVertices, **kwargs)
-    g = set_types_pagerank(g, **kwargs)
+    r = np.zeros(nVertices)
+    for k, pr in nx.pagerank(g.g).items():
+        r[k] = pr
+    g = set_types_rank(g, rank=r, **kwargs)
     return g
 
 
-def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kwargs) :
+def minimal_random_graph(nVertices, sfdp=None, seed=None, **kwargs) :
     """Creates a connected graph by selecting vertex locations graphly.
 
     Parameters
     ----------
     nVertices : int
         The number of vertices in the graph.
-    is_directed : bool (optional, the default is ``True``)
-        Specifies whether the graph is directed or not.
     sfdp : bool or None (optional, the default is ``None``)
         Specifies whether to run graph-tool's
         :func:`~graph_tool.draw.sfdp_layout` function on the graph ``g``.
@@ -424,24 +424,17 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kw
         if unionF.nClusters == cluster - 1 :
             break
 
-    for r in [np.sqrt(max_space) * (1 + 0.1 * k) for k in range(10)] :
-        g, pos  = gt.geometric_graph(points, r)
-        comp, a = gt.label_components(g)
-        if max(comp.a) == 0 :
+    pos = {k: p for k, p in enumerate(points)}
+    for r in [np.sqrt(max_space) * (1 + 0.1 * k) for k in range(10)]:
+        g   = nx.random_geometric_graph(nVertices, r, pos=pos)
+        nCC = nx.number_connected_components(g)
+        if nCC == 0 :
             break
 
-    if is_directed :
-        g.set_directed(True)
-
-    g2  = g.copy()
-    for e in g2.edges() :
-        e1  = g.add_edge(source=int(e.target()), target=int(e.source()))
-
-    g.reindex_edges()
+    g = GraphWrapper(g.to_directed())
     if (nVertices > 200 and sfdp is None) or sfdp :
-        pos = gt.sfdp_layout(g, max_iter=10000)
+        g.set_pos()
     
-    g.vp['pos'] = pos
     return g
 
 
@@ -522,7 +515,7 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
     return g
 
 
-def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
+def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
     """Creates a stylized graph. Sets edge and types using `pagerank`_.
 
     This function sets the edge types of a graph to be either 1, 2, or 3.
@@ -567,22 +560,21 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
     if isinstance(seed, numbers.Integral) :
         np.random.seed(seed)
 
-    pagerank    = gt.pagerank(g.g)
-    tmp         = np.sort(np.array(pagerank.a))
-    nDests      = int(np.ceil(g.num_vertices() * pType2))
-    dests       = set(np.where(pagerank.a >= tmp[-nDests])[0])
+    tmp    = np.sort(np.array(rank))
+    nDests = int(np.ceil(g.num_vertices() * pType2))
+    dests  = set(np.where(rank >= tmp[-nDests])[0])
 
     if 'pos' not in g.vertex_properties:
         g.set_pos()
 
-    dest_pos    = np.array([g.vp(v, 'pos') for v in dests])
-    nFCQ        = int(pType3 * g.num_vertices())
-    min_g_dist  = np.ones(nFCQ) * np.infty
-    ind_g_dist  = np.ones(nFCQ, int)
+    dest_pos   = np.array([g.vp(v, 'pos') for v in dests])
+    nFCQ       = int(pType3 * g.num_vertices())
+    min_g_dist = np.ones(nFCQ) * np.infty
+    ind_g_dist = np.ones(nFCQ, int)
     
-    r, theta    = np.random.random(nFCQ) / 500, np.random.random(nFCQ) * 360
-    xy_pos      = np.array([r * np.cos(theta), r * np.sin(theta)]).transpose()
-    g_pos       = xy_pos + dest_pos[np.array( np.mod(np.arange(nFCQ), nDests), int)]
+    r, theta = np.random.random(nFCQ) / 500, np.random.random(nFCQ) * 360
+    xy_pos   = np.array([r * np.cos(theta), r * np.sin(theta)]).transpose()
+    g_pos    = xy_pos + dest_pos[np.array( np.mod(np.arange(nFCQ), nDests), int)]
     
     for v in g.vertices() :
         if int(v) not in dests :
@@ -590,8 +582,8 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
             min_g_dist = np.min((tmp, min_g_dist), 0)
             ind_g_dist[min_g_dist == tmp] = int(v)
     
-    ind_g_dist  = np.unique(ind_g_dist)
-    fcqs        = set(ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )])
+    ind_g_dist = np.unique(ind_g_dist)
+    fcqs       = set(ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )])
     g.new_vertex_property('loop_type', 'int')
 
     for v in g.vertices() :
@@ -610,8 +602,8 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
         if g.vp(v, 'loop_type') in [2, 3] :
             e = (v, v)
             if g.vp(v, 'loop_type') == 2 :
-                g.ep(e, 'eType', 2)
+                g.set_ep(e, 'eType', 2)
             else :
-                g.ep(e, 'eType', 3)
+                g.set_ep(e, 'eType', 3)
     
     return g

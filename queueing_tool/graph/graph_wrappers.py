@@ -17,7 +17,6 @@ class GraphWrapper(object):
             self.is_nx_graph = True
             edge_index = {e: k for k, e in enumerate(g.edges())}
             setattr(g, 'edge_index', edge_index)
-            nx.freeze(g)
 
         else:
             msg = "Must be given a networkx DiGraph or a graph-tool Graph"
@@ -134,6 +133,15 @@ class GraphWrapper(object):
                 return None
             else:
                 return self.g.ep[edge_property][e]
+
+    def vp(self, v, vertex_property):
+        if self.is_nx_graph:
+            return self.g.node[v].get(vertex_property)
+        else:
+            if vertex_property not in self.g.vp:
+                return None
+            else:
+                return self.g.vp[vertex_property][v]
 
     def set_ep(self, e, edge_property, value):
         if self.is_nx_graph:

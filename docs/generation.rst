@@ -12,7 +12,7 @@ Graph generation
     .. autofunction:: generate_pagerank_graph
     .. autofunction:: minimal_random_graph
     .. autofunction:: generate_transition_matrix
-    .. autofunction:: set_types_pagerank
+    .. autofunction:: set_types_rank
     .. autofunction:: set_types_random
 
 Miscellaneous functions

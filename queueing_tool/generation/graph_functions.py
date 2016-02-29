@@ -1,4 +1,5 @@
 #import graph_tool.all as gt
+from queueing_tool.graph import GraphWrapper
 import numpy as np
 
 
