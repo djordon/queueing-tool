@@ -1,6 +1,5 @@
 import networkx as nx
 
-
 nx2gt_attr = {
     'vertices': 'nodes',
     'num_vertices': 'number_of_nodes',
@@ -19,13 +18,7 @@ class GraphWrapper(object):
             edge_index = {e: k for k, e in enumerate(g.edges())}
             setattr(g, 'edge_index', edge_index)
             nx.freeze(g)
-            #values = {}
-            #for e in g.edges():
-            #    if 'eType' not in g.edge[e[0]][e[1]]:
-            #        values[e] = 1
 
-            #if len(values) > 0:
-            #    nx.set_edge_attributes(g, 'eType', values)
         else:
             msg = "Must be given a networkx DiGraph or a graph-tool Graph"
             try:
@@ -163,6 +156,19 @@ class GraphWrapper(object):
                     kwargs[key] = self.g.ep[key]
 
             gt.graph_draw(g, **kwargs)
+
+    def get_window(self, **kwargs):
+        if self.is_nx_graph:
+            return None
+        else:
+            try:
+                from gi.repository import Gtk, GObject
+            except ImportError:
+                msg = "Need gi.repository module for animating a graph_tool."
+                raise ImportError(msg)
+
+            window = gt.GraphWindow(g=self.g, **kwargs)
+            return window, Gtk.main_quit, Gtk.main, GObject
 
     @property
     def vertex_properties(self):

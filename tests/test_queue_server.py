@@ -1,8 +1,10 @@
-import numpy as np
-import queueing_tool  as qt
-import graph_tool.all as gt
-import unittest
 import os
+import unittest
+
+import networkx as nx
+import numpy as np
+
+import queueing_tool as qt
 
 
 class TestQueueServers(unittest.TestCase) :
@@ -181,16 +183,13 @@ class TestQueueServers(unittest.TestCase) :
 
     def test_ResourceQueue_network(self) :
 
-        nV  = 100
-        ps  = np.random.uniform(0, 5, size=(nV, 2))
-
-        g, pos = gt.geometric_graph(ps, 1)
+        g = nx.random_geometric_graph(100, 0.2).to_directed()
         q_cls = {1 : qt.ResourceQueue, 2 : qt.ResourceQueue}
         q_arg = {1 : {'nServers' : 50}, 2 : {'nServers' : 500}}
 
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg)
         qn.max_agents = 400000
-        qn.initialize(queues=range(g.num_edges()))
+        qn.initialize(queues=range(qn.g.num_edges()))
         qn.simulate(n=50000)
 
         nServ = {1 : 50, 2 : 500}
@@ -200,10 +199,7 @@ class TestQueueServers(unittest.TestCase) :
 
     def test_ResourceQueue_animation(self) :
 
-        nV = 100
-        ps = np.random.uniform(0, 5, size=(nV, 2))
-
-        g, pos = gt.geometric_graph(ps, 1)
+        g = nx.random_geometric_graph(100, 0.2).to_directed()
         e = g.add_edge(1, 1)
 
         q_cls = {1 : qt.ResourceQueue, 2 : qt.ResourceQueue}
@@ -211,7 +207,7 @@ class TestQueueServers(unittest.TestCase) :
 
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg)
         qn.max_agents = 400000
-        qn.initialize(queues=range(g.num_edges()))
+        qn.initialize(queues=range(qn.g.num_edges()))
 
         ct  = np.random.randint(25, 52)
         ans = np.zeros(ct+4, bool)
@@ -230,16 +226,13 @@ class TestQueueServers(unittest.TestCase) :
 
     def test_InfoQueue_network(self) :
 
-        nV  = 100
-        ps  = np.random.uniform(0, 5, size=(nV, 2))
-
-        g, pos = gt.geometric_graph(ps, 1)
+        g = nx.random_geometric_graph(100, 0.2).to_directed()
         q_cls = {1 : qt.InfoQueue}
-        q_arg = {1 : {'net_size' : g.num_edges()} }
+        q_arg = {1 : {'net_size' : g.number_of_edges()} }
 
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
         qn.max_agents = 40000
-        qn.initialize(queues=range(g.num_edges()))
+        qn.initialize(queues=range(qn.g.num_edges()))
         qn.simulate(n=2000)
 
         # Finish this

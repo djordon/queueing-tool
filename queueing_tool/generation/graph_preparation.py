@@ -1,10 +1,11 @@
-import networkx as nx
-import numpy as np
 import numbers
 
-from .. graph import GraphWrapper
-from .graph_generation import adjacency2graph
-from .graph_functions  import graph2dict
+import networkx as nx
+import numpy as np
+
+from queueing_tool.graph import GraphWrapper
+from queueing_tool.generation.graph_generation import adjacency2graph
+from queueing_tool.generation.graph_functions  import graph2dict
 
 
 def _test_graph(g) :

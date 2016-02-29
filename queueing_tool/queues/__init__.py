@@ -17,17 +17,17 @@ Summary
     poisson_random_measure
 """
 
-from .queue_servers import (
+from queueing_tool.queues.queue_servers import (
     QueueServer,
     LossQueue,
     NullQueue,
     poisson_random_measure
 )
-from .agents import (
+from queueing_tool.queues.agents import (
     Agent,
     GreedyAgent
 )
-from .queue_extentions import (
+from queueing_tool.queues.queue_extentions import (
     ResourceAgent,
     ResourceQueue,
     InfoAgent,

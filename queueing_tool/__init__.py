@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from queueing_tool.queues import *
-import queueing_tool.queues as queues
+import queueing_tool.queues
 
 from queueing_tool.network import *
 import queueing_tool.network as network
@@ -21,4 +21,4 @@ __all__.extend(network.__all__)
 __all__.extend(generation.__all__)
 __all__.extend(graph.__all__)
 
-del queues, network, generation, graph
+#del queues, network, generation, graph

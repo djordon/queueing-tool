@@ -1,11 +1,12 @@
-import graph_tool.all as gt
-import networkx as nx
-import numpy as np
 import numbers
 import copy
 
-from .. graph import GraphWrapper
-from .union_find import UnionFind
+#import graph_tool.all as gt
+import networkx as nx
+import numpy as np
+
+from queueing_tool.graph import GraphWrapper
+from queueing_tool.generation.union_find import UnionFind
 
 
 def _test_graph(g) :
@@ -401,7 +402,6 @@ def minimal_random_graph(nVertices, is_directed=True, sfdp=None, seed=None, **kw
     """
     if isinstance(seed, numbers.Integral) :
         np.random.seed(seed)
-        gt.seed_rng(seed)
 
     points  = np.random.random((nVertices, 2)) * np.float(10)
     nEdges  = nVertices * (nVertices - 1) // 2
@@ -488,39 +488,37 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
     """
     g = _test_graph(g)
 
-    if isinstance(seed, numbers.Integral) :
+    if isinstance(seed, numbers.Integral):
         np.random.seed(seed)
 
-    if pTypes is None :
-        pTypes = {k : 1.0/3 for k in range(1, 4)}
+    if pTypes is None:
+        pTypes = {k : 1.0 / 3 for k in range(1, 4)}
 
     nEdges  = g.num_edges()
-    edges   = [k for k in range(nEdges)]
+    edges   = [e for e in g.edges()]
     cut_off = np.cumsum( np.array(list(pTypes.values())) )
 
-    if np.isclose(cut_off[-1], 1.0) :
+    if np.isclose(cut_off[-1], 1.0):
         cut_off = np.array(np.round(cut_off * nEdges)).astype(int)
     elif cut_off[-1] != nEdges:
-        msg = ("pTypes must sum to one, or sum to the number of "
-               "edges in the graph")
+        msg = ("pTypes must sum to one, or sum to the "
+               "number of edges in the graph")
         raise RuntimeError(msg)
 
     np.random.shuffle(edges)
-    eTypes  = {}
-    for k, key in enumerate(pTypes.keys()) :
-        if k == 0 :
-            for ei in edges[:cut_off[k]] :
-                eTypes[ei] = key
-        else :
-            for ei in edges[cut_off[k-1]:cut_off[k]] :
-                eTypes[ei] = key
+    eTypes = {}
+    for k, key in enumerate(pTypes.keys()):
+        if k == 0:
+            for e in edges[:cut_off[k]]:
+                eTypes[e] = key
+        else:
+            for e in edges[cut_off[k-1]:cut_off[k]]:
+                eTypes[e] = key
 
-    eType = g.new_edge_property("int")
-
-    for k, e in enumerate(g.edges()) :
-        eType[e] = eTypes[k]
+    g.new_edge_property('eType', 'int')
+    for e in g.edges():
+        g.set_ep(e, 'eType', eTypes[e])
     
-    g.ep['eType'] = eType
     return g
 
 
@@ -568,18 +566,16 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
 
     if isinstance(seed, numbers.Integral) :
         np.random.seed(seed)
-        gt.seed_rng(seed)
 
-    pagerank    = gt.pagerank(g)
+    pagerank    = gt.pagerank(g.g)
     tmp         = np.sort(np.array(pagerank.a))
     nDests      = int(np.ceil(g.num_vertices() * pType2))
-    dests       = np.where(pagerank.a >= tmp[-nDests])[0]
+    dests       = set(np.where(pagerank.a >= tmp[-nDests])[0])
 
-    if 'pos' not in g.vp :
-        pos = gt.sfdp_layout(g, max_iter=10000)
-        g.vp['pos'] = pos
+    if 'pos' not in g.vertex_properties:
+        g.set_pos()
 
-    dest_pos    = np.array([g.vp['pos'][g.vertex(k)] for k in dests])
+    dest_pos    = np.array([g.vp(v, 'pos') for v in dests])
     nFCQ        = int(pType3 * g.num_vertices())
     min_g_dist  = np.ones(nFCQ) * np.infty
     ind_g_dist  = np.ones(nFCQ, int)
@@ -590,35 +586,32 @@ def set_types_pagerank(g, pType2=0.1, pType3=0.1, seed=None, **kwargs) :
     
     for v in g.vertices() :
         if int(v) not in dests :
-            tmp = np.array([_calculate_distance(g.vp['pos'][v], g_pos[k, :]) for k in range(nFCQ)])
+            tmp = np.array([_calculate_distance(g.vp(v, 'pos'), g_pos[k, :]) for k in range(nFCQ)])
             min_g_dist = np.min((tmp, min_g_dist), 0)
             ind_g_dist[min_g_dist == tmp] = int(v)
     
     ind_g_dist  = np.unique(ind_g_dist)
-    fcqs        = ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )]
-    loop_type   = g.new_vertex_property("int")
+    fcqs        = set(ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )])
+    g.new_vertex_property('loop_type', 'int')
 
     for v in g.vertices() :
-        if int(v) in dests :
-            loop_type[v] = 3
-            if not isinstance(g.edge(v, v), gt.Edge) :
-                e = g.add_edge(source=v, target=v)
-        elif int(v) in fcqs :
-            loop_type[v] = 2
-            if not isinstance(g.edge(v, v), gt.Edge) :
-                e = g.add_edge(source=v, target=v)
+        if v in dests :
+            g.set_vp(v, 'loop_type', 3)
+            if not g.is_edge((v, v)):
+                g.add_edge(v, v)
+        elif v in fcqs :
+            g.set_vp(v, 'loop_type', 2)
+            if not g.is_edge((v, v)):
+                g.add_edge(v, v)
     
-    g.reindex_edges()
-    eType     = g.new_edge_property("int")
-    eType.a  += 1
+    g.new_edge_property('eType', 'int')
 
     for v in g.vertices() :
-        if loop_type[v] in [2, 3] :
-            e = g.edge(v, v)
-            if loop_type[v] == 2 :
-                eType[e] = 2
+        if g.vp(v, 'loop_type') in [2, 3] :
+            e = (v, v)
+            if g.vp(v, 'loop_type') == 2 :
+                g.ep(e, 'eType', 2)
             else :
-                eType[e] = 3
+                g.ep(e, 'eType', 3)
     
-    g.ep['eType'] = eType
     return g

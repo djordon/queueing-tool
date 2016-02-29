@@ -19,7 +19,7 @@ Summary
 """
 
 
-from .graph_generation import (
+from queueing_tool.generation.graph_generation import (
     generate_random_graph,
     generate_pagerank_graph,
     adjacency2graph,
@@ -28,11 +28,11 @@ from .graph_generation import (
     set_types_pagerank,
     generate_transition_matrix
 )
-from .graph_preparation import (
+from queueing_tool.generation.graph_preparation import (
     add_edge_lengths,
     _prepare_graph
 )
-from .graph_functions import (
+from queueing_tool.generation.graph_functions import (
     shortest_paths,
     vertices2edge,
     graph2dict

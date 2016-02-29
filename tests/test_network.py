@@ -4,11 +4,10 @@ import numbers
 import sys
 import os
 
+import networkx as nx
 import numpy as np
 
-import queueing_tool  as qt
-import graph_tool.all as gt
-
+import queueing_tool as qt
 
 
 class TestQueueNetwork(unittest.TestCase) :
@@ -305,15 +304,11 @@ class TestQueueNetwork(unittest.TestCase) :
 
     def test_QueueNetwork_data_queues(self) :
 
-        nV  = 50
-        ps  = np.random.uniform(0, 2, size=(nV, 2))
-
-        g, pos = gt.geometric_graph(ps, 1)
-        g = qt.set_types_random(g, pTypes={1 : 1})
+        g = nx.random_geometric_graph(50, 0.5).to_directed()
         q_cls = {1 : qt.QueueServer}
 
-        qn  = qt.QueueNetwork(g, q_classes=q_cls, seed=17)
-        k   = np.random.randint(10000, 20000)
+        qn = qt.QueueNetwork(g, q_classes=q_cls, seed=17)
+        k  = np.random.randint(10000, 20000)
 
         qn.max_agents = 4000
         qn.initialize(queues=range(qn.nE))
@@ -342,10 +337,18 @@ class TestQueueNetwork(unittest.TestCase) :
         ety = {0 : 1, 1 : [2, 2, 2]}
         g   = qt.adjacency2graph(adj, eType=ety)
 
-        qcl = {1 : qt.QueueServer, 2 : qt.QueueServer}
-        arg = {1 : {'arrival_f' : arr, 'service_f' : lambda t: t,
-                    'AgentClass': qt.GreedyAgent},
-               2 : {'service_f' : ser, 'nServers' : nSe} }
+        qcl = {1: qt.QueueServer, 2: qt.QueueServer}
+        arg = {
+            1: {
+                'arrival_f': arr,
+                'service_f': lambda t: t,
+                'AgentClass': qt.GreedyAgent
+            },
+            2: {
+                'service_f': ser,
+                'nServers': nSe
+            }
+        }
 
         qn  = qt.QueueNetwork(g, q_classes=qcl, q_args=arg)
         qn.initialize(edge=(0,1))
@@ -371,14 +374,22 @@ class TestQueueNetwork(unittest.TestCase) :
 
     def test_QueueNetwork_blocking(self) :
 
-        nV  = 100
-        ps  = np.random.uniform(0, 5, size=(nV, 2))
-
-        g, pos = gt.geometric_graph(ps, 1)
-        g = qt.set_types_random(g, pTypes={k : 1.0/6 for k in range(1,7)})
-        q_cls = {1 : qt.LossQueue, 2 : qt.QueueServer, 3 : qt.InfoQueue,
-                 4 : qt.ResourceQueue, 5 : qt.ResourceQueue, 6 : qt.QueueServer}
-        q_arg = {3 : {'net_size' : g.num_edges()}, 4 : {'nServers' : 500}, 6 : {'AgentClass' : qt.GreedyAgent}}
+        g = nx.random_geometric_graph(100, 0.2).to_directed()
+        g = qt.set_types_random(g, pTypes={k : 1.0 / 6 for k in range(1, 7)})
+        q_cls = {
+            1: qt.LossQueue,
+            2: qt.QueueServer,
+            3: qt.InfoQueue,
+            4: qt.ResourceQueue,
+            5: qt.ResourceQueue,
+            6: qt.QueueServer
+        }
+                 
+        q_arg = {
+            3: {'net_size': g.num_edges()},
+            4: {'nServers': 500},
+            6: {'AgentClass' : qt.GreedyAgent}
+        }
 
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
         qn.blocking = 'RS'
@@ -391,10 +402,7 @@ class TestQueueNetwork(unittest.TestCase) :
 
     def test_QueueNetwork_copy(self) :
 
-        nV  = 100
-        ps  = np.random.uniform(0, 5, size=(nV, 2))
-
-        g, pos = gt.geometric_graph(ps, 1)
+        g = nx.random_geometric_graph(100, 0.2).to_directed()
         g = qt.set_types_random(g, pTypes={k : 0.2 for k in range(1,6)})
         q_cls = {
             1: qt.LossQueue,

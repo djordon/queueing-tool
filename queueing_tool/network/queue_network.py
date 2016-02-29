@@ -1,17 +1,24 @@
-import graph_tool.all as gt
-import networkx as nx
-import numpy as np
 import collections
 import numbers
 import copy
 
-from ..generation  import _prepare_graph
-from ..queues      import NullQueue, QueueServer, LossQueue
+import networkx as nx
+import numpy as np
+from numpy.random import uniform
 
-from .sorting      import oneBisectSort, bisectSort, oneSort, twoSort
+from queueing_tool.generation import _prepare_graph
+from queueing_tool.queues import (
+    NullQueue,
+    QueueServer,
+    LossQueue
+)
+from queueing_tool.network.sorting import (
+    oneBisectSort,
+    bisectSort,
+    oneSort,
+    twoSort
+)
 
-from numpy.random  import uniform
-from gi.repository import Gtk, GObject
 
 EPS = np.float64(1e-7)
 
@@ -152,15 +159,15 @@ class QueueNetwork(object) :
       ``vertex_color``\, ``vertex_fill_color``\, ``pos``\, and ``edge_color``\.
       The default colors, which are used by various methods, are:
 
-      >>> default_colors = { 'vertex_fill_color' : [0.9, 0.9, 0.9, 1.0],
-      ...                    'vertex_color'      : [0.0, 0.5, 1.0, 1.0],
-      ...                    'vertex_highlight'  : [0.5, 0.5, 0.5, 1.0],
-      ...                    'edge_departure'    : [0, 0, 0, 1],
-      ...                    'vertex_active'     : [0.1, 1.0, 0.5, 1.0],
-      ...                    'vertex_inactive'   : [0.9, 0.9, 0.9, 0.8],
-      ...                    'edge_active'       : [0.1, 0.1, 0.1, 1.0],
-      ...                    'edge_inactive'     : [0.8, 0.8, 0.8, 0.3],
-      ...                    'bg_color'          : [1, 1, 1, 1]}
+      >>> default_colors = {'vertex_fill_color': [0.9, 0.9, 0.9, 1.0],
+      ...                   'vertex_color'     : [0.0, 0.5, 1.0, 1.0],
+      ...                   'vertex_highlight' : [0.5, 0.5, 0.5, 1.0],
+      ...                   'edge_departure'   : [0, 0, 0, 1],
+      ...                   'vertex_active'    : [0.1, 1.0, 0.5, 1.0],
+      ...                   'vertex_inactive'  : [0.9, 0.9, 0.9, 0.8],
+      ...                   'edge_active'      : [0.1, 0.1, 0.1, 1.0],
+      ...                   'edge_inactive'    : [0.8, 0.8, 0.8, 0.3],
+      ...                   'bg_color'         : [1, 1, 1, 1]}
 
     If the graph is not connected then there may be issues with ``Agents``
     that arrive at an edge that points to terminal vertex. If the graph was
@@ -1164,7 +1171,7 @@ class QueueNetwork(object) :
             return True
 
 
-    def animate(self, out=None, n=10, t=None, **kwargs) :
+    def animate(self, out=None, n=10, t=None, **kwargs):
         """Animates the network as it's simulating.
 
         The animations can be saved to disk or view in interactive mode.
@@ -1243,20 +1250,22 @@ class QueueNetwork(object) :
         self._to_animate = True
         self._update_all_colors()
 
-        if out is None :
+        if out is None:
             kwargs = self._update_kwargs(kwargs, out=False, update_props=True)
 
             if 'bg_color' not in kwargs:
                 kwargs['bg_color'] = self.colors['bg_color']
 
+            window, gtk_main_quit, gtk_main, GObject = self.g.get_window(**kwargs)
+
             self._to_disk = False
-            self._window  = gt.GraphWindow(g=self.g, **kwargs)
+            self._window  = window
 
             cid = GObject.idle_add(self._simulate_next_event)
-            self._window.connect("delete_event", Gtk.main_quit)
+            self._window.connect("delete_event", gtk_main_quit)
             self._window.show_all()
-            Gtk.main()
-        else :
+            gtk_main()
+        else:
             kwargs = self._update_kwargs(kwargs, out=True, update_props=False)
             self._fmt     = kwargs['fmt'] if 'fmt' in kwargs else 'png'
             self._count   = 0
