@@ -197,6 +197,7 @@ class TestQueueServers(unittest.TestCase) :
         self.assertTrue( ans.any() )
 
 
+    @unittest.skip("No animations")
     def test_ResourceQueue_animation(self) :
 
         g = nx.random_geometric_graph(100, 0.2).to_directed()

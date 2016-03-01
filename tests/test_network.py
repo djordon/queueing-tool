@@ -10,25 +10,25 @@ import numpy as np
 import queueing_tool as qt
 
 
-class TestQueueNetwork(unittest.TestCase) :
+class TestQueueNetwork(unittest.TestCase):
 
     @classmethod
-    def setUpClass(cls) :
+    def setUpClass(cls):
         cls.g  = qt.generate_pagerank_graph(200)
         cls.qn = qt.QueueNetwork(cls.g)
         cls.qn.max_agents = 2000
         cls.qn.initialize(50)
 
-    def tearDown(self) :
+    def tearDown(self):
         self.qn.clear()
         self.qn.initialize(50)
 
 
-    def test_QueueNetwork_sorting(self) :
+    def test_QueueNetwork_sorting(self):
 
         nEvents = 1000
         ans = np.zeros(nEvents, bool)
-        for k in range(nEvents // 2) :
+        for k in range(nEvents // 2):
             net_times   = np.array([q.time for q in self.qn._queues])
             queue_times = [q.time for q in self.qn.edge2queue]
             queue_times.sort()
@@ -42,7 +42,7 @@ class TestQueueNetwork(unittest.TestCase) :
 
         self.qn.simulate(n=10000)
 
-        for k in range(nEvents // 2, nEvents) :
+        for k in range(nEvents // 2, nEvents):
             net_times   = np.array([q.time for q in self.qn._queues])
             queue_times = [q.time for q in self.qn.edge2queue]
             queue_times.sort()
@@ -57,13 +57,13 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
-    def test_QueueNetwork_sorting2(self) :
+    def test_QueueNetwork_sorting2(self):
 
         nEvents = 100
         ans = np.zeros(nEvents, bool)
         self.qn.clear()
         self.qn.initialize(1)
-        for k in range(nEvents) :
+        for k in range(nEvents):
             net_times   = np.array([q.time for q in self.qn._queues])
             queue_times = [q.time for q in self.qn.edge2queue]
             queue_times.sort()
@@ -78,7 +78,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
-    def test_QueueNetwork_closedness(self) :
+    def test_QueueNetwork_closedness(self):
 
         nEvents = 2500
         ans = np.zeros(nEvents, bool)
@@ -86,7 +86,7 @@ class TestQueueNetwork(unittest.TestCase) :
         for q in self.qn.edge2queue :
             na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q._queue) - 2
 
-        for k in range(nEvents) :
+        for k in range(nEvents):
             ans[k] = np.sum(self.qn.nAgents) >= np.sum(na)
             for q in self.qn.edge2queue :
                 na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q._queue) - 2
@@ -96,26 +96,26 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
-    def test_QueueNetwork_max_agents(self) :
+    def test_QueueNetwork_max_agents(self):
 
         nEvents = 1500
         self.qn.max_agents = 200
         ans = np.zeros(nEvents, bool)
 
-        for k in range(nEvents // 2) :
+        for k in range(nEvents // 2):
             ans[k] = np.sum(self.qn.nAgents) <= self.qn.max_agents
             self.qn.simulate(n=1)
 
         self.qn.simulate(n=20000)
 
-        for k in range(nEvents // 2, nEvents) :
+        for k in range(nEvents // 2, nEvents):
             ans[k] = np.sum(self.qn.nAgents) <= self.qn.max_agents
             self.qn.simulate(n=1)
 
         self.assertTrue( ans.all() )
 
 
-    def test_QueueNetwork_accounting(self) :
+    def test_QueueNetwork_accounting(self):
 
         nEvents = 2500
         ans = np.zeros(nEvents, bool)
@@ -123,7 +123,7 @@ class TestQueueNetwork(unittest.TestCase) :
         for q in self.qn.edge2queue :
             na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q._queue) - 2
 
-        for k in range(nEvents) :
+        for k in range(nEvents):
             ans[k] = (self.qn.nAgents == na).all()
             self.qn.simulate(n=1)
             for q in self.qn.edge2queue :
@@ -132,7 +132,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
-    def test_QueueNetwork_simulate(self) :
+    def test_QueueNetwork_simulate(self):
 
         g  = qt.generate_pagerank_graph(50)
         qn = qt.QueueNetwork(g)
@@ -145,7 +145,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( qn.current_time > t0 )
 
 
-    def test_QueueNetwork_initialization(self) :
+    def test_QueueNetwork_initialization(self):
 
         # Single edge index
         k = np.random.randint(0, self.qn.nE)
@@ -166,7 +166,7 @@ class TestQueueNetwork(unittest.TestCase) :
 
         # Single edge as edge
         k = np.random.randint(0, self.qn.nE)
-        e = self.g.edge(self.qn.edge2queue[k].edge[0], self.qn.edge2queue[k].edge[1])
+        e = self.qn.edge2queue[k].edge[:2]
         self.qn.clear()
         self.qn.initialize(edge=e)
 
@@ -174,28 +174,26 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue(ans == [k])
 
         # Single edge as tuple
-        k  = np.random.randint(0, self.qn.nE)
-        e  = self.g.edge(self.qn.edge2queue[k].edge[0], self.qn.edge2queue[k].edge[1])
-        ee = (int(e.source()), int(e.target()))
+        k = np.random.randint(0, self.qn.nE)
+        e = self.qn.edge2queue[k].edge[:2]
         self.qn.clear()
-        self.qn.initialize(edge=ee)
+        self.qn.initialize(edge=e)
 
         ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
         self.assertTrue(ans == [k])
 
         # Multiple edges as tuples
-        k   = np.unique(np.random.randint(0, self.qn.nE, 5))
-        es  = [self.g.edge(self.qn.edge2queue[i].edge[0], self.qn.edge2queue[i].edge[1]) for i in k]
-        ees = [(int(e.source()), int(e.target())) for e in es]
+        k  = np.unique(np.random.randint(0, self.qn.nE, 5))
+        es = [self.qn.edge2queue[i].edge[:2] for i in k]
         self.qn.clear()
-        self.qn.initialize(edge=ees)
+        self.qn.initialize(edge=es)
 
         ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
         self.assertTrue( (ans == k).all() )
 
         # Multple edges as edges
-        k   = np.unique(np.random.randint(0, self.qn.nE, 5))
-        es  = [self.g.edge(self.qn.edge2queue[i].edge[0], self.qn.edge2queue[i].edge[1]) for i in k]
+        k  = np.unique(np.random.randint(0, self.qn.nE, 5))
+        es = [self.qn.edge2queue[i].edge[:2] for i in k]
         self.qn.clear()
         self.qn.initialize(edge=es)
 
@@ -203,7 +201,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( (ans == k).all() )
 
         # Single eType
-        k  = np.random.randint(1, 4)
+        k = np.random.randint(1, 4)
         self.qn.clear()
         self.qn.initialize(eType=k)
 
@@ -211,7 +209,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue(ans.all())
 
         # Multiple eTypes
-        k   = np.unique(np.random.randint(1, 4, 3))
+        k = np.unique(np.random.randint(1, 4, 3))
         self.qn.clear()
         self.qn.initialize(eType=k)
 
@@ -219,7 +217,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
-    def test_QueueNetwork_add_arrival(self) :
+    def test_QueueNetwork_add_arrival(self):
 
         adj = {0 : 1, 1 : [2, 3]}
         g   = qt.adjacency2graph(adj)
@@ -246,24 +244,23 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertAlmostEqual( trans[1][1], p1, 2)
 
 
-    def test_QueueNetwork_transitions(self) :
+    def test_QueueNetwork_transitions(self):
 
         degree = [len(self.qn.out_edges[k]) for k in range(self.qn.nV)]
-        k, deg = np.argmax(degree), max(degree)
+        v, deg = np.argmax(degree), max(degree)
 
         trans  = np.random.uniform(size=deg)
         trans  = trans / sum(trans)
 
-        self.qn.set_transitions({k : trans})
+        self.qn.set_transitions({v : trans})
         mat = self.qn.transitions()
-        v   = self.qn.g.vertex(k)
-        tra = mat[k, [int(e.target()) for e in v.out_edges()]]
+        tra = mat[v, [e[1] for e in self.qn.g.out_edges(v)]]
 
         self.assertTrue( (tra == trans).all() )
 
         tra = self.qn.transitions(return_matrix=False)
 
-        self.assertTrue( (tra[k] == trans).all() )
+        self.assertTrue( (tra[v] == trans).all() )
 
         mat = qt.generate_transition_matrix(self.g)
         self.qn.set_transitions(mat)
@@ -272,13 +269,13 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( np.allclose(tra, mat) )
 
         mat = qt.generate_transition_matrix(self.g)
-        self.qn.set_transitions({k : mat[k]})
+        self.qn.set_transitions({v : mat[v]})
         tra = self.qn.transitions()
 
-        self.assertTrue( np.allclose(tra[k], mat[k]) )
+        self.assertTrue( np.allclose(tra[v], mat[v]) )
 
 
-    def test_QueueNetwork_data_agents(self) :
+    def test_QueueNetwork_data_agents(self):
 
         self.qn.clear()
         self.qn.initialize(queues=1)
@@ -302,7 +299,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( (dat0[1:, 0] == dat0[dat0[:,2] > 0, 2]).all() )
 
 
-    def test_QueueNetwork_data_queues(self) :
+    def test_QueueNetwork_data_queues(self):
 
         g = nx.random_geometric_graph(50, 0.5).to_directed()
         q_cls = {1 : qt.QueueServer}
@@ -324,7 +321,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
-    def test_QueueNetwork_greedy_routing(self) :
+    def test_QueueNetwork_greedy_routing(self):
 
         lam = np.random.randint(1,10) + 0.0
         rho = np.random.uniform(0.75, 1)
@@ -333,9 +330,13 @@ class TestQueueNetwork(unittest.TestCase) :
         arr = lambda t : t + np.random.exponential(1/lam)
         ser = lambda t : t + np.random.exponential(1/mu)
 
-        adj = {0 : 1, 1 : [2, 3, 4]}
-        ety = {0 : 1, 1 : [2, 2, 2]}
-        g   = qt.adjacency2graph(adj, eType=ety)
+        adj = {
+            0 : {1: {'eType': 1}},
+            1 : {2: {'eType': 2},
+                 3: {'eType': 2},
+                 4: {'eType': 2}}
+        }
+        g = qt.adjacency2graph(adj)
 
         qcl = {1: qt.QueueServer, 2: qt.QueueServer}
         arg = {
@@ -356,13 +357,13 @@ class TestQueueNetwork(unittest.TestCase) :
 
         nEvents = 1000
         ans = np.zeros(nEvents, bool)
-        e01 = qn.g.edge_index[qn.g.edge(0,1)]
+        e01 = qn.g.edge_index[(0, 1)]
         edg = qn.edge2queue[e01].edge
         c   = 0
 
         while c < nEvents :
             qn.simulate(n=1)
-            if qn.next_event_description() == ('Departure', e01) :
+            if qn.next_event_description() == ('Departure', e01):
                 d0 = qn.edge2queue[e01]._departures[0].desired_destination(qn, edg)
                 a1 = np.argmin([qn.edge2queue[e].nQueued() for e in qn.out_edges[1]])
                 d1 = qn.out_edges[1][a1]
@@ -372,7 +373,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
-    def test_QueueNetwork_blocking(self) :
+    def test_QueueNetwork_blocking(self):
 
         g = nx.random_geometric_graph(100, 0.2).to_directed()
         g = qt.set_types_random(g, pTypes={k : 1.0 / 6 for k in range(1, 7)})
@@ -400,7 +401,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( qn._initialized == False )
 
 
-    def test_QueueNetwork_copy(self) :
+    def test_QueueNetwork_copy(self):
 
         g = nx.random_geometric_graph(100, 0.2).to_directed()
         g = qt.set_types_random(g, pTypes={k : 0.2 for k in range(1,6)})
@@ -429,31 +430,31 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertFalse( qn.time == qn2.time )
 
         ans = []
-        for k, q in enumerate(qn2.edge2queue) :
+        for k, q in enumerate(qn2.edge2queue):
             if stamp[k][1] != q.time :
                 ans.append(q.time != qn.edge2queue[k].time)
 
         self.assertTrue( np.array(ans).all() )
 
-
-    def test_QueueNetwork_drawing_animation(self) :
+    @unittest.skip("No animations")
+    def test_QueueNetwork_drawing_animation(self):
 
         ct  = np.random.randint(15, 22)
         ans = np.zeros(ct+4, bool)
         self.qn.animate(out='test', n=ct, output_size=(200,200))
 
-        for k in range(ct) :
+        for k in range(ct):
             ans[k] = os.path.isfile('test%s.png' % (k))
             if ans[k] :
                 os.remove('test%s.png' % (k))
 
-        for k in range(4) :
+        for k in range(4):
             ans[ct+k] = not os.path.isfile('test%s.png' % (ct+k))
 
         self.assertTrue( ans.all() )
 
-
-    def test_QueueNetwork_drawing_animation_time(self) :
+    @unittest.skip("No animations")
+    def test_QueueNetwork_drawing_animation_time(self):
 
         nE0 = self.qn.nEvents
         self.qn.animate(out='test', t=0.01, output_size=(200,200))
@@ -461,18 +462,18 @@ class TestQueueNetwork(unittest.TestCase) :
         ct  = nE1 - nE0
         ans = np.zeros(ct+4, bool)
 
-        for k in range(ct) :
+        for k in range(ct):
             ans[k] = os.path.isfile('test%s.png' % (k))
             if ans[k] :
                 os.remove('test%s.png' % (k))
 
-        for k in range(4) :
+        for k in range(4):
             ans[ct+k] = not os.path.isfile('test%s.png' % (ct+k))
 
         self.assertTrue( ans.all() )
 
-
-    def test_QueueNetwork_show_type_active(self) :
+    @unittest.skip("No plotting")
+    def test_QueueNetwork_show_type_active(self):
 
         ans = np.zeros(2, bool)
 
@@ -490,7 +491,7 @@ class TestQueueNetwork(unittest.TestCase) :
         self.assertTrue( ans.all() )
 
 
-    def test_QueueNetwork_add_arrival(self) :
+    def test_QueueNetwork_add_arrival(self):
 
         self.qn.simulate(1000)
 

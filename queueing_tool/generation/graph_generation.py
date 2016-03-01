@@ -59,26 +59,26 @@ def _calculate_distance(latlon1, latlon2) :
     return c
 
 
-def _matrix2dict(matrix) :
+def _matrix2dict(matrix, etype=False):
     """Takes an adjacency matrix and returns an adjacency list."""
     n = len(matrix)
     adj = {k : {} for k in range(n)}
     for k in range(n):
         for j in range(n):
             if matrix[k, j] != 0:
-                adj[k][j] = {}
+                adj[k][j] = {} if not etype else matrix[k, j]
     
     return adj
 
 
-def _dict2dict(adj_dict) :
+def _dict2dict(adj_dict, etype=False):
     """Takes a dictionary representation of an adjacency list and returns
     a dict of dicts based representation.
     """
     item = adj_dict.popitem()
     adj_dict[item[0]] = item[1]
     if not isinstance(item[1], dict):
-        for key, value in adj_dict.items() :
+        for key, value in adj_dict.items():
             value = {v: {} for v in value}
 
     return adj_dict
@@ -131,7 +131,7 @@ def _adjacency_adjust(adjacency, adjust, is_directed) :
 
     for v, adj in adjacency.items():
         for u, properties in adj.items():
-            if 'eType' not in properties:
+            if properties.get('eType') is None:
                 properties['eType'] = 1
 
     if is_directed:
@@ -150,7 +150,7 @@ def _adjacency_adjust(adjacency, adjust, is_directed) :
         else:
             for k, adj in adjacency.items():
                 if len(adj) == 0:
-                    adj[k] = {k: {'eType': 0}}
+                    adj[k] = {'eType': 0}
 
     return adjacency
 
@@ -203,8 +203,8 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     If terminal nodes are such that all in-edges have edge type ``0`` then
     nothing is changed
 
-    >>> adj = { 0 : [1], 1 : [2], 2 : [3, 4], 3 : [2] }
-    >>> eTy = { 0 : [1], 1 : [2], 2 : [4, 0], 3 : [3] }
+    >>> adj = {0: {1: {}} , 1: {2: {}}, 2: {3: {}, 4: {}}, 3: {2: {}} }
+    >>> eTy = {0: {1: 1}, 1: {2: 2}, 2: {3: 4, 4: 0}, 3: {2: 3}}
     >>> g = qt.adjacency2graph(adj, eType=eTy)
     >>> ans = qt.graph2dict(g)
     >>> ans[0]    # This is the adjacency list
@@ -242,11 +242,27 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     elif isinstance(adjacency, list) :
         adjacency = _list2dict(adjacency)
     else :
-        raise TypeError("If the adjacency parameter is supplied it must be a list, dict, or a numpy.ndarray.")
+        msg = ("If the adjacency parameter is supplied it must be a "
+               "list, dict, or a numpy.ndarray.")
+        raise TypeError(msg)
+
+    if eType is None:
+        eType = {}
+    else:
+        if isinstance(eType, np.ndarray):
+            eType = _matrix2dict(eType, etype=True)
+        elif isinstance(eType, dict):
+            eType = _dict2dict(eType, etype=True)
+        elif isinstance(eType, list):
+            eType = _list2dict(eType, etype=True)
+
+    for u, ty in eType.items():
+        for v, et in ty.items():
+            adjacency[u][v]['eType'] = et
 
     adjacency = _adjacency_adjust(adjacency, adjust, is_directed)
     g = nx.from_dict_of_dicts(adjacency, create_using=nx.DiGraph())
-    return GraphWrapper(g)
+    return g
 
 
 def generate_transition_matrix(g, seed=None):

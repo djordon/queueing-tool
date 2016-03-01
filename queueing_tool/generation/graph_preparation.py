@@ -82,12 +82,12 @@ def add_edge_lengths(g) :
 
     """
     g = _test_graph(g)
-    g.new_edge_property('elength', 'double')
+    g.new_edge_property('edge_length', 'double')
 
     for e in g.edges() :
         latlon1 = g.vp(e[1], 'pos')
         latlon2 = g.vp(e[0], 'pos')
-        g.set_ep(e, 'elength', np.round(_calculate_distance(latlon1, latlon2), 3))
+        g.set_ep(e, 'edge_length', np.round(_calculate_distance(latlon1, latlon2), 3))
     
     return g
 
@@ -161,9 +161,10 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
     g.new_edge_property('edge_marker_size', 'double')
     g.new_edge_property('edge_pen_width', 'double')
 
-    if 'eType' not in g.edge_properties :
-        ans = g.graph2dict()
-        g   = adjacency2graph(ans, adjust=1, is_directed=g.is_directed())
+    #if 'eType' not in g.edge_properties :
+    ans = g.graph2dict()
+    g = adjacency2graph(ans, adjust=1, is_directed=g.is_directed())
+    g = GraphWrapper(g)
 
     queues = _set_queues(g, q_cls, q_arg, 'cap' in g.vertex_properties)
 

@@ -111,17 +111,16 @@ class GraphWrapper(object):
             return nx.to_dict_of_dicts(self.g)
         else:
             adj = {}
-            if 'eType' not in g.ep:
-                for v in self.g.vertices():
-                    adj[int(v)] = {int(u): {} for u in v.out_neighbours()}
-            else:
-                ep = self.g.ep
-                for v in self.g.vertices():
-                    tmp = {}
-                    for e in v.out_edges():
-                        tmp[int(e.target())] = {p: ep[e] for p in self.g.vp.keys()}
+            for v in self.g.vertices():
+                adj[int(v)] = {int(u): {} for u in v.out_neighbours()}
 
-                    adj[int(v)] = tmp
+            ep = self.g.ep
+            for v in self.g.vertices():
+                tmp = {}
+                for e in v.out_edges():
+                    tmp[int(e.target())] = {p: ep[p][e] for p in self.g.ep.keys()}
+
+                adj[int(v)] = tmp
 
             return adj
 
