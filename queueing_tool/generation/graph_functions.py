@@ -84,7 +84,7 @@ def graph2dict(g) :
     return g.graph2dict()
 
 
-def shortest_paths(g) :
+def _shortest_paths(g) :
     """Returns the shortest paths between every two vertices in the graph ``g``,
     as well as the total distances along those distances.
 

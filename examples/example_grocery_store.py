@@ -59,7 +59,7 @@ qn.start_collecting_data()
 qn.simulate(t=1.8)
 
 # Collect data
-data = qn.data_queues()
+data = qn.get_queue_data()
 
 # Animate while simulating
 qn.animate(output_size=(700,200), pos=pos)

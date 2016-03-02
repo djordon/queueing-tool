@@ -15,7 +15,6 @@ Summary
     graph2dict
     vertices2edge
     add_edge_lengths
-    shortest_paths
 """
 
 
@@ -33,7 +32,7 @@ from queueing_tool.generation.graph_preparation import (
     _prepare_graph
 )
 from queueing_tool.generation.graph_functions import (
-    shortest_paths,
+    _shortest_paths,
     vertices2edge,
     graph2dict
 )
@@ -46,7 +45,7 @@ __all__ = [
     'set_types_rank',
     'set_types_random',
     '_prepare_graph',
-    'shortest_paths',
+    '_shortest_paths',
     'add_edge_lengths',
     'minimal_random_graph',
     'vertices2edge',

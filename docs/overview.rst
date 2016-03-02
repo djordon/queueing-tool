@@ -237,7 +237,7 @@ you have to tell it to do so:
 
     >>> qn.start_collecting_data()
     >>> qn.simulate(t=1.8)
-    >>> data = qn.data_queues()
+    >>> data = qn.get_queue_data()
     >>> data.shape
     (1139, 6)
 
@@ -251,10 +251,10 @@ we can specify that by having type ``0`` edges collect data:
     >>> qn.clear_data()
     >>> qn.start_collecting_data(eType=0)
     >>> qn.simulate(t=3)
-    >>> data = qn.data_queues(eType=0)
+    >>> data = qn.get_queue_data(eType=0)
     >>> data.shape
     (550, 6)
 
 The above code collected the departure times of every agent over the simulated
 period, it did not collect each agent's arrival or waiting time. See
-:meth:`.data_queues` and :meth:`.start_collecting_data` for more on extracting data.
+:meth:`.get_queue_data` and :meth:`.start_collecting_data` for more on extracting data.

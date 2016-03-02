@@ -14,10 +14,11 @@ else:
     use_cython = True
 
 
-if sys.version_info[:2] < (2, 7) or (3, 0) <=  sys.version_info[:2] < (3, 2):
+_version = sys.version_info[:2]
+if _version < (2, 7) or (3, 0) <=  _version < (3, 2):
     raise RuntimeError('Python version 2.7 or >= 3.2 required.')
 
-cmdclass    = {}
+cmdclass = {}
 ext_modules = []
 
 if use_cython:
@@ -47,12 +48,12 @@ setup(
     long_description=long_description,
     license='MIT',
     author='Daniel Jordon',
-    author_email='dan@danjordon.com',
+    author_email='dan.jordon@gmail.com',
     url='https://github.com/djordon/queueing-tool',
     packages=['queueing_tool',
               'queueing_tool.network',
               'queueing_tool.queues',
-              'queueing_tool.graph', 
+              'queueing_tool.graph',
               'queueing_tool.generation'],
     cmdclass=cmdclass,
     ext_modules=ext_modules,
@@ -68,6 +69,7 @@ setup(
     'Programming Language :: Python :: 3.2',
     'Programming Language :: Python :: 3.3',
     'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.5',
     'Programming Language :: Cython',
     'Topic :: Scientific/Engineering',
     'Topic :: Scientific/Engineering :: Mathematics']

@@ -465,7 +465,7 @@ class QueueNetwork(object) :
         return mat
 
 
-    def set_transitions(self, mat) :
+    def set_transitions(self, mat):
         """Change the routing transitions probabilities for the network.
 
         Parameters
@@ -511,45 +511,45 @@ class QueueNetwork(object) :
         >>> net.transitions(False)
         {0: [1.0], 1: [0.963, 0.037], 2: [0.338, 0.396, 0.265], 3: [1.0], 4: [1.0]}
         """
-        if isinstance(mat, dict) :
-            for key, value in mat.items() :
+        if isinstance(mat, dict):
+            for key, value in mat.items():
                 if key > self.nV or key < 0 :
                     raise RuntimeError("One of the keys don't correspond to a vertex.")
-                elif len(self.out_edges[key]) > 0 and not np.isclose(np.sum(value), 1) :
+                elif len(self.out_edges[key]) > 0 and not np.isclose(np.sum(value), 1):
                     raise RuntimeError("Sum of transition probabilities at a vertex was not 1.")
-                elif (np.array(value) < 0).any() :
+                elif (np.array(value) < 0).any():
                     raise RuntimeError("Some transition probabilities were negative.")
 
-                if len(value) == self.nV :
+                if len(value) == self.nV:
                     self._route_probs[key] = []
                     for e in self.g.out_edges(key):
                         p = value[e[1]]
                         self._route_probs[key].append(np.float64(p))
-                elif len(value) == len(self._route_probs[key]) :
+                elif len(value) == len(self._route_probs[key]):
                     self._route_probs[key] = []
                     for p in value :
                         self._route_probs[key].append(np.float64(p))
 
-        elif isinstance(mat, np.ndarray) :
+        elif isinstance(mat, np.ndarray):
             non_terminal = np.array([self.g.out_degree(v) > 0 for v in self.g.vertices()])
-            if mat.shape != (self.nV, self.nV) :
+            if mat.shape != (self.nV, self.nV):
                 msg = ("Matrix is the wrong shape, should "
                        "be {0} x {1}.").format(self.nV, self.nV)
                 raise RuntimeError(msg)
-            elif not np.allclose(np.sum(mat[non_terminal,:], axis=1), 1) :
+            elif not np.allclose(np.sum(mat[non_terminal,:], axis=1), 1):
                 msg = "Sum of transition probabilities at a vertex was not 1."
                 raise RuntimeError(msg)
-            elif (mat < 0).any() :
+            elif (mat < 0).any():
                 raise RuntimeError("Some transition probabilities were negative.")
 
-            for k in range(self.nV) :
+            for k in range(self.nV):
                 self._route_probs[k] = []
                 for e in self.g.out_edges(k):
                     p = mat[k, e[1]]
                     self._route_probs[k].append( np.float64(p) )
 
 
-    def start_collecting_data(self, queues=None, edge=None, eType=None) :
+    def start_collecting_data(self, queues=None, edge=None, eType=None):
         """Tells the queues to collect data on agents' arrival, service start,
         and departure times.
 
@@ -572,11 +572,11 @@ class QueueNetwork(object) :
         """
         queues = _get_queues(self.g, queues, edge, eType)
 
-        for k in queues :
+        for k in queues:
             self.edge2queue[k].collect_data = True
 
 
-    def stop_collecting_data(self, queues=None, edge=None, eType=None) :
+    def stop_collecting_data(self, queues=None, edge=None, eType=None):
         """Tells the queues to stop collecting data on agents.
 
         If none of the parameters are given then every :class:`.QueueServer`
@@ -598,11 +598,11 @@ class QueueNetwork(object) :
         """
         queues = _get_queues(self.g, queues, edge, eType)
 
-        for k in queues :
+        for k in queues:
             self.edge2queue[k].collect_data = False
 
 
-    def data_queues(self, queues=None, edge=None, eType=None) :
+    def get_queue_data(self, queues=None, edge=None, eType=None):
         """Fetches data from queues.
 
         If none of the parameters are given then data from every
@@ -644,33 +644,33 @@ class QueueNetwork(object) :
         >>> net.start_collecting_data()
         >>> net.initialize(10)
         >>> net.simulate(2000)
-        >>> data = net.data_queues(eType=(1,3))
+        >>> data = net.get_queue_data(eType=(1,3))
 
         To get data from an edge connecting two vertices do the following:
 
-        >>> data = net.data_queues(edge=(1,50))
+        >>> data = net.get_queue_data(edge=(1,50))
 
         To get data from several edges do the following:
 
-        >>> data = net.data_queues(edge=[(1,3), (10,91), (90,90)])
+        >>> data = net.get_queue_data(edge=[(1,3), (10,91), (90,90)])
 
         You can specify the edge indices as well:
 
-        >>> data = net.data_queues(queues=(20, 14, 0, 4))
+        >>> data = net.get_queue_data(queues=(20, 14, 0, 4))
         """
         queues = _get_queues(self.g, queues, edge, eType)
 
-        data = np.zeros( (0,6) )
-        for q in queues :
+        data = np.zeros((0, 6))
+        for q in queues:
             dat = self.edge2queue[q].fetch_data()
 
-            if len(dat) > 0 :
+            if len(dat) > 0:
                 data = np.vstack( (data, dat) )
 
         return data
 
 
-    def data_agents(self, queues=None, edge=None, eType=None) :
+    def get_agent_data(self, queues=None, edge=None, eType=None):
         """Fetches data from queues, and organizes it by agent.
 
         If none of the parameters are given then data from every
@@ -705,14 +705,14 @@ class QueueNetwork(object) :
         queues = _get_queues(self.g, queues, edge, eType)
 
         data = {}
-        for qid in queues :
-            for issn, dat in self.edge2queue[qid].data.items() :
+        for qid in queues:
+            for issn, dat in self.edge2queue[qid].data.items():
                 datum = np.zeros( (len(dat), 6) )
                 datum[:,:5] = np.array(dat)
                 datum[:, 5] = qid
-                if issn in data :
+                if issn in data:
                     data[issn] = np.vstack( (data[issn], datum) )
-                else :
+                else:
                     data[issn] = datum
 
         dType = [
@@ -723,7 +723,7 @@ class QueueNetwork(object) :
             ('n', float),
             ('id', float)
         ]
-        for issn, dat in data.items() :
+        for issn, dat in data.items():
             datum = np.array([tuple(d) for d in dat.tolist()], dtype=dType)
             datum = np.sort(datum, order='a')
             data[issn] = np.array([tuple(d) for d in datum])
@@ -891,7 +891,7 @@ class QueueNetwork(object) :
         """
         for v in self.g.vertices():
             e = (v, v)
-            if self.is_edge(e) and self.g.ep(e, 'eType') == eType:
+            if self.g.is_edge(e) and self.g.ep(e, 'eType') == eType:
                 ei = self.g.edge_index[e]
                 self.g.set_vp(v, 'vertex_fill_color', self.colors['vertex_highlight'])
                 self.g.set_vp(v, 'vertex_color', self.edge2queue[ei].colors['vertex_color'])
@@ -924,7 +924,7 @@ class QueueNetwork(object) :
                 self.g.set_ep(e, 'edge_color', q._current_color())
                 if do[q.edge[1]] :
                     ee  = (v, v)
-                    eei = self.g.edge_index[ee] if ee is not None else 0
+                    eei = self.g.edge_index[ee] if self.g.is_edge(ee) else 0
 
                     if ee is None or (ee is not None and self.edge2queue[eei].edge[3] == 0):
                         nSy = 0
@@ -962,9 +962,10 @@ class QueueNetwork(object) :
             else:
                 self.g.set_ep(pe, 'edge_color', q._current_color())
                 ee  = (pv, pv)
-                eei = self.g.edge_index[ee] if ee is not None else 0
+                ee_is_edge = self.g.is_edge(ee)
+                eei = self.g.edge_index[ee] if ee_is_edge else 0
 
-                if ee is None or (ee is not None and self.edge2queue[eei].edge[3] == 0):
+                if not ee_is_edge or (ee_is_edge and self.edge2queue[eei].edge[3] == 0):
                     nSy = 0
                     cap = 0
                     for ei in self.in_edges[q.edge[1]]:
@@ -990,9 +991,10 @@ class QueueNetwork(object) :
         else:
             self.g.set_ep(e, 'edge_color', q._current_color())
             ee  = (v, v)
-            eei = self.g.edge_index[ee] if ee is not None else 0
+            ee_is_edge = self.g.is_edge(ee)
+            eei = self.g.edge_index[ee] if self.g.is_edge(ee) else 0
 
-            if ee is None or (ee is not None and self.edge2queue[eei].edge[3] == 0):
+            if not ee_is_edge or (ee_is_edge and self.edge2queue[eei].edge[3] == 0):
                 nSy = 0
                 cap = 0
                 for ei in self.in_edges[qedge[1]]:

@@ -1,4 +1,5 @@
 import networkx as nx
+import numpy as np
 
 nx2gt_attr = {
     'vertices': 'nodes',
@@ -7,10 +8,19 @@ nx2gt_attr = {
 }
 gt2nx_attr = {value: key for key, value in nx2gt_attr.items()}
 
+kw_map = {
+    'vertex_fill_color': 'node_color',
+    'vertex_color': 'node_color',
+    'with_labels': False,
+    'edge_color': 'edge_color',
+    'arrows': False,
+    'pos': 'pos'
+}
 
 class GraphWrapper(object):
     gt2nx_attr = gt2nx_attr
     nx2gt_attr = nx2gt_attr
+    kw_map = kw_map
 
     def __init__(self, g):
         if isinstance(g, nx.DiGraph):
@@ -77,7 +87,7 @@ class GraphWrapper(object):
         else:
             return [int(v) for v in self.g.vertices()]
 
-    def graph_draw(self, **kwargs):
+    def _draw(self, **kwargs):
         if self.is_nx_graph:
             nx.draw_networkx(self.g, **kwargs)
         else:
@@ -156,7 +166,62 @@ class GraphWrapper(object):
 
     def graph_draw(self, **kwargs):
         if self.is_nx_graph:
-            pass
+            try:
+                import matplotlib.pyplot as plt
+                from matplotlib.colors import rgb2hex
+            except ImportError:
+                msg = ("Matplotlib required for graph_draw() with "
+                       "NetworkX DiGraph.")
+                raise ImportError(msg)
+
+            plt.style.use('ggplot')
+            plt.ion()
+
+            fig = plt.figure()
+            ax = fig.gca()
+
+            kwa = {
+                's': 100,
+                'marker': 'o',
+                'cmap': plt.cm.ocean_r,
+                'linewidths': 1,
+                'edgecolors': 'k'
+            }
+            #kwa.update(kwargs)
+            pos = []
+            color = []
+
+            for v in self.g.nodes():
+                pos.append(self.g.node[v]['pos'])
+                color.append(self.g.node[v]['vertex_fill_color'])
+            
+            pos = np.array(pos)
+            color = np.array(color)
+            ax.scatter(pos[:, 0], pos[:, 1], c=color, **kwa)
+
+            pos = {}
+            if 'pos' in self.vertex_properties:
+                for v in self.g.nodes():
+                    pos[v] = {v: self.g.node[v]['pos']}
+
+            kwa = {'with_labels': False, 'arrows': False, 'edge_cmap': plt.cm.ocean_r}
+            for e in self.g.edges():
+                kwa['pos'] = {}
+                kwa['pos'].update(pos[e[0]])
+                kwa['pos'].update(pos[e[1]])
+                for key, val in self.g.edge[e[0]][e[1]].items():
+                    if key in self.kw_map:
+                        if 'color' in key:
+                            kwa[self.kw_map[key]] = rgb2hex(val)
+                            kwa['alpha'] = val[3]
+                        else:
+                            kwa[self.kw_map[key]] = val
+
+                nx.draw_networkx(self.g, nodelist=[], edgelist=[e], ax=ax, **kwa)
+
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+            plt.draw()
         else:
             for key in kwargs.keys():
                 if key in self.g.ep:

@@ -230,7 +230,7 @@ class TestQueueNetwork(unittest.TestCase):
 
         qn.simulate(150000)
 
-        data = qn.data_queues(edge=[(1,2), (1,3)])
+        data = qn.get_queue_data(edge=[(1,2), (1,3)])
         e0, e1 = qn.out_edges[1]
 
         p0 = np.sum(data[:, 5] == e0, dtype=float) / data.shape[0]
@@ -275,14 +275,14 @@ class TestQueueNetwork(unittest.TestCase):
         self.assertTrue( np.allclose(tra[v], mat[v]) )
 
 
-    def test_QueueNetwork_data_agents(self):
+    def test_QueueNetwork_get_agent_data(self):
 
         self.qn.clear()
         self.qn.initialize(queues=1)
         self.qn.start_collecting_data()
         self.qn.simulate(n=20000)
 
-        data = self.qn.data_agents()
+        data = self.qn.get_agent_data()
         dat0 = data[(1,0)]
 
         a = dat0[:,0]
@@ -299,7 +299,7 @@ class TestQueueNetwork(unittest.TestCase):
         self.assertTrue( (dat0[1:, 0] == dat0[dat0[:,2] > 0, 2]).all() )
 
 
-    def test_QueueNetwork_data_queues(self):
+    def test_QueueNetwork_get_queue_data(self):
 
         g = nx.random_geometric_graph(50, 0.5).to_directed()
         q_cls = {1 : qt.QueueServer}
@@ -312,7 +312,7 @@ class TestQueueNetwork(unittest.TestCase):
         qn.start_collecting_data()
         qn.simulate(n=k)
 
-        data = qn.data_queues()
+        data = qn.get_queue_data()
         self.assertTrue( data.shape == (k, 6) )
         qn.stop_collecting_data()
         qn.clear_data()

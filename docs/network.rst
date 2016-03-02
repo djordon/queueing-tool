@@ -16,8 +16,8 @@ Simulation methods
 Data methods
 ------------
 
-      .. automethod:: QueueNetwork.data_queues
-      .. automethod:: QueueNetwork.data_agents
+      .. automethod:: QueueNetwork.get_queue_data
+      .. automethod:: QueueNetwork.get_agent_data
       .. automethod:: QueueNetwork.start_collecting_data
       .. automethod:: QueueNetwork.stop_collecting_data
 
