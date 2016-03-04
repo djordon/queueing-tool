@@ -252,12 +252,21 @@ class GraphWrapper(object):
                 'linewidths': (1,),
                 'antialiaseds': (1,),
                 'linestyle': 'solid',
-                'transOffset': ax.transData
+                'transOffset': ax.transData,
+                'cmap': plt.cm.ocean_r,
+                'pickradius': 5,
+                'zorder': 2,
+                'facecolors': None,
+                'norm': None
             }
 
             scatter_kwargs = {
                 's': 100,
                 'c': self.vertex_fill_color,
+                'alpha': None,
+                'norm': None,
+                'vmin': None,
+                'vmax': None,
                 'marker': 'o',
                 'cmap': plt.cm.ocean_r,
                 'linewidths': 1,
@@ -266,7 +275,7 @@ class GraphWrapper(object):
 
             edge_collection = LineCollection(**line_collecton_kwargs)
             ax.add_collection(edge_collection)
-            ax.scatter(self.pos[:, 0], self.pos[:, 1], **scatter_kwargs)
+            ax.scatter(x=self.pos[:, 0], y=self.pos[:, 1], **scatter_kwargs)
 
             ax.get_xaxis().set_visible(False)
             ax.get_yaxis().set_visible(False)
