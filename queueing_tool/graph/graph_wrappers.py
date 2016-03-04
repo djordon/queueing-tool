@@ -52,6 +52,8 @@ class GraphWrapper(object):
                 g.ep['eType'] = eType
 
         self.g = g
+        self.pos = None
+        self.edge_colors = None
 
     def __getattr__(self, attr):
         if attr in self.gt2nx_attr and not self.is_nx_graph:
@@ -81,17 +83,17 @@ class GraphWrapper(object):
         v = self.g.vertex(v)
         return v.out_degree()
 
-    def vertices(self, *args, **kwargs):
-        if self.is_nx_graph:
-            return self.g.nodes(*args, **kwargs)
-        else:
-            return [int(v) for v in self.g.vertices()]
-
     def _draw(self, **kwargs):
         if self.is_nx_graph:
             nx.draw_networkx(self.g, **kwargs)
         else:
             gt.graph_draw(g=self.g, **kwargs)
+
+    def vertices(self, *args, **kwargs):
+        if self.is_nx_graph:
+            return self.g.nodes(*args, **kwargs)
+        else:
+            return [int(v) for v in self.g.vertices()]
 
     def out_neighbours(self, v):
         if self.is_nx_graph:
@@ -155,92 +157,18 @@ class GraphWrapper(object):
     def set_ep(self, e, edge_property, value):
         if self.is_nx_graph:
             self.g.edge[e[0]][e[1]][edge_property] = value
+            if edge_property == 'edge_color':
+                self.edge_colors[self.edge_index[e]] = value
         else:
             self.g.ep[edge_property][e] = value
 
     def set_vp(self, v, vertex_property, value):
         if self.is_nx_graph:
             self.g.node[v][vertex_property] = value
+            if vertex_property == 'pos':
+                self.pos[v] = value
         else:
             self.g.vp[vertex_property][v] = value
-
-    def graph_draw(self, **kwargs):
-        if self.is_nx_graph:
-            try:
-                import matplotlib.pyplot as plt
-                from matplotlib.colors import rgb2hex
-            except ImportError:
-                msg = ("Matplotlib required for graph_draw() with "
-                       "NetworkX DiGraph.")
-                raise ImportError(msg)
-
-            plt.style.use('ggplot')
-            plt.ion()
-
-            fig = plt.figure()
-            ax = fig.gca()
-
-            kwa = {
-                's': 100,
-                'marker': 'o',
-                'cmap': plt.cm.ocean_r,
-                'linewidths': 1,
-                'edgecolors': 'k'
-            }
-            #kwa.update(kwargs)
-            pos = []
-            color = []
-
-            for v in self.g.nodes():
-                pos.append(self.g.node[v]['pos'])
-                color.append(self.g.node[v]['vertex_fill_color'])
-            
-            pos = np.array(pos)
-            color = np.array(color)
-            ax.scatter(pos[:, 0], pos[:, 1], c=color, **kwa)
-
-            pos = {}
-            if 'pos' in self.vertex_properties:
-                for v in self.g.nodes():
-                    pos[v] = {v: self.g.node[v]['pos']}
-
-            kwa = {'with_labels': False, 'arrows': False, 'edge_cmap': plt.cm.ocean_r}
-            for e in self.g.edges():
-                kwa['pos'] = {}
-                kwa['pos'].update(pos[e[0]])
-                kwa['pos'].update(pos[e[1]])
-                for key, val in self.g.edge[e[0]][e[1]].items():
-                    if key in self.kw_map:
-                        if 'color' in key:
-                            kwa[self.kw_map[key]] = rgb2hex(val)
-                            kwa['alpha'] = val[3]
-                        else:
-                            kwa[self.kw_map[key]] = val
-
-                nx.draw_networkx(self.g, nodelist=[], edgelist=[e], ax=ax, **kwa)
-
-            ax.get_xaxis().set_visible(False)
-            ax.get_yaxis().set_visible(False)
-            plt.draw()
-        else:
-            for key in kwargs.keys():
-                if key in self.g.ep:
-                    kwargs[key] = self.g.ep[key]
-
-            gt.graph_draw(g, **kwargs)
-
-    def get_window(self, **kwargs):
-        if self.is_nx_graph:
-            return None
-        else:
-            try:
-                from gi.repository import Gtk, GObject
-            except ImportError:
-                msg = "Need gi.repository module for animating a graph_tool."
-                raise ImportError(msg)
-
-            window = gt.GraphWindow(g=self.g, **kwargs)
-            return window, Gtk.main_quit, Gtk.main, GObject
 
     @property
     def vertex_properties(self):
@@ -273,6 +201,8 @@ class GraphWrapper(object):
         if self.is_nx_graph:
             values = {v: None for v in self.g.edges()}
             nx.set_edge_attributes(self.g, name, values)
+            if name == 'edge_color':
+                self.edge_colors = np.zeros((self.number_of_edges(), 4))
         else:
             self.g.ep[name] = g.new_edge_property(property_type)
 
@@ -280,9 +210,75 @@ class GraphWrapper(object):
         if self.is_nx_graph:
             pos = nx.spring_layout(self.g)
             nx.set_node_attributes(self.g, 'pos', pos)
+            self.pos = np.array([pos[v] for v in self.g.nodes()])
         else:
             pos = gt.sfdp_layout(self.g, epsilon=1e-2, cooling_step=0.95)
             self.g.vp['pos'] = pos
+
+    def graph_draw(self, **kwargs):
+        if self.is_nx_graph:
+            try:
+                import matplotlib.pyplot as plt
+                from matplotlib.colors import rgb2hex
+                from matplotlib.collections import LineCollection
+            except ImportError:
+                msg = ("Matplotlib required for graph_draw() with "
+                       "NetworkX DiGraph.")
+                raise ImportError(msg)
+
+            plt.style.use('ggplot')
+            plt.ion()
+
+            fig = plt.figure()
+            ax = fig.gca()
+
+            edge_pos = [(self.pos[e[0]], self.pos[e[1]]) for e in self.g.edges()]
+            line_collecton_kwargs = {
+                'segments': edge_pos,
+                'colors': self.edge_colors,
+                'linewidths': (1,),
+                'antialiaseds': (1,),
+                'linestyle': 'solid',
+                'transOffset': ax.transData
+            }
+
+            ecolor = [self.g.node[v]['vertex_color'] for v in self.g.nodes()]
+            fcolor = [self.g.node[v]['vertex_fill_color'] for v in self.g.nodes()]
+            scatter_kwargs = {
+                's': 100,
+                'c': fcolor,
+                'marker': 'o',
+                'cmap': plt.cm.ocean_r,
+                'linewidths': 1,
+                'edgecolors': ecolor
+            }
+
+            edge_collection = LineCollection(**line_collecton_kwargs)
+            ax.add_collection(edge_collection)
+            ax.scatter(self.pos[:, 0], self.pos[:, 1], **scatter_kwargs)
+
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+            plt.draw()
+        else:
+            for key in kwargs.keys():
+                if key in self.g.ep:
+                    kwargs[key] = self.g.ep[key]
+
+            gt.graph_draw(g, **kwargs)
+
+    def get_window(self, **kwargs):
+        if self.is_nx_graph:
+            return None
+        else:
+            try:
+                from gi.repository import Gtk, GObject
+            except ImportError:
+                msg = "Need gi.repository module for animating a graph_tool."
+                raise ImportError(msg)
+
+            window = gt.GraphWindow(g=self.g, **kwargs)
+            return window, Gtk.main_quit, Gtk.main, GObject
 
     def is_edge(self, e):
         if self.is_nx_graph:

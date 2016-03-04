@@ -151,6 +151,11 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
     """
     g = _test_graph(g)
 
+    #if 'eType' not in g.edge_properties :
+    ans = g.graph2dict()
+    g = adjacency2graph(ans, adjust=1, is_directed=g.is_directed())
+    g = GraphWrapper(g)
+
     g.new_vertex_property('vertex_color', 'vector<double>')
     g.new_vertex_property('vertex_fill_color', 'vector<double>')
     g.new_vertex_property('vertex_pen_width', 'double')
@@ -160,11 +165,6 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
     g.new_edge_property('edge_color', 'vector<double>')
     g.new_edge_property('edge_marker_size', 'double')
     g.new_edge_property('edge_pen_width', 'double')
-
-    #if 'eType' not in g.edge_properties :
-    ans = g.graph2dict()
-    g = adjacency2graph(ans, adjust=1, is_directed=g.is_directed())
-    g = GraphWrapper(g)
 
     queues = _set_queues(g, q_cls, q_arg, 'cap' in g.vertex_properties)
 
