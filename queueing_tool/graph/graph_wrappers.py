@@ -53,7 +53,15 @@ class GraphWrapper(object):
 
         self.g = g
         self.pos = None
-        self.edge_colors = None
+        self.edge_color = None
+        self.vertex_color = None
+        self.vertex_fill_color = None
+
+    def freeze(self):
+        if self.is_nx_graph:
+            edge_index = {e: k for k, e in enumerate(self.g.edges())}
+            setattr(self.g, 'edge_index', edge_index)
+            nx.freeze(self.g)
 
     def __getattr__(self, attr):
         if attr in self.gt2nx_attr and not self.is_nx_graph:
@@ -158,15 +166,16 @@ class GraphWrapper(object):
         if self.is_nx_graph:
             self.g.edge[e[0]][e[1]][edge_property] = value
             if edge_property == 'edge_color':
-                self.edge_colors[self.edge_index[e]] = value
+                self.edge_color[self.edge_index[e]] = value
         else:
             self.g.ep[edge_property][e] = value
 
     def set_vp(self, v, vertex_property, value):
         if self.is_nx_graph:
             self.g.node[v][vertex_property] = value
-            if vertex_property == 'pos':
-                self.pos[v] = value
+            if hasattr(self, vertex_property):
+                attr = getattr(self, vertex_property)
+                attr[v] = value
         else:
             self.g.vp[vertex_property][v] = value
 
@@ -194,6 +203,10 @@ class GraphWrapper(object):
         if self.is_nx_graph:
             values = {v: None for v in self.g.nodes()}
             nx.set_node_attributes(self.g, name, values)
+            if name == 'vertex_color':
+                self.vertex_color = [0 for v in range(self.number_of_nodes())]
+            if name == 'vertex_fill_color':
+                self.vertex_fill_color = [0 for v in range(self.number_of_nodes())]
         else:
             self.g.vp[name] = g.new_vertex_property(property_type)
 
@@ -202,7 +215,7 @@ class GraphWrapper(object):
             values = {v: None for v in self.g.edges()}
             nx.set_edge_attributes(self.g, name, values)
             if name == 'edge_color':
-                self.edge_colors = np.zeros((self.number_of_edges(), 4))
+                self.edge_color = np.zeros((self.number_of_edges(), 4))
         else:
             self.g.ep[name] = g.new_edge_property(property_type)
 
@@ -235,22 +248,20 @@ class GraphWrapper(object):
             edge_pos = [(self.pos[e[0]], self.pos[e[1]]) for e in self.g.edges()]
             line_collecton_kwargs = {
                 'segments': edge_pos,
-                'colors': self.edge_colors,
+                'colors': self.edge_color,
                 'linewidths': (1,),
                 'antialiaseds': (1,),
                 'linestyle': 'solid',
                 'transOffset': ax.transData
             }
 
-            ecolor = [self.g.node[v]['vertex_color'] for v in self.g.nodes()]
-            fcolor = [self.g.node[v]['vertex_fill_color'] for v in self.g.nodes()]
             scatter_kwargs = {
                 's': 100,
-                'c': fcolor,
+                'c': self.vertex_fill_color,
                 'marker': 'o',
                 'cmap': plt.cm.ocean_r,
                 'linewidths': 1,
-                'edgecolors': ecolor
+                'edgecolors': self.vertex_color
             }
 
             edge_collection = LineCollection(**line_collecton_kwargs)

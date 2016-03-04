@@ -318,6 +318,7 @@ class QueueNetwork(object) :
                 self.in_edges[v]  = [i for i in map(edge_index, g.in_edges(v))]
                 self._route_probs[v] = [np.float64(1 / vod) for i in range(vod)]
 
+            g.freeze()
             self.g = g
 
     def __repr__(self) :
