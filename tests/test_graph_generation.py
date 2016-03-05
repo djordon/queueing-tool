@@ -1,11 +1,11 @@
 import numbers
 import unittest
 
-import networkx as nx
-import numpy    as np
 from numpy.random import randint
+import networkx as nx
+import numpy as np
 
-import queueing_tool  as qt
+import queueing_tool as qt
 
 
 def generate_adjacency(a=3, b=25, c=6, n=12):
@@ -118,8 +118,8 @@ class TestGraphFunctions(unittest.TestCase):
     @unittest.skip('Unfinished test')
     def test_shortest_path(self):
 
-        nV  = 30
-        ps  = np.random.uniform(0, 2, size=(nV, 2))
+        nV = 30
+        ps = np.random.uniform(0, 2, size=(nV, 2))
 
         g = nx.random_geometric_graph(nV, 0.5).to_directed()
         g.vp['pos'] = pos
@@ -127,7 +127,6 @@ class TestGraphFunctions(unittest.TestCase):
 
         paths, dists = qt.shortest_paths(g)
 
-        # Finish this
         self.assertTrue( True )
 
 

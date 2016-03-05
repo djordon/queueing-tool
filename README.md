@@ -57,5 +57,6 @@ Code and documentation Copyright 2014-2015 Daniel Jordon. Code released under th
   [online]: http://queueing-tool.readthedocs.org/
   [1]: http://graph-tool.skewed.de/download#packages
   [numpy]: http://www.numpy.org/
+  [networkx]: http://networkx.readthedocs.org/en/stable/
   [2]: http://docs.scipy.org/doc/numpy/user/install.html
   [MIT license]: https://github.com/djordon/queueing-tool/blob/master/LICENSE

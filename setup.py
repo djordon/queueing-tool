@@ -15,8 +15,8 @@ else:
 
 
 _version = sys.version_info[:2]
-if _version < (2, 7) or (3, 0) <=  _version < (3, 2):
-    raise RuntimeError('Python version 2.7 or >= 3.2 required.')
+if _version < (2, 7) or (3, 0) <=  _version < (3, 3):
+    raise RuntimeError('Python version 2.7 or >= 3.3 required.')
 
 cmdclass = {}
 ext_modules = []
@@ -53,8 +53,7 @@ setup(
     packages=['queueing_tool',
               'queueing_tool.network',
               'queueing_tool.queues',
-              'queueing_tool.graph',
-              'queueing_tool.generation'],
+              'queueing_tool.graph'],
     cmdclass=cmdclass,
     ext_modules=ext_modules,
     keywords=['queueing theory', 'queueing', 'simulation', 'queueing simulator',

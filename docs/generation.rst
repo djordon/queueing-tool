@@ -1,7 +1,7 @@
 Network generation tools
 ========================
 
-.. automodule:: queueing_tool.generation
+.. automodule:: queueing_tool.graph
     :undoc-members:
 
 Graph generation

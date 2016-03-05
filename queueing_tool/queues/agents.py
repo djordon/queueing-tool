@@ -1,6 +1,6 @@
 import copy
 
-from numpy        import infty
+from numpy import infty
 from numpy.random import uniform
 
 from queueing_tool.queues.choice import _choice, _argmin

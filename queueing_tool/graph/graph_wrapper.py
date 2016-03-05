@@ -209,16 +209,17 @@ class GraphWrapper(object):
         else:
             self.g.ep[name] = g.new_edge_property(property_type)
 
-    def set_pos(self):
+    def set_pos(self, pos=None):
         if self.is_nx_graph:
-            pos = nx.spring_layout(self.g)
+            if pos is None:
+                pos = nx.spring_layout(self.g)
             nx.set_node_attributes(self.g, 'pos', pos)
             self.pos = np.array([pos[v] for v in self.g.nodes()])
         else:
             pos = gt.sfdp_layout(self.g, epsilon=1e-2, cooling_step=0.95)
             self.g.vp['pos'] = pos
 
-    def graph_draw(self, **kwargs):
+    def draw_graph(self, **kwargs):
         if self.is_nx_graph:
             try:
                 import matplotlib.pyplot as plt

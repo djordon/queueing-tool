@@ -4,12 +4,9 @@ import copy
 import networkx as nx
 import numpy as np
 
-from queueing_tool.graph import GraphWrapper
-from queueing_tool.generation.union_find import UnionFind
-from queueing_tool.generation.graph_functions import (
-    _test_graph
-)
-
+from queueing_tool.graph.graph_functions import _test_graph
+from queueing_tool.graph.graph_wrapper import GraphWrapper
+from queueing_tool.union_find import UnionFind
 
 def _calculate_distance(latlon1, latlon2) :
     """Calculates the distance between two points on earth.
@@ -243,6 +240,8 @@ def generate_transition_matrix(g, seed=None):
         transitioning from vertex ``i`` to vertex ``j``\. If there is no edge
         connecting vertex ``i`` to vertex ``j`` then ``mat[i, j] = 0``\.
     """
+    g = _test_graph(g)
+
     if isinstance(seed, numbers.Integral):
         np.random.seed(seed)
 

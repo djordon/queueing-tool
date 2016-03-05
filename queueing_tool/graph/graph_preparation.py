@@ -3,12 +3,13 @@ import numbers
 import networkx as nx
 import numpy as np
 
-from queueing_tool.graph import GraphWrapper
-from queueing_tool.generation.graph_generation import adjacency2graph
-from queueing_tool.generation.graph_functions  import (
+from queueing_tool.graph.graph_functions  import (
     graph2dict,
     _test_graph
 )
+from queueing_tool.graph.graph_generation import adjacency2graph
+from queueing_tool.graph.graph_wrapper import GraphWrapper
+
 
 def _calculate_distance(latlon1, latlon2) :
     """Calculates the distance between two points on earth.

@@ -44,15 +44,15 @@ class TestQueueServers(unittest.TestCase) :
 
     def test_QueueServer_copy(self) :
         
-        q1  = qt.QueueServer(seed=15)
+        q1 = qt.QueueServer(seed=15)
         q1.set_active()
         q1.simulate(t=100)
 
-        q2  = q1.copy()
-        t   = q1.time
+        q2 = q1.copy()
+        t  = q1.time
         q2.simulate(t=20)
 
-        self.assertTrue( t < q2.time )
+        self.assertTrue(t < q2.time)
 
 
     def test_QueueServer_active_cap(self) :
@@ -63,16 +63,16 @@ class TestQueueServers(unittest.TestCase) :
         q.set_active()
         q.simulate(n=3000)
 
-        self.assertTrue( q.nDepartures == 1000 )
-        self.assertTrue( q.nArrivals == [1000, 1000] )
+        self.assertTrue(q.nDepartures == 1000)
+        self.assertTrue(q.nArrivals == [1000, 1000])
 
 
     def test_QueueServer_accounting(self) :
 
         nSe = np.random.randint(1, 10)
         mu  = self.lam / (self.rho * nSe)
-        arr = lambda t : t + np.random.exponential(1 / self.lam)
-        ser = lambda t : t + np.random.exponential(1 / mu)
+        arr = lambda t: t + np.random.exponential(1 / self.lam)
+        ser = lambda t: t + np.random.exponential(1 / mu)
 
         q   = qt.QueueServer(nServers=nSe, arrival_f=arr, service_f=ser)
         q.set_active()

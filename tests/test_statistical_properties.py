@@ -18,7 +18,7 @@ empirical_cdf = np.vectorize(empirical_cdf0, excluded={1, 2})
 def chi2_cdf(q, k, n=1000000, ns=1):
     return np.mean([empirical_cdf(q, np.random.chisquare(k, n), n) for i in range(ns)])
 
-reason = "Tests statistical properties, takes long."
+reason = "Test takes long."
 
 class TestQueueServers(unittest.TestCase):
 
