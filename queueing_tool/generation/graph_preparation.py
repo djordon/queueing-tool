@@ -5,45 +5,10 @@ import numpy as np
 
 from queueing_tool.graph import GraphWrapper
 from queueing_tool.generation.graph_generation import adjacency2graph
-from queueing_tool.generation.graph_functions  import graph2dict
-
-
-def _test_graph(g) :
-    """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or
-     a string or file object to one.
-
-    Parameters
-    ----------
-    g : A **str** or a :class:`~graph_tool.Graph`.
-
-    Returns
-    -------
-    :class:`~graph_tool.Graph`
-        If ``g`` is a string or a file object then the output given by
-        ``graph_tool.load_graph(g, fmt='xml')``, if ``g`` is aready a
-        :class:`~graph_tool.Graph` then it is returned unaltered.
-
-    Raises
-    ------
-    TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
-        or a :class:`~graph_tool.Graph`\.
-    """
-    if not isinstance(g, GraphWrapper):
-        if not isinstance(g, nx.DiGraph):
-            try:
-                import graph_tool.all as gt
-            except ImportError:
-                msg = ("Graph given was not a networkx DiGraph or graph_tool "
-                       "graph.")
-                raise ImportError(msg)
-            if not isinstance(g, gt.Graph) :
-                msg = "Need to supply a graph-tool Graph or networkx DiGraph"
-                raise TypeError(msg)
-
-        g = GraphWrapper(g)
-    return g
-
+from queueing_tool.generation.graph_functions  import (
+    graph2dict,
+    _test_graph
+)
 
 def _calculate_distance(latlon1, latlon2) :
     """Calculates the distance between two points on earth.

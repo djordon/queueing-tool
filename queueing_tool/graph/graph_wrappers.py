@@ -40,8 +40,6 @@ class GraphWrapper(object):
 
             g.reindex_edges()
             self.is_nx_graph = False
-            setattr(g, 'successors', self._successors)
-            setattr(g, 'predecessors', self._predecessors)
             setattr(g, 'out_degree', self._out_degree)
             setattr(g, 'out_edges', self._out_edges)
             setattr(g, 'in_edges', self._in_edges)
@@ -70,14 +68,6 @@ class GraphWrapper(object):
             return getattr(self.g, self.nx2gt_attr[attr])
         else:
             return getattr(self.g, attr)
-
-    def _successors(self, v):
-        v = self.g.vertex(v)
-        return [int(e.target()) for e in v.out_edges()]
-
-    def _predecessors(self, v):
-        v = self.g.vertex(v)
-        return [int(e.source()) for e in v.in_edges()]
 
     def _out_edges(self, v):
         v = self.g.vertex(v)
@@ -259,7 +249,6 @@ class GraphWrapper(object):
                 'facecolors': None,
                 'norm': None
             }
-
             scatter_kwargs = {
                 's': 100,
                 'c': self.vertex_fill_color,
@@ -272,6 +261,12 @@ class GraphWrapper(object):
                 'linewidths': 1,
                 'edgecolors': self.vertex_color
             }
+
+            for key, value in kwargs.items():
+                if key in line_collecton_kwargs:
+                    line_collecton_kwargs[key] = value
+                if key in scatter_kwargs:
+                    scatter_kwargs[key] = value
 
             edge_collection = LineCollection(**line_collecton_kwargs)
             ax.add_collection(edge_collection)
@@ -305,23 +300,3 @@ class GraphWrapper(object):
             return e in self.g.edge_index
         else:
             return self.g.edge(*e) is not None
-
-def __create_graph():
-    vs  = g.add_vertex(nV)
-
-    g.set_directed(is_directed)
-
-    eT = g.new_edge_property("int")
-
-    for u, adj in adjacency.items() :
-        if is_directed :
-            for j, v in enumerate(adj) :
-                e = g.add_edge(u, v)
-                eT[e] = eType[u][j]
-        else :
-            for j, v in enumerate(adj) :
-                if len(g.edge(u,v,True)) < adj.count(v) :
-                    e = g.add_edge(u, v)
-                    eT[e] = eType[u][j]
-
-    g.ep['eType'] = eT

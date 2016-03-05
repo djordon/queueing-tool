@@ -19,6 +19,8 @@ from queueing_tool.network.sorting import (
     twoSort
 )
 
+class InitializationError(Exception):
+    pass
 
 EPS = np.float64(1e-7)
 
@@ -136,13 +138,18 @@ class QueueNetwork(object) :
     * If an edge type is used in your network but not given in ``q_classes``
       parameter then the defaults are used, where the defaults are:
 
-      >>> default_classes = {0 : qt.NullQueue, 1 : qt.QueueServer, 2 : qt.LossQueue,
-      ...                    3 : qt.LossQueue, 4 : qt.LossQueue}
+      >>> default_classes = { # doctest: +SKIP
+      ...     0: qt.NullQueue,
+      ...     1: qt.QueueServer,
+      ...     2: qt.LossQueue,
+      ...     3: qt.LossQueue,
+      ...     4: qt.LossQueue
+      ... }
 
       For example, if your network has type ``0``\, ``1``\, and ``2`` edges but
       your ``q_classes`` parameter looks like:
 
-      >>> my_classes = {1 : qt.ResourceQueue}
+      >>> my_classes = {1 : qt.ResourceQueue} # doctest: +SKIP
 
       then each type ``0`` or type ``2`` edge is a :class:`.NullQueue` or
       :class:`.LossQueue` respectively.
@@ -180,14 +187,17 @@ class QueueNetwork(object) :
     --------
     The following creates a queueing network with 100 vertices:
 
+    >>> import queueing_tool as qt
+    >>> import numpy as np
+    >>>
     >>> g = qt.generate_pagerank_graph(100, seed=13)
-    >>> q_cl = {2 : qt.QueueServer}
-    >>> arr  = lambda t: t + np.random.gamma(4, 0.0025)
+    >>> q_cl = {2: qt.QueueServer}
+    >>> arr = lambda t: t + np.random.gamma(4, 0.0025)
     >>> ser2 = lambda t: t + np.random.exponential(0.025)
     >>> ser3 = lambda t: t + np.random.exponential(4)
-    >>> q_ar = {2 : {'arrival_f' : arr, 'service_f' : ser2, 'nServers' : 5},
-                3 : {'service_f' : ser3, 'nServers' : 10}}
-    >>> net  = qt.QueueNetwork(g, q_classes=q_cl, q_args=q_ar, seed=13)
+    >>> q_ar = {2: {'arrival_f': arr, 'service_f': ser2, 'nServers': 5},
+    ...         3: {'service_f': ser3, 'nServers': 10}}
+    >>> net = qt.QueueNetwork(g, q_classes=q_cl, q_args=q_ar, seed=13)
 
     To specify that arrivals enter from type 2 edges and simulate run:
 
@@ -199,16 +209,16 @@ class QueueNetwork(object) :
     >>> nA = [(q.nSystem, q.edge[2]) for q in net.edge2queue if q.edge[3] == 2]
     >>> nA.sort(reverse=True)
     >>> nA[:5]
-    [(7, 213), (5, 553), (5, 528), (4, 424), (4, 165)]
+    [(10, 498), (6, 0), (4, 609), (3, 753), (2, 463)]
     >>> q = net.edge2queue[213]
     >>> q.nSystem, q.nServers
-    (7, 5)
+    (0, 10)
 
     To view the state of the network do the following (note, your
     graph may be rotated):
 
-    >>> pos = gt.sfdp_layout(g, max_iter=100000)
-    >>> net.draw(output="my_network.png", pos=pos, output_size=(700,300))
+    >>> pos = gt.sfdp_layout(g, max_iter=100000) # doctest: +SKIP
+    >>> net.draw(output="my_network.png", pos=pos, output_size=(700,300)) # doctest: +SKIP
     <...>
 
     .. figure:: my_network.png
@@ -387,31 +397,33 @@ class QueueNetwork(object) :
             ``nActive`` is not an integer or is less than 1 then a
             :exc:`~RuntimeError` is raised.
         """
-        if queues is None and edge is None and eType is None :
-            if nActive >= 1 and isinstance(nActive, numbers.Integral) :
+        if queues is None and edge is None and eType is None:
+            if nActive >= 1 and isinstance(nActive, numbers.Integral):
                 queues = np.random.choice(self.nE, size=nActive, replace=False)
-            else :
-                raise RuntimeError("If queues is None, then nActive must be a strictly positive int.")
-        else :
+            else:
+                msg = ("If queues is None, then nActive must be a strictly "
+                       "positive int.")
+                raise RuntimeError(msg)
+        else:
             queues = _get_queues(self.g, queues, edge, eType)
 
-        if len(queues) > self.max_agents - np.sum(self.nAgents) :
+        if len(queues) > self.max_agents - np.sum(self.nAgents):
             queues = queues[:self.max_agents]
 
-        for ei in queues :
+        for ei in queues:
             self.edge2queue[ei].set_active()
             self.nAgents[ei] = self.edge2queue[ei]._nTotal
 
         self._queues = [q for q in self.edge2queue]
         self._queues.sort()
-        while self._queues[-1]._time == np.infty :
+        while self._queues[-1]._time == np.infty:
             self._queues.pop()
 
         self._queues.sort(reverse=True)
         self._initialized  = True
 
 
-    def transitions(self, return_matrix=True) :
+    def transitions(self, return_matrix=True):
         """Returns the transition probabilities for each vertex in the graph.
 
         Parameters
@@ -440,14 +452,15 @@ class QueueNetwork(object) :
         The default transition matrix is every out edge being equally likely.
         Lets change them randomly:
 
+        >>> import queueing_tool as qt
         >>> g = qt.generate_random_graph(5, seed=96)
         >>> mat = qt.generate_transition_matrix(g, seed=96)
         >>> net = qt.QueueNetwork(g)
         >>> net.set_transitions(mat)
-        >>> net.transitions(False)
-        {0: [0.195, 0.805], 1: [1.0], 2: [1.0], 3: [0.474, 0.526], 4: [0.855, 0.145]}
-        >>> qt.graph2dict(g)[0]
-        {0: [3, 1], 1: [0], 2: [4], 3: [4, 0], 4: [2, 3]}
+        >>> net.transitions(False)  # doctest: +ELLIPSIS
+        {0: [0.194..., 0.805...], 1: [1.0], 2: [0.473..., 0.526...], 3: [0.763..., 0.129..., 0.107...], 4: [0.495..., 0.504...]}
+        >>> {k: list(val.keys()) for k, val in qt.graph2dict(g).items()}
+        {0: [1, 3], 1: [0], 2: [3, 4], 3: [0, 2, 4], 4: [2, 3]}
 
         What this shows is the following: when an :class:`.Agent` is at vertex
         ``0`` they will transition to vertex ``1`` with probability ``0.805``
@@ -485,23 +498,26 @@ class QueueNetwork(object) :
             :class:`~numpy.ndarray` is passed with the wrong shape, must be
             (``nVertices``, ``nVertices``); or the values passed are not
             probabilities (for each vertex they are positive and sum to 1);
-
+        TypeError
+            If mat is not a :class:`.dict` or :class:`~numpy.ndarray` a
+            TypeError is raised.
 
         Examples
         --------
         The default transition matrix is every out edge being equally likely:
 
+        >>> import queueing_tool as qt
         >>> g = qt.generate_random_graph(5, seed=10)
         >>> net = qt.QueueNetwork(g)
-        >>> net.transitions(False)
-        {0: [1.0], 1: [0.5, 0.5], 2: [0.333, 0.333, 0.333], 3: [1.0], 4: [1.0]}
+        >>> net.transitions(False)  # doctest: +ELLIPSIS
+        {0: [1.0], 1: [0.5, 0.5], 2: [0.333..., 0.333..., 0.333...], 3: [1.0], 4: [1.0]}
 
         If you want to change only one vertex's transition probabilities, you
         can do so with the following:
 
         >>> net.set_transitions({1 : [0.75, 0.25]})
-        >>> net.transitions(False)
-        {0: [1.0], 1: [0.75, 0.25], 2: [0.333, 0.333, 0.333], 3: [1.0], 4: [1.0]}
+        >>> net.transitions(False)  # doctest: +ELLIPSIS
+        {0: [1.0], 1: [0.75, 0.25], 2: [0.333..., 0.333..., 0.333...], 3: [1.0], 4: [1.0]}
 
         One can generate a transition matrix using
         :func:`.generate_transition_matrix`\. You can change all transition
@@ -509,12 +525,12 @@ class QueueNetwork(object) :
 
         >>> mat = qt.generate_transition_matrix(g, seed=10)
         >>> net.set_transitions(mat)
-        >>> net.transitions(False)
-        {0: [1.0], 1: [0.963, 0.037], 2: [0.338, 0.396, 0.265], 3: [1.0], 4: [1.0]}
+        >>> net.transitions(False)  # doctest: +ELLIPSIS
+        {0: [1.0], 1: [0.962..., 0.037...], 2: [0.338..., 0.396..., 0.264...], 3: [1.0], 4: [1.0]}
         """
         if isinstance(mat, dict):
             for key, value in mat.items():
-                if key > self.nV or key < 0 :
+                if key >= self.nV or key < 0 :
                     raise RuntimeError("One of the keys don't correspond to a vertex.")
                 elif len(self.out_edges[key]) > 0 and not np.isclose(np.sum(value), 1):
                     raise RuntimeError("Sum of transition probabilities at a vertex was not 1.")
@@ -547,7 +563,9 @@ class QueueNetwork(object) :
                 self._route_probs[k] = []
                 for e in self.g.out_edges(k):
                     p = mat[k, e[1]]
-                    self._route_probs[k].append( np.float64(p) )
+                    self._route_probs[k].append(np.float64(p))
+        else:
+            raise TypeError("mat must be a numpy array or a dict.")
 
 
     def start_collecting_data(self, queues=None, edge=None, eType=None):
@@ -640,7 +658,8 @@ class QueueNetwork(object) :
         on (as well as initialize the network). The following returns data from
         queues with ``eType`` 1 or 3:
 
-        >>> g   = qt.generate_pagerank_graph(100, seed=13)
+        >>> import queueing_tool as qt
+        >>> g = qt.generate_pagerank_graph(100, seed=13)
         >>> net = qt.QueueNetwork(g, seed=13)
         >>> net.start_collecting_data()
         >>> net.initialize(10)
@@ -653,7 +672,7 @@ class QueueNetwork(object) :
 
         To get data from several edges do the following:
 
-        >>> data = net.get_queue_data(edge=[(1,3), (10,91), (90,90)])
+        >>> data = net.get_queue_data(edge=[(1,50), (10,91), (99,99)])
 
         You can specify the edge indices as well:
 
@@ -776,15 +795,16 @@ class QueueNetwork(object) :
         --------
         To draw the current state of the network, call:
 
-        >>> g   = qt.generate_pagerank_graph(100, seed=13)
+        >>> import queueing_tool as qt
+        >>> g = qt.generate_pagerank_graph(100, seed=13)
         >>> net = qt.QueueNetwork(g, seed=13)
-        >>> net.draw()
+        >>> net.draw() # doctest: +SKIP
 
         If you specify a file name and location, the drawing will be saved to
         disk. For example, to save the drawing to the current working directory
         do the following:
 
-        >>> net.draw(output="current_state.png", output_size=(400,400))
+        >>> net.draw(output="current_state.png", output_size=(400,400)) # doctest: +SKIP
 
         .. figure:: current_state.png
             :align: center
@@ -799,7 +819,7 @@ class QueueNetwork(object) :
         :func:`~graph_tool.draw.graph_draw` parameters are valid. For example,
         to show the vertex number in the graph, one could do the following:
 
-        >>> net.draw(vertex_text=net.g.vertex_index)
+        >>> net.draw(vertex_text=net.g.vertex_index) # doctest: +SKIP
         """
         if update_colors :
             self._update_all_colors()
@@ -883,9 +903,12 @@ class QueueNetwork(object) :
         edge is a loop then the vertex is highlighted as well. In this case
         all edges with edge type ``2`` happen to be loops.
 
-        >>> g   = qt.generate_pagerank_graph(100, seed=13)
+        >>> import queueing_tool as qt
+        >>> import matplotlib.pyplot as plt
+        >>> g = qt.generate_pagerank_graph(100, seed=13)
         >>> net = qt.QueueNetwork(g, seed=13)
-        >>> net.show_type(2, output_size=(400,400), output='edge_type_2.png')
+        >>> fname = 'edge_type_2.png'
+        >>> net.show_type(2, output_size=(400,400), output=fname) # doctest: +SKIP
 
         .. figure:: edge_type_2.png
            :align: center
@@ -1190,23 +1213,30 @@ class QueueNetwork(object) :
 
         Raises
         ------
-        RuntimeError
-            Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not
-            been initialized. Call :meth:`.initialize` before running.
+        InitializationError
+            Will raise a ``InitializationError`` if the ``QueueNetwork`` has
+            not been initialized. Call :meth:`.initialize` before running.
 
         Examples
         --------
         This function works similarly to ``QueueNetwork``\'s :meth:`.draw`
         method. To animate the network in interactive mode do the following:
 
-        >>> g   = qt.generate_pagerank_graph(100, seed=13)
+        >>> import queueing_tool as qt
+        >>> g = qt.generate_pagerank_graph(100, seed=13)
         >>> net = qt.QueueNetwork(g, seed=13)
-        >>> net.animate(output_size=(400,400))
+        >>> net.initialize()
+        >>> net.animate(output_size=(400,400)) # doctest: +SKIP
 
         To stop the animation just close the window. If you want to write the frames
         to disk run something like the following:
 
-        >>> net.animate(out="./test", count=25, output_size=(400,400), vertex_size=15)
+        >>> kwargs = {
+        ...     'count': 25,
+        ...     'output_size': (400,400),
+        ...     'vertex_size': 15
+        ... }
+        >>> net.animate(out="./test", **kwargs) # doctest: +SKIP
 
         The above code outputs the frames in the current working directory and
         outputs 25 ``png`` images whose names start with ``test`` e.g.
@@ -1216,7 +1246,7 @@ class QueueNetwork(object) :
         if not self._initialized:
             msg = ("Network has not been initialized. "
                    "Call '.initialize()' first.")
-            raise RuntimeError(msg)
+            raise InitializationError(msg)
 
         self._to_animate = True
         self._update_all_colors()
@@ -1271,9 +1301,9 @@ class QueueNetwork(object) :
 
         Raises
         ------
-        RuntimeError
-            Will raise a :exc:`~RuntimeError` if the ``QueueNetwork`` has not
-            been initialized. Call :meth:`.initialize` before running.
+        InitializationError
+            Will raise a ``InitializationError`` if the ``QueueNetwork`` has
+            not been initialized. Call :meth:`.initialize` before running.
 
         Examples
         --------
@@ -1282,32 +1312,33 @@ class QueueNetwork(object) :
         from outside the network. To initialize with 2 (random chosen) edges
         accepting arrivals run:
 
-        >>> g   = qt.generate_pagerank_graph(100, seed=13)
-        >>> net = qt.QueueNetwork(g, seed=13)
+        >>> import queueing_tool as qt
+        >>> g = qt.generate_pagerank_graph(100, seed=50)
+        >>> net = qt.QueueNetwork(g, seed=50)
         >>> net.initialize(2)
 
         To simulate the network 50000 events run:
 
-        >>> nE0 = net.nEvents
+        >>> nE = net.nEvents
         >>> net.simulate(50000)
-        >>> net.nEvents - nE0
+        >>> net.nEvents - nE
         50000
 
         To simulate the network for at least 25 simulation time units run:
 
-        >>> nE0 = net.nEvents
-        >>> t0  = net.current_time
+        >>> nE = net.nEvents
+        >>> t0 = net.current_time
         >>> net.simulate(t=75)
-        >>> t1  = net.current_time
-        >>> round(t1 - t0, 3)
-        75.005
-        >>> net.nEvents - nE0
-        21595
+        >>> t1 = net.current_time
+        >>> round(float(t1 - t0), 3)
+        75.003
+        >>> net.nEvents - nE
+        20926
         """
         if not self._initialized:
             msg = ("Network has not been initialized. "
                    "Call '.initialize()' first.")
-            raise RuntimeError(msg)
+            raise InitializationError(msg)
         if t is None :
             for k in range(n) :
                 self._simulate_next_event(slow=False)

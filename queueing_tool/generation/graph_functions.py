@@ -1,6 +1,7 @@
 #import graph_tool.all as gt
 from queueing_tool.graph import GraphWrapper
 import numpy as np
+import networkx as nx
 
 
 def _test_graph(g) :

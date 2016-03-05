@@ -3,6 +3,12 @@ Summary
 '''''''
 """
 
-from queueing_tool.network.queue_network import QueueNetwork
+from queueing_tool.network.queue_network import (
+    InitializationError,
+    QueueNetwork
+)
 
-__all__ = ['QueueNetwork']
+__all__ = [
+    'InitializationError',
+    'QueueNetwork',
+]

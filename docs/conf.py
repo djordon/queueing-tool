@@ -20,11 +20,11 @@ from unittest.mock import MagicMock
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
-            return Mock()
+        return Mock()
 
 MOCK_MODULES = ['gi.repository', 'Gtk', 'GObject', 'sorting', 'choice',
                 'queueing_tool.queues.choice', 'queueing_tool.network.sorting',
-                'scipy', 'numpy', 'numpy.random', 'graph_tool.all', 'graph_tool']
+                'numpy', 'numpy.random', 'graph_tool.all', 'graph_tool']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
@@ -54,12 +54,16 @@ extensions = [
     'numpydoc',
 ]
 
-intersphinx_mapping = {'python': ('http://docs.python.org/3', None),
-                       'numpy': ('http://docs.scipy.org/doc/numpy', None),
-                       'graphtool': ('http://graph-tool.skewed.de/static/doc/', None)}
+intersphinx_mapping = {
+    'python': ('http://docs.python.org/3', None),
+    'numpy': ('http://docs.scipy.org/doc/numpy', None),
+    'graphtool': ('http://graph-tool.skewed.de/static/doc/', None)
+}
 
-extlinks = {'doi': ('http://dx.doi.org/%s', 'DOI: '),
-            'arxiv': ('http://arxiv.org/abs/%s', 'arXiv: ')}
+extlinks = {
+    'doi': ('http://dx.doi.org/%s', 'DOI: '),
+    'arxiv': ('http://arxiv.org/abs/%s', 'arXiv: ')
+}
 
 numpydoc_show_class_members = False
 

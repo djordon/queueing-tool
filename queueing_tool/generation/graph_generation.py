@@ -6,44 +6,9 @@ import numpy as np
 
 from queueing_tool.graph import GraphWrapper
 from queueing_tool.generation.union_find import UnionFind
-
-
-def _test_graph(g) :
-    """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or
-     a string or file object to one.
-
-    Parameters
-    ----------
-    g : A **str** or a :class:`~graph_tool.Graph`.
-
-    Returns
-    -------
-    :class:`~graph_tool.Graph`
-        If ``g`` is a string or a file object then the output given by
-        ``graph_tool.load_graph(g, fmt='xml')``, if ``g`` is aready a
-        :class:`~graph_tool.Graph` then it is returned unaltered.
-
-    Raises
-    ------
-    TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
-        or a :class:`~graph_tool.Graph`\.
-    """
-    if not isinstance(g, GraphWrapper):
-        if not isinstance(g, nx.DiGraph):
-            try:
-                import graph_tool.all as gt
-            except ImportError:
-                msg = ("Graph given was not a networkx DiGraph or graph_tool "
-                       "graph.")
-                raise ImportError(msg)
-            if not isinstance(g, gt.Graph) :
-                msg = "Need to supply a graph-tool Graph or networkx DiGraph"
-                raise TypeError(msg)
-
-        g = GraphWrapper(g)
-    return g
-
+from queueing_tool.generation.graph_functions import (
+    _test_graph
+)
 
 
 def _calculate_distance(latlon1, latlon2) :
@@ -72,20 +37,22 @@ def _matrix2dict(matrix, etype=False):
 
 
 def _dict2dict(adj_dict, etype=False):
-    """Takes a dictionary representation of an adjacency list and returns
+    """Takes a dictionary based representation of an adjacency list and returns
     a dict of dicts based representation.
     """
     item = adj_dict.popitem()
     adj_dict[item[0]] = item[1]
     if not isinstance(item[1], dict):
+        new_dict = {}
         for key, value in adj_dict.items():
-            value = {v: {} for v in value}
+            new_dict[key] = {v: {} for v in value}
 
+        adj_dict = new_dict
     return adj_dict
 
 
 def _list2dict(adj_list) :
-    """Takes a dictionary representation of an adjacency list and returns
+    """Takes a list based representation of an adjacency list and returns
     a list based representation.
     """
     adj_dict = {}
@@ -201,39 +168,32 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     Examples
     --------
     If terminal nodes are such that all in-edges have edge type ``0`` then
-    nothing is changed
+    nothing is changed. However, if a node is a terminal node then a loop
+    is added with edge type 0.
 
-    >>> adj = {0: {1: {}} , 1: {2: {}}, 2: {3: {}, 4: {}}, 3: {2: {}} }
-    >>> eTy = {0: {1: 1}, 1: {2: 2}, 2: {3: 4, 4: 0}, 3: {2: 3}}
+    >>> import queueing_tool as qt
+    >>> adj = {0: {1: {}}, 1: {2: {}, 3: {}}, 3: {0: {}} }
+    >>> eTy = {0: {1: 1}, 1: {2: 2, 3: 4}, 3: {0: 1}}
     >>> g = qt.adjacency2graph(adj, eType=eTy)
     >>> ans = qt.graph2dict(g)
-    >>> ans[0]    # This is the adjacency list
-    {0: [1], 1: [2], 2: [3, 4], 3: [2], 4: []}
-    >>> ans[1]    # This is the edge types
-    {0: [1], 1: [2], 2: [4, 0], 3: [3], 4: []}
+    >>> ans # This is the adjacency list, a loop was added to vertex 2
+    {0: {1: {'eType': 1}}, 1: {2: {'eType': 2}, 3: {'eType': 4}}, 2: {2: {'eType': 0}}, 3: {0: {'eType': 1}}}
 
-    If this is not the case, then the graph is adjusted by adding a loop with
-    eType 0 to terminal vertices. In this case, vertex 4 is terminal since it
-    does not have any out edges:
+    You can use a dict of lists to represent the adjacency list.
 
-    >>> eTy = { 0 : [1], 1 : [2], 2 : [4, 5], 3 : [3] }
+    >>> adj = {0 : [1], 1: [2, 3], 3: [0]}
     >>> g = qt.adjacency2graph(adj, eType=eTy)
     >>> ans = qt.graph2dict(g)
-    >>> ans[0]    # A loop was added to vertex 4
-    {0: [1], 1: [2], 2: [3, 4], 3: [2], 4: [4]}
-    >>> ans[1]    # The added loop has edge type 0
-    {0: [1], 1: [2], 2: [4, 5], 3: [3], 4: [0]}
+    >>> ans
+    {0: {1: {'eType': 1}}, 1: {2: {'eType': 2}, 3: {'eType': 4}}, 2: {2: {'eType': 0}}, 3: {0: {'eType': 1}}}
 
     Alternatively, you could have this function adjust the edges that lead to
     terminal vertices by changing their edge type to 0:
 
-    >>> eTy = { 0 : [1], 1 : [2], 2 : [4, 5], 3 : [3] }
     >>> g = qt.adjacency2graph(adj, eType=eTy, adjust=1)
     >>> ans = qt.graph2dict(g)
-    >>> ans[0]    # The graph is unaltered
-    {0: [1], 1: [2], 2: [3, 4], 3: [2], 4: []}
-    >>> ans[1]    # The terminal edge's edge type was changed to 0
-    {0: [1], 1: [2], 2: [4, 0], 3: [3], 4: []}
+    >>> ans  # The graph is unaltered
+    {0: {1: {'eType': 1}}, 1: {2: {'eType': 0}, 3: {'eType': 4}}, 2: {}, 3: {0: {'eType': 1}}}
     """
     if isinstance(adjacency, np.ndarray) :
         adjacency = _matrix2dict(adjacency)
@@ -260,6 +220,8 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
         for v, et in ty.items():
             adjacency[u][v]['eType'] = et
 
+    g = nx.from_dict_of_dicts(adjacency, create_using=nx.DiGraph())
+    adjacency = nx.to_dict_of_dicts(g)
     adjacency = _adjacency_adjust(adjacency, adjust, is_directed)
     g = nx.from_dict_of_dicts(adjacency, create_using=nx.DiGraph())
     return g
@@ -328,12 +290,13 @@ def generate_random_graph(nVertices=250, **kwargs) :
     The following generates a directed graph with 50 vertices where half the
     edges are type 1 and 1/4th are type 2 and 1/4th are type 3:
 
+    >>> import queueing_tool as qt
     >>> g = qt.generate_random_graph(50, pTypes={1: 0.5, 2: 0.25, 3: 0.25}, seed=15)
-    >>> np.sum(g.ep['eType'].a == 1) / g.num_edges()
+    >>> np.sum([g.ep(e, 'eType') == 1 for e in g.edges()]) / g.num_edges()
     0.5
-    >>> np.sum(g.ep['eType'].a == 2) / g.num_edges()
+    >>> np.sum([g.ep(e, 'eType') == 2 for e in g.edges()]) / g.num_edges()
     0.25147928994082841
-    >>> np.sum(g.ep['eType'].a == 3) / g.num_edges()
+    >>> np.sum([g.ep(e, 'eType') == 3 for e in g.edges()]) / g.num_edges()
     0.24852071005917159
 
     To make an undirected graph with 25 vertices where there are 4 different
@@ -419,9 +382,9 @@ def minimal_random_graph(nVertices, sfdp=None, seed=None, **kwargs) :
     if isinstance(seed, numbers.Integral) :
         np.random.seed(seed)
 
-    points  = np.random.random((nVertices, 2)) * np.float(10)
-    nEdges  = nVertices * (nVertices - 1) // 2
-    edges   = []
+    points = np.random.random((nVertices, 2)) * np.float(10)
+    nEdges = nVertices * (nVertices - 1) // 2
+    edges  = []
 
     for k in range(nVertices-1) :
         for j in range(k+1, nVertices) :
@@ -429,10 +392,10 @@ def minimal_random_graph(nVertices, sfdp=None, seed=None, **kwargs) :
             edges.append( (k, j, v[0]**2 + v[1]**2) )
 
     cluster = 2
-    mytype  = [('n1', int), ('n2', int), ('distance', np.float)]
-    edges   = np.array(edges, dtype=mytype)
-    edges   = np.sort(edges, order='distance')
-    unionF  = UnionFind([k for k in range(nVertices)])
+    mytype = [('n1', int), ('n2', int), ('distance', np.float)]
+    edges  = np.array(edges, dtype=mytype)
+    edges  = np.sort(edges, order='distance')
+    unionF = UnionFind([k for k in range(nVertices)])
 
     for n1, n2, d in edges :
         max_space = d
@@ -442,13 +405,13 @@ def minimal_random_graph(nVertices, sfdp=None, seed=None, **kwargs) :
 
     pos = {k: p for k, p in enumerate(points)}
     for r in [np.sqrt(max_space) * (1 + 0.1 * k) for k in range(10)]:
-        g   = nx.random_geometric_graph(nVertices, r, pos=pos)
+        g = nx.random_geometric_graph(nVertices, r, pos=pos)
         nCC = nx.number_connected_components(g)
-        if nCC == 0 :
+        if nCC == 1:
             break
 
     g = GraphWrapper(g.to_directed())
-    if (nVertices > 200 and sfdp is None) or sfdp :
+    if (nVertices > 200 and sfdp is None) or sfdp:
         g.set_pos()
     
     return g
@@ -599,27 +562,29 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
             ind_g_dist[min_g_dist == tmp] = int(v)
     
     ind_g_dist = np.unique(ind_g_dist)
-    fcqs       = set(ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )])
+    fcqs = set(ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )])
     g.new_vertex_property('loop_type', 'int')
 
-    for v in g.vertices() :
-        if v in dests :
+    for v in g.vertices():
+        if v in dests:
             g.set_vp(v, 'loop_type', 3)
             if not g.is_edge((v, v)):
                 g.add_edge(v, v)
-        elif v in fcqs :
+        elif v in fcqs:
             g.set_vp(v, 'loop_type', 2)
             if not g.is_edge((v, v)):
                 g.add_edge(v, v)
     
     g.new_edge_property('eType', 'int')
+    for e in g.edges():
+        g.set_ep(e, 'eType', 1)
 
-    for v in g.vertices() :
-        if g.vp(v, 'loop_type') in [2, 3] :
+    for v in g.vertices():
+        if g.vp(v, 'loop_type') in [2, 3]:
             e = (v, v)
-            if g.vp(v, 'loop_type') == 2 :
+            if g.vp(v, 'loop_type') == 2:
                 g.set_ep(e, 'eType', 2)
-            else :
+            else:
                 g.set_ep(e, 'eType', 3)
-    
+
     return g

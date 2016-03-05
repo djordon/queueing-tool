@@ -43,8 +43,8 @@ requires [graph-tool][] and [numpy][]. It should work on Python 3.2
 and 3.3 as well but it has not been tested in those environments.
 
 **Platforms**: Queueing tool should work on Windows and any unix-like
-platform such as Linux or Mac OS X. The developers of [numpy][2] and
-[scipy][3] have compiled binary packages for Windows, Mac OS X, and
+platform such as Linux or Mac OS X. The developers of [numpy][2]
+have compiled binary packages for Windows, Mac OS X, and
 several other unix-like operating systems, while the developers of
 [graph-tool][1] have made binaries for Mac OS X and several linux
 distributions but not Windows.

@@ -23,6 +23,15 @@ class TestQueueNetwork(unittest.TestCase):
         self.qn.clear()
         self.qn.initialize(50)
 
+    def test_QueueNetwork_init_error(self):
+        g  = qt.generate_pagerank_graph(7)
+        with self.assertRaises(TypeError):
+            qn = qt.QueueNetwork(g, blocking=2)
+
+    def test_QueueNetwork_blocking_setter_error(self):
+        self.qn.blocking = 'RS'
+        with self.assertRaises(TypeError):
+            self.qn.blocking = 2
 
     def test_QueueNetwork_sorting(self):
 
@@ -216,6 +225,39 @@ class TestQueueNetwork(unittest.TestCase):
         ans = np.array([q.edge[3] in k for q in self.qn.edge2queue if q.active])
         self.assertTrue( ans.all() )
 
+    def test_QueueNetwork_initialize_Error(self):
+        self.qn.clear()
+        with self.assertRaises(RuntimeError):
+            self.qn.initialize(nActive=0)
+
+    def test_QueueNetwork_set_transitions_Error(self):
+        with self.assertRaises(RuntimeError):
+            self.qn.set_transitions({-1: [0.75, 0.25]})
+
+        with self.assertRaises(RuntimeError):
+            self.qn.set_transitions({self.qn.nV: [0.75, 0.25]})
+
+        with self.assertRaises(RuntimeError):
+            self.qn.set_transitions({0: [0.75, -0.25]})
+
+        with self.assertRaises(RuntimeError):
+            self.qn.set_transitions({0: [0.75, -0.25]})
+
+        mat = np.zeros((2, 2))
+        with self.assertRaises(RuntimeError):
+            self.qn.set_transitions(mat)
+
+        mat = np.zeros((self.qn.nV, self.qn.nV))
+        with self.assertRaises(RuntimeError):
+            self.qn.set_transitions(mat)
+
+        mat[0, 0] = -1
+        with self.assertRaises(RuntimeError):
+            self.qn.set_transitions(mat)
+
+        mat = 1
+        with self.assertRaises(TypeError):
+            self.qn.set_transitions(mat)
 
     def test_QueueNetwork_add_arrival(self):
 
@@ -471,6 +513,16 @@ class TestQueueNetwork(unittest.TestCase):
             ans[ct+k] = not os.path.isfile('test%s.png' % (ct+k))
 
         self.assertTrue( ans.all() )
+
+    def test_QueueNetwork_drawing_animation_error(self):
+        self.qn.clear()
+        with self.assertRaises(qt.InitializationError):
+            self.qn.animate()
+
+    def test_QueueNetwork_drawing_simulate_error(self):
+        self.qn.clear()
+        with self.assertRaises(qt.InitializationError):
+            self.qn.simulate()
 
     @unittest.skip("No plotting")
     def test_QueueNetwork_show_type_active(self):
