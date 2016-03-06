@@ -1,5 +1,6 @@
 import numbers
 import unittest
+import unittest.mock as mock
 
 from numpy.random import randint
 import networkx as nx
@@ -14,7 +15,13 @@ def generate_adjacency(a=3, b=25, c=6, n=12):
         ans[k] = {j: {} for j in randint(a, b, randint(1, c))}
     return ans
 
-
+a_mock = mock.Mock()
+a_mock.all = mock.Mock()
+a_mock.all.Graph = nx.DiGraph
+graph_tool_mock = {
+    'graph_tool': a_mock,
+    'graph_tool.all': a_mock.all
+}
 
 class TestGraphFunctions(unittest.TestCase):
 
@@ -39,7 +46,7 @@ class TestGraphFunctions(unittest.TestCase):
         g1  = qt.adjacency2graph(adj, adjust=1)
         aj1 = qt.graph2dict(g1)
         g2  = qt.adjacency2graph(aj1, adjust=1)
-        self.assertTrue( nx.is_isomorphic(g1, g2) )
+        self.assertTrue(nx.is_isomorphic(g1, g2))
 
 
     def test_add_edge_lengths(self):
@@ -58,7 +65,11 @@ class TestGraphFunctions(unittest.TestCase):
         mat = qt.generate_transition_matrix(g)
 
         ans = np.sum(mat, axis=1)
-        self.assertTrue( np.allclose(ans, 1) )
+        self.assertTrue(np.allclose(ans, 1))
+
+        mat = qt.generate_transition_matrix(g, seed=10)
+        ans = np.sum(mat, axis=1)
+        self.assertTrue(np.allclose(ans, 1))
 
 
     def test_adjacency2graph_matrix_adjacency(self):
@@ -115,19 +126,17 @@ class TestGraphFunctions(unittest.TestCase):
         self.assertTrue( np.allclose(props , ps, atol=0.001) )
 
 
-    @unittest.skip('Unfinished test')
-    def test_shortest_path(self):
+    def test_test_graph_importerror(self):
+        with self.assertRaises(ImportError):
+            qt.generate_transition_matrix(1)
 
-        nV = 30
-        ps = np.random.uniform(0, 2, size=(nV, 2))
 
-        g = nx.random_geometric_graph(nV, 0.5).to_directed()
-        g.vp['pos'] = pos
-        g = qt.add_edge_lengths(g)
+    @mock.patch.dict('sys.modules', graph_tool_mock)
+    def test_test_graph_typeerror(self):
+        with self.assertRaises(TypeError):
+            qt.generate_transition_matrix(1)
 
-        paths, dists = qt.shortest_paths(g)
 
-        self.assertTrue( True )
 
 
 if __name__ == '__main__':

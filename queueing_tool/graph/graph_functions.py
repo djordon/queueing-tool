@@ -4,6 +4,7 @@ import numpy as np
 from queueing_tool.graph.graph_wrapper import GraphWrapper
 
 
+
 def _test_graph(g) :
     """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or
      a string or file object to one.
@@ -33,7 +34,7 @@ def _test_graph(g) :
                 msg = ("Graph given was not a networkx DiGraph or graph_tool "
                        "graph.")
                 raise ImportError(msg)
-            if not isinstance(g, gt.Graph) :
+            if not isinstance(g, gt.Graph):
                 msg = "Need to supply a graph-tool Graph or networkx DiGraph"
                 raise TypeError(msg)
 

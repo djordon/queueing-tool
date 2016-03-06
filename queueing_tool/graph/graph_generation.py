@@ -48,48 +48,6 @@ def _dict2dict(adj_dict, etype=False):
     return adj_dict
 
 
-def _list2dict(adj_list) :
-    """Takes a list based representation of an adjacency list and returns
-    a list based representation.
-    """
-    adj_dict = {}
-    for key, value in enumerate(adj_list) :
-        adj_dict[key] = {v: {} for v in value}
-
-    return adj_dict
-
-
-def _other2dict(adj_dict, other) :
-    other_dict = {}
-
-    if isinstance(other, dict) :
-        for k, value in adj_dict.items() :
-            if k in other :
-                other_dict[k] = other[k]
-            else :
-                other_dict[k] = []
-    elif isinstance(other, list) :
-        for k, value in adj_dict.items() :
-            if k < len(other) :
-                other_dict[k] = other[k]
-            else :
-                other_dict[k] = []
-    elif isinstance(other, np.ndarray) :
-        other_dict = copy.deepcopy(adj_dict)
-        for k, value in adj_dict.items() :
-            for i, j in enumerate(value) :
-                other_dict[k][i] = other[k, j]
-    else :
-        raise TypeError('eType must by either a dict, list, or numpy.ndarray')
-
-    tmp = copy.deepcopy(other_dict)
-    for key, value in tmp.items() :
-        if not hasattr(value, '__iter__') :
-            other_dict[key] = [value]
-
-    return other_dict
-
-
 def _adjacency_adjust(adjacency, adjust, is_directed) :
     """Takes an adjacency list and returns a (possibly) modified adjacency list."""
 
@@ -130,8 +88,8 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
 
     Parameters
     ----------
-    adjacency : list, dict, or :class:`~numpy.ndarray`
-        An adjacency list, dict, or matrix.
+    adjacency : dict, or :class:`~numpy.ndarray`
+        An adjacency list as either a dict, or an adjacency matrix.
     adjust : int ``{0, 1}`` (optional, the default is 0)
         Specifies what to do when the graph has terminal vertices (nodes with
         no out-edges). Note that if ``adjust`` is not 0 or 1 then it assumed
@@ -192,15 +150,13 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     >>> ans  # The graph is unaltered
     {0: {1: {'eType': 1}}, 1: {2: {'eType': 0}, 3: {'eType': 4}}, 2: {}, 3: {0: {'eType': 1}}}
     """
-    if isinstance(adjacency, np.ndarray) :
+    if isinstance(adjacency, np.ndarray):
         adjacency = _matrix2dict(adjacency)
-    elif isinstance(adjacency, dict) :
+    elif isinstance(adjacency, dict):
         adjacency = _dict2dict(adjacency)
-    elif isinstance(adjacency, list) :
-        adjacency = _list2dict(adjacency)
     else :
         msg = ("If the adjacency parameter is supplied it must be a "
-               "list, dict, or a numpy.ndarray.")
+               "dict, or a numpy.ndarray.")
         raise TypeError(msg)
 
     if eType is None:
@@ -210,8 +166,6 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
             eType = _matrix2dict(eType, etype=True)
         elif isinstance(eType, dict):
             eType = _dict2dict(eType, etype=True)
-        elif isinstance(eType, list):
-            eType = _list2dict(eType, etype=True)
 
     for u, ty in eType.items():
         for v, et in ty.items():

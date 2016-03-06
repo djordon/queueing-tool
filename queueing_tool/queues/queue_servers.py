@@ -239,10 +239,12 @@ class QueueServer(object):
                     AgentClass=Agent, collect_data=False, active_cap=infty,
                     deactive_t=infty, colors=None, seed=None, **kwargs):
 
-        if (not isinstance(nServers, numbers.Integral) and nServers is not infty)\
-            or nServers <= 0:
+        if not isinstance(nServers, numbers.Integral) and nServers is not infty:
+            the_str = "nServers must be an integer or infinity.\n{0}"
+            raise TypeError(the_str.format(str(self)))
+        elif nServers <= 0:
             the_str = "nServers must be a positive integer or infinity.\n{0}"
-            raise RuntimeError( the_str.format(str(self)) )
+            raise ValueError( the_str.format(str(self)) )
 
         self.edge         = edge
         self.nServers     = nServers
@@ -368,9 +370,12 @@ class QueueServer(object):
             If ``n`` is not a positive integer or infinity then this error is
             raised.
         """
-        if ((not isinstance(n, numbers.Integral)) and n is not infty) or n <= 0:
-            msg = "nServers must be a positive integer or infinity.\n{0}"
-            raise RuntimeError(msg.format(str(self)) )
+        if not isinstance(n, numbers.Integral) and n is not infty:
+            the_str = "n must be an integer or infinity.\n{0}"
+            raise TypeError(the_str.format(str(self)))
+        elif n <= 0:
+            the_str = "n must be a positive integer or infinity.\n{0}"
+            raise ValueError( the_str.format(str(self)) )
         else:
             self.nServers = n
 

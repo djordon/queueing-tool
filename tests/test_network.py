@@ -291,7 +291,6 @@ class TestQueueNetwork(unittest.TestCase):
         ans = np.array([q.data == {} for q in qn.edge2queue])
         self.assertTrue( ans.all() )
 
-
     def test_QueueNetwork_greedy_routing(self):
 
         lam = np.random.randint(1,10) + 0.0
@@ -345,7 +344,7 @@ class TestQueueNetwork(unittest.TestCase):
 
     def test_QueueNetwork_initialize_Error(self):
         self.qn.clear()
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             self.qn.initialize(nActive=0)
 
     def test_QueueNetwork_initialization(self):
@@ -495,6 +494,36 @@ class TestQueueNetwork(unittest.TestCase):
         self.qn.clear()
         with self.assertRaises(qt.InitializationError):
             self.qn.simulate()
+
+    def test_QueueNetwork_simulate_slow(self):
+        edge = self.qn._queues[-1].edge
+
+        if edge[0] == edge[1]:
+            for q in self.qn.edge2queue:
+                if q.edge[0] != q.edge[1]:
+                    break
+            self.qn._simulate_next_event(slow=True)
+        else:
+            for q in self.qn.edge2queue:
+                if q.edge[0] == q.edge[1]:
+                    break
+            self.qn._simulate_next_event(slow=True)
+
+        self.qn.clear()
+        self.qn.initialize(queues=[q.edge[2]])
+        self.qn._queues[-1].edge
+
+        loop = edge[0] == edge[1]
+        self.qn._simulate_next_event(slow=True)
+
+        while True:
+            edge = self.qn._queues[-1].edge
+
+            if (edge[0] != edge[1]) == loop:
+                self.qn._simulate_next_event(slow=True)
+                break
+            else:
+                self.qn._simulate_next_event(slow=False)
 
     def test_QueueNetwork_show_type(self):
         args = {'c': 'b', 'bg_color': 'green'}

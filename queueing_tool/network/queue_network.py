@@ -409,7 +409,7 @@ class QueueNetwork(object):
             else:
                 msg = ("If queues is None, then nActive must be a strictly "
                        "positive int.")
-                raise RuntimeError(msg)
+                raise ValueError(msg)
         else:
             queues = _get_queues(self.g, queues, edge, eType)
 
@@ -988,7 +988,7 @@ class QueueNetwork(object):
             pv = self._prev_edge[1]
             q  = self.edge2queue[self._prev_edge[2]]
 
-            if pe.target() == pe.source():
+            if pe[0] == pe[1]:
                 self.g.set_ep(pe, 'edge_color', q._current_color(1))
                 self.g.set_vp(pv, 'vertex_color', q._current_color(2))
                 if q.edge[3] != 0:
