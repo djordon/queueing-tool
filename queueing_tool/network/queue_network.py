@@ -11,8 +11,6 @@ try:
     from matplotlib.animation import FuncAnimation
     from matplotlib.collections import LineCollection
     plt.style.use('ggplot')
-    import matplotlib
-    matplotlib.use('qt4agg')
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False

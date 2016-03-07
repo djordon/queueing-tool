@@ -11,6 +11,23 @@ import numpy as np
 import queueing_tool as qt
 
 
+a_mock = mock.Mock()
+a_mock.pyplot = mock.Mock()
+a_mock.pyplot.style = mock.Mock()
+a_mock.pyplot.style.use = mock.Mock()
+a_mock.animation = mock.Mock()
+a_mock.animation.FuncAnimation = mock.Mock()
+a_mock.collections = mock.Mock()
+a_mock.collections.LineCollection = mock.Mock()
+
+matplotlib_mock = {
+    'matplotlib': a_mock,
+    'matplotlib.pyplot': a_mock.pyplot,
+    'matplotlib.animation': a_mock.animation,
+    'matplotlib.collections': a_mock.collections,
+}
+
+
 class TestQueueNetwork(unittest.TestCase):
 
     @classmethod
@@ -195,6 +212,7 @@ class TestQueueNetwork(unittest.TestCase):
 
         self.assertTrue(np.array(ans).all())
 
+    @mock.patch('queueing_tool.network.queue_network.HAS_MATPLOTLIB', True)
     def test_QueueNetwork_drawing(self):
         args = {'c': 'b', 'bgcolor': 'green'}
         self.qn.draw(**args)
@@ -222,6 +240,11 @@ class TestQueueNetwork(unittest.TestCase):
         self.qn.clear()
         with self.assertRaises(qt.InitializationError):
             self.qn.animate()
+
+        self.qn.initialize()
+        with mock.patch('queueing_tool.network.queue_network.HAS_MATPLOTLIB', False):
+            with self.assertRaises(ImportError):
+                self.qn.animate()
 
     @unittest.skip("No animations")
     def test_QueueNetwork_drawing_animation_time(self):
@@ -525,6 +548,7 @@ class TestQueueNetwork(unittest.TestCase):
             else:
                 self.qn._simulate_next_event(slow=False)
 
+    @mock.patch('queueing_tool.network.queue_network.HAS_MATPLOTLIB', True)
     def test_QueueNetwork_show_type(self):
         args = {'c': 'b', 'bgcolor': 'green'}
         self.qn.show_type(eType=2, **args)
@@ -538,6 +562,7 @@ class TestQueueNetwork(unittest.TestCase):
         #    tmp = self.qn.g.ep(e, 'edge_color') ==
         #self.qn.show_active(output='active.png', output_size=(200,200))
 
+    @mock.patch('queueing_tool.network.queue_network.HAS_MATPLOTLIB', True)
     def test_QueueNetwork_show_active(self):
         args = {
             'output': 'types.png',
