@@ -240,11 +240,11 @@ class QueueServer(object):
                     deactive_t=infty, colors=None, seed=None, **kwargs):
 
         if not isinstance(nServers, numbers.Integral) and nServers is not infty:
-            the_str = "nServers must be an integer or infinity.\n{0}"
-            raise TypeError(the_str.format(str(self)))
+            msg = "nServers must be an integer or infinity."
+            raise TypeError(msg)
         elif nServers <= 0:
-            the_str = "nServers must be a positive integer or infinity.\n{0}"
-            raise ValueError( the_str.format(str(self)) )
+            msg = "nServers must be a positive integer or infinity."
+            raise ValueError(msg)
 
         self.edge         = edge
         self.nServers     = nServers

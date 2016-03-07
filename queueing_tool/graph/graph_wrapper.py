@@ -1,53 +1,30 @@
 import networkx as nx
 import numpy as np
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib.collections import LineCollection
+    plt.style.use('ggplot')
+    HAS_MATPLOTLIB = True
+except ImportError:
+    HAS_MATPLOTLIB = False
 
-nx2gt_attr = {
+gt2nx_attr = {
     'vertices': 'nodes',
     'num_vertices': 'number_of_nodes',
     'num_edges': 'number_of_edges',
 }
-gt2nx_attr = {value: key for key, value in nx2gt_attr.items()}
 
-kw_map = {
-    'vertex_fill_color': 'node_color',
-    'vertex_color': 'node_color',
-    'with_labels': False,
-    'edge_color': 'edge_color',
-    'arrows': False,
-    'pos': 'pos'
-}
 
 class GraphWrapper(object):
     gt2nx_attr = gt2nx_attr
-    nx2gt_attr = nx2gt_attr
-    kw_map = kw_map
 
     def __init__(self, g):
-        if isinstance(g, nx.DiGraph):
-            self.is_nx_graph = True
-            edge_index = {e: k for k, e in enumerate(g.edges())}
-            setattr(g, 'edge_index', edge_index)
+        if not isinstance(g, nx.DiGraph):
+            msg = "Must be given a networkx DiGraph."
+            raise TypeError(msg)
 
-        else:
-            msg = "Must be given a networkx DiGraph or a graph-tool Graph"
-            try:
-                import graph_tool.all as gt
-            except ImportError:
-                raise ImportError(msg)
-
-            if not isinstance(g, gt.Graph):
-                raise TypeError(msg)
-
-            g.reindex_edges()
-            self.is_nx_graph = False
-            setattr(g, 'out_degree', self._out_degree)
-            setattr(g, 'out_edges', self._out_edges)
-            setattr(g, 'in_edges', self._in_edges)
-
-            if 'eType' not in g.ep:
-                eType = g.new_edge_property('int')
-                eType.a = 1
-                g.ep['eType'] = eType
+        edge_index = {e: k for k, e in enumerate(g.edges())}
+        setattr(g, 'edge_index', edge_index)
 
         self.g = g
         self.pos = None
@@ -55,56 +32,31 @@ class GraphWrapper(object):
         self.vertex_color = None
         self.vertex_fill_color = None
 
+
     def freeze(self):
-        if self.is_nx_graph:
-            edge_index = {e: k for k, e in enumerate(self.g.edges())}
-            setattr(self.g, 'edge_index', edge_index)
-            nx.freeze(self.g)
+        edge_index = {e: k for k, e in enumerate(self.g.edges())}
+        setattr(self.g, 'edge_index', edge_index)
+        nx.freeze(self.g)
+
 
     def __getattr__(self, attr):
-        if attr in self.gt2nx_attr and not self.is_nx_graph:
+        if attr in self.gt2nx_attr:
             return getattr(self.g, self.gt2nx_attr[attr])
-        elif attr in self.nx2gt_attr and self.is_nx_graph:
-            return getattr(self.g, self.nx2gt_attr[attr])
         else:
             return getattr(self.g, attr)
 
-    def _out_edges(self, v):
-        v = self.g.vertex(v)
-        return [(int(e.source()), int(e.target())) for e in v.out_edges()]
-
-    def _in_edges(self, v):
-        v = self.g.vertex(v)
-        return [(int(e.source()), int(e.target())) for e in v.in_edges()]
-
-    def _out_degree(self, v):
-        v = self.g.vertex(v)
-        return v.out_degree()
 
     def _draw(self, **kwargs):
-        if self.is_nx_graph:
-            nx.draw_networkx(self.g, **kwargs)
-        else:
-            gt.graph_draw(g=self.g, **kwargs)
+        nx.draw_networkx(self.g, **kwargs)
+
 
     def vertices(self, *args, **kwargs):
-        if self.is_nx_graph:
-            return self.g.nodes(*args, **kwargs)
-        else:
-            return [int(v) for v in self.g.vertices()]
+        return self.g.nodes(*args, **kwargs)
+
 
     def out_neighbours(self, v):
-        if self.is_nx_graph:
-            return [e[1] for e in self.g.out_edges(v)]
-        else:
-            v = self.g.vertex(v)
-            return [int(u) for u in v.out_neighbours()]
+        return [e[1] for e in self.g.out_edges(v)]
 
-    def edges(self, *args, **kwargs):
-        if self.is_nx_graph:
-            return self.g.edges(*args, **kwargs)
-        else:
-            return [(int(e.source()), int(e.target())) for e in self.g.edges()]
 
     def graph2dict(self):
         """Takes a graph and returns an adjacency list.
@@ -117,187 +69,131 @@ class GraphWrapper(object):
             values are :class:`.list`\s of vertex indices where that vertex is
             connected to ``v`` by an edge.
         """
-        if self.is_nx_graph:
-            return nx.to_dict_of_dicts(self.g)
-        else:
-            adj = {}
-            for v in self.g.vertices():
-                adj[int(v)] = {int(u): {} for u in v.out_neighbours()}
+        return nx.to_dict_of_dicts(self.g)
 
-            ep = self.g.ep
-            for v in self.g.vertices():
-                tmp = {}
-                for e in v.out_edges():
-                    tmp[int(e.target())] = {p: ep[p][e] for p in self.g.ep.keys()}
-
-                adj[int(v)] = tmp
-
-            return adj
 
     def ep(self, e, edge_property):
-        if self.is_nx_graph:
-            return self.g.edge[e[0]][e[1]].get(edge_property)
-        else:
-            if edge_property not in self.g.ep:
-                return None
-            else:
-                return self.g.ep[edge_property][e]
+        return self.g.edge[e[0]][e[1]].get(edge_property)
+
 
     def vp(self, v, vertex_property):
-        if self.is_nx_graph:
-            return self.g.node[v].get(vertex_property)
-        else:
-            if vertex_property not in self.g.vp:
-                return None
-            else:
-                return self.g.vp[vertex_property][v]
+        return self.g.node[v].get(vertex_property)
+
 
     def set_ep(self, e, edge_property, value):
-        if self.is_nx_graph:
-            self.g.edge[e[0]][e[1]][edge_property] = value
-            if edge_property == 'edge_color':
-                self.edge_color[self.edge_index[e]] = value
-        else:
-            self.g.ep[edge_property][e] = value
+        self.g.edge[e[0]][e[1]][edge_property] = value
+        if hasattr(self, edge_property):
+            attr = getattr(self, edge_property)
+            attr[self.edge_index[e]] = value
+
 
     def set_vp(self, v, vertex_property, value):
-        if self.is_nx_graph:
-            self.g.node[v][vertex_property] = value
-            if hasattr(self, vertex_property):
-                attr = getattr(self, vertex_property)
-                attr[v] = value
-        else:
-            self.g.vp[vertex_property][v] = value
+        self.g.node[v][vertex_property] = value
+        if hasattr(self, vertex_property):
+            attr = getattr(self, vertex_property)
+            attr[v] = value
+
 
     @property
     def vertex_properties(self):
-        if self.is_nx_graph:
-            props = set()
-            for v in self.g.nodes():
-                props.update(self.g.node[v].keys())
-            return props
-        else:
-            return set(self.g.vertex_properties.keys())
+        props = set()
+        for v in self.g.nodes():
+            props.update(self.g.node[v].keys())
+        return props
+
 
     @property
     def edge_properties(self):
-        if self.is_nx_graph:
-            props = set()
-            for e in self.g.edges():
-                props.update(self.g.edge[e[0]][e[1]].keys())
-            return props
-        else:
-            return set(self.g.edge_properties.keys())
+        props = set()
+        for e in self.g.edges():
+            props.update(self.g.edge[e[0]][e[1]].keys())
+        return props
 
-    def new_vertex_property(self, name, property_type):
-        if self.is_nx_graph:
-            values = {v: None for v in self.g.nodes()}
-            nx.set_node_attributes(self.g, name, values)
-            if name == 'vertex_color':
-                self.vertex_color = [0 for v in range(self.number_of_nodes())]
-            if name == 'vertex_fill_color':
-                self.vertex_fill_color = [0 for v in range(self.number_of_nodes())]
-        else:
-            self.g.vp[name] = g.new_vertex_property(property_type)
 
-    def new_edge_property(self, name, property_type):
-        if self.is_nx_graph:
-            values = {v: None for v in self.g.edges()}
-            nx.set_edge_attributes(self.g, name, values)
-            if name == 'edge_color':
-                self.edge_color = np.zeros((self.number_of_edges(), 4))
-        else:
-            self.g.ep[name] = g.new_edge_property(property_type)
+    def new_vertex_property(self, name):
+        values = {v: None for v in self.g.nodes()}
+        nx.set_node_attributes(self.g, name, values)
+        if name == 'vertex_color':
+            self.vertex_color = [0 for v in range(self.number_of_nodes())]
+        if name == 'vertex_fill_color':
+            self.vertex_fill_color = [0 for v in range(self.number_of_nodes())]
+
+
+    def new_edge_property(self, name):
+        values = {v: None for v in self.g.edges()}
+        nx.set_edge_attributes(self.g, name, values)
+        if name == 'edge_color':
+            self.edge_color = np.zeros((self.number_of_edges(), 4))
+
 
     def set_pos(self, pos=None):
-        if self.is_nx_graph:
-            if pos is None:
-                pos = nx.spring_layout(self.g)
-            nx.set_node_attributes(self.g, 'pos', pos)
-            self.pos = np.array([pos[v] for v in self.g.nodes()])
-        else:
-            pos = gt.sfdp_layout(self.g, epsilon=1e-2, cooling_step=0.95)
-            self.g.vp['pos'] = pos
+        if pos is None:
+            pos = nx.spring_layout(self.g)
+        nx.set_node_attributes(self.g, 'pos', pos)
+        self.pos = np.array([pos[v] for v in self.g.nodes()])
+
 
     def draw_graph(self, **kwargs):
-        if self.is_nx_graph:
-            try:
-                import matplotlib.pyplot as plt
-                from matplotlib.colors import rgb2hex
-                from matplotlib.collections import LineCollection
-            except ImportError:
-                msg = ("Matplotlib required for graph_draw() with "
-                       "NetworkX DiGraph.")
-                raise ImportError(msg)
+        if not HAS_MATPLOTLIB:
+            raise ImportError("Matplotlib required to draw the graph.")
 
-            plt.style.use('ggplot')
-            plt.ion()
+        fig = plt.figure(figsize=kwargs.get('figsize', (7, 7)))
+        ax  = fig.gca()
 
-            fig = plt.figure()
-            ax = fig.gca()
+        lines_kwargs, scatter_kwargs = self._lines_scatter_args(ax, **kwargs)
 
-            edge_pos = [(self.pos[e[0]], self.pos[e[1]]) for e in self.g.edges()]
-            line_collecton_kwargs = {
-                'segments': edge_pos,
-                'colors': self.edge_color,
-                'linewidths': (1,),
-                'antialiaseds': (1,),
-                'linestyle': 'solid',
-                'transOffset': ax.transData,
-                'cmap': plt.cm.ocean_r,
-                'pickradius': 5,
-                'zorder': 2,
-                'facecolors': None,
-                'norm': None
-            }
-            scatter_kwargs = {
-                's': 100,
-                'c': self.vertex_fill_color,
-                'alpha': None,
-                'norm': None,
-                'vmin': None,
-                'vmax': None,
-                'marker': 'o',
-                'cmap': plt.cm.ocean_r,
-                'linewidths': 1,
-                'edgecolors': self.vertex_color
-            }
+        edge_collection = LineCollection(**lines_kwargs)
+        ax.add_collection(edge_collection)
+        ax.scatter(**scatter_kwargs)
 
-            for key, value in kwargs.items():
-                if key in line_collecton_kwargs:
-                    line_collecton_kwargs[key] = value
-                if key in scatter_kwargs:
-                    scatter_kwargs[key] = value
+        ax.set_axis_bgcolor(kwargs.get('bgcolor', [1, 1, 1, 1]))
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
 
-            edge_collection = LineCollection(**line_collecton_kwargs)
-            ax.add_collection(edge_collection)
-            ax.scatter(x=self.pos[:, 0], y=self.pos[:, 1], **scatter_kwargs)
+        plt.ion()
+        plt.show()
+        plt.ioff()
 
-            ax.get_xaxis().set_visible(False)
-            ax.get_yaxis().set_visible(False)
-            plt.draw()
-        else:
-            for key in kwargs.keys():
-                if key in self.g.ep:
-                    kwargs[key] = self.g.ep[key]
 
-            gt.graph_draw(g, **kwargs)
+    def _lines_scatter_args(self, ax, **kwargs):
 
-    def get_window(self, **kwargs):
-        if self.is_nx_graph:
-            return None
-        else:
-            try:
-                from gi.repository import Gtk, GObject
-            except ImportError:
-                msg = "Need gi.repository module for animating a graph_tool."
-                raise ImportError(msg)
+        edge_pos = [(self.pos[e[0]], self.pos[e[1]]) for e in self.g.edges()]
+        line_collecton_kwargs = {
+            'segments': edge_pos,
+            'colors': self.edge_color,
+            'linewidths': (1,),
+            'antialiaseds': (1,),
+            'linestyle': 'solid',
+            'transOffset': ax.transData,
+            'cmap': plt.cm.ocean_r,
+            'pickradius': 5,
+            'zorder': 2,
+            'facecolors': None,
+            'norm': None
+        }
+        scatter_kwargs = {
+            'x': self.pos[:, 0],
+            'y': self.pos[:, 1],
+            's': 100,
+            'c': self.vertex_fill_color,
+            'alpha': None,
+            'norm': None,
+            'vmin': None,
+            'vmax': None,
+            'marker': 'o',
+            'cmap': plt.cm.ocean_r,
+            'linewidths': 1,
+            'edgecolors': self.vertex_color
+        }
 
-            window = gt.GraphWindow(g=self.g, **kwargs)
-            return window, Gtk.main_quit, Gtk.main, GObject
+        for key, value in kwargs.items():
+            if key in line_collecton_kwargs:
+                line_collecton_kwargs[key] = value
+            if key in scatter_kwargs:
+                scatter_kwargs[key] = value
+
+        return line_collecton_kwargs, scatter_kwargs
+
 
     def is_edge(self, e):
-        if self.is_nx_graph:
-            return e in self.g.edge_index
-        else:
-            return self.g.edge(*e) is not None
+        return e in self.g.edge_index

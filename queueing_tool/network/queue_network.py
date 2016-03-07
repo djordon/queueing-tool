@@ -6,6 +6,17 @@ import networkx as nx
 import numpy as np
 from numpy.random import uniform
 
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib.animation import FuncAnimation
+    from matplotlib.collections import LineCollection
+    plt.style.use('ggplot')
+    import matplotlib
+    matplotlib.use('qt4agg')
+    HAS_MATPLOTLIB = True
+except ImportError:
+    HAS_MATPLOTLIB = False
+
 from queueing_tool.graph import _prepare_graph
 from queueing_tool.queues import (
     NullQueue,
@@ -20,6 +31,9 @@ from queueing_tool.network.sorting import (
 )
 
 class InitializationError(Exception):
+    pass
+
+class AnimationStop(Exception):
     pass
 
 EPS = np.float64(1e-7)
@@ -176,7 +190,7 @@ class QueueNetwork(object):
       ...                   'vertex_inactive'  : [0.9, 0.9, 0.9, 0.8],
       ...                   'edge_active'      : [0.1, 0.1, 0.1, 1.0],
       ...                   'edge_inactive'    : [0.8, 0.8, 0.8, 0.3],
-      ...                   'bg_color'         : [1, 1, 1, 1]}
+      ...                   'bgcolor'         : [1, 1, 1, 1]}
 
     If the graph is not connected then there may be issues with ``Agents``
     that arrive at an edge that points to terminal vertex. If the graph was
@@ -255,7 +269,7 @@ class QueueNetwork(object):
             'vertex_inactive'  : [0.9, 0.9, 0.9, 0.8],
             'edge_active'      : [0.1, 0.1, 0.1, 1.0],
             'edge_inactive'    : [0.8, 0.8, 0.8, 0.3],
-            'bg_color'         : [1, 1, 1, 1]
+            'bgcolor'         : [1, 1, 1, 1]
         }
 
         colors.update(default_colors)
@@ -788,7 +802,7 @@ class QueueNetwork(object):
 
         Each of these properties are used by ``draw`` to style the canvas.
         There is also a parameter that sets the background color of the canvas,
-        which is the ``bg_color`` parameter. This color is defined in the class
+        which is the ``bgcolor`` parameter. This color is defined in the class
         property ``QueueNetwork.colors`` (which is a :class:`.dict`).
 
         If any of these parameters are supplied as arguments to ``draw`` then
@@ -827,12 +841,15 @@ class QueueNetwork(object):
 
         >>> net.draw(vertex_text=net.g.vertex_index) # doctest: +SKIP
         """
+        if not HAS_MATPLOTLIB:
+            raise ImportError("matplotlib is necessary to draw the network.")
+
         if update_colors :
             self._update_all_colors()
 
         kwargs = self._update_kwargs(kwargs, out='output' in kwargs, update_props=True)
-        if 'bg_color' not in kwargs:
-            kwargs['bg_color'] = self.colors['bg_color']
+        if 'bgcolor' not in kwargs:
+            kwargs['bgcolor'] = self.colors['bgcolor']
 
         ans = self.g.draw_graph(**kwargs)
 
@@ -1160,19 +1177,8 @@ class QueueNetwork(object):
                 else :
                     bisectSort(self._queues, q1, n - 1)
 
-        if self._to_animate :
-            if self._to_disk :
-                self._kwargs['output'] = self._outdir + '%s.' % (self._count) + self._fmt
-                self.draw(update_colors=False, **self._kwargs)
-                self._count += 1
-            else :
-                self._window.graph.regenerate_surface(lazy=False)
-                self._window.graph.queue_draw()
 
-            return True
-
-
-    def animate(self, out=None, n=10, t=None, **kwargs):
+    def animate(self, out=None, t=None, **kwargs):
         """Animates the network as it's simulating.
 
         The animations can be saved to disk or view in interactive mode.
@@ -1184,9 +1190,6 @@ class QueueNetwork(object):
             The location where the frames for the images will be saved. If this
             parameter is not given, then the animation is shown in interactive
             mode.
-        n : int (optional, the default is 10)
-            Indicates the number of frames to save to disk. This parameter is
-            only used if ``out`` is passed.
         t : float (optional)
             The amount of simulation time to simulate forward. If given, and
             ``out`` is given, ``t`` is used instead of ``n``.
@@ -1207,7 +1210,7 @@ class QueueNetwork(object):
               ``edge_pen_width``.
 
         Each of these properties are used by ``animate`` to style the canvas.
-        Also, the ``bg_color`` parameter is defined in the :class:`.dict`
+        Also, the ``bgcolor`` parameter is defined in the :class:`.dict`
         ``QueueNetwork.colors``\. The ``output_size`` defaults to
         ``(700, 700)``\. If any of these parameters are supplied as arguments
         then they are used over the defaults.
@@ -1250,47 +1253,59 @@ class QueueNetwork(object):
         ``test0.png``\, ``test1.png``\, ... etc. Also, the vertex size for each
         vertex was changed from the default (of 8) to 15.
         """
+
         if not self._initialized:
             msg = ("Network has not been initialized. "
                    "Call '.initialize()' first.")
             raise InitializationError(msg)
 
-        self._to_animate = True
+        if not HAS_MATPLOTLIB:
+            raise ImportError("matplotlib is necessary to animate a simulation.")
+
         self._update_all_colors()
+        kwargs = self._update_kwargs(kwargs, out='output' in kwargs)
 
-        if out is None:
-            kwargs = self._update_kwargs(kwargs, out=False, update_props=True)
+        if 'bgcolor' not in kwargs:
+            kwargs['bgcolor'] = self.colors['bgcolor']
 
-            if 'bg_color' not in kwargs:
-                kwargs['bg_color'] = self.colors['bg_color']
+        fig = plt.figure(figsize=kwargs.get('figsize', (7, 7)))
+        ax  = fig.gca()
+        line_args, scat_args = self.g._lines_scatter_args(ax, **kwargs)
 
-            window, gtk_main_quit, gtk_main, GObject = self.g.get_window(**kwargs)
+        lines = LineCollection(**line_args)
+        lines = ax.add_collection(lines)
+        scatt = ax.scatter(**scat_args)
 
-            self._to_disk = False
-            self._window  = window
+        t = 10 if t is None else t
+        now = self._t
 
-            cid = GObject.idle_add(self._simulate_next_event)
-            self._window.connect("delete_event", gtk_main_quit)
-            self._window.show_all()
-            gtk_main()
-        else:
-            kwargs = self._update_kwargs(kwargs, out=True, update_props=False)
-            self._fmt     = kwargs['fmt'] if 'fmt' in kwargs else 'png'
-            self._count   = 0
-            self._to_disk = True
-            self._outdir  = out
-            self._kwargs  = kwargs
+        def update(frame_number):
+            if t is not None:
+                if self._t > now + t:
+                    return False
+            self._simulate_next_event(slow=True)
+            lines.set_color(line_args['colors'])
+            scatt.set_edgecolors(scat_args['edgecolors'])
+            scatt.set_facecolor(scat_args['c'])
 
-            if t is None:
-                for k in range(n):
-                    self._simulate_next_event(slow=True)
-            else:
-                now = self._t
-                while self._t < now + t:
-                    self._simulate_next_event(slow=True)
+        ax.set_axis_bgcolor(kwargs['bgcolor'])
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
 
-        self._to_animate = False
-        self._to_disk    = False
+        animation_args = {
+            'save_count': None,
+            'repeat': None,
+            'repeat_delay': None,
+            'interval': 10,
+        }
+
+        for key, value in kwargs.items():
+            if key in animation_args:
+                animation_args[key] = value
+
+        plt.ioff()
+        animation = FuncAnimation(fig, update, **animation_args)
+        plt.show()
 
 
     def simulate(self, n=1, t=None):
@@ -1351,7 +1366,7 @@ class QueueNetwork(object):
                 self._simulate_next_event(slow=False)
         else :
             now = self._t
-            while self._t < now + t :
+            while self._t < now + t:
                 self._simulate_next_event(slow=False)
 
 

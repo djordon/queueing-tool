@@ -440,7 +440,7 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
             for e in edges[cut_off[k-1]:cut_off[k]]:
                 eTypes[e] = key
 
-    g.new_edge_property('eType', 'int')
+    g.new_edge_property('eType')
     for e in g.edges():
         g.set_ep(e, 'eType', eTypes[e])
     
@@ -516,7 +516,7 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
     
     ind_g_dist = np.unique(ind_g_dist)
     fcqs = set(ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )])
-    g.new_vertex_property('loop_type', 'int')
+    g.new_vertex_property('loop_type')
 
     for v in g.vertices():
         if v in dests:
@@ -528,7 +528,7 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
             if not g.is_edge((v, v)):
                 g.add_edge(v, v)
     
-    g.new_edge_property('eType', 'int')
+    g.new_edge_property('eType')
     for e in g.edges():
         g.set_ep(e, 'eType', 1)
 

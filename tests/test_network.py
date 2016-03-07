@@ -196,7 +196,7 @@ class TestQueueNetwork(unittest.TestCase):
         self.assertTrue(np.array(ans).all())
 
     def test_QueueNetwork_drawing(self):
-        args = {'c': 'b', 'bg_color': 'green'}
+        args = {'c': 'b', 'bgcolor': 'green'}
         self.qn.draw(**args)
         args = self.qn._update_kwargs(args)
         self.qn.g.draw_graph.assert_called_with(**args)
@@ -526,7 +526,7 @@ class TestQueueNetwork(unittest.TestCase):
                 self.qn._simulate_next_event(slow=False)
 
     def test_QueueNetwork_show_type(self):
-        args = {'c': 'b', 'bg_color': 'green'}
+        args = {'c': 'b', 'bgcolor': 'green'}
         self.qn.show_type(eType=2, **args)
         args = self.qn._update_kwargs(args)
         self.qn.g.draw_graph.assert_called_with(**args)
@@ -542,7 +542,7 @@ class TestQueueNetwork(unittest.TestCase):
         args = {
             'output': 'types.png',
             'geometry': (200, 200),
-            'bg_color': 'green'
+            'bgcolor': 'green'
         }
         self.qn.show_active(**args)
         args = self.qn._update_kwargs(args)

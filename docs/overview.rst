@@ -177,7 +177,7 @@ The default layout was a little hard on the eyes so I changed it a little:
 
 .. doctest::
 
-    >>> pos = g.new_vertex_property("vector<double>")
+    >>> g.new_vertex_property('pos') ### FIX THIS
     >>> for v in g.vertices() :
     >>>     vi = int(v)
     >>>     if vi == 0 :

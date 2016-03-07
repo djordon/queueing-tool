@@ -48,7 +48,7 @@ def add_edge_lengths(g) :
 
     """
     g = _test_graph(g)
-    g.new_edge_property('edge_length', 'double')
+    g.new_edge_property('edge_length')
 
     for e in g.edges() :
         latlon1 = g.vp(e[1], 'pos')
@@ -122,15 +122,15 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
     g = adjacency2graph(ans, adjust=1, is_directed=g.is_directed())
     g = GraphWrapper(g)
 
-    g.new_vertex_property('vertex_color', 'vector<double>')
-    g.new_vertex_property('vertex_fill_color', 'vector<double>')
-    g.new_vertex_property('vertex_pen_width', 'double')
-    g.new_vertex_property('vertex_size', 'double')
+    g.new_vertex_property('vertex_color')
+    g.new_vertex_property('vertex_fill_color')
+    g.new_vertex_property('vertex_pen_width')
+    g.new_vertex_property('vertex_size')
 
-    g.new_edge_property('edge_control_points', 'vector<double>')
-    g.new_edge_property('edge_color', 'vector<double>')
-    g.new_edge_property('edge_marker_size', 'double')
-    g.new_edge_property('edge_pen_width', 'double')
+    g.new_edge_property('edge_control_points')
+    g.new_edge_property('edge_color')
+    g.new_edge_property('edge_marker_size')
+    g.new_edge_property('edge_pen_width')
 
     queues = _set_queues(g, q_cls, q_arg, 'cap' in g.vertex_properties)
 

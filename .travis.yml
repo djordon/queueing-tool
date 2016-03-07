@@ -11,8 +11,8 @@ env:
   global:
     - TRAVIS_TEST=true
 install:
-  - pip install --user -r requirements.txt
-  - pip install --user coveralls
+  - pip install -r requirements.txt
+  - pip install coveralls
   - pip install -e .
 script:
   - nosetests --with-doctest --with-coverage --cover-package=queueing_tool -v
