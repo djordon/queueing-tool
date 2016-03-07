@@ -925,7 +925,7 @@ class QueueNetwork(object):
         all edges with edge type ``2`` happen to be loops.
 
         >>> import queueing_tool as qt
-        >>> import matplotlib.pyplot as plt
+        >>> import matplotlib.pyplot as plt # doctest: +SKIP
         >>> g = qt.generate_pagerank_graph(100, seed=13)
         >>> net = qt.QueueNetwork(g, seed=13)
         >>> fname = 'edge_type_2.png'
