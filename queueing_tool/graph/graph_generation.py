@@ -8,6 +8,7 @@ from queueing_tool.graph.graph_functions import _test_graph
 from queueing_tool.graph.graph_wrapper import QueueNetworkDiGraph
 from queueing_tool.union_find import UnionFind
 
+
 def _calculate_distance(latlon1, latlon2) :
     """Calculates the distance between two points on earth.
     """

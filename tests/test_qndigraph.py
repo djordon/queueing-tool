@@ -5,9 +5,18 @@ import unittest.mock as mock
 from numpy.random import randint
 import networkx as nx
 import numpy as np
+
+TRAVIS_TEST = os.environ.get('TRAVIS_TEST', False)
+
+if TRAVIS_TEST:
+    import matplotlib
+    matplotlib.use('Agg')
+
 import matplotlib.image as mpimg
 
 import queueing_tool as qt
+
+
 
 #a_mock.pyplot.cm = mock.Mock()
 #a_mock.pyplot.style = mock.Mock()
