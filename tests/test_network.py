@@ -7,11 +7,9 @@ import numpy as np
 
 import queueing_tool as qt
 
+
 TRAVIS_TEST = os.environ.get('TRAVIS_TEST', False)
 
-if TRAVIS_TEST:
-    import matplotlib
-    matplotlib.use('Agg')
 
 a_mock = mock.Mock()
 a_mock.pyplot = mock.Mock()
