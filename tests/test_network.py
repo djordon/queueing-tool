@@ -1,6 +1,9 @@
 import os
-import unittest.mock as mock
 import unittest
+try:
+    import unittest.mock as mock
+except ImportError:
+    import mock
 
 import networkx as nx
 import numpy as np

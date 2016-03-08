@@ -1,5 +1,8 @@
 import unittest
-import unittest.mock as mock
+try:
+    import unittest.mock as mock
+except ImportError:
+    import mock
 
 from numpy.random import randint
 import networkx as nx
