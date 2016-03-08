@@ -1,7 +1,7 @@
 import networkx as nx
 import numpy as np
 
-from queueing_tool.graph.graph_wrapper import GraphWrapper
+from queueing_tool.graph.graph_wrapper import QueueNetworkDiGraph
 
 
 
@@ -26,7 +26,7 @@ def _test_graph(g) :
         Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
         or a :class:`~graph_tool.Graph`\.
     """
-    if not isinstance(g, GraphWrapper):
+    if not isinstance(g, QueueNetworkDiGraph):
         if not isinstance(g, nx.DiGraph):
             try:
                 import graph_tool.all as gt
@@ -38,7 +38,7 @@ def _test_graph(g) :
                 msg = "Need to supply a graph-tool Graph or networkx DiGraph"
                 raise TypeError(msg)
 
-        g = GraphWrapper(g)
+        g = QueueNetworkDiGraph(g)
     return g
 
 
@@ -80,15 +80,15 @@ def graph2dict(g) :
         values are :class:`.list`\s of vertex indices where that vertex is
         connected to ``v`` by an edge.
     """
-    if not isinstance(g, GraphWrapper):
-        g = GraphWrapper(g)
+    if not isinstance(g, nx.DiGraph):
+        g = QueueNetworkDiGraph(g)
 
-    return g.graph2dict()
+    return nx.to_dict_of_dicts(g)
 
 def graph_tool_graph2dict(g):
         adj = {}
         vp = g.vp
-        for v in g.vertices():
+        for v in g.nodes():
             tmp = {}
             for u in v.out_neighbours():
                 tmp[int(u)] = {p: vp[p][u] for p in vp.keys()}
@@ -96,7 +96,7 @@ def graph_tool_graph2dict(g):
             adj[int(v)] = tmp
 
         ep = g.ep
-        for v in g.vertices():
+        for v in g.nodes():
             tmp = {}
             for e in v.out_edges():
                 tmp[int(e.target())] = {p: ep[p][e] for p in g.ep.keys()}

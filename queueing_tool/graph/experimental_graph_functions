@@ -78,7 +78,7 @@ def osm_edge_types(g) :
     has_elight  = 'light' in edge_props
 
     eType   = g.new_edge_property("int")
-    for v in g.vertices() :
+    for v in g.nodes() :
         if has_garage and g.vp['garage'][v] :
             e = g.edge(v,v)
             if isinstance(e, gt.Edge) :
@@ -138,14 +138,14 @@ def _shortest_paths(g) :
     for key in g.vertex_properties.keys() :
         v_props = v_props.union([key])
 
-    nV    = g.num_vertices()
+    nV    = g.number_of_nodes()
     dist  = np.zeros((nV, nV))
     short = np.ones( (nV, nV), int)
     spath = np.ones( (nV, nV), int)
 
     if 'dist' not in v_props :
-        for ve in g.vertices() :
-            for we in g.vertices() :
+        for ve in g.nodes() :
+            for we in g.nodes() :
                 v,w  = int(ve), int(we)
 
                 if v == w or dist[v, w] != 0 :
@@ -178,7 +178,7 @@ def _shortest_paths(g) :
         r = np.arange(nV)
         short[r, r] = r
     else :
-        for v in g.vertices() :
+        for v in g.nodes() :
             dist[int(v),:] = g.vp['dist'][v].a
 
     return short, dist

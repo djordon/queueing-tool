@@ -178,7 +178,7 @@ The default layout was a little hard on the eyes so I changed it a little:
 .. doctest::
 
     >>> g.new_vertex_property('pos') ### FIX THIS
-    >>> for v in g.vertices() :
+    >>> for v in g.nodes() :
     >>>     vi = int(v)
     >>>     if vi == 0 :
     >>>         pos[v] = [0, -0.25]

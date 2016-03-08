@@ -24,7 +24,6 @@ from queueing_tool.graph.graph_functions import (
 from queueing_tool.graph.graph_generation import (
     generate_random_graph,
     generate_pagerank_graph,
-    adjacency2graph,
     minimal_random_graph,
     set_types_random,
     set_types_rank,
@@ -34,7 +33,10 @@ from queueing_tool.graph.graph_preparation import (
     add_edge_lengths,
     _prepare_graph
 )
-from queueing_tool.graph.graph_wrapper import GraphWrapper
+from queueing_tool.graph.graph_wrapper import (
+    adjacency2graph,
+    QueueNetworkDiGraph
+)
 
 __all__ = [
     'generate_random_graph',
@@ -48,5 +50,5 @@ __all__ = [
     'minimal_random_graph',
     'vertices2edge',
     'graph2dict',
-    'GraphWrapper'
+    'QueueNetworkDiGraph'
 ]

@@ -11,7 +11,7 @@ import queueing_tool as qt
 class TestQueueServers(unittest.TestCase):
 
     def setUp(self):
-        self.lam = np.random.randint(1,10) + 0.0
+        self.lam = np.random.randint(1, 10) + 0.0
         self.rho = np.random.uniform(0.5, 1)
 
     def test_QueueServer_init_errors(self):
@@ -204,7 +204,7 @@ class TestQueueServers(unittest.TestCase):
 
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg)
         qn.max_agents = 400000
-        qn.initialize(queues=range(qn.g.num_edges()))
+        qn.initialize(queues=range(qn.g.number_of_edges()))
         qn.simulate(n=50000)
 
         nServ = {1: 50, 2: 500}
@@ -219,7 +219,7 @@ class TestQueueServers(unittest.TestCase):
 
         qn = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg)
         qn.max_agents = 40000
-        qn.initialize(queues=range(qn.g.num_edges()))
+        qn.initialize(queues=range(qn.g.number_of_edges()))
         qn.start_collecting_data()
         qn.simulate(n=5000)
 
@@ -257,7 +257,7 @@ class TestQueueServers(unittest.TestCase):
 
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg)
         qn.max_agents = 400000
-        qn.initialize(queues=range(qn.g.num_edges()))
+        qn.initialize(queues=range(qn.g.number_of_edges()))
 
         ct  = np.random.randint(25, 52)
         ans = np.zeros(ct+4, bool)
@@ -282,7 +282,7 @@ class TestQueueServers(unittest.TestCase):
 
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
         qn.max_agents = 40000
-        qn.initialize(queues=range(qn.g.num_edges()))
+        qn.initialize(queues=range(qn.g.number_of_edges()))
         qn.simulate(n=2000)
 
         # Finish this

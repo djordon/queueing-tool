@@ -223,7 +223,7 @@ class QueueNetwork(object):
     >>> nA = [(q.nSystem, q.edge[2]) for q in net.edge2queue if q.edge[3] == 2]
     >>> nA.sort(reverse=True)
     >>> nA[:5]
-    [(10, 498), (6, 0), (4, 609), (3, 753), (2, 463)]
+    [(8, 498), (5, 0), (4, 609), (4, 252), (3, 753)]
     >>> q = net.edge2queue[213]
     >>> q.nSystem, q.nServers
     (0, 10)
@@ -249,7 +249,6 @@ class QueueNetwork(object):
         self._t           = 0
         self.max_agents   = max_agents
 
-        self._to_animate  = False
         self._initialized = False
         self._prev_edge   = None
         self._queues      = []
@@ -324,11 +323,11 @@ class QueueNetwork(object):
         if g is not None:
             g, qs = _prepare_graph(g, self.colors, q_classes, q_args)
 
-            self.nV = g.num_vertices()
-            self.nE = g.num_edges()
+            self.nV = g.number_of_nodes()
+            self.nE = g.number_of_edges()
 
             self.edge2queue   = qs
-            self.nAgents      = np.zeros(g.num_edges(), int)
+            self.nAgents      = np.zeros(g.number_of_edges(), int)
             self.out_edges    = [0 for v in range(self.nV)]
             self.in_edges     = [0 for v in range(self.nV)]
             self._route_probs = [0 for v in range(self.nV)]
@@ -336,7 +335,7 @@ class QueueNetwork(object):
             def edge_index(e):
                 return g.edge_index[e]
 
-            for v in g.vertices():
+            for v in g.nodes():
                 vod = g.out_degree(v)
                 self.out_edges[v] = [i for i in map(edge_index, g.out_edges(v))]
                 self.in_edges[v]  = [i for i in map(edge_index, g.in_edges(v))]
@@ -488,7 +487,7 @@ class QueueNetwork(object):
         """
         if return_matrix :
             mat = np.zeros( (self.nV, self.nV) )
-            for v in self.g.vertices():
+            for v in self.g.nodes():
                 ind = [e[1] for e in self.g.out_edges(v)]
                 mat[v, ind] = self._route_probs[v]
         else :
@@ -566,7 +565,7 @@ class QueueNetwork(object):
                         self._route_probs[key].append(np.float64(p))
 
         elif isinstance(mat, np.ndarray):
-            non_terminal = np.array([self.g.out_degree(v) > 0 for v in self.g.vertices()])
+            non_terminal = np.array([self.g.out_degree(v) > 0 for v in self.g.nodes()])
             if mat.shape != (self.nV, self.nV):
                 msg = ("Matrix is the wrong shape, should "
                        "be {0} x {1}.").format(self.nV, self.nV)
@@ -873,7 +872,7 @@ class QueueNetwork(object):
         ``edge_inactive``.
         """
         g  = self.g
-        for v in g.vertices():
+        for v in g.nodes():
             self.g.set_vp(v, 'vertex_color', [0, 0, 0, 0.9])
             is_active = False
             my_iter   = g.in_edges(v) if g.is_directed() else g.out_edges(v)
@@ -925,7 +924,6 @@ class QueueNetwork(object):
         all edges with edge type ``2`` happen to be loops.
 
         >>> import queueing_tool as qt
-        >>> import matplotlib.pyplot as plt # doctest: +SKIP
         >>> g = qt.generate_pagerank_graph(100, seed=13)
         >>> net = qt.QueueNetwork(g, seed=13)
         >>> fname = 'edge_type_2.png'
@@ -934,7 +932,7 @@ class QueueNetwork(object):
         .. figure:: edge_type_2.png
            :align: center
         """
-        for v in self.g.vertices():
+        for v in self.g.nodes():
             e = (v, v)
             if self.g.is_edge(e) and self.g.ep(e, 'eType') == eType:
                 ei = self.g.edge_index[e]
@@ -1291,10 +1289,12 @@ class QueueNetwork(object):
         ax.get_yaxis().set_visible(False)
 
         animation_args = {
+            'frames': None,
             'save_count': None,
             'repeat': None,
             'repeat_delay': None,
             'interval': 10,
+            'blit': False
         }
 
         for key, value in kwargs.items():
@@ -1351,9 +1351,9 @@ class QueueNetwork(object):
         >>> net.simulate(t=75)
         >>> t1 = net.current_time
         >>> round(float(t1 - t0), 3)
-        75.003
+        75.002
         >>> net.nEvents - nE
-        20926
+        22080
         """
         if not self._initialized:
             msg = ("Network has not been initialized. "
@@ -1406,7 +1406,7 @@ class QueueNetwork(object):
         """Resets all edge and vertex colors to their default values."""
         for k, e in enumerate(self.g.edges()):
             self.g.set_ep(e, 'edge_color', self.edge2queue[k].colors['edge_color'])
-        for v in self.g.vertices():
+        for v in self.g.nodes():
             self.g.set_vp(v, 'vertex_fill_color', self.colors['vertex_fill_color'])
 
 
@@ -1425,7 +1425,6 @@ class QueueNetwork(object):
         self.nEvents      = 0
         self.nAgents      = np.zeros(self.nE, int)
         self._queues      = []
-        self._to_animate  = False
         self._prev_edge   = None
         self._initialized = False
         self.reset_colors()
@@ -1469,7 +1468,6 @@ class QueueNetwork(object):
         net._t           = copy.copy(self._t)
         net._initialized = copy.copy(self._initialized)
         net._prev_edge   = copy.copy(self._prev_edge)
-        net._to_animate  = copy.copy(self._to_animate)
         net._blocking    = copy.copy(self._blocking)
         net.colors       = copy.deepcopy(self.colors)
         net.out_edges    = copy.deepcopy(self.out_edges)
@@ -1510,6 +1508,6 @@ def _get_queues(g, queues, edge, eType):
             queues = np.where(np.in1d(tmp, eType) )[0]
 
         if queues is None:
-            queues = range(g.num_edges())
+            queues = range(g.number_of_edges())
 
     return queues

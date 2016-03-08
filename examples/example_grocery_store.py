@@ -34,7 +34,7 @@ qn = qt.QueueNetwork(g=g, q_classes=q_classes, q_args=q_args, seed=13)
 # The default layout is sfdp, which doesn't look good for this network.
 # This makes a new one
 pos = g.new_vertex_property('pos')
-for v in g.vertices():
+for v in g.nodes():
     if v == 0:
         pos[v] = [0, -0.25]
     elif v == 1:

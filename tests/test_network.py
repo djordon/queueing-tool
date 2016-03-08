@@ -1,9 +1,6 @@
-import collections
-import numbers
 import os
 import unittest.mock as mock
 import unittest
-import sys
 
 import networkx as nx
 import numpy as np
@@ -128,6 +125,11 @@ class TestQueueNetwork(unittest.TestCase):
         queue_times.sort(reverse=True)
         self.assertTrue( (queue_times == net_times).all() )
 
+    def test_QueueNetwork_animate(self):
+        with mock.patch('queueing_tool.network.queue_network.plt.show'):
+            self.qn.animate(frames=1)
+
+
     def test_QueueNetwork_blocking(self):
 
         g = nx.random_geometric_graph(100, 0.2).to_directed()
@@ -142,7 +144,7 @@ class TestQueueNetwork(unittest.TestCase):
         }
                  
         q_arg = {
-            3: {'net_size': g.num_edges()},
+            3: {'net_size': g.number_of_edges()},
             4: {'nServers': 500},
             6: {'AgentClass' : qt.GreedyAgent}
         }
@@ -189,12 +191,12 @@ class TestQueueNetwork(unittest.TestCase):
             5: qt.ResourceQueue
         }
 
-        q_arg = {3: {'net_size' : g.num_edges()},
+        q_arg = {3: {'net_size' : g.number_of_edges()},
                  4: {'nServers' : 500}}
 
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
         qn.max_agents = np.infty
-        qn.initialize(queues=range(g.num_edges()))
+        qn.initialize(queues=range(g.number_of_edges()))
 
         qn.simulate(n=50000)
         qn2 = qn.copy()
@@ -345,7 +347,7 @@ class TestQueueNetwork(unittest.TestCase):
         }
 
         qn  = qt.QueueNetwork(g, q_classes=qcl, q_args=arg)
-        qn.initialize(edge=(0,1))
+        qn.initialize(edge=(0, 1))
         qn.max_agents = 5000
 
         nEvents = 1000

@@ -7,9 +7,10 @@ from queueing_tool.graph.graph_functions  import (
     graph2dict,
     _test_graph
 )
-from queueing_tool.graph.graph_generation import adjacency2graph
-from queueing_tool.graph.graph_wrapper import GraphWrapper
-
+from queueing_tool.graph.graph_wrapper import (
+    adjacency2graph,
+    QueueNetworkDiGraph
+)
 
 def _calculate_distance(latlon1, latlon2) :
     """Calculates the distance between two points on earth.
@@ -118,9 +119,9 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
     g = _test_graph(g)
 
     #if 'eType' not in g.edge_properties :
-    ans = g.graph2dict()
+    ans = nx.to_dict_of_dicts(g)
     g = adjacency2graph(ans, adjust=1, is_directed=g.is_directed())
-    g = GraphWrapper(g)
+    g = QueueNetworkDiGraph(g)
 
     g.new_vertex_property('vertex_color')
     g.new_vertex_property('vertex_fill_color')
@@ -145,7 +146,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
         else :
             g.set_ep(e, 'edge_color', queues[k].colors['edge_color'])
 
-    for v in g.vertices() :
+    for v in g.nodes() :
         g.set_vp(v, 'vertex_pen_width', 1.1)
         g.set_vp(v, 'vertex_size', 8)
         e = (v, v)
@@ -160,7 +161,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
 
 
 def _set_queues(g, q_cls, q_arg, has_cap):
-    queues = [0 for k in range(g.num_edges())]
+    queues = [0 for k in range(g.number_of_edges())]
 
     for e in g.edges():
         eType = g.ep(e, 'eType')
