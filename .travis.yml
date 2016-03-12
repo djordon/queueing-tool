@@ -11,7 +11,7 @@ env:
     - TRAVIS_TEST=true
 install:
   - pip install -r requirements.txt
-  - pip install coveralls
+  - pip install coveralls matplotlib==1.5.1
   - pip install -e .
 before_script:
   - "export DISPLAY=:99.0"

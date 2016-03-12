@@ -1,3 +1,2 @@
 networkx>=1.11
 numpy>=1.10
-matplotlib==1.5.1

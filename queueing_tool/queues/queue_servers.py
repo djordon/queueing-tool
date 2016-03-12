@@ -620,8 +620,8 @@ class QueueServer(object):
 
         >>> t0 = q.time
         >>> q.simulate(t=75)
-        >>> round(float(q.time - t0), 3)
-        75.107
+        >>> round(float(q.time - t0), 1)
+        75.1
         >>> q.nArrivals[1] + q.nDepartures - nEvents
         1597
 

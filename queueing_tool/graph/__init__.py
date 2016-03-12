@@ -13,12 +13,10 @@ Summary
     set_types_rank
     set_types_random
     graph2dict
-    vertices2edge
     add_edge_lengths
 """
 
 from queueing_tool.graph.graph_functions import (
-    vertices2edge,
     graph2dict
 )
 from queueing_tool.graph.graph_generation import (
@@ -48,7 +46,6 @@ __all__ = [
     '_prepare_graph',
     'add_edge_lengths',
     'minimal_random_graph',
-    'vertices2edge',
     'graph2dict',
     'QueueNetworkDiGraph'
 ]

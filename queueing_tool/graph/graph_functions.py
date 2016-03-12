@@ -42,29 +42,6 @@ def _test_graph(g) :
     return g
 
 
-
-def vertices2edge(g, u, v) :
-    """Returns the edge index of the edge that connects two vertex.
-
-    Parameters
-    ----------
-    g : :class:`~graph_tool.Graph`
-    u : int or :class:`~graph_tool.Vertex`
-        The vertex index (or actual :class:`~graph_tool.Vertex`) identifying
-        the source vertex.
-    v : int or :class:`~graph_tool.Vertex`
-        The vertex index (or actual :class:`~graph_tool.Vertex`) identifying
-        the target vertex.
-
-    Returns
-    -------
-    edge_index : int or ``None``
-        If there is an edge connecting ``u`` and ``v`` then its edge index is
-        returned, otherwise ``None`` is returned.
-    """
-    return g.edge_index[(u, v)]
-
-
 def graph2dict(g) :
     """Takes a graph and returns an adjacency list.
 

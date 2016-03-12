@@ -61,7 +61,8 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
 
         img0 = mpimg.imread('tests/img/test.png')
         img1 = mpimg.imread('test1.png')
-        self.assertTrue((img0 == img1).all())
 
         if os.path.exists('test1.png'):
             os.remove('test1.png')
+
+        self.assertTrue((img0 == img1).all())

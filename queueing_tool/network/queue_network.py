@@ -339,7 +339,7 @@ class QueueNetwork(object):
                 vod = g.out_degree(v)
                 self.out_edges[v] = [i for i in map(edge_index, g.out_edges(v))]
                 self.in_edges[v]  = [i for i in map(edge_index, g.in_edges(v))]
-                self._route_probs[v] = [np.float64(1 / vod) for i in range(vod)]
+                self._route_probs[v] = [np.float64(1. / vod) for i in range(vod)]
 
             g.freeze()
             self.g = g
@@ -1350,8 +1350,8 @@ class QueueNetwork(object):
         >>> t0 = net.current_time
         >>> net.simulate(t=75)
         >>> t1 = net.current_time
-        >>> round(float(t1 - t0), 3)
-        75.002
+        >>> round(float(t1 - t0), 2)
+        75.0
         >>> net.nEvents - nE
         22080
         """

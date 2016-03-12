@@ -89,12 +89,15 @@ def generate_random_graph(nVertices=250, **kwargs) :
 
     >>> import queueing_tool as qt
     >>> g = qt.generate_random_graph(50, pTypes={1: 0.5, 2: 0.25, 3: 0.25}, seed=15)
-    >>> np.sum([g.ep(e, 'eType') == 1 for e in g.edges()]) / g.number_of_edges()
+    >>> p1 = np.sum([g.ep(e, 'eType') == 1 for e in g.edges()])
+    >>> float(p1) / g.number_of_edges() # doctest: +ELLIPSIS
     0.5
-    >>> np.sum([g.ep(e, 'eType') == 2 for e in g.edges()]) / g.number_of_edges()
-    0.25147928994082841
-    >>> np.sum([g.ep(e, 'eType') == 3 for e in g.edges()]) / g.number_of_edges()
-    0.24852071005917159
+    >>> p2 = np.sum([g.ep(e, 'eType') == 2 for e in g.edges()])
+    >>> float(p2) / g.number_of_edges() # doctest: +ELLIPSIS
+    0.251...
+    >>> p3 = np.sum([g.ep(e, 'eType') == 3 for e in g.edges()])
+    >>> float(p3) / g.number_of_edges() # doctest: +ELLIPSIS
+    0.248...
 
     To make an undirected graph with 25 vertices where there are 4 different
     edge types with random proportions:
