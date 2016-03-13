@@ -2,11 +2,14 @@ import functools
 
 import networkx as nx
 import numpy as np
+
 try:
     import matplotlib.pyplot as plt
     from matplotlib.collections import LineCollection
+
     plt.style.use('ggplot')
     HAS_MATPLOTLIB = True
+
 except ImportError:
     HAS_MATPLOTLIB = False
 
@@ -273,7 +276,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
 
     def draw_graph(self, **kwargs):
         if not HAS_MATPLOTLIB:
-            raise ImportError("Matplotlib required to draw the graph.")
+            raise ImportError("Matplotlib is required to draw the graph.")
 
         fig = plt.figure(figsize=kwargs.get('figsize', (7, 7)))
         ax  = fig.gca()

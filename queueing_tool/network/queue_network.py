@@ -10,8 +10,10 @@ try:
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
     from matplotlib.collections import LineCollection
+
     plt.style.use('ggplot')
     HAS_MATPLOTLIB = True
+
 except ImportError:
     HAS_MATPLOTLIB = False
 
@@ -28,11 +30,10 @@ from queueing_tool.network.sorting import (
     twoSort
 )
 
+
 class InitializationError(Exception):
     pass
 
-class AnimationStop(Exception):
-    pass
 
 EPS = np.float64(1e-7)
 
@@ -254,7 +255,7 @@ class QueueNetwork(object):
         self._queues      = []
         self._blocking    = True if blocking.lower() != 'rs' else False
 
-        if colors is None :
+        if colors is None:
             colors = {}
 
         default_colors = {
@@ -366,9 +367,9 @@ class QueueNetwork(object):
 
     @property
     def time(self):
-        if len(self._queues) > 0 :
+        if len(self._queues) > 0:
             t = self._queues[-1]._time
-        else :
+        else:
             t = np.infty
         return t
 
@@ -485,12 +486,12 @@ class QueueNetwork(object):
         ``3`` they will transition to vertex ``4`` with probability ``0.474``
         and route back to vertex ``0`` probability ``0.526``,... etc.
         """
-        if return_matrix :
+        if return_matrix:
             mat = np.zeros( (self.nV, self.nV) )
             for v in self.g.nodes():
                 ind = [e[1] for e in self.g.out_edges(v)]
                 mat[v, ind] = self._route_probs[v]
-        else :
+        else:
             mat = {k: value for k, value in enumerate(self._route_probs)}
 
         return mat
@@ -547,7 +548,7 @@ class QueueNetwork(object):
         """
         if isinstance(mat, dict):
             for key, value in mat.items():
-                if key >= self.nV or key < 0 :
+                if key >= self.nV or key < 0:
                     raise RuntimeError("One of the keys don't correspond to a vertex.")
                 elif len(self.out_edges[key]) > 0 and not np.isclose(np.sum(value), 1):
                     raise RuntimeError("Sum of transition probabilities at a vertex was not 1.")
@@ -561,7 +562,7 @@ class QueueNetwork(object):
                         self._route_probs[key].append(np.float64(p))
                 elif len(value) == len(self._route_probs[key]):
                     self._route_probs[key] = []
-                    for p in value :
+                    for p in value:
                         self._route_probs[key].append(np.float64(p))
 
         elif isinstance(mat, np.ndarray):
@@ -841,7 +842,7 @@ class QueueNetwork(object):
         if not HAS_MATPLOTLIB:
             raise ImportError("matplotlib is necessary to draw the network.")
 
-        if update_colors :
+        if update_colors:
             self._update_all_colors()
 
         kwargs = self._update_kwargs(kwargs, out='output' in kwargs, update_props=True)
@@ -890,7 +891,7 @@ class QueueNetwork(object):
             ei = g.edge_index[e]
             if self.edge2queue[ei]._active:
                 self.g.set_ep(e, 'edge_color', self.colors['edge_active'])
-            else :
+            else:
                 self.g.set_ep(e, 'edge_color', self.colors['edge_inactive'])
 
         self.draw(update_colors=False, **kwargs)
@@ -945,7 +946,7 @@ class QueueNetwork(object):
         for e in self.g.edges():
             if self.g.ep(e, 'eType') == eType:
                 self.g.set_ep(e, 'edge_color', self.colors['edge_active'])
-            else :
+            else:
                 self.g.set_ep(e, 'edge_color', self.colors['edge_inactive'])
 
         self.draw(update_colors=False, **kwargs)
@@ -963,7 +964,7 @@ class QueueNetwork(object):
                 if q.edge[3] != 0:
                     self.g.set_vp(v, 'vertex_fill_color', q._current_color())
                 do[v] = False
-            else :
+            else:
                 self.g.set_ep(e, 'edge_color', q._current_color())
                 if do[v]:
                     self._update_vertex_color(v)
@@ -980,7 +981,7 @@ class QueueNetwork(object):
         if not ee_is_edge or (ee_is_edge and self.edge2queue[eei].edge[3] == 0):
             nSy = 0
             cap = 0
-            for ei in self.in_edges[v] :
+            for ei in self.in_edges[v]:
                 nSy += self.edge2queue[ei].nSystem
                 cap += self.edge2queue[ei].nServers
 
@@ -1039,13 +1040,13 @@ class QueueNetwork(object):
         """
         q   = self.edge2queue[ei]
         qt  = q._time
-        if t is None :
+        if t is None:
             t = q._time + 1 if q._time < np.infty else self._queues[-1]._time + 1
 
         agent._time = t
         q._add_arrival(agent)
 
-        if qt == np.infty and q._time < np.infty :
+        if qt == np.infty and q._time < np.infty:
             self._queues.append(q)
 
         self._queues.sort(reverse=True)
@@ -1064,9 +1065,9 @@ class QueueNetwork(object):
             The edge index of the edge that this event will occur at. If there
             are no events then ``None`` is returned.
         """
-        if len(self._queues) == 0 :
+        if len(self._queues) == 0:
             ans = ('Nothing', None)
-        else :
+        else:
             ad1 = 'Arrival' if self._queues[-1].next_event_description() == 1 else 'Departure'
             ad2 = self._queues[-1].edge[2]
             ans = (ad1, ad2)
@@ -1075,7 +1076,7 @@ class QueueNetwork(object):
 
     def _simulate_next_event(self, slow=True):
         n = len(self._queues)
-        if n == 0 :
+        if n == 0:
             self._t = np.infty
             return
 
@@ -1092,15 +1093,15 @@ class QueueNetwork(object):
             q2  = self.edge2queue[e2]
             q2t = q2._time
 
-            if q2.at_capacity() and e2 != e1 :
+            if q2.at_capacity() and e2 != e1:
                 q2.nBlocked += 1
                 q1._departures[0].blocked += 1
-                if self._blocking :
+                if self._blocking:
                     t = q2._departures[0]._time + EPS * uniform(0.33, 0.66)
                     q1.delay_service(t)
-                else :
+                else:
                     q1.delay_service()
-            else :
+            else:
                 agent = q1.next_event()
                 agent._time = q1t
 
@@ -1108,69 +1109,69 @@ class QueueNetwork(object):
                 self.nAgents[e1] = q1._nTotal
                 self.nAgents[e2] = q2._nTotal
 
-                if slow :
+                if slow:
                     self._update_graph_colors(qedge=q1.edge)
                     self._prev_edge = q1.edge
 
-                if q2._active and self.max_agents < np.infty and np.sum(self.nAgents) > self.max_agents - 1 :
+                if q2._active and self.max_agents < np.infty and np.sum(self.nAgents) > self.max_agents - 1:
                     q2._active = False
 
                 q2.next_event()
                 self.nAgents[e2] = q2._nTotal
 
-                if slow :
+                if slow:
                     self._update_graph_colors(qedge=q2.edge)
                     self._prev_edge = q2.edge
 
-            if q1._time < np.infty :
-                if q2._time < q2t < np.infty and e2 != e1 :
-                    if n > 2 :
+            if q1._time < np.infty:
+                if q2._time < q2t < np.infty and e2 != e1:
+                    if n > 2:
                         oneBisectSort(self._queues, q1, q2t, n-1)
-                    else :
-                        if q1._time < q2._time :
+                    else:
+                        if q1._time < q2._time:
                             self._queues.append(q1)
-                        else :
+                        else:
                             self._queues.insert(0, q1)
-                elif q2._time < q2t and e2 != e1 :
-                    if n == 1 :
-                        if q1._time < q2._time :
+                elif q2._time < q2t and e2 != e1:
+                    if n == 1:
+                        if q1._time < q2._time:
                             self._queues.append(q2)
                             self._queues.append(q1)
-                        else :
+                        else:
                             self._queues.append(q1)
                             self._queues.append(q2)
-                    else :
+                    else:
                         twoSort(self._queues, q1, q2, n-1)
-                else :
-                    if n == 1 :
+                else:
+                    if n == 1:
                         self._queues.append(q1)
-                    else :
+                    else:
                         bisectSort(self._queues, q1, n-1)
-            else :
-                if q2._time < q2t < np.infty :
-                    if n > 2 :
+            else:
+                if q2._time < q2t < np.infty:
+                    if n > 2:
                         oneSort(self._queues, q2t, n-1)
-                elif q2._time < q2t :
-                    if n == 1 :
+                elif q2._time < q2t:
+                    if n == 1:
                         self._queues.append(q2)
-                    else :
+                    else:
                         bisectSort(self._queues, q2, n-1)
 
-        elif event == 1 : # This is an arrival
-            if q1._active and self.max_agents < np.infty and np.sum(self.nAgents) > self.max_agents - 1 :
+        elif event == 1: # This is an arrival
+            if q1._active and self.max_agents < np.infty and np.sum(self.nAgents) > self.max_agents - 1:
                 q1._active = False
 
             q1.next_event()
             self.nAgents[e1] = q1._nTotal
 
-            if slow :
+            if slow:
                 self._update_graph_colors(qedge=q1.edge)
                 self._prev_edge  = q1.edge
 
-            if q1._time < np.infty :
-                if n == 1 :
+            if q1._time < np.infty:
+                if n == 1:
                     self._queues.append(q1)
-                else :
+                else:
                     bisectSort(self._queues, q1, n - 1)
 
 
@@ -1256,7 +1257,7 @@ class QueueNetwork(object):
             raise InitializationError(msg)
 
         if not HAS_MATPLOTLIB:
-            raise ImportError("matplotlib is necessary to animate a simulation.")
+            raise ImportError("Matplotlib is necessary to animate a simulation.")
 
         self._update_all_colors()
         kwargs = self._update_kwargs(kwargs, out='output' in kwargs)
@@ -1359,10 +1360,10 @@ class QueueNetwork(object):
             msg = ("Network has not been initialized. "
                    "Call '.initialize()' first.")
             raise InitializationError(msg)
-        if t is None :
+        if t is None:
             for k in range(n):
                 self._simulate_next_event(slow=False)
-        else :
+        else:
             now = self._t
             while self._t < now + t:
                 self._simulate_next_event(slow=False)
@@ -1381,7 +1382,7 @@ class QueueNetwork(object):
 
             del kwargs[arg1]
 
-        if arg2 not in kwargs :
+        if arg2 not in kwargs:
             kwargs[arg2] = output_size
 
         if update_props:
@@ -1428,7 +1429,7 @@ class QueueNetwork(object):
         self._prev_edge   = None
         self._initialized = False
         self.reset_colors()
-        for q in self.edge2queue :
+        for q in self.edge2queue:
             q.clear()
 
 
@@ -1452,7 +1453,7 @@ class QueueNetwork(object):
         """
         queues = _get_queues(self.g, queues, edge, eType)
 
-        for k in queues :
+        for k in queues:
             self.edge2queue[k].data = {}
 
 
@@ -1475,10 +1476,10 @@ class QueueNetwork(object):
         net.edge2queue   = copy.deepcopy(self.edge2queue)
         net._route_probs = copy.deepcopy(self._route_probs)
 
-        if net._initialized :
+        if net._initialized:
             net._queues = [q for q in net.edge2queue]
             net._queues.sort()
-            while net._queues[-1]._time == np.infty :
+            while net._queues[-1]._time == np.infty:
                 net._queues.pop()
 
             net._queues.sort(reverse=True)

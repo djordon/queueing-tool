@@ -66,3 +66,7 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
             os.remove('test1.png')
 
         self.assertTrue((img0 == img1).all())
+
+        with mock.patch('queueing_tool.graph.graph_wrapper.HAS_MATPLOTLIB', False):
+            with self.assertRaises(ImportError):
+                self.g.draw_graph()

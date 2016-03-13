@@ -14,22 +14,6 @@ import queueing_tool as qt
 TRAVIS_TEST = os.environ.get('TRAVIS_TEST', False)
 
 
-a_mock = mock.Mock()
-a_mock.pyplot = mock.Mock()
-a_mock.pyplot.style = mock.Mock()
-a_mock.pyplot.style.use = mock.Mock()
-a_mock.animation = mock.Mock()
-a_mock.animation.FuncAnimation = mock.Mock()
-a_mock.collections = mock.Mock()
-a_mock.collections.LineCollection = mock.Mock()
-
-matplotlib_mock = {
-    'matplotlib': a_mock,
-    'matplotlib.pyplot': a_mock.pyplot,
-    'matplotlib.animation': a_mock.animation,
-    'matplotlib.collections': a_mock.collections,
-}
-
 
 class TestQueueNetwork(unittest.TestCase):
 

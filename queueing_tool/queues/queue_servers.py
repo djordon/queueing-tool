@@ -234,10 +234,18 @@ class QueueServer(object):
     .. _the publisher: http://assets.cambridge.org/97811070/27503/excerpt/9781107027503_excerpt.pdf
     .. _9781107027503: http://www.cambridge.org/us/9781107027503
     """
+
+    _default_colors = {
+        'edge_loop_color'  : [0, 0, 0, 0],
+        'edge_color'       : [0.9, 0.9, 0.9, 0.5],
+        'vertex_fill_color': [1.0, 1.0, 1.0, 1.0],
+        'vertex_color'     : [0.0, 0.5, 1.0, 1.0]
+    }
+
     def __init__(self, nServers=1, arrival_f=lambda t: t + exponential(1),
-                    service_f=lambda t: t + exponential(0.9), edge=(0,0,0,1),
-                    AgentClass=Agent, collect_data=False, active_cap=infty,
-                    deactive_t=infty, colors=None, seed=None, **kwargs):
+                 service_f=lambda t: t + exponential(0.9), edge=(0,0,0,1),
+                 AgentClass=Agent, collect_data=False, active_cap=infty,
+                 deactive_t=infty, colors=None, seed=None, **kwargs):
 
         if not isinstance(nServers, numbers.Integral) and nServers is not infty:
             msg = "nServers must be an integer or infinity."
@@ -275,19 +283,12 @@ class QueueServer(object):
         if isinstance(seed, numbers.Integral):
             np.random.seed(seed)
 
-        default_colors = {
-            'edge_loop_color'  : [0, 0, 0, 0],
-            'edge_color'       : [0.9, 0.9, 0.9, 0.5],
-            'vertex_fill_color': [1.0, 1.0, 1.0, 1.0],
-            'vertex_color'     : [0.0, 0.5, 1.0, 1.0]
-        }
-
         if colors is not None:
             self.colors = colors
-            for col in set(default_colors.keys()) - set(self.colors.keys()):
-                self.colors[col] = default_colors[col]
+            for col in set(self._default_colors.keys()) - set(self.colors.keys()):
+                self.colors[col] = self._default_colors[col]
         else:
-            self.colors = default_colors
+            self.colors = self._default_colors
 
 
     @property
@@ -791,20 +792,14 @@ class LossQueue(QueueServer):
     instance is an :math:`\\text{M}/\\text{M}/1/1` queue.
     """
 
+    _default_colors = {
+        'edge_loop_color'  : [0, 0, 0, 0],
+        'edge_color'       : [0.7, 0.7, 0.7, 0.5],
+        'vertex_fill_color': [1.0, 1.0, 1.0, 1.0],
+        'vertex_color'     : [0.133, 0.545, 0.133, 1.0]
+    }
+
     def __init__(self, qbuffer=0, **kwargs):
-        default_colors  = {
-            'edge_loop_color'  : [0, 0, 0, 0],
-            'edge_color'       : [0.7, 0.7, 0.7, 0.5],
-            'vertex_fill_color': [1.0, 1.0, 1.0, 1.0],
-            'vertex_color'     : [0.133, 0.545, 0.133, 1.0]
-        }
-
-        if 'colors' in kwargs:
-            for col in set(default_colors.keys()) - set(kwargs['colors'].keys()):
-                kwargs['colors'][col] = default_colors[col]
-        else:
-            kwargs['colors'] = default_colors
-
         super(LossQueue, self).__init__(**kwargs)
 
         self.nBlocked   = 0
@@ -904,23 +899,17 @@ class NullQueue(QueueServer):
     :meth:`~QueueServer.next_event_description` and :meth:`~QueueServer.nQueued`
     will always return ``0``.
     """
+
+    _default_colors = {
+        'edge_loop_color'  : [0, 0, 0, 0],
+        'edge_color'       : [0.7, 0.7, 0.7, 0.3],
+        'vertex_fill_color': [1.0, 1.0, 1.0, 1.0],
+        'vertex_color'     : [0.5, 0.5, 0.5, 0.5]
+    }
+
     def __init__(self, *args, **kwargs):
-
-        default_colors  = {
-            'edge_loop_color'  : [0, 0, 0, 0],
-            'edge_color'       : [0.7, 0.7, 0.7, 0.3],
-            'vertex_fill_color': [1.0, 1.0, 1.0, 1.0],
-            'vertex_color'     : [0.5, 0.5, 0.5, 0.5]
-        }
-
-        if 'colors' in kwargs:
-            for col in set(default_colors.keys()) - set(kwargs['colors'].keys()):
-                kwargs['colors'][col] = default_colors[col]
-        else:
-            kwargs['colors'] = default_colors
-
         if 'edge' not in kwargs :
-            kwargs['edge'] = (0,0,0,0)
+            kwargs['edge'] = (0, 0, 0, 0)
 
         super(NullQueue, self).__init__(**kwargs)
         self.nServers = 0

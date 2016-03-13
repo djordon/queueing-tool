@@ -87,19 +87,15 @@ class ResourceQueue(LossQueue):
     kwargs
         Any arguments to pass to :class:`.LossQueue`\.
     """
+
+    _default_colors = {
+        'edge_loop_color'  : [0.7, 0.7, 0.7, 0.50],
+        'edge_color'       : [0.7, 0.7, 0.7, 0.50],
+        'vertex_fill_color': [1.0, 1.0, 1.0, 1.0],
+        'vertex_pen_color' : [0.0, 0.235, 0.718, 1.0]
+    }
+
     def __init__(self, nServers=10, AgentClass=ResourceAgent, qbuffer=0, **kwargs):
-
-        default_colors  = { 'edge_loop_color'   : [0.7, 0.7, 0.7, 0.50],
-                            'edge_color'        : [0.7, 0.7, 0.7, 0.50],
-                            'vertex_fill_color' : [1.0, 1.0, 1.0, 1.0],
-                            'vertex_pen_color'  : [0.0, 0.235, 0.718, 1.0] }
-
-        if 'colors' in kwargs :
-            for col in set(default_colors.keys()) - set(kwargs['colors'].keys()):
-                kwargs['colors'][col] = default_colors[col]
-        else :
-            kwargs['colors'] = default_colors
-
         super(ResourceQueue, self).__init__(
             nServers=nServers,
             AgentClass=AgentClass,
@@ -252,7 +248,7 @@ class InfoAgent(Agent):
     def __init__(self, issn=(0,0), net_size=1, **kwargs):
         super(InfoAgent, self).__init__(issn, **kwargs)
 
-        self.stats    = np.zeros((net_size, 3), np.int32 )
+        self.stats = np.zeros((net_size, 3), np.int32 )
         self.net_data = np.ones((net_size, 3)) * -1
 
     def __repr__(self):

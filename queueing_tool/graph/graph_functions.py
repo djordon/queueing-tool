@@ -61,23 +61,3 @@ def graph2dict(g) :
         g = QueueNetworkDiGraph(g)
 
     return nx.to_dict_of_dicts(g)
-
-def graph_tool_graph2dict(g):
-        adj = {}
-        vp = g.vp
-        for v in g.nodes():
-            tmp = {}
-            for u in v.out_neighbours():
-                tmp[int(u)] = {p: vp[p][u] for p in vp.keys()}
-
-            adj[int(v)] = tmp
-
-        ep = g.ep
-        for v in g.nodes():
-            tmp = {}
-            for e in v.out_edges():
-                tmp[int(e.target())] = {p: ep[p][e] for p in g.ep.keys()}
-
-            adj[int(v)] = tmp
-
-        return adj
