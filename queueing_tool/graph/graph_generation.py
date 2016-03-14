@@ -229,10 +229,7 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
     pTypes : dict (optional)
         A dictionary of types and proportions, where the keys are the types
         and the values are the proportion of edges that are expected to be of
-        that type. The values can be either proportions (that add to one) or
-        the exact number of edges that be set to a type. In the later case, the
-        sum of all the values must equal the total number of edges in the
-        :class:`~graph_tool.Graph`\.
+        that type. The values can must be proportions (that add to one).
     seed : int (optional)
         An integer used to initialize numpy's psuedorandom number generator.
     **kwargs :
@@ -249,9 +246,8 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
         Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
         or a :class:`~graph_tool.Graph`\.
 
-    RuntimeError
-        Raises a :exc:`~RuntimeError` if the ``pType`` values do not sum to one
-        or does not sum to the number of edges in the graph.
+    ValueError
+        Raises a :exc:`~ValueError` if the ``pType`` values do not sum to one.
     
     Notes
     -----
@@ -272,10 +268,9 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
 
     if np.isclose(cut_off[-1], 1.0):
         cut_off = np.array(np.round(cut_off * nEdges)).astype(int)
-    elif cut_off[-1] != nEdges:
-        msg = ("pTypes must sum to one, or sum to the "
-               "number of edges in the graph")
-        ValueError(msg)
+    else:
+        msg = "pTypes values must sum to one."
+        raise ValueError("pTypes values must sum to one.")
 
     np.random.shuffle(edges)
     eTypes = {}
