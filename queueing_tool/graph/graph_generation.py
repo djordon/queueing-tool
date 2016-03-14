@@ -93,7 +93,7 @@ def generate_random_graph(nVertices=250, **kwargs) :
     >>> float(p1) / g.number_of_edges()
     0.5
     >>> p2 = np.sum([g.ep(e, 'eType') == 2 for e in g.edges()])
-    >>> float(p1) / g.number_of_edges() # doctest: +ELLIPSIS
+    >>> float(p2) / g.number_of_edges() # doctest: +ELLIPSIS
     0.251...
     >>> p3 = np.sum([g.ep(e, 'eType') == 3 for e in g.edges()])
     >>> float(p3) / g.number_of_edges() # doctest: +ELLIPSIS
