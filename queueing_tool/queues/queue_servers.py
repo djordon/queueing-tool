@@ -278,7 +278,7 @@ class QueueServer(object):
         self._current_t   = 0         # The time of the last event.
         self._time        = infty     # The time of the next event.
         self._next_ct     = 0         # The next time an arrival from outside the network can arrive.
-        self._black_cap   = 5         # Used to help color edges and vertices.
+        self._black_cap   = 5.        # Used to help color edges and vertices.
 
         if isinstance(seed, numbers.Integral):
             np.random.seed(seed)
@@ -842,10 +842,10 @@ class LossQueue(QueueServer):
             returned, otherwise nothing is returned.
         """
         if self._departures[0]._time < self._arrivals[0]._time :
-            return QueueServer.next_event(self)
+            return super(LossQueue, self).next_event()
         elif self._arrivals[0]._time < infty :
             if self.nSystem < self.nServers + self.buffer :
-                QueueServer.next_event(self)
+                super(LossQueue, self).next_event()
             else:
                 self.nBlocked += 1
                 self._nTotal  -= 1
@@ -871,12 +871,12 @@ class LossQueue(QueueServer):
 
 
     def clear(self):
-        QueueServer.clear(self)
+        super(LossQueue, self).clear()
         self.nBlocked  = 0
 
 
     def __deepcopy__(self, memo):
-        new_server = QueueServer.__deepcopy__(self, memo)
+        new_server = super(LossQueue, self).__deepcopy__(memo)
         new_server.nBlocked = copy.copy(self.nBlocked)
         new_server.buffer   = copy.copy(self.buffer)
         return new_server
@@ -958,4 +958,4 @@ class NullQueue(QueueServer):
         pass
 
     def __deepcopy__(self, memo):
-        return QueueServer.__deepcopy__(self, memo)
+        return super(NullQueue, self).__deepcopy__(memo)

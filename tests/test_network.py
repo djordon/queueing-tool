@@ -599,26 +599,6 @@ class TestQueueNetwork(unittest.TestCase):
 
         self.assertTrue( ans.all() )
 
-    def test_QueueNetwork_sorting2(self):
-
-        nEvents = 100
-        ans = np.zeros(nEvents, bool)
-        self.qn.clear()
-        self.qn.initialize(1)
-        for k in range(nEvents):
-            net_times   = np.array([q.time for q in self.qn._queues])
-            queue_times = [q.time for q in self.qn.edge2queue]
-            queue_times.sort()
-            while queue_times[-1] == np.infty :
-                tmp = queue_times.pop()
-
-            queue_times.sort(reverse=True)
-
-            ans[k] = (queue_times == net_times).all()
-            self.qn.simulate(n=1)
-
-        self.assertTrue( ans.all() )
-
     def test_QueueNetwork_transitions(self):
 
         degree = [len(self.qn.out_edges[k]) for k in range(self.qn.nV)]

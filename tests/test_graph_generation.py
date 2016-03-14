@@ -127,6 +127,11 @@ class TestGraphFunctions(unittest.TestCase):
 
         self.assertTrue( np.allclose(props , ps, atol=0.001) )
 
+        prob[-1] = 2
+        pType = {eType[k] : prob[k] for k in range(nT)}
+        with self.assertRaises(ValueError):
+            g = qt.set_types_random(g, pTypes=pType, seed=10)
+
 
     def test_test_graph_importerror(self):
         with self.assertRaises(ImportError):

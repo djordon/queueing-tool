@@ -30,7 +30,6 @@ from queueing_tool.network.sorting import (
     twoSort
 )
 
-
 class InitializationError(Exception):
     pass
 
@@ -985,7 +984,7 @@ class QueueNetwork(object):
                 nSy += self.edge2queue[ei].nSystem
                 cap += self.edge2queue[ei].nServers
 
-            div = 5 if cap <= 1 else (2 * cap)
+            div = 5. if cap <= 1 else (2. * cap)
             tmp = 0.9 - min(nSy / div, 0.9)
 
             color = [i * tmp / 0.9 for i in self.colors['vertex_fill_color']]

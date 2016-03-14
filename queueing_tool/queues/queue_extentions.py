@@ -48,18 +48,18 @@ class ResourceAgent(Agent):
             The instance of the queue that the ``ResourceAgent`` will interact with.
         """
         if isinstance(queue, ResourceQueue):
-            if self._has_resource :
+            if self._has_resource:
                 self._has_resource = False
                 self._had_resource = True
-            else :
-                if queue.nServers > 0 :
+            else:
+                if queue.nServers > 0:
                     queue.set_nServers(queue.nServers - 1)
                     self._has_resource = True
                     self._had_resource = False
 
 
     def __deepcopy__(self, memo):
-        new_agent = Agent.__deepcopy__(self, memo)
+        new_agent = super(ResourceAgent, self).__deepcopy__(memo)
         new_agent._has_resource = copy.deepcopy(self._has_resource)
         new_agent._had_resource = copy.deepcopy(self._had_resource)
         return new_agent
@@ -117,7 +117,7 @@ class ResourceQueue(LossQueue):
 
     def set_nServers(self, n):
         self.nServers = n
-        if n > self.max_servers :
+        if n > self.max_servers:
             self.over_max += 1
 
 
@@ -140,56 +140,56 @@ class ResourceQueue(LossQueue):
         Use :meth:`~QueueServer.simulate` for simulating instead.
         """
         if isinstance(self._arrivals[0], ResourceAgent):
-            if self._departures[0]._time < self._arrivals[0]._time :
-                return QueueServer.next_event(self)
-            elif self._arrivals[0]._time < infty :
-                if self._arrivals[0]._has_resource :
+            if self._departures[0]._time < self._arrivals[0]._time:
+                return super(ResourceQueue, self).next_event()
+            elif self._arrivals[0]._time < infty:
+                if self._arrivals[0]._has_resource:
                     arrival   = heappop(self._arrivals)
                     self._current_t = arrival._time
                     self._nTotal  -= 1
                     self.set_nServers(self.nServers+1)
 
-                    if self.collect_data :
+                    if self.collect_data:
                         t = arrival._time
-                        if arrival.issn not in self.data :
+                        if arrival.issn not in self.data:
                             self.data[arrival.issn] = [[t, t, t, len(self._queue), self.nSystem]]
-                        else :
+                        else:
                             self.data[arrival.issn].append([t, t, t, len(self._queue), self.nSystem])
 
-                    if self._arrivals[0]._time < self._departures[0]._time :
+                    if self._arrivals[0]._time < self._departures[0]._time:
                         self._time = self._arrivals[0]._time
-                    else :
+                    else:
                         self._time = self._departures[0]._time
 
-                elif self.nSystem < self.nServers :
-                    QueueServer.next_event(self)
+                elif self.nSystem < self.nServers:
+                    super(ResourceQueue, self).next_event()
 
-                else :
+                else:
                     self.nBlocked   += 1
                     self._nArrivals += 1
                     self._nTotal    -= 1
                     arrival          = heappop(self._arrivals)
                     self._current_t  = arrival._time
 
-                    if self.collect_data :
-                        if arrival.issn not in self.data :
+                    if self.collect_data:
+                        if arrival.issn not in self.data:
                             self.data[arrival.issn] = [[arrival._time, 0, 0, len(self._queue), self.nSystem]]
-                        else :
+                        else:
                             self.data[arrival.issn].append([arrival._time, 0, 0, len(self._queue), self.nSystem])
 
-                    if self._arrivals[0]._time < self._departures[0]._time :
+                    if self._arrivals[0]._time < self._departures[0]._time:
                         self._time = self._arrivals[0]._time
-                    else :
+                    else:
                         self._time = self._departures[0]._time
-        else :
-            return LossQueue.next_event(self)
+        else:
+            return super(ResourceQueue, self).next_event()
 
 
     def _current_color(self, which=0):
         if which == 1:
             nSy = self.nServers
             cap = self.max_servers
-            div = 5 if cap <= 1 else (3 * cap)
+            div = 5. if cap <= 1 else (3. * cap)
             tmp = 0.9 - min(nSy / div, 0.9)
 
             color    = [i * tmp / 0.9 for i in self.colors['edge_loop_color']]
@@ -200,7 +200,7 @@ class ResourceQueue(LossQueue):
         else:
             nSy = self.nServers
             cap = self.max_servers
-            div = 5 if cap <= 1 else (3 * cap)
+            div = 5. if cap <= 1 else (3. * cap)
             tmp = 0.9 - min(nSy / div, 0.9)
 
             if self.edge[0] == self.edge[1]:
@@ -214,13 +214,13 @@ class ResourceQueue(LossQueue):
 
 
     def clear(self):
-        LossQueue.clear(self)
+        super(ResourceQueue, self).clear()
         self.nBlocked = 0
         self.over_max = 0
 
 
     def __deepcopy__(self, memo):
-        new_server  = LossQueue.__deepcopy__(self, memo)
+        new_server  = super(ResourceQueue, self).__deepcopy__(memo)
         new_server.max_servers = copy.copy(self.max_servers)
         new_server.over_max    = copy.copy(self.over_max)
         return new_server
@@ -271,14 +271,15 @@ class InfoAgent(Agent):
 
             ### stamp this information
             n   = queue.edge[2]    # This is the edge_index of the queue
-            if self.issn in queue.data :
-                self.stats[n, 0]    = self.stats[n, 0] + (queue.data[self.issn][-1][1] - queue.data[self.issn][-1][0])
-                self.stats[n, 1]   += 1 if (queue.data[self.issn][-1][1] - queue.data[self.issn][-1][0]) > 0 else 0
+            if self.issn in queue.data:
+                tmp = queue.data[self.issn][-1][1] - queue.data[self.issn][-1][0]
+                self.stats[n, 0]  = self.stats[n, 0] + tmp
+                self.stats[n, 1] += 1 if tmp > 0 else 0
             self.net_data[n, :] = queue._current_t, queue.nServers, queue.nSystem / queue.nServers
 
 
     def __deepcopy__(self, memo):
-        new_agent          = Agent.__deepcopy__(self, memo)
+        new_agent          = super(InfoAgent, self).__deepcopy__(memo)
         new_agent.stats    = copy.deepcopy(self.stats)
         new_agent.net_data = copy.deepcopy(self.net_data)
         return new_agent
@@ -309,13 +310,13 @@ class InfoQueue(LossQueue):
         Extra parameters to pass to :class:`.LossQueue`.
     """
     def __init__(self, net_size=1, AgentClass=InfoAgent, qbuffer=np.infty, **kwargs):
-        LossQueue.__init__(self, AgentClass=AgentClass, qbuffer=qbuffer, **kwargs)
+        super(InfoQueue, self).__init__(AgentClass=AgentClass, qbuffer=qbuffer, **kwargs)
 
         self.networking(net_size)
 
     def __repr__(self):
-        my_str = "InfoQueue:{0}. Servers: {1}, queued: {2}, " + \
-                 "arrivals: {3}, departures: {4}, next time: {5}"
+        my_str = ("InfoQueue:{0}. Servers: {1}, queued: {2}, "
+                  "arrivals: {3}, departures: {4}, next time: {5}")
         arg =  my_str % (self.edge[2], self.nServers, len(self._queue),\
                          self.nArrivals, self.nDepartures, round(self._time, 3))
         return my_str.format(*arg)
@@ -361,15 +362,15 @@ class InfoQueue(LossQueue):
         if self._arrivals[0]._time < self._departures[0]._time:
             self.extract_information(self._arrivals[0])
 
-        return LossQueue.next_event(self)
+        return super(InfoQueue, self).next_event()
 
 
     def clear(self):
-        LossQueue.clear(self)
+        super(InfoQueue, self).clear()
         self.networking( len(self.net_data) )
 
 
     def __deepcopy__(self, memo):
-        new_server = LossQueue.__deepcopy__(self, memo)
+        new_server = super(InfoQueue, self).__deepcopy__(memo)
         new_server.net_data = copy.copy(self.net_data)
         return new_server
