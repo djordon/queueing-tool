@@ -330,6 +330,9 @@ class QueueServer(object):
     def __ge__(a, b):
         return a._time >= b._time
 
+    def _key(self):
+        return self._time, self.edge[2]
+
 
     def at_capacity(self):
         """Returns whether the queue is at capacity or not.

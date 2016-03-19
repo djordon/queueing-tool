@@ -69,51 +69,6 @@ class TestQueueNetwork(unittest.TestCase):
         self.assertAlmostEqual( trans[1][0], p0, 2)
         self.assertAlmostEqual( trans[1][1], p1, 2)
 
-    def test_QueueNetwork_add_arrival_timing(self):
-
-        self.qn.simulate(1000)
-
-        ag1 = qt.Agent( (-1,0) )
-        ag2 = qt.Agent( (-1,1) )
-
-        t1  = [q.edge[2] for q in self.qn.edge2queue if q.edge[3] == 1]
-        t2  = [q.edge[2] for q in self.qn.edge2queue if q.edge[3] == 2]
-
-        q1  = t1[np.random.randint(len(t1))]
-        q2  = t2[np.random.randint(len(t2))]
-        
-        self.qn._add_arrival(q1, ag1)
-        self.qn._add_arrival(q2, ag2)
-
-        arrivals = self.qn.edge2queue[q1]._arrivals
-        an1 = np.array([ag1.issn == ag.issn for ag in arrivals if isinstance(ag, qt.Agent)])
-
-        arrivals = self.qn.edge2queue[q2]._arrivals
-        an2 = np.array([ag2.issn == ag.issn for ag in arrivals if isinstance(ag, qt.Agent)])
-
-        self.assertTrue( an1.any() )
-        self.assertTrue( an2.any() )
-
-        net_times   = np.array([q.time for q in self.qn._queues])
-        queue_times = [q.time for q in self.qn.edge2queue]
-        queue_times.sort()
-
-        while queue_times[-1] == np.infty :
-            tmp = queue_times.pop()
-
-        queue_times.sort(reverse=True)
-
-        self.assertTrue( (queue_times == net_times).all() )
-
-        self.qn.simulate(10000)
-        net_times   = np.array([q.time for q in self.qn._queues])
-        queue_times = [q.time for q in self.qn.edge2queue]
-        queue_times.sort()
-        while queue_times[-1] == np.infty :
-            tmp = queue_times.pop()
-
-        queue_times.sort(reverse=True)
-        self.assertTrue( (queue_times == net_times).all() )
 
     def test_QueueNetwork_animate(self):
         with mock.patch('queueing_tool.network.queue_network.plt.show'):
@@ -193,7 +148,7 @@ class TestQueueNetwork(unittest.TestCase):
 
         stamp = [(q.nArrivals, q.time) for q in qn2.edge2queue]
         qn2.simulate(n=25000)
-
+        print(qn.time, qn2.time)
         self.assertFalse(qn.current_time == qn2.current_time)
         self.assertFalse(qn.time == qn2.time)
 
@@ -346,7 +301,7 @@ class TestQueueNetwork(unittest.TestCase):
         edg = qn.edge2queue[e01].edge
         c   = 0
 
-        while c < nEvents :
+        while c < nEvents:
             qn.simulate(n=1)
             if qn.next_event_description() == ('Departure', e01):
                 d0 = qn.edge2queue[e01]._departures[0].desired_destination(qn, edg)
@@ -511,7 +466,8 @@ class TestQueueNetwork(unittest.TestCase):
             self.qn.simulate()
 
     def test_QueueNetwork_simulate_slow(self):
-        edge = self.qn._queues[-1].edge
+        e = self.qn._fancy_heap.array_edges[0]
+        edge = self.qn.edge2queue[e].edge
 
         if edge[0] == edge[1]:
             for q in self.qn.edge2queue:
@@ -526,13 +482,15 @@ class TestQueueNetwork(unittest.TestCase):
 
         self.qn.clear()
         self.qn.initialize(queues=[q.edge[2]])
-        self.qn._queues[-1].edge
+        e = self.qn._fancy_heap.array_edges[0]
+        edge = self.qn.edge2queue[e].edge
 
         loop = edge[0] == edge[1]
         self.qn._simulate_next_event(slow=True)
 
         while True:
-            edge = self.qn._queues[-1].edge
+            e = self.qn._fancy_heap.array_edges[0]
+            edge = self.qn.edge2queue[e].edge
 
             if (edge[0] != edge[1]) == loop:
                 self.qn._simulate_next_event(slow=True)
@@ -569,33 +527,23 @@ class TestQueueNetwork(unittest.TestCase):
 
     def test_QueueNetwork_sorting(self):
 
-        nEvents = 1000
+        nEvents = 2000
         ans = np.zeros(nEvents, bool)
         for k in range(nEvents // 2):
-            net_times   = np.array([q.time for q in self.qn._queues])
             queue_times = [q.time for q in self.qn.edge2queue]
             queue_times.sort()
-            while queue_times[-1] == np.infty:
-                tmp = queue_times.pop()
-
-            queue_times.sort(reverse=True)
-
-            ans[k] = (queue_times == net_times).all()
+            tmp = queue_times[0]
             self.qn.simulate(n=1)
+            ans[k] = (tmp == self.qn._qkey[0])
 
         self.qn.simulate(n=10000)
 
         for k in range(nEvents // 2, nEvents):
-            net_times   = np.array([q.time for q in self.qn._queues])
             queue_times = [q.time for q in self.qn.edge2queue]
             queue_times.sort()
-            while queue_times[-1] == np.infty :
-                tmp = queue_times.pop()
-
-            queue_times.sort(reverse=True)
-
-            ans[k] = (queue_times == net_times).all()
+            tmp = queue_times[0]
             self.qn.simulate(n=1)
+            ans[k] = (tmp == self.qn._qkey[0])
 
         self.assertTrue( ans.all() )
 

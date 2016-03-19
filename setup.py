@@ -8,10 +8,9 @@ except ImportError :
 
 try :
     from Cython.Distutils import build_ext
+    use_cython = True
 except ImportError :
     use_cython = False
-else:
-    use_cython = True
 
 
 _version = sys.version_info[:2]
@@ -23,14 +22,30 @@ ext_modules = []
 
 if use_cython:
     ext_modules.extend([
-        Extension('queueing_tool.network.sorting', ['queueing_tool/network/sorting.pyx'], include_dirs=[numpy.get_include()]),
-        Extension('queueing_tool.queues.choice', ['queueing_tool/queues/choice.pyx'], include_dirs=[numpy.get_include()])
+        Extension(
+            'queueing_tool.network.priority_queue',
+            ['queueing_tool/network/priority_queue.pyx'],
+            include_dirs=[numpy.get_include()]
+        ),
+        Extension(
+            'queueing_tool.queues.choice',
+            ['queueing_tool/queues/choice.pyx'],
+            include_dirs=[numpy.get_include()]
+        )
     ])
     cmdclass.update({ 'build_ext': build_ext })
 else:
     ext_modules.extend([
-        Extension('queueing_tool.network.sorting', ['queueing_tool/network/sorting.c'], include_dirs=[numpy.get_include()]),
-        Extension('queueing_tool.queues.choice', ['queueing_tool/queues/choice.c'], include_dirs=[numpy.get_include()])
+        Extension(
+            'queueing_tool.network.priority_queue',
+            ['queueing_tool/network/priority_queue.c'],
+            include_dirs=[numpy.get_include()]
+        ),
+        Extension(
+            'queueing_tool.queues.choice',
+            ['queueing_tool/queues/choice.c'],
+            include_dirs=[numpy.get_include()]
+        )
     ])
 
 

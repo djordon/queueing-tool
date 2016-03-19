@@ -23,12 +23,8 @@ from queueing_tool.queues import (
     QueueServer,
     LossQueue
 )
-from queueing_tool.network.sorting import (
-    oneBisectSort,
-    bisectSort,
-    oneSort,
-    twoSort
-)
+from queueing_tool.network.priority_queue import PriorityQueue
+
 
 class InitializationError(Exception):
     pass
@@ -251,7 +247,7 @@ class QueueNetwork(object):
 
         self._initialized = False
         self._prev_edge   = None
-        self._queues      = []
+        self._fancy_heap  = PriorityQueue()
         self._blocking    = True if blocking.lower() != 'rs' else False
 
         if colors is None:
@@ -366,8 +362,9 @@ class QueueNetwork(object):
 
     @property
     def time(self):
-        if len(self._queues) > 0:
-            t = self._queues[-1]._time
+        if self._fancy_heap.size > 0:
+            e = self._fancy_heap.array_edges[0]
+            t = self.edge2queue[e]._time
         else:
             t = np.infty
         return t
@@ -431,12 +428,8 @@ class QueueNetwork(object):
             self.edge2queue[ei].set_active()
             self.nAgents[ei] = self.edge2queue[ei]._nTotal
 
-        self._queues = [q for q in self.edge2queue]
-        self._queues.sort()
-        while self._queues[-1]._time == np.infty:
-            self._queues.pop()
-
-        self._queues.sort(reverse=True)
+        keys = [q._key() for q in self.edge2queue if q._time < np.infty]
+        self._fancy_heap = PriorityQueue(keys, self.nE)
         self._initialized  = True
 
 
@@ -1040,15 +1033,13 @@ class QueueNetwork(object):
         q   = self.edge2queue[ei]
         qt  = q._time
         if t is None:
-            t = q._time + 1 if q._time < np.infty else self._queues[-1]._time + 1
+            t = q._time + 1 if q._time < np.infty else self._fancy_heap.array_times[0] + 1
 
         agent._time = t
         q._add_arrival(agent)
 
-        if qt == np.infty and q._time < np.infty:
-            self._queues.append(q)
-
-        self._queues.sort(reverse=True)
+        keys = [q._key() for q in self.edge2queue if q._time < np.infty]
+        self._fancy_heap = PriorityQueue(keys, self.nE)
 
 
     def next_event_description(self):
@@ -1064,33 +1055,38 @@ class QueueNetwork(object):
             The edge index of the edge that this event will occur at. If there
             are no events then ``None`` is returned.
         """
-        if len(self._queues) == 0:
-            ans = ('Nothing', None)
+        if self._fancy_heap.size == 0:
+            event_type = 'Nothing'
+            edge_index = None
         else:
-            ad1 = 'Arrival' if self._queues[-1].next_event_description() == 1 else 'Departure'
-            ad2 = self._queues[-1].edge[2]
-            ans = (ad1, ad2)
-        return ans
+            e = self._fancy_heap.array_edges[0]
+            q = self.edge2queue[e]
+
+            event_type = 'Arrival' if q.next_event_description() == 1 else 'Departure'
+            edge_index = q.edge[2]
+        return (event_type, edge_index)
 
 
     def _simulate_next_event(self, slow=True):
-        n = len(self._queues)
-        if n == 0:
+        if self._fancy_heap.size == 0:
             self._t = np.infty
             return
 
-        q1  = self._queues.pop()
-        q1t = q1._time
+        q1k = self._fancy_heap.pop()
+        q1  = self.edge2queue[q1k[1]]
+        q1t = q1k[0]
         e1  = q1.edge[2]
 
         event   = q1.next_event_description()
         self._t = q1t
+        self._qkey = q1k
         self.nEvents += 1
 
         if event == 2 : # This is a departure
             e2  = q1._departures[0].desired_destination(self, q1.edge)
             q2  = self.edge2queue[e2]
-            q2t = q2._time
+            q2k = q2._key()
+            q2t = q2k[0]
 
             if q2.at_capacity() and e2 != e1:
                 q2.nBlocked += 1
@@ -1122,39 +1118,17 @@ class QueueNetwork(object):
                     self._update_graph_colors(qedge=q2.edge)
                     self._prev_edge = q2.edge
 
-            if q1._time < np.infty:
-                if q2._time < q2t < np.infty and e2 != e1:
-                    if n > 2:
-                        oneBisectSort(self._queues, q1, q2t, n-1)
-                    else:
-                        if q1._time < q2._time:
-                            self._queues.append(q1)
-                        else:
-                            self._queues.insert(0, q1)
-                elif q2._time < q2t and e2 != e1:
-                    if n == 1:
-                        if q1._time < q2._time:
-                            self._queues.append(q2)
-                            self._queues.append(q1)
-                        else:
-                            self._queues.append(q1)
-                            self._queues.append(q2)
-                    else:
-                        twoSort(self._queues, q1, q2, n-1)
-                else:
-                    if n == 1:
-                        self._queues.append(q1)
-                    else:
-                        bisectSort(self._queues, q1, n-1)
+            new_q1k = q1._key()
+            new_q2k = q2._key()
+
+            if new_q2k[0] != q2k[0]:
+                self._fancy_heap.push(*new_q2k)
+
+                if new_q1k[0] < np.infty and new_q1k != new_q2k:
+                    self._fancy_heap.push(*new_q1k)
             else:
-                if q2._time < q2t < np.infty:
-                    if n > 2:
-                        oneSort(self._queues, q2t, n-1)
-                elif q2._time < q2t:
-                    if n == 1:
-                        self._queues.append(q2)
-                    else:
-                        bisectSort(self._queues, q2, n-1)
+                if new_q1k[0] < np.infty:
+                    self._fancy_heap.push(*new_q1k)
 
         elif event == 1: # This is an arrival
             if q1._active and self.max_agents < np.infty and np.sum(self.nAgents) > self.max_agents - 1:
@@ -1167,11 +1141,9 @@ class QueueNetwork(object):
                 self._update_graph_colors(qedge=q1.edge)
                 self._prev_edge  = q1.edge
 
-            if q1._time < np.infty:
-                if n == 1:
-                    self._queues.append(q1)
-                else:
-                    bisectSort(self._queues, q1, n - 1)
+            new_q1k = q1._key()
+            if new_q1k[0] < np.infty:
+                self._fancy_heap.push(*new_q1k)
 
 
     def animate(self, out=None, t=None, **kwargs):
@@ -1424,7 +1396,7 @@ class QueueNetwork(object):
         self._t           = 0
         self.nEvents      = 0
         self.nAgents      = np.zeros(self.nE, int)
-        self._queues      = []
+        self._fancy_heap  = PriorityQueue()
         self._prev_edge   = None
         self._initialized = False
         self.reset_colors()
@@ -1476,12 +1448,8 @@ class QueueNetwork(object):
         net._route_probs = copy.deepcopy(self._route_probs)
 
         if net._initialized:
-            net._queues = [q for q in net.edge2queue]
-            net._queues.sort()
-            while net._queues[-1]._time == np.infty:
-                net._queues.pop()
-
-            net._queues.sort(reverse=True)
+            keys = [q._key() for q in net.edge2queue if q._time < np.infty]
+            net._fancy_heap = PriorityQueue(keys, net.nE)
 
         return net
 

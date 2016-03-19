@@ -10,5 +10,5 @@ from queueing_tool.network.queue_network import (
 
 __all__ = [
     'InitializationError',
-    'QueueNetwork',
+    'QueueNetwork'
 ]
