@@ -43,12 +43,12 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
 
 
     @mock.patch.dict('sys.modules', matplotlib_mock)
-    def test_lines_scatter_args(self):
+    def testlines_scatter_args(self):
         ax = mock.Mock()
         ax.transData = mock.Mock()
         kwargs = {'linewidths': 77, 'vmax': 107, 'beefy': 910}
 
-        a, b = self.g._lines_scatter_args(ax, **kwargs)
+        a, b = self.g.lines_scatter_args(ax, **kwargs)
 
         self.assertTrue(a['linewidths'] == 77)
         self.assertTrue(b['vmax'] == 107)
@@ -70,3 +70,10 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
         with mock.patch('queueing_tool.graph.graph_wrapper.HAS_MATPLOTLIB', False):
             with self.assertRaises(ImportError):
                 self.g.draw_graph()
+
+        kwargs = {'pos': 1}
+        self.g.set_pos = mock.MagicMock()
+        with mock.patch.dict('sys.modules', matplotlib_mock):
+            self.g.draw_graph(**kwargs)
+
+        self.g.set_pos.assert_called_once_with(1)

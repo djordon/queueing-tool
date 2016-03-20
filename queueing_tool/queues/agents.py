@@ -18,7 +18,7 @@ class Agent(object) :
 
     Parameters
     ----------
-    issn : tuple (optional, the default is ``(0,0)``\)
+    issn : tuple (optional, the default is ``(0, 0)``\)
         A unique identifier for an agent. Is set automatically by the
         :class:`.QueueServer` that instantiates the ``Agent``\. The first slot
         is the :class:`.QueueServer`\'s edge index and the second slot is
@@ -184,12 +184,6 @@ class InftyAgent(object) :
 
     def __eq__(a, b) :
         return a._time == b._time
-
-    def __le__(a, b) :
-        return a._time <= b._time
-
-    def __ge__(a, b) :
-        return a._time >= b._time
 
     def __deepcopy__(self, memo) :
         return self.__class__()

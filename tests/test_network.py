@@ -5,6 +5,12 @@ try:
 except ImportError:
     import mock
 
+try:
+    import matplotlib.pyplot as plt
+    HAS_MATPLOTLIB = True
+except ImportError:
+    HAS_MATPLOTLIB = False
+
 import networkx as nx
 import numpy as np
 
@@ -35,13 +41,13 @@ class TestQueueNetwork(unittest.TestCase):
         ans = np.zeros(nEvents, bool)
         na  = np.zeros(self.qn.nE, int)
         for q in self.qn.edge2queue :
-            na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q._queue) - 2
+            na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q.queue) - 2
 
         for k in range(nEvents):
             ans[k] = (self.qn.nAgents == na).all()
             self.qn.simulate(n=1)
             for q in self.qn.edge2queue :
-                na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q._queue) - 2
+                na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q.queue) - 2
 
         self.assertTrue( ans.all() )
 
@@ -71,8 +77,13 @@ class TestQueueNetwork(unittest.TestCase):
 
 
     def test_QueueNetwork_animate(self):
-        with mock.patch('queueing_tool.network.queue_network.plt.show'):
-            self.qn.animate(frames=1)
+        if not HAS_MATPLOTLIB:
+            with mock.patch('queueing_tool.network.queue_network.plt.show'):
+                self.qn.animate(frames=5)
+        else:
+            plt.switch_backend('Agg')
+            self.qn.animate(frames=5)
+
 
 
     def test_QueueNetwork_blocking(self):
@@ -113,12 +124,12 @@ class TestQueueNetwork(unittest.TestCase):
         ans = np.zeros(nEvents, bool)
         na  = np.zeros(self.qn.nE, int)
         for q in self.qn.edge2queue :
-            na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q._queue) - 2
+            na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q.queue) - 2
 
         for k in range(nEvents):
             ans[k] = np.sum(self.qn.nAgents) >= np.sum(na)
             for q in self.qn.edge2queue :
-                na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q._queue) - 2
+                na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q.queue) - 2
 
             self.qn.simulate(n=1)
 
@@ -165,6 +176,18 @@ class TestQueueNetwork(unittest.TestCase):
         self.qn.draw(**args)
         args = self.qn._update_kwargs(args)
         self.qn.g.draw_graph.assert_called_with(**args)
+
+        args = {'c': 'b'}
+        self.qn.draw(**args)
+        args = self.qn._update_kwargs(args)
+        self.assertTrue('bgcolor' not in args)
+        args['bgcolor'] = self.qn.colors['bgcolor']
+        self.qn.g.draw_graph.assert_called_with(**args)
+
+    @mock.patch('queueing_tool.network.queue_network.HAS_MATPLOTLIB', False)
+    def test_QueueNetwork_drawing_importerror(self):
+        with self.assertRaises(ImportError):
+            self.qn.draw()
 
     @unittest.skip("No animations")
     def test_QueueNetwork_drawing_animation(self):

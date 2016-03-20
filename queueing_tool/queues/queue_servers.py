@@ -170,6 +170,8 @@ class QueueServer(object):
         list of lists. Each time an agent arrives at the queue it appends this
         data to the end of the list. Use :meth:`.fetch_data` to retrieve a
         formated version of this data.
+    queue : deque
+        The agents waiting to enter service.
 
     Examples
     --------
@@ -259,6 +261,7 @@ class QueueServer(object):
         self.nDepartures  = 0
         self.nSystem      = 0
         self.data         = {}   # times; issn : [arrival, service start, departure]
+        self.queue        = collections.deque()
 
         self.arrival_f    = arrival_f
         self.service_f    = service_f
@@ -270,7 +273,6 @@ class QueueServer(object):
         inftyAgent        = InftyAgent()
         self._arrivals    = [inftyAgent]    # A list of arriving agents.
         self._departures  = [inftyAgent]    # A list of departing agents.
-        self._queue       = collections.deque()
         self._nArrivals   = 0
         self._oArrivals   = 0
         self._nTotal      = 0         # The number of agents scheduled to arrive + nSystem
@@ -311,24 +313,10 @@ class QueueServer(object):
     def __repr__(self):
         my_str = ("QueueServer:{0}. Servers: {1}, queued: {2}, arrivals: {3}, "
                   "departures: {4}, next time: {5}")
-        arg = (self.edge[2], self.nServers, len(self._queue), self.nArrivals,\
+        arg = (self.edge[2], self.nServers, len(self.queue), self.nArrivals,\
                self.nDepartures, round(self._time, 3))
         return my_str.format(*arg)
 
-    def __lt__(a, b):
-        return a._time < b._time
-
-    def __gt__(a, b):
-        return a._time > b._time
-
-    def __eq__(a, b):
-        return a._time == b._time
-
-    def __le__(a, b):
-        return a._time <= b._time
-
-    def __ge__(a, b):
-        return a._time >= b._time
 
     def _key(self):
         return self._time, self.edge[2]
@@ -392,7 +380,7 @@ class QueueServer(object):
         int
             The number of agents waiting in line to be served.
         """
-        return len(self._queue)
+        return len(self.queue)
 
 
     def fetch_data(self):
@@ -531,8 +519,8 @@ class QueueServer(object):
             if self.collect_data and new_depart.issn in self.data :
                 self.data[new_depart.issn][-1][2] = self._current_t
 
-            if len(self._queue) > 0 :
-                agent = self._queue.popleft()
+            if len(self.queue) > 0 :
+                agent = self.queue.popleft()
                 if self.collect_data and agent.issn in self.data :
                     self.data[agent.issn][-1][1] = self._current_t
 
@@ -562,9 +550,9 @@ class QueueServer(object):
             if self.collect_data :
                 b = 0 if self.nSystem <= self.nServers else 1
                 if arrival.issn not in self.data :
-                    self.data[arrival.issn] = [[arrival._time, 0, 0, len(self._queue)+b, self.nSystem]]
+                    self.data[arrival.issn] = [[arrival._time, 0, 0, len(self.queue)+b, self.nSystem]]
                 else:
-                    self.data[arrival.issn].append([arrival._time, 0, 0, len(self._queue)+b, self.nSystem])
+                    self.data[arrival.issn].append([arrival._time, 0, 0, len(self.queue)+b, self.nSystem])
 
             arrival.queue_action(self, 0)
 
@@ -576,7 +564,7 @@ class QueueServer(object):
                 arrival.queue_action(self, 1)
                 heappush(self._departures, arrival)
             else:
-                self._queue.append(arrival)
+                self.queue.append(arrival)
 
             if self._arrivals[0]._time < self._departures[0]._time :
                 self._time = self._arrivals[0]._time
@@ -725,7 +713,7 @@ class QueueServer(object):
         self._time       = infty
         self._next_ct    = 0
         self._active     = False
-        self._queue      = collections.deque()
+        self.queue      = collections.deque()
         inftyAgent       = InftyAgent()
         self._arrivals   = [inftyAgent]
         self._departures = [inftyAgent]
@@ -754,7 +742,7 @@ class QueueServer(object):
         new_server._oArrivals   = copy.copy(self._oArrivals)
         new_server.data         = copy.deepcopy(self.data)
         new_server.colors       = copy.deepcopy(self.colors)
-        new_server._queue       = copy.deepcopy(self._queue, memo)
+        new_server.queue        = copy.deepcopy(self.queue, memo)
         new_server._arrivals    = copy.deepcopy(self._arrivals, memo)
         new_server._departures  = copy.deepcopy(self._departures, memo)
         new_server.arrival_f    = self.arrival_f
@@ -813,7 +801,7 @@ class LossQueue(QueueServer):
     def __repr__(self):
         tmp = ("LossQueue:{0}. Servers: {1}, queued: {2}, arrivals: {3}, "
                "departures: {4}, next time: {5}")
-        arg = (self.edge[2], self.nServers, len(self._queue), self.nArrivals,\
+        arg = (self.edge[2], self.nServers, len(self.queue), self.nArrivals,\
                self.nDepartures, round(self._time, 3))
         return tmp.format(*arg)
 
@@ -863,9 +851,9 @@ class LossQueue(QueueServer):
 
                 if self.collect_data :
                     if arrival.issn in self.data :
-                        self.data[arrival.issn].append([arrival._time, 0, 0, len(self._queue), self.nSystem])
+                        self.data[arrival.issn].append([arrival._time, 0, 0, len(self.queue), self.nSystem])
                     else:
-                        self.data[arrival.issn] = [[arrival._time, 0, 0, len(self._queue), self.nSystem]]
+                        self.data[arrival.issn] = [[arrival._time, 0, 0, len(self.queue), self.nSystem]]
 
                 if self._arrivals[0]._time < self._departures[0]._time :
                     self._time = self._arrivals[0]._time
@@ -911,7 +899,7 @@ class NullQueue(QueueServer):
     }
 
     def __init__(self, *args, **kwargs):
-        if 'edge' not in kwargs :
+        if 'edge' not in kwargs:
             kwargs['edge'] = (0, 0, 0, 0)
 
         super(NullQueue, self).__init__(**kwargs)

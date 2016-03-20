@@ -22,16 +22,21 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
         return Mock()
 
-MOCK_MODULES = ['gi.repository', 'Gtk', 'GObject', 'sorting', 'choice',
-                'queueing_tool.queues.choice', 'queueing_tool.network.sorting',
-                'numpy', 'numpy.random', 'graph_tool.all', 'graph_tool']
+MOCK_MODULES = [
+    'choice',
+    'queueing_tool.queues.choice',
+    'numpy',
+    'numpy.random',
+    'priority_queue',
+    'queueing_tool.network.priority_queue',
+]
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('..'))
 sys.path.append(os.path.abspath('sphinxext'))
 
 # -- General configuration ------------------------------------------------
@@ -56,8 +61,9 @@ extensions = [
 
 intersphinx_mapping = {
     'python': ('http://docs.python.org/3', None),
+    'matplotlib': ('http://matplotlib.sourceforge.net', None),
     'numpy': ('http://docs.scipy.org/doc/numpy', None),
-    'graphtool': ('http://graph-tool.skewed.de/static/doc/', None)
+    'networkx': ('http://networkx.readthedocs.org/en/networkx-1.11/', None)
 }
 
 extlinks = {
@@ -80,7 +86,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'queueuing-tool'
+project = 'queueing-tool'
 copyright = '2015, Daniel Jordon'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -94,6 +100,7 @@ with open('../VERSION', 'r') as a_file :
 
 
 # The short X.Y version.
+import queueing_tool as qt
 i = release.rfind('.')
 version = release[:i] #'0.5.0'
 

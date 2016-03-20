@@ -47,7 +47,7 @@ python setup.py develop --user
 Copyright and license
 ---------------------
 
-Code and documentation Copyright 2014-2015 Daniel Jordon. Code released under the [MIT license][].
+Code and documentation Copyright 2014-2016 Daniel Jordon. Code released under the [MIT license][].
 
   [queues]: http://en.wikipedia.org/wiki/Queueing_theory
   [Jackson networks]: http://en.wikipedia.org/wiki/Jackson_network

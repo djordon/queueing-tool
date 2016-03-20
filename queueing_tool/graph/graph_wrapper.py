@@ -279,7 +279,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         fig = plt.figure(figsize=kwargs.get('figsize', (7, 7)))
         ax  = fig.gca()
 
-        lines_kwargs, scatter_kwargs = self._lines_scatter_args(ax, **kwargs)
+        lines_kwargs, scatter_kwargs = self.lines_scatter_args(ax, **kwargs)
 
         edge_collection = LineCollection(**lines_kwargs)
         ax.add_collection(edge_collection)
@@ -299,7 +299,12 @@ class QueueNetworkDiGraph(nx.DiGraph):
             plt.ioff()
 
 
-    def _lines_scatter_args(self, ax, **kwargs):
+    def lines_scatter_args(self, ax, **kwargs):
+
+        if 'pos' in kwargs:
+            self.set_pos(kwargs['pos'])
+        elif self.pos is None:
+            self.set_pos()
 
         edge_pos = [(self.pos[e[0]], self.pos[e[1]]) for e in self.edges()]
         line_collecton_kwargs = {

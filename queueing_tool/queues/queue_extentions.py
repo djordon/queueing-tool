@@ -152,9 +152,9 @@ class ResourceQueue(LossQueue):
                     if self.collect_data:
                         t = arrival._time
                         if arrival.issn not in self.data:
-                            self.data[arrival.issn] = [[t, t, t, len(self._queue), self.nSystem]]
+                            self.data[arrival.issn] = [[t, t, t, len(self.queue), self.nSystem]]
                         else:
-                            self.data[arrival.issn].append([t, t, t, len(self._queue), self.nSystem])
+                            self.data[arrival.issn].append([t, t, t, len(self.queue), self.nSystem])
 
                     if self._arrivals[0]._time < self._departures[0]._time:
                         self._time = self._arrivals[0]._time
@@ -173,9 +173,9 @@ class ResourceQueue(LossQueue):
 
                     if self.collect_data:
                         if arrival.issn not in self.data:
-                            self.data[arrival.issn] = [[arrival._time, 0, 0, len(self._queue), self.nSystem]]
+                            self.data[arrival.issn] = [[arrival._time, 0, 0, len(self.queue), self.nSystem]]
                         else:
-                            self.data[arrival.issn].append([arrival._time, 0, 0, len(self._queue), self.nSystem])
+                            self.data[arrival.issn].append([arrival._time, 0, 0, len(self.queue), self.nSystem])
 
                     if self._arrivals[0]._time < self._departures[0]._time:
                         self._time = self._arrivals[0]._time
@@ -317,7 +317,7 @@ class InfoQueue(LossQueue):
     def __repr__(self):
         my_str = ("InfoQueue:{0}. Servers: {1}, queued: {2}, "
                   "arrivals: {3}, departures: {4}, next time: {5}")
-        arg =  my_str % (self.edge[2], self.nServers, len(self._queue),\
+        arg =  my_str % (self.edge[2], self.nServers, len(self.queue),\
                          self.nArrivals, self.nDepartures, round(self._time, 3))
         return my_str.format(*arg)
 

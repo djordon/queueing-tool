@@ -18,6 +18,7 @@ Queues
       :show-inheritance:
       :members:
    .. autoclass:: NullQueue
+      :show-inheritance:
 
 Agents
 ------

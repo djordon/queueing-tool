@@ -35,7 +35,7 @@ EPS = np.float64(1e-7)
 class QueueNetwork(object):
     """A class that simulates a network of queues.
 
-    Takes a graph-tool :class:`~graph_tool.Graph` and places queues on each
+    Takes a networkx :any:`DiGraph<networkx.DiGraph>` and places queues on each
     edge of the graph. The simulations are event based, and this class handles
     the scheduling of events.
 
@@ -44,8 +44,11 @@ class QueueNetwork(object):
 
     Parameters
     ----------
-    g : str or :class:`~graph_tool.Graph`
-        The graph specifies the network on which the queues sit.
+    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, :class:`.dict`, \
+        ``None``,  etc.
+        Any object that networkx can turn into a
+        :any:`DiGraph<networkx.DiGraph>`. The graph specifies the
+        network, and the queues sit on top of the edges.
     q_classes : :class:`.dict` (optional)
         Used to specify the :class:`.QueueServer` class for each edge type.
         The keys are integers for the edge types, and the values are classes.
@@ -81,24 +84,26 @@ class QueueNetwork(object):
 
     Attributes
     ----------
-    g : :class:`~graph_tool.Graph`
-        The graph for the network.
     blocking : str
         Specifies whether the system's blocking behavior is either Blocking
         After Service (BAS) or Repetitive Service Blocking (RS).
+    colors : :class:`.dict`
+        A dictionary of colors used when drawing a graph. See the notes for the
+        defaults.
+    current_time : float
+        The time of the last event.
+    edge2queue : :class:`.list`
+        A list of queues where the ``edge2queue[k]`` returns the queue on the
+        edge with edge index ``k``.
+    g : :class:`.QueueNetworkDiGraph`
+        The graph for the network.
     in_edges : :class:`.list`
         A mapping between vertex indices and the in-edges at that vertex.
         Specifically, ``in_edges[v]`` returns a list containing the edge index
         for all edges with the head of the edge at ``v``, where ``v`` is the
         the vertex's index number.
-    out_edges : :class:`.list`
-        A mapping between vertex indices and the out-edges at that vertex.
-        Specifically, ``out_edges[v]`` returns a list containing the edge index
-        for all edges with the tail of the edge at ``v``, where ``v`` is the
-        the vertex's index number.
-    edge2queue : :class:`.list`
-        A list of queues where the ``edge2queue[k]`` returns the queue on the
-        edge with edge index ``k``.
+    max_agents : int
+        The maximum number of agents that can be in the network at any time.
     nAgents : :class:`~numpy.ndarray`
         A one-dimensional array where the ``k``'th entry corresponds to the
         total number of agents in the :class:`.QueueServer` with edge index
@@ -115,21 +120,21 @@ class QueueNetwork(object):
         The number of vertices in the graph.
     nNodes : int
         The number of vertices in the graph.
-    current_time : float
-        The time of the last event.
+    out_edges : :class:`.list`
+        A mapping between vertex indices and the out-edges at that vertex.
+        Specifically, ``out_edges[v]`` returns a list containing the edge index
+        for all edges with the tail of the edge at ``v``, where ``v`` is the
+        the vertex's index number.
     time : float
         The time of the next event.
-    max_agents : int
-        The maximum number of agents that can be in the network at any time.
-    colors : :class:`.dict`
-        A dictionary of colors used when drawing a graph. See the notes for the
-        defaults.
+
 
     Raises
     ------
     TypeError
-        The parameter ``g`` must be either a :class:`~graph_tool.Graph`, a
-        string of a file location to a graph, or ``None``.
+        Raised when the parameter ``g`` is not of a type that can be
+        made into a :any:`networkx.DiGraph`, or when ``g`` is not
+        ``None``.
 
     Notes
     -----
@@ -163,8 +168,8 @@ class QueueNetwork(object):
 
       then each type ``0`` or type ``2`` edge is a :class:`.NullQueue` or
       :class:`.LossQueue` respectively.
-    * The following properties are assigned as a :class:`~graph_tool.PropertyMap`
-      to the graph; their default values for each edge or vertex is shown:
+    * The following properties are assigned as a node or edge attribute
+      oo the graph; their default values for each edge or node is shown:
 
         * ``vertex_pen_width``: ``1.1``,
         * ``vertex_size``: ``8``,
@@ -176,15 +181,17 @@ class QueueNetwork(object):
       ``vertex_color``\, ``vertex_fill_color``\, ``pos``\, and ``edge_color``\.
       The default colors, which are used by various methods, are:
 
-      >>> default_colors = {'vertex_fill_color': [0.9, 0.9, 0.9, 1.0],
-      ...                   'vertex_color'     : [0.0, 0.5, 1.0, 1.0],
-      ...                   'vertex_highlight' : [0.5, 0.5, 0.5, 1.0],
-      ...                   'edge_departure'   : [0, 0, 0, 1],
-      ...                   'vertex_active'    : [0.1, 1.0, 0.5, 1.0],
-      ...                   'vertex_inactive'  : [0.9, 0.9, 0.9, 0.8],
-      ...                   'edge_active'      : [0.1, 0.1, 0.1, 1.0],
-      ...                   'edge_inactive'    : [0.8, 0.8, 0.8, 0.3],
-      ...                   'bgcolor'         : [1, 1, 1, 1]}
+      >>> default_colors = {
+      ...     'vertex_fill_color': [0.9, 0.9, 0.9, 1.0],
+      ...     'vertex_color'     : [0.0, 0.5, 1.0, 1.0],
+      ...     'vertex_highlight' : [0.5, 0.5, 0.5, 1.0],
+      ...     'edge_departure'   : [0, 0, 0, 1],
+      ...     'vertex_active'    : [0.1, 1.0, 0.5, 1.0],
+      ...     'vertex_inactive'  : [0.9, 0.9, 0.9, 0.8],
+      ...     'edge_active'      : [0.1, 0.1, 0.1, 1.0],
+      ...     'edge_inactive'    : [0.8, 0.8, 0.8, 0.3],
+      ...     'bgcolor'          : [1, 1, 1, 1]
+      ... }
 
     If the graph is not connected then there may be issues with ``Agents``
     that arrive at an edge that points to terminal vertex. If the graph was
@@ -311,10 +318,6 @@ class QueueNetwork(object):
 
         if isinstance(seed, numbers.Integral):
             np.random.seed(seed)
-
-        for k in range(5):
-            if k not in q_args:
-                q_args[k] = {}
 
         if g is not None:
             g, qs = _prepare_graph(g, self.colors, q_classes, q_args)
@@ -454,8 +457,8 @@ class QueueNetwork(object):
 
         Notes
         -----
-        Use ``v.out_edges()`` to get a generator of all out edges from ``v``
-        where ``v`` is a :class:`~graph_tool.Vertex`\.
+        Use ``qn.g.out_edges(v)`` to get a generator of all out edges from ``v``
+        where ``v`` is an integer representing a vertex/node.
 
         Examples
         --------
@@ -658,7 +661,7 @@ class QueueNetwork(object):
             columns represent, respectively, the arrival, service start, and
             departure times of each :class:`.Agent` that has visited the queue.
             The fourth column identifies how many other agents were in the
-            queue upon arrival,  the fifth column identifies the number of
+            queue upon arrival, the fifth column identifies the number of
             agents in the system, and the sixth column specifies which queue
             this occurred at (by identifying it's edge index).
 
@@ -770,9 +773,9 @@ class QueueNetwork(object):
         update_colors : ``bool`` (optional, the default is ``True``).
             Specifies whether all the colors are updated.
         **kwargs
-            Any parameters to pass to :func:`~graph_tool.draw.graph_draw`.
+            Any parameters to pass to :func:`.QueueNetworkDiGraph.draw_graph`.
         output_size : :class:`.tuple` (optional, the default is ``(700, 700)``).
-            This is :func:`~graph_tool.draw.graph_draw` parameter for
+            This is :func:`.QueueNetworkDiGraph.draw_graph` parameter for
             specifying the size of canvas.
         output : str (optional, the default is ``None``)
             Specifies the directory where the drawing is saved. If output is
@@ -780,10 +783,10 @@ class QueueNetwork(object):
 
         Notes
         -----
-        There are several parameters passed to :func:`~graph_tool.draw.graph_draw`
-        by default. The following parameters are :class:`~graph_tool.PropertyMap`\s
-        that are automatically set to the graph when a ``QueueNetwork``
-        instance is created. These property maps include:
+        There are several parameters passed to
+        :func:`.QueueNetworkDiGraph.draw_graph` by default. The
+        following are parameters that are automatically set to the graph
+        when a ``QueueNetwork`` instance is created. These include:
 
           * ``vertex_color``, ``vertex_fill_color``, ``vertex_size``,
             ``vertex_pen_width``, ``pos``.
@@ -797,9 +800,6 @@ class QueueNetwork(object):
 
         If any of these parameters are supplied as arguments to ``draw`` then
         the passed arguments are used over the defaults.
-
-        Drawing output may differ between Python 2 and Python 3. Use Python 3
-        for with better output.
 
         Examples
         --------
@@ -825,11 +825,12 @@ class QueueNetwork(object):
         default, the vertex that corresponds to a loop shows how many agents
         are in that loop.
 
-        There are several additional parameters that can be passed -- all
-        :func:`~graph_tool.draw.graph_draw` parameters are valid. For example,
-        to show the vertex number in the graph, one could do the following:
+        There are several additional parameters that can be passed --
+        all :func:`.QueueNetworkDiGraph.draw_graph` parameters are
+        valid. For example, to show the vertex number in the graph, you
+        could do the following:
 
-        >>> net.draw(vertex_text=net.g.vertex_index) # doctest: +SKIP
+        >>> net.draw(linestyle='dashed') # doctest: +SKIP
         """
         if not HAS_MATPLOTLIB:
             raise ImportError("matplotlib is necessary to draw the network.")
@@ -837,7 +838,6 @@ class QueueNetwork(object):
         if update_colors:
             self._update_all_colors()
 
-        kwargs = self._update_kwargs(kwargs, out='output' in kwargs, update_props=True)
         if 'bgcolor' not in kwargs:
             kwargs['bgcolor'] = self.colors['bgcolor']
 
@@ -856,7 +856,7 @@ class QueueNetwork(object):
         ----------
         **kwargs
             Any additional parameters to pass to :meth:`.draw`, and
-            :func:`~graph_tool.draw.graph_draw`.
+            :func:`.QueueNetworkDiGraph.draw_graph`.
 
         Notes
         -----
@@ -902,7 +902,7 @@ class QueueNetwork(object):
             The type of vertices and edges to be shown.
         **kwargs
             Any additional parameters to pass to :meth:`.draw`, and
-            :func:`~graph_tool.draw.graph_draw`.
+            :func:`.QueueNetworkDiGraph.draw_graph`
 
         Notes
         -----
@@ -920,7 +920,7 @@ class QueueNetwork(object):
         >>> g = qt.generate_pagerank_graph(100, seed=13)
         >>> net = qt.QueueNetwork(g, seed=13)
         >>> fname = 'edge_type_2.png'
-        >>> net.show_type(2, output_size=(400,400), output=fname) # doctest: +SKIP
+        >>> net.show_type(2, figsize=(4, 4), fname=fname) # doctest: +SKIP
 
         .. figure:: edge_type_2.png
            :align: center
@@ -965,6 +965,7 @@ class QueueNetwork(object):
                     self._update_vertex_color(q.edge[0])
                     do[q.edge[0]] = False
 
+
     def _update_vertex_color(self, v):
         ee  = (v, v)
         ee_is_edge = self.g.is_edge(ee)
@@ -985,6 +986,7 @@ class QueueNetwork(object):
             self.g.set_vp(v, 'vertex_fill_color', color)
             if not ee_is_edge:
                 self.g.set_vp(v, 'vertex_color', self.colors['vertex_color'])
+
 
     def _update_graph_colors(self, qedge):
         e  = qedge[:2]
@@ -1014,32 +1016,6 @@ class QueueNetwork(object):
         else:
             self.g.set_ep(e, 'edge_color', q._current_color())
             self._update_vertex_color(v)
-
-
-    def _add_arrival(self, ei, agent, t=None):
-        """Used to force an arrival to a queue.
-
-        Parameters
-        ----------
-        ei : int
-            Identifies which queue the agent is going to be added; is the
-            queue's edge index.
-        agent : ``Agent``
-            The agent that is to be added to the queue.
-        t : float (optional)
-            The arrival time of the agent. If not given then it is set to that
-            queue's time-of-next-event (its ``time``\) plus ``1``\.
-        """
-        q   = self.edge2queue[ei]
-        qt  = q._time
-        if t is None:
-            t = q._time + 1 if q._time < np.infty else self._fancy_heap.array_times[0] + 1
-
-        agent._time = t
-        q._add_arrival(agent)
-
-        keys = [q._key() for q in self.edge2queue if q._time < np.infty]
-        self._fancy_heap = PriorityQueue(keys, self.nE)
 
 
     def next_event_description(self):
@@ -1162,32 +1138,32 @@ class QueueNetwork(object):
             The amount of simulation time to simulate forward. If given, and
             ``out`` is given, ``t`` is used instead of ``n``.
         **kwargs :
-            This method calls :class:`~graph_tool.draw.GraphWindow`, ``kwargs``
-            allows you to specify any extra parameters to pass to it.
+            This method calls :meth:`~matplotlib.axes.scatter`,
+            :class:`~matplotlib.collections.LineCollection`, and
+            :class:`~matplotlib.animation.FuncAnimation`. Any keyword
+            that can be passed to these functions are passed via
+            ``kwargs``. Note that none of these functions keyword
+            arguments overlap.
+
 
         Notes
         -----
-        There are several parameters passed to :func:`~graph_tool.draw.GraphWindow`
-        by default. The following parameters are property maps that are
-        automatically set to the graph when a ``QueueNetwork`` instance is
-        created. These property maps include:
+        There are several parameters automatically set and passed to
+        matplotlib's :meth:`~matplotlib.axes.Axes.scatter`,
+        :class:`~matplotlib.collections.LineCollection`, and
+        :class:`~matplotlib.animation.FuncAnimation` by default.
+        These include:
 
-            * ``vertex_color``, ``vertex_fill_color``, ``vertex_size``,
-              ``vertex_pen_width``, ``pos``.
-            * ``edge_color``, ``edge_control_points``, ``edge_marker_size``,
-              ``edge_pen_width``.
+            * :class:`~matplotlib.animation.FuncAnimation`:
+            * :class:`~matplotlib.collections.LineCollection`:
+            * :meth:`~matplotlib.axes.Axes.scatter`:
 
-        Each of these properties are used by ``animate`` to style the canvas.
-        Also, the ``bgcolor`` parameter is defined in the :class:`.dict`
-        ``QueueNetwork.colors``\. The ``output_size`` defaults to
-        ``(700, 700)``\. If any of these parameters are supplied as arguments
+
+        Each of these properties are used by ``animate`` to style the
+        canvas. Also, the ``bgcolor`` parameter is defined in the
+        :class:`.dict` ``QueueNetwork.colors``\. The ``figsize`` defaults to
+        ``(7, 7)``\. If any of these parameters are supplied as arguments
         then they are used over the defaults.
-
-        See the documentation of :func:`~graph_tool.draw.graph_draw` for a
-        more on the documentation of :class:`~graph_tool.draw.GraphWindow`
-
-        Drawing output may differ between Python 2 and Python 3. Use Python 3
-        for with better output.
 
         Raises
         ------
@@ -1198,23 +1174,26 @@ class QueueNetwork(object):
         Examples
         --------
         This function works similarly to ``QueueNetwork``\'s :meth:`.draw`
-        method. To animate the network in interactive mode do the following:
+        method.
 
         >>> import queueing_tool as qt
         >>> g = qt.generate_pagerank_graph(100, seed=13)
         >>> net = qt.QueueNetwork(g, seed=13)
         >>> net.initialize()
-        >>> net.animate(output_size=(400,400)) # doctest: +SKIP
+        >>> net.animate(figsize=(4, 4)) # doctest: +SKIP
 
         To stop the animation just close the window. If you want to write the frames
         to disk run something like the following:
 
         >>> kwargs = {
-        ...     'count': 25,
-        ...     'output_size': (400,400),
+        ...     'filename': 'test.mp4',
+        ...     'frames': 300,
+        ...     'fps': 30,
+        ...     'writer': 'mencoder',
+        ...     'figsize': (4, 4),
         ...     'vertex_size': 15
         ... }
-        >>> net.animate(out="./test", **kwargs) # doctest: +SKIP
+        >>> net.animate(fname="test.mp4", **kwargs) # doctest: +SKIP
 
         The above code outputs the frames in the current working directory and
         outputs 25 ``png`` images whose names start with ``test`` e.g.
@@ -1231,20 +1210,19 @@ class QueueNetwork(object):
             raise ImportError("Matplotlib is necessary to animate a simulation.")
 
         self._update_all_colors()
-        kwargs = self._update_kwargs(kwargs, out='output' in kwargs)
 
         if 'bgcolor' not in kwargs:
             kwargs['bgcolor'] = self.colors['bgcolor']
 
         fig = plt.figure(figsize=kwargs.get('figsize', (7, 7)))
         ax  = fig.gca()
-        line_args, scat_args = self.g._lines_scatter_args(ax, **kwargs)
+        line_args, scat_args = self.g.lines_scatter_args(ax, **kwargs)
 
         lines = LineCollection(**line_args)
         lines = ax.add_collection(lines)
         scatt = ax.scatter(**scat_args)
 
-        t = 10 if t is None else t
+        t = np.infty if t is None else t
         now = self._t
 
         def update(frame_number):
@@ -1268,14 +1246,43 @@ class QueueNetwork(object):
             'interval': 10,
             'blit': False
         }
-
+        save_args = {
+            'filename': None,
+            'writer': None,
+            'fps': None,
+            'dpi': None,
+            'codec': None,
+            'bitrate': None,
+            'extra_args': None,
+            'metadata': None,
+            'extra_anim': None,
+            'savefig_kwargs': None
+        }
         for key, value in kwargs.items():
             if key in animation_args:
                 animation_args[key] = value
 
-        plt.ioff()
         animation = FuncAnimation(fig, update, **animation_args)
-        plt.show()
+        if 'filename' not in kwargs:
+            plt.ioff()
+            plt.show()
+        else:
+            save_args = {
+                'filename': None,
+                'writer': None,
+                'fps': None,
+                'dpi': None,
+                'codec': None,
+                'bitrate': None,
+                'extra_args': None,
+                'metadata': None,
+                'extra_anim': None,
+                'savefig_kwargs': None
+            }
+            for key, value in kwargs.items():
+                if key in save_args:
+                    save_args[key] = value
+            animation.save(**save_args)
 
 
     def simulate(self, n=1, t=None):
@@ -1338,40 +1345,6 @@ class QueueNetwork(object):
             now = self._t
             while self._t < now + t:
                 self._simulate_next_event(slow=False)
-
-
-    def _update_kwargs(self, kwargs, out=False, update_props=True):
-
-        output_size = (700, 700)
-
-        arg1 = 'geometry' if out else 'output_size'
-        arg2 = 'output_size' if out else 'geometry'
-
-        if arg1 in kwargs:
-            if arg2 not in kwargs:
-                kwargs[arg2] = kwargs[arg1]
-
-            del kwargs[arg1]
-
-        if arg2 not in kwargs:
-            kwargs[arg2] = output_size
-
-        if update_props:
-            vertex_props = set(['vertex_color', 'vertex_fill_color', 'vertex_size',
-                                'vertex_pen_width', 'pos'])
-
-            edge_props = set(['edge_color', 'edge_control_points',
-                              'edge_marker_size', 'edge_pen_width'])
-
-            for param in vertex_props:
-                if param not in kwargs:
-                    kwargs[param] = {}
-
-            for param in edge_props:
-                if param not in kwargs:
-                    kwargs[param] = {}
-
-        return kwargs
 
 
     def reset_colors(self):

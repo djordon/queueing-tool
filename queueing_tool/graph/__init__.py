@@ -8,12 +8,12 @@ Summary
     adjacency2graph
     generate_random_graph
     generate_pagerank_graph
-    minimal_random_graph
     generate_transition_matrix
+    graph2dict
+    minimal_random_graph
     set_types_rank
     set_types_random
-    graph2dict
-    add_edge_lengths
+    QueueNetworkDiGraph
 """
 
 from queueing_tool.graph.graph_functions import (
@@ -37,15 +37,15 @@ from queueing_tool.graph.graph_wrapper import (
 )
 
 __all__ = [
+    '_prepare_graph',
+    'add_edge_lengths',
+    'adjacency2graph',
     'generate_random_graph',
     'generate_pagerank_graph',
     'generate_transition_matrix',
-    'adjacency2graph',
+    'graph2dict',
+    'minimal_random_graph',
     'set_types_rank',
     'set_types_random',
-    '_prepare_graph',
-    'add_edge_lengths',
-    'minimal_random_graph',
-    'graph2dict',
     'QueueNetworkDiGraph'
 ]

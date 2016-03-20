@@ -5,16 +5,16 @@ Summary
 .. autosummary::
     :nosignatures:
 
-    QueueServer
-    InfoQueue
-    LossQueue
-    ResourceQueue
-    NullQueue
     Agent
-    GreedyAgent
     InfoAgent
-    ResourceAgent
+    InfoQueue
+    GreedyAgent
+    LossQueue
+    NullQueue
     poisson_random_measure
+    QueueServer
+    ResourceAgent
+    ResourceQueue
 """
 
 from queueing_tool.queues.queue_servers import (

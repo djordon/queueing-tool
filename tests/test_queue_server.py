@@ -99,8 +99,8 @@ class TestQueueServers(unittest.TestCase):
         ans = np.zeros((nEvents,3), bool)
 
         for k in range(nEvents):
-            nt = len(q._departures) + len(q._queue) + len(q._arrivals) - 2
-            nS = len(q._departures) + len(q._queue) - 1
+            nt = len(q._departures) + len(q.queue) + len(q._arrivals) - 2
+            nS = len(q._departures) + len(q.queue) - 1
             ans[k,0] = nt == q._nTotal
             ans[k,1] = nS == q.nSystem
             ans[k,2] = len(q._departures) - 1 <= q.nServers
@@ -108,6 +108,14 @@ class TestQueueServers(unittest.TestCase):
 
         self.assertTrue( ans.all() )
 
+
+    def test_QueueServer_deactivate(self):
+        q = qt.QueueServer(nServers=3, deactive_t=10)
+        q.set_active()
+        self.assertTrue(q.active)
+        q.simulate(t=10)
+        self.assertFalse(q.active)
+        
 
     def test_QueueServer_simulation(self):
 
@@ -160,8 +168,8 @@ class TestQueueServers(unittest.TestCase):
         ans = np.zeros((nEvents,3), bool)
 
         for k in range(nEvents):
-            nt = len(q._departures) + len(q._queue) + len(q._arrivals) - 2
-            nS = len(q._departures) + len(q._queue) - 1
+            nt = len(q._departures) + len(q.queue) + len(q._arrivals) - 2
+            nS = len(q._departures) + len(q.queue) - 1
             ans[k,0] = nt == q._nTotal
             ans[k,1] = nS == q.nSystem
             ans[k,2] = len(q._departures) - 1 <= q.nServers
@@ -198,6 +206,30 @@ class TestQueueServers(unittest.TestCase):
         tmp = np.ones(5)
         self.assertTrue( ans.all() )
 
+
+    def test_NullQueue_data_collection(self):
+        adj = {
+            0 : {1: {'eType': 1}},
+            1 : {2: {'eType': 2},
+                 3: {'eType': 2},
+                 4: {'eType': 2}}
+        }
+        g = qt.adjacency2graph(adj)
+
+        qcl = {1: qt.QueueServer, 2: qt.NullQueue}
+
+        qn  = qt.QueueNetwork(g, q_classes=qcl)
+        qn.initialize(edge=(0, 1))
+        qn.start_collecting_data(eType=2)
+        qn.max_agents = 5000
+        qn.simulate(n=10000)
+        data = qn.get_queue_data()
+
+        # Data collected by NullQueues do not have departure and
+        # service start times in the data
+
+        self.assertFalse(data[:, (1, 2)].any())
+        
 
     def test_ResourceQueue_network(self):
 

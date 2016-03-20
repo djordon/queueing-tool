@@ -17,13 +17,6 @@ def generate_adjacency(a=3, b=25, c=6, n=12):
         ans[k] = {j: {} for j in randint(a, b, randint(1, c))}
     return ans
 
-a_mock = mock.Mock()
-a_mock.all = mock.Mock()
-a_mock.all.Graph = nx.DiGraph
-graph_tool_mock = {
-    'graph_tool': a_mock,
-    'graph_tool.all': a_mock.all
-}
 
 class TestGraphFunctions(unittest.TestCase):
 
@@ -108,6 +101,11 @@ class TestGraphFunctions(unittest.TestCase):
         self.assertTrue(ans == self.expected_response0)
 
 
+    def test_adjacency2graph_errors(self):
+        with self.assertRaises(TypeError):
+            qt.adjacency2graph([])
+
+
     def test_set_types_random(self):
 
         nV = 1000
@@ -135,12 +133,6 @@ class TestGraphFunctions(unittest.TestCase):
 
     def test_test_graph_importerror(self):
         with self.assertRaises(ImportError):
-            qt.generate_transition_matrix(1)
-
-
-    @mock.patch.dict('sys.modules', graph_tool_mock)
-    def test_test_graph_typeerror(self):
-        with self.assertRaises(TypeError):
             qt.generate_transition_matrix(1)
 
 

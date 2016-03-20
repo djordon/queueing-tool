@@ -6,39 +6,29 @@ from queueing_tool.graph.graph_wrapper import QueueNetworkDiGraph
 
 
 def _test_graph(g) :
-    """A function that makes sure ``g`` is either a :class:`~graph_tool.Graph` or
+    """A function that makes sure ``g`` is either a :any:`networkx.DiGraph` or
      a string or file object to one.
 
     Parameters
     ----------
-    g : A **str** or a :class:`~graph_tool.Graph`.
+    g : A **str** or a :any:`networkx.DiGraph`.
 
     Returns
     -------
-    :class:`~graph_tool.Graph`
-        If ``g`` is a string or a file object then the output given by
-        ``graph_tool.load_graph(g, fmt='xml')``, if ``g`` is aready a
-        :class:`~graph_tool.Graph` then it is returned unaltered.
+    :class:`.QueueNetworkDiGraph`
+        
 
     Raises
     ------
     TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
-        or a :class:`~graph_tool.Graph`\.
+        Raises a :exc:`~TypeError` if ``g`` cannot be turned into a
+        :any:`networkx.DiGraph`.
     """
     if not isinstance(g, QueueNetworkDiGraph):
-        if not isinstance(g, nx.DiGraph):
-            try:
-                import graph_tool.all as gt
-            except ImportError:
-                msg = ("Graph given was not a networkx DiGraph or graph_tool "
-                       "graph.")
-                raise ImportError(msg)
-            if not isinstance(g, gt.Graph):
-                msg = "Need to supply a graph-tool Graph or networkx DiGraph"
-                raise TypeError(msg)
-
-        g = QueueNetworkDiGraph(g)
+        try:
+            g = QueueNetworkDiGraph(g)
+        except (nx.NetworkXError, TypeError):
+            raise TypeError("Couldn't turn g into a graph.")
     return g
 
 
@@ -47,7 +37,8 @@ def graph2dict(g) :
 
     Parameters
     ----------
-    g : :class:`~graph_tool.Graph`
+    g : :any:`networkx.DiGraph`, :any:`networkx.Graph`, etc.
+        Any object that can be instantiated as a :any:`networkx.DiGraph`.
 
     Returns
     -------
