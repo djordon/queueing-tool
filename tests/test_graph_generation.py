@@ -132,7 +132,7 @@ class TestGraphFunctions(unittest.TestCase):
 
 
     def test_test_graph_importerror(self):
-        with self.assertRaises(ImportError):
+        with self.assertRaises(TypeError):
             qt.generate_transition_matrix(1)
 
 

@@ -174,12 +174,10 @@ class TestQueueNetwork(unittest.TestCase):
     def test_QueueNetwork_drawing(self):
         args = {'c': 'b', 'bgcolor': 'green'}
         self.qn.draw(**args)
-        args = self.qn._update_kwargs(args)
         self.qn.g.draw_graph.assert_called_with(**args)
 
         args = {'c': 'b'}
         self.qn.draw(**args)
-        args = self.qn._update_kwargs(args)
         self.assertTrue('bgcolor' not in args)
         args['bgcolor'] = self.qn.colors['bgcolor']
         self.qn.g.draw_graph.assert_called_with(**args)
@@ -525,7 +523,6 @@ class TestQueueNetwork(unittest.TestCase):
     def test_QueueNetwork_show_type(self):
         args = {'c': 'b', 'bgcolor': 'green'}
         self.qn.show_type(eType=2, **args)
-        args = self.qn._update_kwargs(args)
         self.qn.g.draw_graph.assert_called_with(**args)
 
         #ans = []
@@ -538,14 +535,11 @@ class TestQueueNetwork(unittest.TestCase):
     @mock.patch('queueing_tool.network.queue_network.HAS_MATPLOTLIB', True)
     def test_QueueNetwork_show_active(self):
         args = {
-            'output': 'types.png',
-            'geometry': (200, 200),
+            'fname': 'types.png',
+            'figsize': (3, 3),
             'bgcolor': 'green'
         }
         self.qn.show_active(**args)
-        args = self.qn._update_kwargs(args)
-        args.pop('geometry')
-        args['output_size'] = (200, 200)
         self.qn.g.draw_graph.assert_called_with(**args)
 
     def test_QueueNetwork_sorting(self):
