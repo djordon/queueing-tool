@@ -1153,10 +1153,8 @@ class QueueNetwork(object):
         >>> t0 = net.current_time
         >>> net.simulate(t=75)
         >>> t1 = net.current_time
-        >>> round(float(t1 - t0), 2)
-        75.0
-        >>> net.nEvents - nE
-        21323
+        >>> t1 - t0 # doctest: +ELLIPSIS
+        75.0...
         """
         if not self._initialized:
             msg = ("Network has not been initialized. "

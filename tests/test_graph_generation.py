@@ -120,7 +120,7 @@ class TestGraphFunctions(unittest.TestCase):
         g = qt.set_types_random(g, pTypes=pType, seed=10)
 
         mat   = [[g.ep(e, 'eType') == k for e in g.edges()] for k in eType]
-        props = np.array(mat).sum(1) / g.number_of_edges()
+        props = (np.array(mat).sum(1) + 0.0) / g.number_of_edges()
         ps    = np.array([pType[k] for k in eType])
 
         self.assertTrue( np.allclose(props , ps, atol=0.001) )
