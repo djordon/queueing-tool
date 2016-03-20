@@ -86,7 +86,7 @@ this system an ``Agent`` chooses the shortest queue to enter at whenever they
 choose which queue to arrive at next. The :class:`.GreedyAgent` class is built
 to model such routing.
 
-The network is represented as a graph-tool :class:`~graph_tool.Graph`. On top of
+The network is represented as a :any:`networkx.DiGraph`. On top of
 each edge in the graph sits the queues, where each queue is represented as a
 :class:`.QueueServer`. In our model, each checkout line is it's own ``QueueServer``.
 These checkout queues receive arrivals from people who are already in the store,
@@ -101,23 +101,21 @@ lines. Let's get started
 
 .. testsetup::
 
-    import graph_tool.all as gt
     import queueing_tool as qt
     import numpy as np
 
 .. doctest::
 
-    >>> import graph_tool.all as gt
     >>> import queueing_tool as qt
     >>> import numpy as np
-    >>> adja_list = [[1], [k for k in range(2, 22)]]
+    >>> adja_list = [0: [1], 1: [k for k in range(2, 22)]]
 
 This says that node 0 points to node one, and node 1 points to nodes 2 through
 21. We could define our adjacency list more explicitly as follows:
 
 .. doctest::
 
-    >>> adja_list = {0 : 1, 1 : [k for k in range(2, 22)]}
+    >>> adja_list = {0: 1, 1: [k for k in range(2, 22)]}
 
 Now in our simple system there are three types of queues, the two important ones
 are: checkout queues, and the queue that represents the store shopping area. The
@@ -127,7 +125,7 @@ an adjacency list like object:
 
 .. doctest::
 
-    >>> edge_list = [[1], [2 for k in range(20)]]
+    >>> edge_list = [0: [1], 1: [2 for k in range(20)]]
 
 This says there are two main types of queues/edges, type ``1`` and type ``2``.
 All the checkout lines are of type ``2`` while the store queue (the edge
@@ -162,12 +160,18 @@ with the following:
 
 .. doctest::
 
-    >>> q_classes = {1 : qt.QueueServer, 2 : qt.QueueServer}
-    >>> q_args    = {1 : {'arrival_f'  : arr_f,
-    ...                   'service_f'  : lambda t: t,
-    ...                   'AgentClass' : qt.GreedyAgent},
-    ...              2 : {'nServers'   : 1,
-    ...                   'service_f'  : ser_f} }
+    >>> q_classes = {1: qt.QueueServer, 2: qt.QueueServer}
+    >>> q_args    = {
+    ...     1: {
+    ...         'arrival_f': arr_f,
+    ...         'service_f': lambda t: t,
+    ...         'AgentClass': qt.GreedyAgent
+    ...     },
+    ...     2: {
+    ...         'nServers': 1,
+    ...         'service_f': ser_f
+    ...     }
+    ... }
     >>> qn = qt.QueueNetwork(g=g, q_classes=q_classes, q_args=q_args, seed=13)
 
 For simplicity, we've made it so that when a customer enters the store they
@@ -181,17 +185,17 @@ The default layout was a little hard on the eyes so I changed it a little:
     >>> for v in g.nodes() :
     >>>     vi = int(v)
     >>>     if vi == 0 :
-    >>>         pos[v] = [0, -0.25]
+    >>>         g.set_vp(v, 'pos', [0, -0.25])
     >>>     elif vi == 1 :
-    >>>         pos[v] = [0, -0.125]
+    >>>         g.set_vp(v, 'pos', [0, -0.125])
     >>>     else :
-    >>>         pos[v] = [-0.5 + (vi - 2.0) / 20, 0]
+    >>>         g.set_vp(v, 'pos', [-0.5 + (vi - 2.0) / 20, 0])
 
 To view the model (using this layout), do the following:
 
 .. doctest::
 
-    >>> qn.draw(output_size=(700,200), pos=pos)
+    >>> qn.draw(figsize=(7, 2), pos=pos)
     <...>
 
 .. figure:: store.png
@@ -222,7 +226,7 @@ To simulate for a specified amount of simulation time run:
     >>> qn.simulate(t=1.8)
     >>> qn.nEvents
     1725
-    >>> qn.draw(output="sim.png", output_size=(700,200), pos=pos)
+    >>> qn.draw(fname="sim.png", figsize=(7, 2), pos=pos)
     <...>
 
 .. figure:: sim.png

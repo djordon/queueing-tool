@@ -31,7 +31,7 @@ q_args    = {1: {'arrival_f': arr_f,
 # Put it all together to create the network
 qn = qt.QueueNetwork(g=g, q_classes=q_classes, q_args=q_args, seed=13)
 
-# The default layout is sfdp, which doesn't look good for this network.
+# The default layout is spring_layout, which doesn't look good for this network.
 # This makes a new one
 pos = g.new_vertex_property('pos')
 for v in g.nodes():

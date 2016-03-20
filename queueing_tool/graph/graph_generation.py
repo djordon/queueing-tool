@@ -9,7 +9,7 @@ from queueing_tool.graph.graph_wrapper import QueueNetworkDiGraph
 from queueing_tool.union_find import UnionFind
 
 
-def _calculate_distance(latlon1, latlon2) :
+def _calculate_distance(latlon1, latlon2):
     """Calculates the distance between two points on earth.
     """
     lat1, lon1 = latlon1
@@ -17,8 +17,8 @@ def _calculate_distance(latlon1, latlon2) :
     R     = 6371          # radius of the earth in kilometers
     dlon  = lon2 - lon1
     dlat  = lat2 - lat1
-    a     = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * (np.sin(dlon/2))**2
-    c     = 2 * np.pi * R * np.arctan2( np.sqrt(a), np.sqrt(1-a) ) / 180
+    a = np.sin(dlat / 2.)**2 + np.cos(lat1) * np.cos(lat2) * (np.sin(dlon / 2.))**2
+    c = 2 * np.pi * R * np.arctan2( np.sqrt(a), np.sqrt(1-a) ) / 180.
     return c
 
 
@@ -27,7 +27,9 @@ def generate_transition_matrix(g, seed=None):
 
     Parameters
     ----------
-    g : :class:`~graph_tool.Graph`
+    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, :class:`.dict`, \
+        etc.
+        Any object that :any:`DiGraph<networkx.DiGraph>` accepts.
     seed : int (optional)
         An integer used to initialize numpy's psuedorandom number generator.
 
@@ -52,7 +54,7 @@ def generate_transition_matrix(g, seed=None):
         if deg == 1:
             mat[v, ind] = 1
         elif deg > 1:
-            probs = np.ceil(np.random.rand(deg) * 100) / 100
+            probs = np.ceil(np.random.rand(deg) * 100) / 100.
             if np.isclose(np.sum(probs), 0):
                 probs[np.random.randint(deg)]  = 1
 
@@ -62,7 +64,7 @@ def generate_transition_matrix(g, seed=None):
             
 
 
-def generate_random_graph(nVertices=250, **kwargs) :
+def generate_random_graph(nVertices=250, **kwargs):
     """Creates a random graph where the edge and vertex types are selected
     using the :func:`~set_types_random` method.
 
@@ -78,7 +80,7 @@ def generate_random_graph(nVertices=250, **kwargs) :
 
     Returns
     -------
-    :class:`~graph_tool.Graph`
+    :class:`.QueueNetworkDiGraph`
         A graph with a ``pos`` vertex property (these are the vertex positions)
         and the ``eType`` edge property.
 
@@ -115,11 +117,22 @@ def generate_random_graph(nVertices=250, **kwargs) :
     return g
 
 
-def generate_pagerank_graph(nVertices=250, **kwargs) :
+def generate_pagerank_graph(nVertices=250, **kwargs):
     """Creates a random graph where the edge and vertex types are selected
     using the :func:`.set_types_rank` method.
 
     Calls :func:`.minimal_random_graph` and then calls :func:`.set_types_rank`.
+
+    This function sets the edge types of a graph to be either 1, 2, or 3.
+    It sets the vertices to type 2 by selecting the top
+    ``pType2 * g.number_of_nodes()`` vertices given by the
+    :func:`~networkx.pagerank` of the graph. A loop is added
+    to all vertices identified this way (if one does not exist already). It
+    then randomly sets vertices close to the type 2 vertices as type 3, and
+    adds loops to these vertices as well. These loops then have edge types the
+    correspond to the vertices type. The rest of the edges are set to type 1.
+
+    .. _pagerank: http://en.wikipedia.org/wiki/PageRank
 
     Parameters
     ----------
@@ -131,7 +144,7 @@ def generate_pagerank_graph(nVertices=250, **kwargs) :
 
     Returns
     -------
-    :class:`~graph_tool.Graph`
+    :class:`.QueueNetworkDiGraph`
         A graph with a ``pos`` vertex property and the ``eType`` edge property.
     """
     g = minimal_random_graph(nVertices, **kwargs)
@@ -142,19 +155,13 @@ def generate_pagerank_graph(nVertices=250, **kwargs) :
     return g
 
 
-def minimal_random_graph(nVertices, sfdp=None, seed=None, **kwargs) :
+def minimal_random_graph(nVertices, seed=None, **kwargs):
     """Creates a connected graph by selecting vertex locations graphly.
 
     Parameters
     ----------
     nVertices : int
         The number of vertices in the graph.
-    sfdp : bool or None (optional, the default is ``None``)
-        Specifies whether to run graph-tool's
-        :func:`~graph_tool.draw.sfdp_layout` function on the graph ``g``.
-        If ``True``, the vertex positions returned by
-        :func:`~graph_tool.draw.sfdp_layout` are used to set the ``pos``
-        vertex property.
     seed : int (optional)
         An integer used to initialize numpy's and graph-tool's psuedorandom
         number generators.
@@ -163,7 +170,7 @@ def minimal_random_graph(nVertices, sfdp=None, seed=None, **kwargs) :
 
     Returns
     -------
-    :class:`~graph_tool.Graph`
+    :class:`.QueueNetworkDiGraph`
         A graph with a ``pos`` vertex property for the vertex positions.
 
     Notes
@@ -173,21 +180,16 @@ def minimal_random_graph(nVertices, sfdp=None, seed=None, **kwargs) :
     distance less or equal to ``r`` are connect by an edge --- where ``r`` is
     the smallest number such that the graph ends up connected at the end of
     this process.
-
-    If the number of nodes is greater than 200 and ``sfdp`` is ``None`` (the
-    default) then the position of the nodes is altered  using graph-tool's
-    :func:`~graph_tool.draw.sfdp_layout` function (with ``max_iter=10000`` and
-    all other parameters set to their default value).
     """
-    if isinstance(seed, numbers.Integral) :
+    if isinstance(seed, numbers.Integral):
         np.random.seed(seed)
 
     points = np.random.random((nVertices, 2)) * np.float(10)
     nEdges = nVertices * (nVertices - 1) // 2
     edges  = []
 
-    for k in range(nVertices-1) :
-        for j in range(k+1, nVertices) :
+    for k in range(nVertices-1):
+        for j in range(k+1, nVertices):
             v = points[k] - points[j]
             edges.append( (k, j, v[0]**2 + v[1]**2) )
 
@@ -197,27 +199,26 @@ def minimal_random_graph(nVertices, sfdp=None, seed=None, **kwargs) :
     edges  = np.sort(edges, order='distance')
     unionF = UnionFind([k for k in range(nVertices)])
 
-    for n1, n2, d in edges :
+    for n1, n2, d in edges:
         max_space = d
         unionF.union(n1, n2)
-        if unionF.nClusters == cluster - 1 :
+        if unionF.nClusters == cluster - 1:
             break
 
+    max_space = np.sqrt(max_space)
+
     pos = {k: p for k, p in enumerate(points)}
-    for r in [np.sqrt(max_space) * (1 + 0.1 * k) for k in range(10)]:
+    for k in range(10):
+        r = max_space * (1 + 0.1 * k)
         g = nx.random_geometric_graph(nVertices, r, pos=pos)
         nCC = nx.number_connected_components(g)
         if nCC == 1:
             break
 
-    g = QueueNetworkDiGraph(g.to_directed())
-    if (nVertices > 200 and sfdp is None) or sfdp:
-        g.set_pos()
-    
-    return g
+    return QueueNetworkDiGraph(g.to_directed())
 
 
-def set_types_random(g, pTypes=None, seed=None, **kwargs) :
+def set_types_random(g, pTypes=None, seed=None, **kwargs):
     """Randomly sets ``eType`` (edge type) properties of the graph.
 
     This function randomly assigns each edge a type. The probability of an edge being
@@ -225,7 +226,9 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
 
     Parameters
     ----------
-    g : A string or a :class:`~graph_tool.Graph`.
+    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, :class:`.dict`, \
+        etc.
+        Any object that :any:`DiGraph<networkx.DiGraph>` accepts.
     pTypes : dict (optional)
         A dictionary of types and proportions, where the keys are the types
         and the values are the proportion of edges that are expected to be of
@@ -237,14 +240,14 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs) :
 
     Returns
     -------
-    :class:`~graph_tool.Graph`
-        Returns the :class:`~graph_tool.Graph` ``g`` with an ``eType`` edge property.
+    :class:`.QueueNetworkDiGraph`
+        Returns the a graph with an ``eType`` edge property.
 
     Raises
     ------
     TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
-        or a :class:`~graph_tool.Graph`\.
+        Raised when the parameter ``g`` is not of a type that can be
+        made into a :any:`networkx.DiGraph`.
 
     ValueError
         Raises a :exc:`~ValueError` if the ``pType`` values do not sum to one.
@@ -295,7 +298,7 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
     This function sets the edge types of a graph to be either 1, 2, or 3.
     It sets the vertices to type 2 by selecting the top
     ``pType2 * g.number_of_nodes()`` vertices given by the
-    :func:`~graph_tool.centrality.pagerank` of the graph. A loop is added
+    :func:`~networkx.pagerank` of the graph. A loop is added
     to all vertices identified this way (if one does not exist already). It
     then randomly sets vertices close to the type 2 vertices as type 3, and
     adds loops to these vertices as well. These loops then have edge types the
@@ -305,7 +308,9 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
 
     Parameters
     ----------
-    g : A string or a :class:`~graph_tool.Graph`.
+    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, :class:`.dict`, \
+        etc.
+        Any object that :any:`DiGraph<networkx.DiGraph>` accepts.
     pType2 : float (optional, the default is 0.1)
         Specifies the proportion of vertices that will be of type 2.
     pType3 : float (optional, the default is 0.1)
@@ -319,24 +324,23 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
 
     Returns
     -------
-    :class:`~graph_tool.Graph`
-        Returns the :class:`~graph_tool.Graph` ``g`` with the ``eType`` edge
-        property.
+    :class:`.QueueNetworkDiGraph`
+        Returns the a graph with an ``eType`` edge property.
 
     Raises
     ------
     TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
-        or a :class:`~graph_tool.Graph`\.
+        Raised when the parameter ``g`` is not of a type that can be
+        made into a :any:`DiGraph<networkx.DiGraph>`.
     """
     g = _test_graph(g)
 
-    if isinstance(seed, numbers.Integral) :
+    if isinstance(seed, numbers.Integral):
         np.random.seed(seed)
 
     tmp    = np.sort(np.array(rank))
     nDests = int(np.ceil(g.number_of_nodes() * pType2))
-    dests  = set(np.where(rank >= tmp[-nDests])[0])
+    dests  = np.where(rank >= tmp[-nDests])[0]
 
     if 'pos' not in g.vertex_properties:
         g.set_pos()
@@ -345,19 +349,20 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
     nFCQ       = int(pType3 * g.number_of_nodes())
     min_g_dist = np.ones(nFCQ) * np.infty
     ind_g_dist = np.ones(nFCQ, int)
-    
-    r, theta = np.random.random(nFCQ) / 500, np.random.random(nFCQ) * 360
+
+    r, theta = np.random.random(nFCQ) / 500., np.random.random(nFCQ) * 360.
     xy_pos   = np.array([r * np.cos(theta), r * np.sin(theta)]).transpose()
-    g_pos    = xy_pos + dest_pos[np.array( np.mod(np.arange(nFCQ), nDests), int)]
-    
-    for v in g.nodes() :
-        if int(v) not in dests :
+    g_pos    = xy_pos + dest_pos[np.array(np.mod(np.arange(nFCQ), nDests), int)]
+
+    for v in g.nodes():
+        if v not in dests:
             tmp = np.array([_calculate_distance(g.vp(v, 'pos'), g_pos[k, :]) for k in range(nFCQ)])
             min_g_dist = np.min((tmp, min_g_dist), 0)
-            ind_g_dist[min_g_dist == tmp] = int(v)
-    
+            ind_g_dist[min_g_dist == tmp] = v
+
     ind_g_dist = np.unique(ind_g_dist)
-    fcqs = set(ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )])
+    fcqs  = set(ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )])
+    dests = set(dests)
     g.new_vertex_property('loop_type')
 
     for v in g.nodes():
@@ -369,7 +374,7 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
             g.set_vp(v, 'loop_type', 2)
             if not g.is_edge((v, v)):
                 g.add_edge(v, v)
-    
+
     g.new_edge_property('eType')
     for e in g.edges():
         g.set_ep(e, 'eType', 1)

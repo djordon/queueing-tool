@@ -75,6 +75,7 @@ cdef class PriorityQueue:
                 self.heappop()
 
         if self.size < 0:
+            self.size += 1
             return None
         return self.next_time, self.next_node
 

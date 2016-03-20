@@ -1,4 +1,5 @@
 import os
+import sys
 import unittest
 try:
     import unittest.mock as mock
@@ -15,12 +16,6 @@ import queueing_tool as qt
 
 
 TRAVIS_TEST = os.environ.get('TRAVIS_TEST', False)
-#a_mock.pyplot.cm = mock.Mock()
-#a_mock.pyplot.style = mock.Mock()
-#a_mock.animation.FuncAnimation = mock.Mock()
-#a_mock.pyplot.style.use = mock.Mock()
-#a_mock.pyplot.cm.ocean_r = mock.Mock()
-#a_mock.collections.LineCollection = mock.Mock()
 
 a_mock = mock.Mock()
 a_mock.pyplot = mock.Mock()
@@ -39,7 +34,7 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.g = qt.generate_pagerank_graph(20, sfdp=True, seed=25)
+        cls.g = qt.generate_pagerank_graph(20, seed=25)
 
 
     @mock.patch.dict('sys.modules', matplotlib_mock)
@@ -59,13 +54,16 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
         kwargs = {'fname': 'test1.png'}
         self.g.draw_graph(**kwargs)
 
+
         img0 = mpimg.imread('tests/img/test.png')
         img1 = mpimg.imread('test1.png')
 
         if os.path.exists('test1.png'):
             os.remove('test1.png')
 
-        self.assertTrue((img0 == img1).all())
+        pixel_diff = (img0 != img1).flatten()
+        num_pixels = pixel_diff.shape[0] + 0.0
+        self.assertTrue(pixel_diff.sum() / num_pixels < 0.0001)
 
         with mock.patch('queueing_tool.graph.graph_wrapper.HAS_MATPLOTLIB', False):
             with self.assertRaises(ImportError):

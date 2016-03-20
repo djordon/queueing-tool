@@ -152,16 +152,6 @@ class QueueServer(object):
         default is false. To change call :meth:`.set_active`\.
     current_time : float
         The time of the last event.
-    time : float
-        The time of the next event.
-    nDepartures : int
-        The total number of departures from the queue.
-    nSystem : int
-        The number of agents in the entire ``QueueServer`` -- this includes
-        those being served and those waiting to be served.
-    nArrivals : list
-        A list with two entries. The first slot is the total number of arrivals,
-        while the second slot is the number of arrivals from outside the network.
     data : dict
         Keeps track of each :class:`.Agent`\'s arrival, service start, and
         departure times, as well as how many other agents were waiting to be
@@ -170,8 +160,18 @@ class QueueServer(object):
         list of lists. Each time an agent arrives at the queue it appends this
         data to the end of the list. Use :meth:`.fetch_data` to retrieve a
         formated version of this data.
+    nArrivals : list
+        A list with two entries. The first slot is the total number of arrivals,
+        while the second slot is the number of arrivals from outside the network.
+    nDepartures : int
+        The total number of departures from the queue.
+    nSystem : int
+        The number of agents in the entire ``QueueServer`` -- this includes
+        those being served and those waiting to be served.
     queue : deque
         The agents waiting to enter service.
+    time : float
+        The time of the next event.
 
     Examples
     --------
@@ -216,10 +216,12 @@ class QueueServer(object):
 
     Some defaults:
 
-    >>> default_colors = {'edge_loop_color'   : [0, 0, 0, 0],
-    ...                   'edge_color'        : [0.9, 0.9, 0.9, 0.5],
-    ...                   'vertex_fill_color' : [1.0, 1.0, 1.0, 1.0],
-    ...                   'vertex_color'      : [0.0, 0.5, 1.0, 1.0]}
+    >>> default_colors = {
+    ...     'edge_loop_color'   : [0, 0, 0, 0],
+    ...     'edge_color'        : [0.9, 0.9, 0.9, 0.5],
+    ...     'vertex_fill_color' : [1.0, 1.0, 1.0, 1.0],
+    ...     'vertex_color'      : [0.0, 0.5, 1.0, 1.0]
+    ... }
 
 
     References
@@ -666,9 +668,10 @@ class QueueServer(object):
             * If ``which`` is 1 then it returns the color of the edge as if it
               were a self loop. This is specified in
               ``colors['edge_loop_color']``\.
-            * If ``which`` is 2 then it returns the color of the vertex pen color
-              (defined as color/vertex_color in :func:`~graph_tool.draw.graph_draw`\).
-              This is specified in ``colors['vertex_color']``\.
+            * If ``which`` is 2 then it returns the color of the vertex
+              pen color (defined as color/vertex_color in
+              :meth:`.QueueNetworkDiGraph.graph_draw`\). This is
+              specified in ``colors['vertex_color']``\.
             * If ``which`` is anything else, then it returns the a shade of the
               edge that is proportional to the number of agents in the system
               -- which includes those being servered and those waiting to be
@@ -713,7 +716,7 @@ class QueueServer(object):
         self._time       = infty
         self._next_ct    = 0
         self._active     = False
-        self.queue      = collections.deque()
+        self.queue       = collections.deque()
         inftyAgent       = InftyAgent()
         self._arrivals   = [inftyAgent]
         self._departures = [inftyAgent]
@@ -863,7 +866,7 @@ class LossQueue(QueueServer):
 
     def clear(self):
         super(LossQueue, self).clear()
-        self.nBlocked  = 0
+        self.nBlocked = 0
 
 
     def __deepcopy__(self, memo):

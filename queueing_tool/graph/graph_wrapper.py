@@ -71,75 +71,75 @@ def _adjacency_adjust(adjacency, adjust, is_directed) :
 def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     """Takes an adjacency list, dict, or matrix and returns a graph.
 
-    The purpose of this function is take an adjacency list (or matrix) and
-    return a :class:`~graph_tool.Graph` that can be used with
-    :class:`.QueueNetwork`. The Graph returned has an ``eType`` edge property.
-    If the adjacency is directed and not connected, then the adjacency list
-    may be altered.
+    The purpose of this function is take an adjacency list (or matrix)
+    and return a :class:`.QueueNetworkDiGraph` that can be used with a
+    :class:`.QueueNetwork` instance. The Graph returned has the
+    ``eType`` edge property for each edge. Note that the graph may be
+    altered.
 
     Parameters
     ----------
     adjacency : dict, or :class:`~numpy.ndarray`
         An adjacency list as either a dict, or an adjacency matrix.
     adjust : int ``{0, 1}`` (optional, the default is 0)
-        Specifies what to do when the graph has terminal vertices (nodes with
-        no out-edges). Note that if ``adjust`` is not 0 or 1 then it assumed
-        to be 0. There are three choices:
+        Specifies what to do when the graph has terminal vertices
+        (nodes with no out-edges). Note that if ``adjust`` is not 1
+        then it assumed to be 0. There are two choices:
 
             ``adjust = 0``
-                A loop is added to each terminal node in the graph, and their
-                ``eType`` of that loop is set to 0.
+                A loop is added to each terminal node in the graph, and
+                their ``eType`` of that loop is set to 0.
             ``adjust = 1``
-                All edges leading to terminal nodes have their ``eType`` set
-                to 0.
+                All edges leading to terminal nodes have their
+                ``eType`` set to 0.
         
     is_directed : bool (optional, the default is True)
         Sets whether the returned graph is directed or not.
 
     Returns
     -------
-    :class:`~graph_tool.Graph`
-        A :class:`~graph_tool.Graph` with the ``eType`` edge property.
+    :class:`.QueueNetworkDiGraph`
+        A :class:`.QueueNetworkDiGraph` with the ``eType`` edge
+        property.
 
     Raises
     ------
     TypeError
-        Is raised if ``adjacency`` is not a :class:`.list`\,
-        :class:`.dict`\, :class:`~numpy.ndarray` the (``eType`` can be
-        ``None``\).
-    RuntimeError
-        A :exc:`~RuntimeError` is raised if, when passed, the ``eType``
-        parameter does not have the same dimensions as ``adjacency``\.
+        Is raised if ``adjacency`` is not a :class:`.dict` or a
+        :class:`~numpy.ndarray`.
 
     Examples
     --------
-    If terminal nodes are such that all in-edges have edge type ``0`` then
-    nothing is changed. However, if a node is a terminal node then a loop
-    is added with edge type 0.
+    If terminal nodes are such that all in-edges have edge type ``0``
+    then nothing is changed. However, if a node is a terminal node then
+    a loop is added with edge type 0.
 
     >>> import queueing_tool as qt
     >>> adj = {0: {1: {}}, 1: {2: {}, 3: {}}, 3: {0: {}} }
     >>> eTy = {0: {1: 1}, 1: {2: 2, 3: 4}, 3: {0: 1}}
     >>> g = qt.adjacency2graph(adj, eType=eTy)
-    >>> ans = qt.graph2dict(g)
-    >>> ans # This is the adjacency list, a loop was added to vertex 2
-    {0: {1: {'eType': 1}}, 1: {2: {'eType': 2}, 3: {'eType': 4}}, 2: {2: {'eType': 0}}, 3: {0: {'eType': 1}}}
+    >>> ans = qt.graph2dict(g) # A loop was added to vertex 2
+    >>> ans # doctest: +NORMALIZE_WHITESPACE
+    {0: {1: {'eType': 1}}, 1: {2: {'eType': 2}, 3: {'eType': 4}},
+    2: {2: {'eType': 0}}, 3: {0: {'eType': 1}}}
 
     You can use a dict of lists to represent the adjacency list.
 
     >>> adj = {0 : [1], 1: [2, 3], 3: [0]}
     >>> g = qt.adjacency2graph(adj, eType=eTy)
     >>> ans = qt.graph2dict(g)
-    >>> ans
-    {0: {1: {'eType': 1}}, 1: {2: {'eType': 2}, 3: {'eType': 4}}, 2: {2: {'eType': 0}}, 3: {0: {'eType': 1}}}
+    >>> ans # doctest: +NORMALIZE_WHITESPACE
+    {0: {1: {'eType': 1}}, 1: {2: {'eType': 2}, 3: {'eType': 4}},
+    2: {2: {'eType': 0}}, 3: {0: {'eType': 1}}}
 
-    Alternatively, you could have this function adjust the edges that lead to
-    terminal vertices by changing their edge type to 0:
+    Alternatively, you could have this function adjust the edges that
+    lead to terminal vertices by changing their edge type to 0:
 
     >>> g = qt.adjacency2graph(adj, eType=eTy, adjust=1)
-    >>> ans = qt.graph2dict(g)
-    >>> ans  # The graph is unaltered
-    {0: {1: {'eType': 1}}, 1: {2: {'eType': 0}, 3: {'eType': 4}}, 2: {}, 3: {0: {'eType': 1}}}
+    >>> ans = qt.graph2dict(g) # The graph is unaltered
+    >>> ans # doctest: +NORMALIZE_WHITESPACE
+    {0: {1: {'eType': 1}}, 1: {2: {'eType': 0}, 3: {'eType': 4}},
+    2: {}, 3: {0: {'eType': 1}}}
     """
     if isinstance(adjacency, np.ndarray):
         adjacency = _matrix2dict(adjacency)
@@ -192,21 +192,30 @@ class QueueNetworkDiGraph(nx.DiGraph):
             data = adjacency2graph(data)
 
         super(QueueNetworkDiGraph, self).__init__(data, **kwargs)
-        self.edge_index = {e: k for k, e in enumerate(self.edges())}
+        edges = self.edges()
+        edges.sort()
+        self.edge_index = {e: k for k, e in enumerate(edges)}
 
         self.pos = None
         self.edge_color = None
         self.vertex_color = None
         self.vertex_fill_color = None
+        self._nE = self.number_of_edges()
 
     def freeze(self):
-        edge_index = {e: k for k, e in enumerate(self.edges())}
-        self.edge_index = edge_index
         nx.freeze(self)
 
 
     def is_edge(self, e):
         return e in self.edge_index
+
+
+    def add_edge(self, *args, **kwargs):
+        super(QueueNetworkDiGraph, self).add_edge(*args, **kwargs)
+        e = (args[0], args[1])
+        if e not in self.edge_index:
+            self.edge_index[e] = self._nE
+            self._nE += 1
 
 
     def out_neighbours(self, v):

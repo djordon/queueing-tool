@@ -12,7 +12,7 @@ from queueing_tool.graph.graph_wrapper import (
     QueueNetworkDiGraph
 )
 
-def _calculate_distance(latlon1, latlon2) :
+def _calculate_distance(latlon1, latlon2):
     """Calculates the distance between two points on earth.
     """
     lat1, lon1  = latlon1
@@ -25,33 +25,36 @@ def _calculate_distance(latlon1, latlon2) :
     return c
 
 
-def add_edge_lengths(g) :
-    """Add add the edge lengths as a :class:`~graph_tool.PropertyMap` for the graph.
+def add_edge_lengths(g):
+    """Add add the edge lengths as a :any:`DiGraph<networkx.DiGraph>`
+    for the graph.
 
     Uses the ``pos`` vertex property to get the location of each vertex. These
     are then used to calculate the length of an edge between two vertices.
 
     Parameters
     ----------
-    g : A string or a :class:`~graph_tool.Graph`.
+    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, :class:`.dict`, \
+        ``None``,  etc.
+        Any object that networkx can turn into a
+        :any:`DiGraph<networkx.DiGraph>`
 
     Returns
     -------
-    :class:`~graph_tool.Graph`
-        Returns the :class:`~graph_tool.Graph` ``g`` with the ``edge_length``
-        edge property.
+    :class:`.QueueNetworkDiGraph`
+        Returns the a graph with the ``edge_length`` edge property.
 
     Raises
     ------
     TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
-        or a :class:`~graph_tool.Graph`\.
+        Raised when the parameter ``g`` is not of a type that can be
+        made into a :any:`networkx.DiGraph`.
 
     """
     g = _test_graph(g)
     g.new_edge_property('edge_length')
 
-    for e in g.edges() :
+    for e in g.edges():
         latlon1 = g.vp(e[1], 'pos')
         latlon2 = g.vp(e[0], 'pos')
         g.set_ep(e, 'edge_length', np.round(_calculate_distance(latlon1, latlon2), 3))
@@ -60,17 +63,20 @@ def add_edge_lengths(g) :
 
 
 
-def _prepare_graph(g, g_colors, q_cls, q_arg) :
+def _prepare_graph(g, g_colors, q_cls, q_arg):
     """Prepares a graph for use in :class:`.QueueNetwork`.
 
-    This function is called by ``__init__`` in the :class:`.QueueNetwork` class.
-    It creates the :class:`.QueueServer` instances that sit on the edges, and
-    sets various :class:`~graph_tool.PropertyMap`\s that are used when drawing
-    the graph.
+    This function is called by ``__init__`` in the
+    :class:`.QueueNetwork` class. It creates the :class:`.QueueServer`
+    instances that sit on the edges, and sets various edge and node
+    properties that are used when drawing the graph.
 
     Parameters
     ----------
-    g : :class:`~graph_tool.Graph`
+    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, :class:`.dict`, \
+        ``None``,  etc.
+        Any object that networkx can turn into a
+        :any:`DiGraph<networkx.DiGraph>`
     g_colors : :class:`.dict`
         A dictionary of colors. The specific keys used are ``vertex_color`` and
         ``vertex_fill_color`` for vertices that do not have any loops. Set
@@ -85,24 +91,22 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
 
     Returns
     -------
-    g : :class:`~graph_tool.Graph`
-        The same graph, but with the addition of various
-        :class:`~graph_tool.PropertyMap`\s.
+    g : :class:`.QueueNetworkDiGraph`
     queues : :class:`.list`
         A list of :class:`.QueueServer`\s where ``queues[k]`` is the
         ``QueueServer`` that sets on the edge with edge index ``k``.
     
     Notes
     -----
-    The graph ``g`` should have the ``eType`` edge property map. If it does not
-    then an ``eType`` edge property is created and set to 1.
+    The graph ``g`` should have the ``eType`` edge property map. If it
+    does not then an ``eType`` edge property is created and set to 1.
 
     The following properties are set by each queue: ``vertex_color``,
     ``vertex_fill_color``, ``vertex_fill_color``, ``edge_color``.
     See :class:`.QueueServer` for more on setting these values.
 
-    The following properties are assigned as a :class:`~graph_tool.PropertyMap`
-    to the graph; their default values for each edge or vertex is shown:
+    The following properties are assigned as a properties to the graph;
+    their default values for each edge or vertex is shown:
         
         * ``vertex_pen_width``: ``1.1``,
         * ``vertex_size``: ``8``,
@@ -113,8 +117,8 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
     Raises
     ------
     TypeError
-        Raises a :exc:`~TypeError` if ``g`` is not a string to a file object,
-        or a :class:`~graph_tool.Graph`.
+        Raised when the parameter ``g`` is not of a type that can be
+        made into a :any:`networkx.DiGraph`.
     """
     g = _test_graph(g)
 
@@ -143,10 +147,10 @@ def _prepare_graph(g, g_colors, q_cls, q_arg) :
         g.set_ep(e, 'edge_marker_size', 8)
         if e[0] == e[1]:
             g.set_ep(e, 'edge_color', queues[k].colors['edge_loop_color'])
-        else :
+        else:
             g.set_ep(e, 'edge_color', queues[k].colors['edge_color'])
 
-    for v in g.nodes() :
+    for v in g.nodes():
         g.set_vp(v, 'vertex_pen_width', 1.1)
         g.set_vp(v, 'vertex_size', 8)
         e = (v, v)
