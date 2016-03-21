@@ -39,8 +39,10 @@ def _dict2dict(adj_dict, etype=False):
     return adj_dict
 
 
-def _adjacency_adjust(adjacency, adjust, is_directed) :
-    """Takes an adjacency list and returns a (possibly) modified adjacency list."""
+def _adjacency_adjust(adjacency, adjust, is_directed):
+    """Takes an adjacency list and returns a (possibly) modified
+    adjacency list.
+    """
 
     for v, adj in adjacency.items():
         for u, properties in adj.items():
@@ -68,7 +70,7 @@ def _adjacency_adjust(adjacency, adjust, is_directed) :
     return adjacency
 
 
-def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
+def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True, **kwargs):
     """Takes an adjacency list, dict, or matrix and returns a graph.
 
     The purpose of this function is take an adjacency list (or matrix)
@@ -95,12 +97,13 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
         
     is_directed : bool (optional, the default is True)
         Sets whether the returned graph is directed or not.
+    **kwargs :
+        Unused.
 
     Returns
     -------
-    :class:`.QueueNetworkDiGraph`
-        A :class:`.QueueNetworkDiGraph` with the ``eType`` edge
-        property.
+    :any:`networkx.DiGraph`
+        A directed graph with the ``eType`` edge property.
 
     Raises
     ------
@@ -115,13 +118,25 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     a loop is added with edge type 0.
 
     >>> import queueing_tool as qt
-    >>> adj = {0: {1: {}}, 1: {2: {}, 3: {}}, 3: {0: {}} }
+    >>> adj = {
+    ...     0: {1: {}},
+    ...     1: {
+    ...             2: {},
+    ...             3: {}
+    ...         },
+    ...     3: {0: {}}
+    ... }
     >>> eTy = {0: {1: 1}, 1: {2: 2, 3: 4}, 3: {0: 1}}
     >>> g = qt.adjacency2graph(adj, eType=eTy)
     >>> ans = qt.graph2dict(g) # A loop was added to vertex 2
     >>> ans # doctest: +NORMALIZE_WHITESPACE
-    {0: {1: {'eType': 1}}, 1: {2: {'eType': 2}, 3: {'eType': 4}},
-    2: {2: {'eType': 0}}, 3: {0: {'eType': 1}}}
+    {0: {1: {'eType': 1}},
+     1: {
+            2: {'eType': 2},
+            3: {'eType': 4}
+        },
+     2: {2: {'eType': 0}},
+     3: {0: {'eType': 1}}}
 
     You can use a dict of lists to represent the adjacency list.
 
@@ -129,8 +144,13 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     >>> g = qt.adjacency2graph(adj, eType=eTy)
     >>> ans = qt.graph2dict(g)
     >>> ans # doctest: +NORMALIZE_WHITESPACE
-    {0: {1: {'eType': 1}}, 1: {2: {'eType': 2}, 3: {'eType': 4}},
-    2: {2: {'eType': 0}}, 3: {0: {'eType': 1}}}
+    {0: {1: {'eType': 1}},
+     1: {
+            2: {'eType': 2},
+            3: {'eType': 4}
+        },
+     2: {2: {'eType': 0}},
+     3: {0: {'eType': 1}}}
 
     Alternatively, you could have this function adjust the edges that
     lead to terminal vertices by changing their edge type to 0:
@@ -138,14 +158,19 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True) :
     >>> g = qt.adjacency2graph(adj, eType=eTy, adjust=1)
     >>> ans = qt.graph2dict(g) # The graph is unaltered
     >>> ans # doctest: +NORMALIZE_WHITESPACE
-    {0: {1: {'eType': 1}}, 1: {2: {'eType': 0}, 3: {'eType': 4}},
-    2: {}, 3: {0: {'eType': 1}}}
+    {0: {1: {'eType': 1}},
+     1: {
+            2: {'eType': 0},
+            3: {'eType': 4}
+        },
+    2: {},
+    3: {0: {'eType': 1}}}
     """
     if isinstance(adjacency, np.ndarray):
         adjacency = _matrix2dict(adjacency)
     elif isinstance(adjacency, dict):
         adjacency = _dict2dict(adjacency)
-    else :
+    else:
         msg = ("If the adjacency parameter is supplied it must be a "
                "dict, or a numpy.ndarray.")
         raise TypeError(msg)
@@ -186,10 +211,14 @@ savefig_kwargs = set([
 
 
 class QueueNetworkDiGraph(nx.DiGraph):
+    """A directed graph class built to work with a
+    :class:`.QueueNetwork`
 
+    If data is a dict then adjacency2graph is called first.
+    """
     def __init__(self, data, **kwargs):
         if isinstance(data, dict):
-            data = adjacency2graph(data)
+            data = adjacency2graph(data, **kwargs)
 
         super(QueueNetworkDiGraph, self).__init__(data, **kwargs)
         edges = self.edges()

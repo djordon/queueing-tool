@@ -4,11 +4,11 @@ Summary
 """
 
 from queueing_tool.network.queue_network import (
-    InitializationError,
+    QueueingToolError,
     QueueNetwork
 )
 
 __all__ = [
-    'InitializationError',
+    'QueueingToolError',
     'QueueNetwork'
 ]

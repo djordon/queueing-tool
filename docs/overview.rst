@@ -183,13 +183,13 @@ The default layout was a little hard on the eyes so I changed it a little:
 
     >>> g.new_vertex_property('pos') ### FIX THIS
     >>> for v in g.nodes() :
-    >>>     vi = int(v)
-    >>>     if vi == 0 :
-    >>>         g.set_vp(v, 'pos', [0, -0.25])
-    >>>     elif vi == 1 :
-    >>>         g.set_vp(v, 'pos', [0, -0.125])
-    >>>     else :
-    >>>         g.set_vp(v, 'pos', [-0.5 + (vi - 2.0) / 20, 0])
+    ...     vi = int(v)
+    ...     if vi == 0 :
+    ...         g.set_vp(v, 'pos', [0, -0.25])
+    ...     elif vi == 1 :
+    ...         g.set_vp(v, 'pos', [0, -0.125])
+    ...     else :
+    ...         g.set_vp(v, 'pos', [-0.5 + (vi - 2.0) / 20, 0])
 
 To view the model (using this layout), do the following:
 

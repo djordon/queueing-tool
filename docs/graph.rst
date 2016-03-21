@@ -1,4 +1,4 @@
-Network Graph tools
+Graph utilities
 ========================
 
 .. automodule:: queueing_tool.graph

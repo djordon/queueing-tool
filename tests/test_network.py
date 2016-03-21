@@ -206,7 +206,7 @@ class TestQueueNetwork(unittest.TestCase):
 
     def test_QueueNetwork_drawing_animation_error(self):
         self.qn.clear()
-        with self.assertRaises(qt.InitializationError):
+        with self.assertRaises(qt.QueueingToolError):
             self.qn.animate()
 
         self.qn.initialize()
@@ -483,7 +483,7 @@ class TestQueueNetwork(unittest.TestCase):
 
     def test_QueueNetwork_simulate_error(self):
         self.qn.clear()
-        with self.assertRaises(qt.InitializationError):
+        with self.assertRaises(qt.QueueingToolError):
             self.qn.simulate()
 
     def test_QueueNetwork_simulate_slow(self):

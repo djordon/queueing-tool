@@ -95,7 +95,7 @@ class Agent(object):
         See Also
         --------
         :meth:`.transitions` : :class:`.QueueNetwork`\'s method that
-        returns the transition probabilities for each edge in the graph.
+            returns the transition probabilities for each edge in the graph.
         """
         n = len(network.out_edges[edge[1]])
         if n <= 1:

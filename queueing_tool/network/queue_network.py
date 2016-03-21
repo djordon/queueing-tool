@@ -26,7 +26,7 @@ from queueing_tool.queues import (
 from queueing_tool.network.priority_queue import PriorityQueue
 
 
-class InitializationError(Exception):
+class QueueingToolError(Exception):
     pass
 
 
@@ -215,8 +215,17 @@ class QueueNetwork(object):
     >>> arr = lambda t: t + np.random.gamma(4, 0.0025)
     >>> ser2 = lambda t: t + np.random.exponential(0.025)
     >>> ser3 = lambda t: t + np.random.exponential(4)
-    >>> q_ar = {2: {'arrival_f': arr, 'service_f': ser2, 'nServers': 5},
-    ...         3: {'service_f': ser3, 'nServers': 10}}
+    >>> q_ar = {
+    ...     2: {
+    ...         'arrival_f': arr,
+    ...         'service_f': ser2,
+    ...         'nServers': 5
+    ...     },
+    ...     3: {
+    ...         'service_f': ser3,
+    ...         'nServers': 10
+    ...     }
+    ... }
     >>> net = qt.QueueNetwork(g, q_classes=q_cl, q_args=q_ar, seed=13)
 
     To specify that arrivals enter from type 2 edges and simulate run:
@@ -428,8 +437,8 @@ class QueueNetwork(object):
 
         Raises
         ------
-        InitializationError
-            Will raise a ``InitializationError`` if the ``QueueNetwork`` has
+        QueueingToolError
+            Will raise a ``QueueingToolError`` if the ``QueueNetwork`` has
             not been initialized. Call :meth:`.initialize` before running.
 
         Examples
@@ -465,7 +474,7 @@ class QueueNetwork(object):
         if not self._initialized:
             msg = ("Network has not been initialized. "
                    "Call '.initialize()' first.")
-            raise InitializationError(msg)
+            raise QueueingToolError(msg)
 
         if not HAS_MATPLOTLIB:
             raise ImportError("Matplotlib is necessary to animate a simulation.")
@@ -947,16 +956,22 @@ class QueueNetwork(object):
         >>> g = qt.generate_random_graph(5, seed=10)
         >>> net = qt.QueueNetwork(g)
         >>> net.transitions(False)  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-        {0: [1.0], 1: [0.5, 0.5], 2: [0.333..., 0.333..., 0.333...],
-        3: [1.0], 4: [1.0]}
+        {0: [1.0],
+         1: [0.5, 0.5],
+         2: [0.333..., 0.333..., 0.333...],
+         3: [1.0],
+         4: [1.0]}
 
         If you want to change only one vertex's transition probabilities, you
         can do so with the following:
 
         >>> net.set_transitions({1 : [0.75, 0.25]})
         >>> net.transitions(False)  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-        {0: [1.0], 1: [0.75, 0.25], 2: [0.333..., 0.333..., 0.333...],
-        3: [1.0], 4: [1.0]}
+        {0: [1.0],
+         1: [0.75, 0.25],
+         2: [0.333..., 0.333..., 0.333...],
+         3: [1.0],
+         4: [1.0]}
 
         One can generate a transition matrix using
         :func:`.generate_transition_matrix`\. You can change all transition
@@ -965,8 +980,11 @@ class QueueNetwork(object):
         >>> mat = qt.generate_transition_matrix(g, seed=10)
         >>> net.set_transitions(mat)
         >>> net.transitions(False)  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-        {0: [1.0], 1: [0.962..., 0.037...],
-        2: [0.338..., 0.396..., 0.264...], 3: [1.0], 4: [1.0]}
+        {0: [1.0],
+         1: [0.962..., 0.037...],
+         2: [0.338..., 0.396..., 0.264...],
+         3: [1.0],
+         4: [1.0]}
         """
         if isinstance(mat, dict):
             for key, value in mat.items():
@@ -1122,8 +1140,8 @@ class QueueNetwork(object):
 
         Raises
         ------
-        InitializationError
-            Will raise a ``InitializationError`` if the ``QueueNetwork``
+        QueueingToolError
+            Will raise a ``QueueingToolError`` if the ``QueueNetwork``
             has not been initialized. Call :meth:`.initialize` before
             running.
 
@@ -1154,12 +1172,12 @@ class QueueNetwork(object):
         >>> net.simulate(t=75)
         >>> t1 = net.current_time
         >>> t1 - t0 # doctest: +ELLIPSIS
-        75.0...
+        75...
         """
         if not self._initialized:
             msg = ("Network has not been initialized. "
                    "Call '.initialize()' first.")
-            raise InitializationError(msg)
+            raise QueueingToolError(msg)
         if t is None:
             for k in range(n):
                 self._simulate_next_event(slow=False)
@@ -1336,10 +1354,17 @@ class QueueNetwork(object):
         >>> net = qt.QueueNetwork(g)
         >>> net.set_transitions(mat)
         >>> net.transitions(False)  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
-        {0: [0.194..., 0.805...], 1: [1.0], 2: [0.473..., 0.526...],
-        3: [0.763..., 0.129..., 0.107...], 4: [0.495..., 0.504...]}
+        {0: [0.194..., 0.805...],
+         1: [1.0],
+         2: [0.473..., 0.526...],
+         3: [0.763..., 0.129..., 0.107...],
+         4: [0.495..., 0.504...]}
         >>> {k: list(val.keys()) for k, val in qt.graph2dict(g).items()}
-        {0: [1, 3], 1: [0], 2: [3, 4], 3: [0, 2, 4], 4: [2, 3]}
+        {0: [1, 3],
+         1: [0],
+         2: [3, 4],
+         3: [0, 2, 4],
+         4: [2, 3]}
 
         What this shows is the following: when an :class:`.Agent` is at
         vertex ``0`` they will transition to vertex ``1`` with

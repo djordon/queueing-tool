@@ -17,6 +17,8 @@ import sys
 import os
 from unittest.mock import MagicMock
 
+import alabaster
+
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
@@ -57,6 +59,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     'numpydoc',
+    'alabaster',
 ]
 
 intersphinx_mapping = {
@@ -127,15 +130,28 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes. http://sphinx-doc.org/theming.html
-html_theme = 'qt_sphinx13' #'bootstrap' #'qt_sphinx13' #'gt_theme' 'sphinx_rtd_theme'
-
+html_theme = 'alabaster'#'qt_sphinx13'#
+#html_style = 'adjust_alabaster.css'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {}
+html_theme_options = {
+    'code_font_size': '0.81em'
+}
+html_context = {'css_files': ['_static/adjust_alabaster.css',]}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = ['_themes']
+html_theme_path = [alabaster.get_path()]#'_themes']
+
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+        'relations.html',
+        'searchbox.html',
+        'donate.html',
+    ]
+}
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
