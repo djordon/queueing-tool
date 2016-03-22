@@ -106,7 +106,7 @@ class QueueServer(object):
         function is called, ``t`` is the time the agent is entering service.
         **Should not return any values less than** ``t``, that is,
         ``service_f(t) >= t`` should always be true.
-    edge : 4-:class:`.tuple` of int (optional, the default is ``(0,0,0,1)``)
+    edge : 4-tuple of int (optional, the default is ``(0,0,0,1)``)
         A tuple that uniquely identifies which edge this queue lays on and the
         edge type. The first slot of the tuple is the source vertex, the second
         slot is the target vertex, and the third slot is the ``edge_index`` of
@@ -661,7 +661,7 @@ class QueueServer(object):
 
         Returns
         -------
-        color : :class:`.list`
+        color : list
             Returns a RGBA color that is represented as a list with 4 entries
             where each entry can be any floating point number between 0 and 1.
 

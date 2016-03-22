@@ -11,6 +11,11 @@ pre {
     padding-left: 10px;
 }
 
+dl dl pre {
+    margin-left: 0;
+    padding-left: 10px;
+}
+
 body {
     font-family: 15px;
 }

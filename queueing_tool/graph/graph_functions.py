@@ -38,15 +38,15 @@ def graph2dict(g) :
     Parameters
     ----------
     g : :any:`networkx.DiGraph`, :any:`networkx.Graph`, etc.
-        Any object that can be instantiated as a :any:`networkx.DiGraph`.
+        Any object that networkx can turn into a :any:`DiGraph<networkx.DiGraph>`.
 
     Returns
     -------
-    adj : :class:`.dict`
-        An adjacency representation of graph as a dictionary of dictionaries,
-        where a key is the vertex index for a vertex ``v`` and the
-        values are :class:`.list`\s of vertex indices where that vertex is
-        connected to ``v`` by an edge.
+    adj : dict
+        An adjacency representation of graph as a dictionary of
+        dictionaries, where a key is the vertex index for a vertex
+        ``v`` and the values are :class:`dicts<.dicts>` with keys for
+        the vertex index and values as edge properties.
     """
     if not isinstance(g, nx.DiGraph):
         g = QueueNetworkDiGraph(g)

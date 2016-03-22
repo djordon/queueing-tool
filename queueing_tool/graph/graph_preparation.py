@@ -34,7 +34,7 @@ def add_edge_lengths(g):
 
     Parameters
     ----------
-    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, :class:`.dict`, \
+    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, dict, \
         ``None``,  etc.
         Any object that networkx can turn into a
         :any:`DiGraph<networkx.DiGraph>`
@@ -73,18 +73,18 @@ def _prepare_graph(g, g_colors, q_cls, q_arg):
 
     Parameters
     ----------
-    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, :class:`.dict`, \
+    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, dict, \
         ``None``,  etc.
         Any object that networkx can turn into a
         :any:`DiGraph<networkx.DiGraph>`
-    g_colors : :class:`.dict`
+    g_colors : dict
         A dictionary of colors. The specific keys used are ``vertex_color`` and
         ``vertex_fill_color`` for vertices that do not have any loops. Set
         :class:`.QueueNetwork` for the default values passed.
-    q_cls : :class:`.dict`
+    q_cls : dict
         A dictionary where the keys are integers that represent an edge type,
         and the values are :class:`.QueueServer` classes.
-    q_args : :class:`.dict`
+    q_args : dict
         A dictionary where the keys are integers that represent an edge type,
         and the values are the arguments that are used when creating an
         instance of that :class:`.QueueServer` class.
@@ -92,7 +92,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg):
     Returns
     -------
     g : :class:`.QueueNetworkDiGraph`
-    queues : :class:`.list`
+    queues : list
         A list of :class:`.QueueServer`\s where ``queues[k]`` is the
         ``QueueServer`` that sets on the edge with edge index ``k``.
     

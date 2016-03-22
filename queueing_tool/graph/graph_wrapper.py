@@ -108,7 +108,7 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True, **kwargs)
     Raises
     ------
     TypeError
-        Is raised if ``adjacency`` is not a :class:`.dict` or a
+        Is raised if ``adjacency`` is not a dict or a
         :class:`~numpy.ndarray`.
 
     Examples

@@ -44,15 +44,15 @@ class QueueNetwork(object):
 
     Parameters
     ----------
-    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, :class:`.dict`, \
+    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, dict, \
         ``None``,  etc.
         Any object that networkx can turn into a
         :any:`DiGraph<networkx.DiGraph>`. The graph specifies the
         network, and the queues sit on top of the edges.
-    q_classes : :class:`.dict` (optional)
+    q_classes : dict (optional)
         Used to specify the :class:`.QueueServer` class for each edge type.
         The keys are integers for the edge types, and the values are classes.
-    q_args : :class:`.dict` (optional)
+    q_args : dict (optional)
         Used to specify the class arguments for each type of
         :class:`.QueueServer`\. The keys are integers for the edge types and
         the values are the arguments that are passed when instantiating each
@@ -60,13 +60,13 @@ class QueueNetwork(object):
     seed : int (optional)
         An integer used to initialize numpy's and graph-tool's psuedorandom
         number generators.
-    colors : :class:`.dict` (optional)
+    colors : dict (optional)
         A dictionary of RGBA colors used to color the graph. The keys are
         specified in the Notes section. If this parameter is supplied and a
         particular key is missing, then the default value for that key is used.
-    max_agents : int (optional, the default is 1000)
+    max_agents : int (optional, default: 1000)
         The maximum number of agents that can be in the network at any time.
-    blocking : str ``{'BAS', 'RS'}`` (optional, the default is ``'BAS'``)
+    blocking : str ``{'BAS', 'RS'}`` (optional, default: ``'BAS'``)
         Specifies the blocking behavior for the system. If ``blocking`` is not
         ``'RS'``, then it is assumed to be ``'BAS'``.
 
@@ -87,17 +87,17 @@ class QueueNetwork(object):
     blocking : str
         Specifies whether the system's blocking behavior is either Blocking
         After Service (BAS) or Repetitive Service Blocking (RS).
-    colors : :class:`.dict`
+    colors : dict
         A dictionary of colors used when drawing a graph. See the notes for the
         defaults.
     current_time : float
         The time of the last event.
-    edge2queue : :class:`.list`
+    edge2queue : list
         A list of queues where the ``edge2queue[k]`` returns the queue on the
         edge with edge index ``k``.
     g : :class:`.QueueNetworkDiGraph`
         The graph for the network.
-    in_edges : :class:`.list`
+    in_edges : list
         A mapping between vertex indices and the in-edges at that vertex.
         Specifically, ``in_edges[v]`` returns a list containing the edge index
         for all edges with the head of the edge at ``v``, where ``v`` is the
@@ -120,7 +120,7 @@ class QueueNetwork(object):
         The number of vertices in the graph.
     nNodes : int
         The number of vertices in the graph.
-    out_edges : :class:`.list`
+    out_edges : list
         A mapping between vertex indices and the out-edges at that vertex.
         Specifically, ``out_edges[v]`` returns a list containing the edge index
         for all edges with the tail of the edge at ``v``, where ``v`` is the
@@ -431,7 +431,7 @@ class QueueNetwork(object):
 
         Each of these properties are used by ``animate`` to style the
         canvas. Also, the ``bgcolor`` parameter is defined in the
-        :class:`.dict` ``QueueNetwork.colors``\. The ``figsize`` defaults to
+        dict ``QueueNetwork.colors``\. The ``figsize`` defaults to
         ``(7, 7)``\. If any of these parameters are supplied as arguments
         then they are used over the defaults.
 
@@ -587,7 +587,7 @@ class QueueNetwork(object):
         queues : int or an iterable of int (optional)
             The edge index (or an iterable of edge indices) identifying the
             :class:`.QueueServer`\(s) whose data will be cleared.
-        edge : 2-:class:`.tuple` of int or *array_like* (optional)
+        edge : 2-tuple of int or *array_like* (optional)
             Explicitly specify which queues' data to clear. Must be either: a
             2-tuple of the edge's source and target vertex indices or an iterable
             of 2-tuples of the edge's source and target vertex indices.
@@ -633,14 +633,14 @@ class QueueNetwork(object):
 
         Parameters
         ----------
-        update_colors : ``bool`` (optional, the default is ``True``).
+        update_colors : ``bool`` (optional, default: ``True``).
             Specifies whether all the colors are updated.
         **kwargs
             Any parameters to pass to :func:`.QueueNetworkDiGraph.draw_graph`.
-        output_size : :class:`.tuple` (optional, the default is ``(700, 700)``).
+        output_size : tuple (optional, default: ``(700, 700)``).
             This is :func:`.QueueNetworkDiGraph.draw_graph` parameter for
             specifying the size of canvas.
-        output : str (optional, the default is ``None``)
+        output : str (optional, default: ``None``)
             Specifies the directory where the drawing is saved. If output is
             ``None``, then the results are drawn using GraphViz.
 
@@ -659,7 +659,7 @@ class QueueNetwork(object):
         Each of these properties are used by ``draw`` to style the canvas.
         There is also a parameter that sets the background color of the canvas,
         which is the ``bgcolor`` parameter. This color is defined in the class
-        property ``QueueNetwork.colors`` (which is a :class:`.dict`).
+        property ``QueueNetwork.colors`` (which is a dict).
 
         If any of these parameters are supplied as arguments to ``draw`` then
         the passed arguments are used over the defaults.
@@ -718,7 +718,7 @@ class QueueNetwork(object):
         queues : int or *array_like* (optional)
             The edge index (or an iterable of edge indices) identifying the
             :class:`.QueueServer`\(s) whose data will be retrieved.
-        edge : 2-:class:`.tuple` of int or *array_like* (optional)
+        edge : 2-tuple of int or *array_like* (optional)
             Explicitly specify which queues to retrieve agent data from. Must
             be either: a 2-tuple of the edge's source and target vertex
             indices, or an iterable of 2-tuples of the edge's source and target
@@ -729,7 +729,7 @@ class QueueNetwork(object):
 
         Returns
         -------
-        :class:`.dict`
+        dict
             Returns a ``dict`` where the keys are the :class:`.Agent`\'s
             ``issn`` and the values are :class:`~numpy.ndarray`\s for that
             :class:`.Agent`\'s data. The first, second, and third columns
@@ -779,7 +779,7 @@ class QueueNetwork(object):
         queues : int or an *array_like* of int, (optional)
             The edge index (or an iterable of edge indices) identifying the
             :class:`.QueueServer`\(s) whose data will be retrieved.
-        edge : 2-:class:`.tuple` of int or *array_like* (optional)
+        edge : 2-tuple of int or *array_like* (optional)
             Explicitly specify which queues to retrieve data from. Must be
             either: a 2-tuple of the edge's source and target vertex indices,
             or an iterable of 2-tuples of the edge's source and target vertex
@@ -849,12 +849,12 @@ class QueueNetwork(object):
 
         Parameters
         ----------
-        nActive : int (optional, the default is ``1``)
+        nActive : int (optional, default: ``1``)
             The number of queues to set as active. The queues are selected randomly.
         queues : int *array_like* (optional)
             The edge index (or an iterable of edge indices) identifying the
             :class:`.QueueServer`\(s) to make active by.
-        edge : 2-:class:`.tuple` of int or *array_like* (optional)
+        edge : 2-tuple of int or *array_like* (optional)
             Explicitly specify which queues to make active. Must be either: a
             2-tuple of the edge's source and target vertex indices or an iterable
             of 2-tuples of the edge's source and target vertex indices.
@@ -930,7 +930,7 @@ class QueueNetwork(object):
 
         Parameters
         ----------
-        mat : :class:`.dict` or :class:`~numpy.ndarray`
+        mat : dict or :class:`~numpy.ndarray`
             A transition routing matrix or transition dictionary. If passed a
             dictionary, the keys should be vertex indices and the values are
             the probabilities for each adjacent vertex, or all vertices
@@ -939,13 +939,13 @@ class QueueNetwork(object):
         Raises
         ------
         RuntimeError
-            A :exc:`.RuntimeError` is raised if: the keys in the :class:`.dict`
+            A :exc:`.RuntimeError` is raised if: the keys in the dict
             don't match with a vertex index in the graph; or if the
             :class:`~numpy.ndarray` is passed with the wrong shape, must be
             (``nVertices``, ``nVertices``); or the values passed are not
             probabilities (for each vertex they are positive and sum to 1);
         TypeError
-            If mat is not a :class:`.dict` or :class:`~numpy.ndarray` a
+            If mat is not a dict or :class:`~numpy.ndarray` a
             TypeError is raised.
 
         Examples
@@ -1072,8 +1072,8 @@ class QueueNetwork(object):
     def show_type(self, eType, **kwargs):
         """Draws the network, highlighting queues of a certain type.
 
-        The colored vertices represent self loops of type ``eType``. Dark edges
-        represent queues of type ``eType``.
+        The colored vertices represent self loops of type ``eType``.
+        Dark edges represent queues of type ``eType``.
 
         Parameters
         ----------
@@ -1085,15 +1085,15 @@ class QueueNetwork(object):
 
         Notes
         -----
-        The colors are defined by the class attribute ``colors``\. The
-        relevant colors are ``vertex_active``\, ``vertex_inactive``\,
-        ``vertex_highlight``\, ``edge_active``\, and ``edge_inactive``\.
+        The colors are defined by the class attribute ``colors``. The
+        relevant colors are ``vertex_active``, ``vertex_inactive``,
+        ``vertex_highlight``, ``edge_active``, and ``edge_inactive``.
 
         Examples
         --------
-        The following code highlights all edges with edge type ``2``. If the
-        edge is a loop then the vertex is highlighted as well. In this case
-        all edges with edge type ``2`` happen to be loops.
+        The following code highlights all edges with edge type ``2``.
+        If the edge is a loop then the vertex is highlighted as well.
+        In this case all edges with edge type ``2`` happen to be loops.
 
         >>> import queueing_tool as qt
         >>> g = qt.generate_pagerank_graph(100, seed=13)
@@ -1131,7 +1131,7 @@ class QueueNetwork(object):
 
         Parameters
         ----------
-        n : int (optional, the default is 1)
+        n : int (optional, default: 1)
             The number of events to simulate. If ``t`` is not given
             then this parameter is used.
         t : float (optional)
@@ -1270,22 +1270,27 @@ class QueueNetwork(object):
         """Tells the queues to collect data on agents' arrival, service
         start, and departure times.
 
-        If none of the parameters are given then every :class:`.QueueServer`
-        will start collecting data.
+        If none of the parameters are given then every
+        :class:`.QueueServer` will start collecting data.
 
         Parameters
         ----------
-        queues : int, *array_like* (optional)
-            The edge index (or an iterable of edge indices) identifying the
-            :class:`.QueueServer`\(s) that will start collecting data.
-        edge : 2-:class:`.tuple` of int or *array_like* (optional)
-            Explicitly specify which queues will collect data. Must be either:
-            a 2-tuple of the edge's source and target vertex indices, or an
-            iterable of 2-tuples of the edge's source and target vertex
-            indices.
+        queues : :any:`int`, *array_like* (optional)
+            The edge index (or an iterable of edge indices) identifying
+            the :class:`.QueueServer`\(s) that will start collecting
+            data.
+        edge : 2-tuple of int or *array_like* (optional)
+            Explicitly specify which queues will collect data. Must be
+            either:
+
+            * A 2-tuple of the edge's source and target vertex
+              indices,
+            * An iterable of 2-tuples of the edge's source and
+              target vertex indices.
+
         eType : int or an iterable of int (optional)
-            A integer, or a collection of integers identifying which edge types
-            will be set active.
+            A integer, or a collection of integers identifying which
+            edge types will be set active.
         """
         queues = _get_queues(self.g, queues, edge, eType)
 
@@ -1296,22 +1301,23 @@ class QueueNetwork(object):
     def stop_collecting_data(self, queues=None, edge=None, eType=None):
         """Tells the queues to stop collecting data on agents.
 
-        If none of the parameters are given then every :class:`.QueueServer`
-        will stop collecting data.
+        If none of the parameters are given then every
+        :class:`.QueueServer` will stop collecting data.
 
         Parameters
         ----------
         queues : int, *array_like* (optional)
-            The edge index (or an iterable of edge indices) identifying the
-            :class:`.QueueServer`\(s) that will stop collecting data.
-        edge : 2-:class:`.tuple` of int or *array_like* (optional)
-            Explicitly specify which queues will stop collecting data. Must be
-            either: a 2-tuple of the edge's source and target vertex indices,
-            or an iterable of 2-tuples of the edge's source and target
-            vertex indices.
+            The edge index (or an iterable of edge indices) identifying
+            the :class:`.QueueServer`\(s) that will stop collecting
+            data.
+        edge : 2-tuple of int or *array_like* (optional)
+            Explicitly specify which queues will stop collecting data.
+            Must be either: a 2-tuple of the edge's source and target
+            vertex indices, or an iterable of 2-tuples of the edge's
+            source and target vertex indices.
         eType : int or an iterable of int (optional)
-            A integer, or a collection of integers identifying which edge types
-            will stop collecting data.
+            A integer, or a collection of integers identifying which
+            edge types will stop collecting data.
         """
         queues = _get_queues(self.g, queues, edge, eType)
 
@@ -1320,33 +1326,35 @@ class QueueNetwork(object):
 
 
     def transitions(self, return_matrix=True):
-        """Returns the transition probabilities for each vertex in the graph.
+        """Returns the transition probabilities for each vertex in the
+        graph.
 
         Parameters
         ----------
         return_matrix : bool (optional, the default is ``True``\)
             Specifies whether a :class:`~numpy.ndarray` is returned. If
-            ``False``\, a :class:`.dict` is returned instead.
+            ``False``\, a dict is returned instead.
 
         Returns
         -------
-        out : an :class:`~numpy.ndarray` or a :class:`.dict`
-            The transition probabilities for each vertex in the graph. If
-            ``out`` is an :class:`~numpy.ndarray`\, then ``out[v, u]`` returns
-            the probability of a transition from vertex ``v`` to vertex ``u``\.
-            If ``out`` is a :class:`.dict` then ``out_edge[v][k]`` is the
-            probability of moving from vertex ``v`` to the vertex at the head
-            of the ``k``\-th out-edge.
+        out : an :class:`~numpy.ndarray` or a dict
+            The transition probabilities for each vertex in the graph.
+            If ``out`` is an :class:`~numpy.ndarray`\, then
+            ``out[v, u]`` returns the probability of a transition from
+            vertex ``v`` to vertex ``u``. If ``out`` is a dict
+            then ``out_edge[v][k]`` is the probability of moving from
+            vertex ``v`` to the vertex at the head of the ``k``\-th
+            out-edge.
 
         Notes
         -----
-        Use ``qn.g.out_edges(v)`` to get a generator of all out edges from ``v``
-        where ``v`` is an integer representing a vertex/node.
+        Use ``qn.g.out_edges(v)`` to get a generator of all out edges
+        from ``v`` where ``v`` is an integer representing a vertex/node.
 
         Examples
         --------
-        The default transition matrix is every out edge being equally likely.
-        Lets change them randomly:
+        The default transition matrix is every out edge being equally
+        likely. Lets change them randomly:
 
         >>> import queueing_tool as qt
         >>> g = qt.generate_random_graph(5, seed=96)

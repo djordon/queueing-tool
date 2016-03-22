@@ -154,7 +154,7 @@ class GreedyAgent(Agent):
         Parameters
         ----------
         network : :class:`.QueueNetwork`
-        edge : :class:`.tuple`
+        edge : tuple
             A 4-tuple indicating which edge this agent is located at.
             The first two slots indicate the current edge's source and
             target vertices, while the third slot indicates this edges

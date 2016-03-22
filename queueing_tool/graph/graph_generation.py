@@ -27,7 +27,7 @@ def generate_transition_matrix(g, seed=None):
 
     Parameters
     ----------
-    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, :class:`.dict`, \
+    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, dict, \
         etc.
         Any object that :any:`DiGraph<networkx.DiGraph>` accepts.
     seed : int (optional)
@@ -226,7 +226,7 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs):
 
     Parameters
     ----------
-    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, :class:`.dict`, \
+    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, dict, \
         etc.
         Any object that :any:`DiGraph<networkx.DiGraph>` accepts.
     pTypes : dict (optional)
@@ -308,7 +308,7 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
 
     Parameters
     ----------
-    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, :class:`.dict`, \
+    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, dict, \
         etc.
         Any object that :any:`DiGraph<networkx.DiGraph>` accepts.
     pType2 : float (optional, the default is 0.1)
