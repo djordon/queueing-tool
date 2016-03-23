@@ -9,22 +9,23 @@ from queueing_tool.queues.choice import _choice, _argmin
 class Agent(object):
     """The base class for an agent.
 
-    ``Agent``\s are the objects that move throughout the network.
+    ``Agents`` are the objects that move throughout the network.
     ``Agents`` are instantiated by a queue, and once serviced the
     ``Agent`` moves on to another queue in the network. Each ``Agent``
     *decides* where in the network it wants to arrive at next but
     choosing amongst its options randomly. The probabilities are
-    specified in :class:`.QueueNetwork`\'s transition matrix. See
-    :meth:`.set_transition` for changing the routing  probabilities.
+    specified in :class:`QueueNetwork's<.QueueNetwork>` transition
+    matrix. See :meth:`.set_transition` for changing the routing
+    probabilities.
 
     Parameters
     ----------
-    issn : tuple (optional, the default is ``(0, 0)``\)
+    issn : tuple (optional, default: ``(0, 0)``)
         A unique identifier for an agent. Is set automatically by the
-        :class:`.QueueServer` that instantiates the ``Agent``\. The
-        first slot is the :class:`.QueueServer`\'s edge index and the
-        second slot is specifies the ``Agent``\'s instantiation number
-        for that queue.
+        :class:`.QueueServer` that instantiates the ``Agent``. The
+        first slot is the :class:`QueueServer's<.QueueServer>` edge
+        index and the second slot is specifies the ``Agent's``
+        instantiation number for that queue.
     **kwargs :
         Unused.
 
@@ -73,8 +74,8 @@ class Agent(object):
 
         An ``Agent`` chooses one of the out edges at random. The
         probability that the ``Agent`` will travel along a specific
-        edge is specified in the :class:`.QueueNetwork`\'s transition
-        matrix.
+        edge is specified in the :class:`QueueNetwork's<.QueueNetwork>`
+        transition matrix.
 
         Parameters
         ----------
@@ -94,8 +95,9 @@ class Agent(object):
 
         See Also
         --------
-        :meth:`.transitions` : :class:`.QueueNetwork`\'s method that
-            returns the transition probabilities for each edge in the graph.
+        :meth:`.transitions` : :class:`QueueNetwork's<.QueueNetwork>`
+            method that returns the transition probabilities for each
+            edge in the graph.
         """
         n = len(network.out_edges[edge[1]])
         if n <= 1:
@@ -104,6 +106,8 @@ class Agent(object):
         u  = uniform()
         pr = network._route_probs[edge[1]]
         k  = _choice(pr, u, n)
+        # _choice returns an integer between 0 and n-1 where the
+        # probability of k being selected is equal to pr[k].
 
         return network.out_edges[edge[1]][k]
 
@@ -134,7 +138,7 @@ class GreedyAgent(Agent):
 
     If there are any ties, the ``GreedyAgent`` chooses the first queue
     with the shortest line (where the ordering is given by
-    :class:`.QueueNetwork`\'s ``out_edges`` attribute).
+    :class:`QueueNetwork's<.QueueNetwork>` ``out_edges`` attribute).
     """
     def __init__(self, issn=(0, 0)):
         Agent.__init__(self, issn)
@@ -149,7 +153,7 @@ class GreedyAgent(Agent):
 
         ``GreedyAgents`` choose their next destination with-in the
         network by picking the adjacent queue with the fewest number of
-        ``Agents`` in the queue.
+        :class:`Agents<.Agent>` in the queue.
 
         Parameters
         ----------
@@ -158,7 +162,7 @@ class GreedyAgent(Agent):
             A 4-tuple indicating which edge this agent is located at.
             The first two slots indicate the current edge's source and
             target vertices, while the third slot indicates this edges
-            ``edge_index``\. The last slot indicates the edges edge
+            ``edge_index``. The last slot indicates the edges edge
             type.
 
         Returns

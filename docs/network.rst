@@ -16,6 +16,7 @@ Simulation methods
 Data methods
 ------------
 
+      .. automethod:: QueueNetwork.clear_data
       .. automethod:: QueueNetwork.get_agent_data
       .. automethod:: QueueNetwork.get_queue_data
       .. automethod:: QueueNetwork.start_collecting_data
@@ -33,7 +34,6 @@ Generic methods
 ---------------
 
       .. automethod:: QueueNetwork.clear
-      .. automethod:: QueueNetwork.clear_data
       .. automethod:: QueueNetwork.copy
       .. automethod:: QueueNetwork.next_event_description
       .. automethod:: QueueNetwork.reset_colors

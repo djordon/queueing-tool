@@ -89,7 +89,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'queueing-tool'
+project = 'Queueing-tool'
 copyright = '2015, Daniel Jordon'
 
 # The version info for the project you're documenting, acts as replacement for

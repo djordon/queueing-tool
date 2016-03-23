@@ -23,3 +23,8 @@ Miscellaneous functions
 
     .. autofunction:: graph2dict
     .. autofunction:: add_edge_lengths
+
+Exceptions
+----------
+
+  .. autoexception:: queueing_tool.network.QueueingToolError

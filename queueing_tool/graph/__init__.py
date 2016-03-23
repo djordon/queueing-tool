@@ -14,6 +14,7 @@ Summary
     set_types_rank
     set_types_random
     QueueNetworkDiGraph
+    ~queueing_tool.network.QueueingToolError
 """
 
 from queueing_tool.graph.graph_functions import (
