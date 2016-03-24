@@ -403,7 +403,10 @@ class QueueNetwork(object):
         return t
 
 
-    def animate(self, out=None, t=None, **kwargs):
+    def animate(self, out=None, t=None,
+                line_kwargs=None,
+                scatter_kwargs=None,
+                animation_kwargs=None, **kwargs):
         """Animates the network as it's simulating.
 
         The animations can be saved to disk or view in interactive
@@ -422,11 +425,13 @@ class QueueNetwork(object):
             ``n``.
         **kwargs :
             This method calls :meth:`~matplotlib.axes.scatter`,
-            :class:`~matplotlib.collections.LineCollection`, and
-            :class:`~matplotlib.animation.FuncAnimation`. Any keyword
-            that can be passed to these functions are passed via
-            ``kwargs``. Note that none of these functions keyword
-            arguments overlap.
+            :class:`~matplotlib.collections.LineCollection`,
+            :class:`~matplotlib.animation.FuncAnimation`, and
+            optionally :meth:`.matplotlib.animation.FuncAnimation.save`.
+            Any keyword that can be passed to these functions are
+            passed via ``kwargs``. Note that only the ``cmap`` keyword
+            arg in :meth:`~matplotlib.axes.scatter`, and
+            :class:`~matplotlib.collections.LineCollection` overlap.
 
 
         Notes
@@ -437,9 +442,18 @@ class QueueNetwork(object):
         :class:`~matplotlib.animation.FuncAnimation` by default.
         These include:
 
-            * :class:`~matplotlib.animation.FuncAnimation`:
-            * :class:`~matplotlib.collections.LineCollection`:
-            * :meth:`~matplotlib.axes.Axes.scatter`:
+            * :class:`~matplotlib.animation.FuncAnimation`: Uses the
+              defaults for that function. Saving the animation is done
+              using :meth:`~matplotlib.animation.FuncAnimation.save`,
+              and if the 'filename' is a key in ``kwargs`` then any
+              :meth:`~matplotlib.animation.FuncAnimation.save`
+              arguments in ``kwargs`` are passed to it.
+            * :class:`~matplotlib.collections.LineCollection`: The default
+              arguments are taken from
+              :meth:`.QueueNetworkDiGraph.lines_scatter_args`.
+            * :meth:`~matplotlib.axes.Axes.scatter`: The default
+              arguments are taken from
+              :meth:`.QueueNetworkDiGraph.lines_scatter_args`.
 
 
         Each of these properties are used by ``animate`` to style the
@@ -502,7 +516,8 @@ class QueueNetwork(object):
 
         fig = plt.figure(figsize=kwargs.get('figsize', (7, 7)))
         ax  = fig.gca()
-        line_args, scat_args = self.g.lines_scatter_args(ax, **kwargs)
+
+        line_args, scat_args = self.g.lines_scatter_args(**kwargs)
 
         lines = LineCollection(**line_args)
         lines = ax.add_collection(lines)
@@ -525,30 +540,23 @@ class QueueNetwork(object):
         ax.get_yaxis().set_visible(False)
 
         animation_args = {
+            'fargs': None,
+            'event_source': None,
+            'init_func': None,
             'frames': None,
-            'save_count': None,
-            'repeat': None,
-            'repeat_delay': None,
+            'blit': False,
             'interval': 10,
-            'blit': False
+            'repeat': None,
+            'func': update,
+            'repeat_delay': None,
+            'fig': fig,
+            'save_count': None,
         }
-        save_args = {
-            'filename': None,
-            'writer': None,
-            'fps': None,
-            'dpi': None,
-            'codec': None,
-            'bitrate': None,
-            'extra_args': None,
-            'metadata': None,
-            'extra_anim': None,
-            'savefig_kwargs': None
-        }
-        for key, value in kwargs.items():
+        for key, value in animation_kwargs.items():
             if key in animation_args:
                 animation_args[key] = value
 
-        animation = FuncAnimation(fig, update, **animation_args)
+        animation = FuncAnimation(**animation_args)
         if 'filename' not in kwargs:
             plt.ioff()
             plt.show()
@@ -565,7 +573,7 @@ class QueueNetwork(object):
                 'extra_anim': None,
                 'savefig_kwargs': None
             }
-            for key, value in kwargs.items():
+            for key, value in save_kwargs.items():
                 if key in save_args:
                     save_args[key] = value
             animation.save(**save_args)
@@ -1015,7 +1023,8 @@ class QueueNetwork(object):
         >>> import queueing_tool as qt
         >>> g = qt.generate_random_graph(5, seed=10)
         >>> net = qt.QueueNetwork(g)
-        >>> net.transitions(False)  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        >>> net.transitions(False)  # doctest: +ELLIPSIS
+        ...                         # doctest: +NORMALIZE_WHITESPACE
         {0: [1.0],
          1: [0.5, 0.5],
          2: [0.333..., 0.333..., 0.333...],
@@ -1026,7 +1035,8 @@ class QueueNetwork(object):
         probabilities, you can do so with the following:
 
         >>> net.set_transitions({1 : [0.75, 0.25]})
-        >>> net.transitions(False)  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        >>> net.transitions(False)  # doctest: +ELLIPSIS
+        ...                         # doctest: +NORMALIZE_WHITESPACE
         {0: [1.0],
          1: [0.75, 0.25],
          2: [0.333..., 0.333..., 0.333...],
@@ -1039,7 +1049,8 @@ class QueueNetwork(object):
 
         >>> mat = qt.generate_transition_matrix(g, seed=10)
         >>> net.set_transitions(mat)
-        >>> net.transitions(False)  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        >>> net.transitions(False)  # doctest: +ELLIPSIS
+        ...                         # doctest: +NORMALIZE_WHITESPACE
         {0: [1.0],
          1: [0.962..., 0.037...],
          2: [0.338..., 0.396..., 0.264...],
@@ -1394,19 +1405,19 @@ class QueueNetwork(object):
 
         Parameters
         ----------
-        return_matrix : bool (optional, the default is ``True``\)
+        return_matrix : bool (optional, the default is ``True``)
             Specifies whether a :class:`~numpy.ndarray` is returned. If
-            ``False``\, a dict is returned instead.
+            ``False``, a dict is returned instead.
 
         Returns
         -------
         out : an :class:`~numpy.ndarray` or a dict
             The transition probabilities for each vertex in the graph.
-            If ``out`` is an :class:`~numpy.ndarray`\, then
+            If ``out`` is an :class:`~numpy.ndarray`, then
             ``out[v, u]`` returns the probability of a transition from
             vertex ``v`` to vertex ``u``. If ``out`` is a dict
             then ``out_edge[v][k]`` is the probability of moving from
-            vertex ``v`` to the vertex at the head of the ``k``\-th
+            vertex ``v`` to the vertex at the head of the ``k``-th
             out-edge.
 
         Notes
@@ -1424,13 +1435,15 @@ class QueueNetwork(object):
         >>> mat = qt.generate_transition_matrix(g, seed=96)
         >>> net = qt.QueueNetwork(g)
         >>> net.set_transitions(mat)
-        >>> net.transitions(False)  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+        >>> net.transitions(False)  # doctest: +ELLIPSIS
+        ...                         # doctest: +NORMALIZE_WHITESPACE
         {0: [0.194..., 0.805...],
          1: [1.0],
          2: [0.473..., 0.526...],
          3: [0.763..., 0.129..., 0.107...],
          4: [0.495..., 0.504...]}
         >>> {k: list(val.keys()) for k, val in qt.graph2dict(g).items()}
+        ...                         # doctest: +NORMALIZE_WHITESPACE
         {0: [1, 3],
          1: [0],
          2: [3, 4],
@@ -1440,7 +1453,7 @@ class QueueNetwork(object):
         What this shows is the following: when an :class:`.Agent` is at
         vertex ``0`` they will transition to vertex ``1`` with
         probability ``0.805`` and route to vertex ``3`` probability
-        ``0.195``\, when at vertex ``3`` they will transition to vertex
+        ``0.195``, when at vertex ``3`` they will transition to vertex
         ``4`` with probability ``0.474`` and route back to vertex ``0``
         probability ``0.526``,... etc.
         """

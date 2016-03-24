@@ -20,13 +20,13 @@ def _matrix2dict(matrix, etype=False):
         for j in range(n):
             if matrix[k, j] != 0:
                 adj[k][j] = {} if not etype else matrix[k, j]
-    
+
     return adj
 
 
 def _dict2dict(adj_dict, etype=False):
-    """Takes a dictionary based representation of an adjacency list and returns
-    a dict of dicts based representation.
+    """Takes a dictionary based representation of an adjacency list
+    and returns a dict of dicts based representation.
     """
     item = adj_dict.popitem()
     adj_dict[item[0]] = item[1]
@@ -83,19 +83,17 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True, **kwargs)
     ----------
     adjacency : dict, or :class:`~numpy.ndarray`
         An adjacency list as either a dict, or an adjacency matrix.
-    adjust : int ``{0, 1}`` (optional, the default is 0)
+    adjust : int ``{0, 1}`` (optional, default: 0)
         Specifies what to do when the graph has terminal vertices
         (nodes with no out-edges). Note that if ``adjust`` is not 1
         then it assumed to be 0. There are two choices:
 
-            ``adjust = 0``
-                A loop is added to each terminal node in the graph, and
-                their ``eType`` of that loop is set to 0.
-            ``adjust = 1``
-                All edges leading to terminal nodes have their
-                ``eType`` set to 0.
-        
-    is_directed : bool (optional, the default is True)
+        * ``adjust = 0``: A loop is added to each terminal node in the
+          graph, and their ``eType`` of that loop is set to 0.
+        * ``adjust = 1``: All edges leading to terminal nodes have
+          their ``eType`` set to 0.
+
+    is_directed : bool (optional, default: True)
         Sets whether the returned graph is directed or not.
     **kwargs :
         Unused.
@@ -120,21 +118,16 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True, **kwargs)
     >>> import queueing_tool as qt
     >>> adj = {
     ...     0: {1: {}},
-    ...     1: {
-    ...             2: {},
-    ...             3: {}
-    ...         },
-    ...     3: {0: {}}
-    ... }
+    ...     1: {2: {},
+    ...         3: {}},
+    ...     3: {0: {}}}
     >>> eTy = {0: {1: 1}, 1: {2: 2, 3: 4}, 3: {0: 1}}
     >>> g = qt.adjacency2graph(adj, eType=eTy)
-    >>> ans = qt.graph2dict(g) # A loop was added to vertex 2
-    >>> ans # doctest: +NORMALIZE_WHITESPACE
+    >>> ans = qt.graph2dict(g)  # A loop was added to vertex 2
+    >>> ans                     # doctest: +NORMALIZE_WHITESPACE
     {0: {1: {'eType': 1}},
-     1: {
-            2: {'eType': 2},
-            3: {'eType': 4}
-        },
+     1: {2: {'eType': 2},
+         3: {'eType': 4}},
      2: {2: {'eType': 0}},
      3: {0: {'eType': 1}}}
 
@@ -143,12 +136,10 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True, **kwargs)
     >>> adj = {0 : [1], 1: [2, 3], 3: [0]}
     >>> g = qt.adjacency2graph(adj, eType=eTy)
     >>> ans = qt.graph2dict(g)
-    >>> ans # doctest: +NORMALIZE_WHITESPACE
+    >>> ans                     # doctest: +NORMALIZE_WHITESPACE
     {0: {1: {'eType': 1}},
-     1: {
-            2: {'eType': 2},
-            3: {'eType': 4}
-        },
+     1: {2: {'eType': 2},
+         3: {'eType': 4}},
      2: {2: {'eType': 0}},
      3: {0: {'eType': 1}}}
 
@@ -156,13 +147,11 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True, **kwargs)
     lead to terminal vertices by changing their edge type to 0:
 
     >>> g = qt.adjacency2graph(adj, eType=eTy, adjust=1)
-    >>> ans = qt.graph2dict(g) # The graph is unaltered
-    >>> ans # doctest: +NORMALIZE_WHITESPACE
+    >>> ans = qt.graph2dict(g)  # The graph is unaltered
+    >>> ans                     # doctest: +NORMALIZE_WHITESPACE
     {0: {1: {'eType': 1}},
-     1: {
-            2: {'eType': 0},
-            3: {'eType': 4}
-        },
+     1: {2: {'eType': 0},
+         3: {'eType': 4}},
     2: {},
     3: {0: {'eType': 1}}}
     """
@@ -195,7 +184,7 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True, **kwargs)
 
 
 
-savefig_kwargs = set([
+SAVEFIG_KWARGS = set([
     'dpi',
     'facecolorw',
     'edgecolorw',
@@ -310,14 +299,34 @@ class QueueNetworkDiGraph(nx.DiGraph):
         self.pos = np.array([pos[v] for v in self.nodes()])
 
 
-    def draw_graph(self, **kwargs):
+    def draw_graph(self, fname=None, **kwargs):
+        """Draws the graph.
+
+        Uses matplotlib, specifically
+        :class:`~matplotlib.collections.LineCollection` and
+        :meth:`~matplotlib.axes.Axes.scatter`. Gets the default
+        keyword arguments by calling
+        :meth:`.QueueNetworkDiGraph.lines_scatter_args` first.
+
+        Parameters
+        ----------
+        fname : str (optional, default: None)
+            The name of the file to save to disk. If fname is None then
+            nothing is saved to disk.
+
+        Raises
+        ------
+        ImportError :
+            If Matplotlib is not installed then an :exc:`ImportError`
+            is raised.
+        """
         if not HAS_MATPLOTLIB:
             raise ImportError("Matplotlib is required to draw the graph.")
 
         fig = plt.figure(figsize=kwargs.get('figsize', (7, 7)))
         ax  = fig.gca()
 
-        lines_kwargs, scatter_kwargs = self.lines_scatter_args(ax, **kwargs)
+        lines_kwargs, scatter_kwargs = self.lines_scatter_args(**kwargs)
 
         edge_collection = LineCollection(**lines_kwargs)
         ax.add_collection(edge_collection)
@@ -327,18 +336,46 @@ class QueueNetworkDiGraph(nx.DiGraph):
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
-        if 'fname' in kwargs:
+        if fname is not None:
             # savefig needs a positional argument for some reason
-            new_kwargs = {k: v for k, v in kwargs.items() if k in savefig_kwargs}
-            fig.savefig(kwargs['fname'], **new_kwargs)
+            new_kwargs = {k: v for k, v in kwargs.items() if k in SAVEFIG_KWARGS}
+            fig.savefig(fname, **new_kwargs)
         else:
             plt.ion()
             plt.show()
             plt.ioff()
 
 
-    def lines_scatter_args(self, ax, **kwargs):
+    def lines_scatter_args(self, **kwargs):
+        """Returns the arguments used when plotting.
 
+        Parameters
+        ----------
+        **kwargs :
+            Any keyword arguments accepted by
+            :class:`~matplotlib.collections.LineCollection` and
+            :meth:`~matplotlib.axes.Axes.scatter`.
+
+        Returns
+        -------
+        tuple
+            A two tuple of dicts. The first entry is the line keyword
+            arguments for
+            :class:`~matplotlib.collections.LineCollection` and the
+            second is the keyword args for
+            :meth:`~matplotlib.axes.Axes.scatter`.
+
+        Notes
+        -----
+        There are two keyword arguments that overlap for
+        :class:`~matplotlib.collections.LineCollection` and
+        :meth:`~matplotlib.axes.Axes.scatter`, and they are ``cmap``
+        and ``linewidths``. To distinguish them, prepend ``line_``
+        or ``scatter_`` to the keywords, e.g. use ``line_cmap`` to
+        denote
+        :class:`LineCollection's<~matplotlib.collections.LineCollection>`
+        cmap argument.
+        """
         if 'pos' in kwargs:
             self.set_pos(kwargs['pos'])
         elif self.pos is None:
@@ -351,7 +388,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
             'linewidths': (1,),
             'antialiaseds': (1,),
             'linestyle': 'solid',
-            'transOffset': ax.transData,
+            'transOffset': None,
             'cmap': plt.cm.ocean_r,
             'pickradius': 5,
             'zorder': 2,
@@ -378,5 +415,12 @@ class QueueNetworkDiGraph(nx.DiGraph):
                 line_collecton_kwargs[key] = value
             if key in scatter_kwargs:
                 scatter_kwargs[key] = value
-
+        if 'line_cmap' in kwargs:
+            line_collecton_kwargs['cmap'] = kwargs['line_cmap']
+        if 'line_cmap' in kwargs:
+            scatter_kwargs['cmap'] = kwargs['scatter_cmap']
+        if 'line_linewidths' in kwargs:
+            line_collecton_kwargs['linewidths'] = kwargs['line_linewidths']
+        if 'line_linewidths' in kwargs:
+            scatter_kwargs['linewidths'] = kwargs['scatter_linewidths']
         return line_collecton_kwargs, scatter_kwargs

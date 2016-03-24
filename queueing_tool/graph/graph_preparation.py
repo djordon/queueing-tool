@@ -29,13 +29,14 @@ def add_edge_lengths(g):
     """Add add the edge lengths as a :any:`DiGraph<networkx.DiGraph>`
     for the graph.
 
-    Uses the ``pos`` vertex property to get the location of each vertex. These
-    are then used to calculate the length of an edge between two vertices.
+    Uses the ``pos`` vertex property to get the location of each
+    vertex. These are then used to calculate the length of an edge
+    between two vertices.
 
     Parameters
     ----------
     g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, dict, \
-        ``None``,  etc.
+        ``None``, etc.
         Any object that networkx can turn into a
         :any:`DiGraph<networkx.DiGraph>`
 
@@ -58,7 +59,7 @@ def add_edge_lengths(g):
         latlon1 = g.vp(e[1], 'pos')
         latlon2 = g.vp(e[0], 'pos')
         g.set_ep(e, 'edge_length', np.round(_calculate_distance(latlon1, latlon2), 3))
-    
+
     return g
 
 
@@ -78,24 +79,26 @@ def _prepare_graph(g, g_colors, q_cls, q_arg):
         Any object that networkx can turn into a
         :any:`DiGraph<networkx.DiGraph>`
     g_colors : dict
-        A dictionary of colors. The specific keys used are ``vertex_color`` and
-        ``vertex_fill_color`` for vertices that do not have any loops. Set
-        :class:`.QueueNetwork` for the default values passed.
+        A dictionary of colors. The specific keys used are
+        ``vertex_color`` and ``vertex_fill_color`` for vertices that
+        do not have any loops. Set :class:`.QueueNetwork` for the
+        default values passed.
     q_cls : dict
-        A dictionary where the keys are integers that represent an edge type,
-        and the values are :class:`.QueueServer` classes.
+        A dictionary where the keys are integers that represent an edge
+        type, and the values are :class:`.QueueServer` classes.
     q_args : dict
-        A dictionary where the keys are integers that represent an edge type,
-        and the values are the arguments that are used when creating an
-        instance of that :class:`.QueueServer` class.
+        A dictionary where the keys are integers that represent an edge
+        type, and the values are the arguments that are used when
+        creating an instance of that :class:`.QueueServer` class.
 
     Returns
     -------
     g : :class:`.QueueNetworkDiGraph`
     queues : list
-        A list of :class:`.QueueServer`\s where ``queues[k]`` is the
-        ``QueueServer`` that sets on the edge with edge index ``k``.
-    
+        A list of :class:`QueueServers<.QueueServer>` where
+        ``queues[k]`` is the ``QueueServer`` that sets on the edge with
+        edge index ``k``.
+
     Notes
     -----
     The graph ``g`` should have the ``eType`` edge property map. If it
@@ -107,13 +110,13 @@ def _prepare_graph(g, g_colors, q_cls, q_arg):
 
     The following properties are assigned as a properties to the graph;
     their default values for each edge or vertex is shown:
-        
+
         * ``vertex_pen_width``: ``1.1``,
         * ``vertex_size``: ``8``,
         * ``edge_control_points``: ``[]``
         * ``edge_marker_size``: ``8``
         * ``edge_pen_width``: ``1.25``
-        
+
     Raises
     ------
     TypeError
