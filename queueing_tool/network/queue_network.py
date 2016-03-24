@@ -403,10 +403,7 @@ class QueueNetwork(object):
         return t
 
 
-    def animate(self, out=None, t=None,
-                line_kwargs=None,
-                scatter_kwargs=None,
-                animation_kwargs=None, **kwargs):
+    def animate(self, out=None, t=None, **kwargs):
         """Animates the network as it's simulating.
 
         The animations can be saved to disk or view in interactive
@@ -552,7 +549,7 @@ class QueueNetwork(object):
             'fig': fig,
             'save_count': None,
         }
-        for key, value in animation_kwargs.items():
+        for key, value in kwargs.items():
             if key in animation_args:
                 animation_args[key] = value
 

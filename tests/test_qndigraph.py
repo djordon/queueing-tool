@@ -43,7 +43,7 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
         ax.transData = mock.Mock()
         kwargs = {'linewidths': 77, 'vmax': 107, 'beefy': 910}
 
-        a, b = self.g.lines_scatter_args(ax, **kwargs)
+        a, b = self.g.lines_scatter_args(**kwargs)
 
         self.assertTrue(a['linewidths'] == 77)
         self.assertTrue(b['vmax'] == 107)
@@ -53,7 +53,6 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
     def test_draw_graph(self):
         kwargs = {'fname': 'test1.png'}
         self.g.draw_graph(**kwargs)
-
 
         img0 = mpimg.imread('tests/img/test.png')
         img1 = mpimg.imread('test1.png')
