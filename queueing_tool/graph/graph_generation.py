@@ -219,17 +219,7 @@ def minimal_random_graph(nVertices, seed=None, **kwargs):
     g = QueueNetworkDiGraph(g.to_directed())
     g.set_pos(pos)
 
-    #max_space = np.sqrt(max_space)
-
-    #pos = {k: p for k, p in enumerate(points)}
-    #for k in range(20):
-    #    r = max_space * (1 + 0.1 * k)
-    #    g = nx.random_geometric_graph(nVertices, r, pos=pos)
-    #    nCC = nx.number_connected_components(g)
-    #    if nCC == 1:
-    #        break
-
-    return g#QueueNetworkDiGraph(g.to_directed())
+    return g
 
 
 def set_types_random(g, pTypes=None, seed=None, **kwargs):
