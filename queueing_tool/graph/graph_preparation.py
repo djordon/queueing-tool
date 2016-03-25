@@ -125,7 +125,6 @@ def _prepare_graph(g, g_colors, q_cls, q_arg):
     """
     g = _test_graph(g)
 
-    #if 'eType' not in g.edge_properties :
     ans = nx.to_dict_of_dicts(g)
     g = adjacency2graph(ans, adjust=1, is_directed=g.is_directed())
     g = QueueNetworkDiGraph(g)
@@ -140,9 +139,9 @@ def _prepare_graph(g, g_colors, q_cls, q_arg):
     g.new_edge_property('edge_marker_size')
     g.new_edge_property('edge_pen_width')
 
-    queues = _set_queues(g, q_cls, q_arg, 'cap' in g.vertex_properties)
+    queues = _set_queues(g, q_cls, q_arg, 'cap' in g.vertex_properties())
 
-    if 'pos' not in g.vertex_properties:
+    if 'pos' not in g.vertex_properties():
         g.set_pos()
 
     for k, e in enumerate(g.edges()):

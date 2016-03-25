@@ -33,6 +33,14 @@ class QueueingToolError(Exception):
 
 EPS = np.float64(1e-7)
 
+v_pens = [
+    [0.5, 0.5, 0.5, 0.5],
+    [0, 0.5, 1, 1],
+    [0.133, 0.545, 0.133, 1],
+    [0.282, 0.239, 0.545, 1],
+    [1, 0.135, 0, 1]
+]
+
 class QueueNetwork(object):
     """A class that simulates a network of queues.
 
@@ -262,6 +270,34 @@ class QueueNetwork(object):
        :align: center
     """
 
+    default_colors = {
+        'vertex_fill_color': [0.9, 0.9, 0.9, 1.0],
+        'vertex_color'     : [0.0, 0.5, 1.0, 1.0],
+        'vertex_highlight' : [0.5, 0.5, 0.5, 1.0],
+        'edge_departure'   : [0, 0, 0, 1],
+        'vertex_active'    : [0.1, 1.0, 0.5, 1.0],
+        'vertex_inactive'  : [0.9, 0.9, 0.9, 0.8],
+        'edge_active'      : [0.1, 0.1, 0.1, 1.0],
+        'edge_inactive'    : [0.8, 0.8, 0.8, 0.3],
+        'bgcolor'          : [1, 1, 1, 1]
+    }
+
+    default_classes = {
+        0: NullQueue,
+        1: QueueServer,
+        2: LossQueue,
+        3: LossQueue,
+        4: LossQueue
+    }
+
+    default_q_colors  = {
+        k: {'edge_loop_color'  : [0, 0, 0, 0],
+            'edge_color'       : [0.7, 0.7, 0.7, 0.5],
+            'vertex_fill_color': [0.9, 0.9, 0.9, 1.0],
+            'vertex_color'     : v_pens[k]}
+        for k in range(5)
+    }
+
     def __init__(self, g, q_classes=None, q_args=None, seed=None, colors=None,
                     max_agents=1000, blocking='BAS'):
 
@@ -280,35 +316,17 @@ class QueueNetwork(object):
         if colors is None:
             colors = {}
 
-        default_colors = {
-            'vertex_fill_color': [0.9, 0.9, 0.9, 1.0],
-            'vertex_color'     : [0.0, 0.5, 1.0, 1.0],
-            'vertex_highlight' : [0.5, 0.5, 0.5, 1.0],
-            'edge_departure'   : [0, 0, 0, 1],
-            'vertex_active'    : [0.1, 1.0, 0.5, 1.0],
-            'vertex_inactive'  : [0.9, 0.9, 0.9, 0.8],
-            'edge_active'      : [0.1, 0.1, 0.1, 1.0],
-            'edge_inactive'    : [0.8, 0.8, 0.8, 0.3],
-            'bgcolor'          : [1, 1, 1, 1]
-        }
-
-        colors.update(default_colors)
+        for key, value in self.default_colors.items():
+            if key not in colors:
+                colors[key] = value
 
         self.colors = colors
 
-        default_classes = {
-            0: NullQueue,
-            1: QueueServer,
-            2: LossQueue,
-            3: LossQueue,
-            4: LossQueue
-        }
-
         if q_classes is None:
-            q_classes = default_classes
+            q_classes = self.default_classes
         else:
-            for k in set(default_classes.keys()) - set(q_classes.keys()):
-                q_classes[k] = default_classes[k]
+            for k in set(self.default_classes.keys()) - set(q_classes.keys()):
+                q_classes[k] = self.default_classes[k]
 
         if q_args is None:
             q_args  = {k: {} for k in range(5)}
@@ -316,25 +334,9 @@ class QueueNetwork(object):
             for k in set(q_classes.keys()) - set(q_args.keys()):
                 q_args[k] = {}
 
-        v_pens = [
-            [0.5, 0.5, 0.5, 0.5],
-            [0, 0.5, 1, 1],
-            [0.133, 0.545, 0.133, 1],
-            [0.282, 0.239, 0.545, 1],
-            [1, 0.135, 0, 1]
-        ]
-        q_colors  = {k: {'edge_loop_color'   : [0, 0, 0, 0],
-                          'edge_color'       : [0.7, 0.7, 0.7, 0.5],
-                          'vertex_fill_color': [0.9, 0.9, 0.9, 1.0],
-                          'vertex_color'     : v_pens[k]} for k in range(5)}
-
-        for keys in q_args.keys():
-            if keys not in q_colors:
-                q_colors[keys] = q_colors[1]
-
         for key, args in q_args.items():
             if 'colors' not in args:
-                args['colors'] = q_colors[key]
+                args['colors'] = self.default_q_colors.get(key, self.default_q_colors[1])
 
         if isinstance(seed, numbers.Integral):
             np.random.seed(seed)

@@ -203,9 +203,36 @@ class QueueNetworkDiGraph(nx.DiGraph):
     """A directed graph class built to work with a
     :class:`.QueueNetwork`
 
-    If data is a dict then adjacency2graph is called first.
+    If data is a dict then :func:`.adjacency2graph` is called first.
+
+    Parameters
+    ----------
+    data : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, dict, etc.
+        Any object that networkx can turn into a
+        :any:`DiGraph<networkx.DiGraph>`.
+    kwargs :
+        Any additional arguments for :any:`DiGraph<networkx.DiGraph>`.
+
+    Attributes
+    ----------
+    pos : :class:`~numpy.ndarray` or ``None``
+        An ``(V, 2)`` array for the position for each vertex
+        (``V`` is the number of vertices). By default this is ``None``.
+    edge_color : :class:`~numpy.ndarray` or ``None``
+        An ``(E, 4)`` array for the RGBA colors for each edge.
+        (``E`` is the number of edges). By default this is ``None``.
+    vertex_color : :class:`~numpy.ndarray` or ``None``
+        An ``(V, 4)`` array for the RGBA colors for each of vertex
+        border. By default this is ``None``.
+    vertex_fill_color : :class:`~numpy.ndarray` or ``None``
+        An ``(V, 4)`` array for the RGBA colors for the body of each.
+        vertex. By default this is ``None``.
+
+    Notes
+    -----
+    Only use with a :class:`.QueueNetwork`.
     """
-    def __init__(self, data, **kwargs):
+    def __init__(self, data=None, **kwargs):
         if isinstance(data, dict):
             data = adjacency2graph(data, **kwargs)
 
@@ -261,14 +288,14 @@ class QueueNetworkDiGraph(nx.DiGraph):
             attr = getattr(self, vertex_property)
             attr[v] = value
 
-    @property
+
     def vertex_properties(self):
         props = set()
         for v in self.nodes():
             props.update(self.node[v].keys())
         return props
 
-    @property
+
     def edge_properties(self):
         props = set()
         for e in self.edges():
@@ -306,7 +333,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         :class:`~matplotlib.collections.LineCollection` and
         :meth:`~matplotlib.axes.Axes.scatter`. Gets the default
         keyword arguments by calling
-        :meth:`.QueueNetworkDiGraph.lines_scatter_args` first.
+        :meth:`~.QueueNetworkDiGraph.lines_scatter_args` first.
 
         Parameters
         ----------
@@ -349,6 +376,11 @@ class QueueNetworkDiGraph(nx.DiGraph):
     def lines_scatter_args(self, **kwargs):
         """Returns the arguments used when plotting.
 
+        Takes any keyword arguments for
+        :class:`~matplotlib.collections.LineCollection` and
+        :meth:`~matplotlib.axes.Axes.scatter` and returns two
+        dictionaries with all the defaults set.
+
         Parameters
         ----------
         **kwargs :
@@ -359,7 +391,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         Returns
         -------
         tuple
-            A two tuple of dicts. The first entry is the line keyword
+            A 2-tuple of dicts. The first entry is the keyword
             arguments for
             :class:`~matplotlib.collections.LineCollection` and the
             second is the keyword args for
@@ -373,7 +405,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         and ``linewidths``. To distinguish them, prepend ``line_``
         or ``scatter_`` to the keywords, e.g. use ``line_cmap`` to
         denote
-        :class:`LineCollection's<~matplotlib.collections.LineCollection>`
+        :class:`LineCollection's<matplotlib.collections.LineCollection>`
         cmap argument.
         """
         if 'pos' in kwargs:

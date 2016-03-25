@@ -4,7 +4,7 @@ Overview
 Queueing-tool is an Python simulation package for analyzing networks of queues.
 The simulations are event based, where events are comprised as arrivals and
 departures of agents that move from queue to queue in the network. The network
-is represented as a graph, which is handled by graph-tool.
+is represented as a graph, which is handled by NetworkX.
 
 There are three major components to queueing-tool: the :class:`.QueueServer`
 classes, :class:`.Agent` classes, and :class:`.QueueNetwork` class. This package
@@ -211,8 +211,8 @@ to save this image to disk:
 By default, each :class:`.QueueServer` starts with no arrivals from outside the
 network and it needs to be initialized before any simulations can run. You can
 specify which queues allow arrivals from outside the system with
-:class:`.QueueNetwork`\'s :meth:`~.QueueNetwork.initialize` function. In this
-example, we only want agents arriving from the type ``1`` edge so we do the
+:class:`QueueNetwork's<.QueueNetwork>` :meth:`~.QueueNetwork.initialize` function.
+In this example, we only want agents arriving from the type ``1`` edge so we do the
 following:
 
 .. doctest::

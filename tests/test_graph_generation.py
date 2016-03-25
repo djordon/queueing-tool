@@ -49,7 +49,7 @@ class TestGraphFunctions(unittest.TestCase):
         g2  = qt.add_edge_lengths(g)
 
         edge_props = set()
-        for key in g.edge_properties:
+        for key in g.edge_properties():
             edge_props.add(key)
 
         self.assertTrue('edge_length' in edge_props)

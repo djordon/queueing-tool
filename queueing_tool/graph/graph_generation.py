@@ -140,8 +140,6 @@ def generate_pagerank_graph(nVertices=250, **kwargs):
     loops then have edge types the correspond to the vertices type. The
     rest of the edges are set to type 1.
 
-    .. _pagerank: http://en.wikipedia.org/wiki/PageRanktypically
-
     Parameters
     ----------
     nVertices : int (optional, the default is 250)
@@ -203,29 +201,35 @@ def minimal_random_graph(nVertices, seed=None, **kwargs):
             v = points[k] - points[j]
             edges.append( (k, j, v[0]**2 + v[1]**2) )
 
-    cluster = 2
     mytype = [('n1', int), ('n2', int), ('distance', np.float)]
     edges  = np.array(edges, dtype=mytype)
     edges  = np.sort(edges, order='distance')
     unionF = UnionFind([k for k in range(nVertices)])
 
+    g = nx.Graph()
+
     for n1, n2, d in edges:
         max_space = d
         unionF.union(n1, n2)
-        if unionF.nClusters == cluster - 1:
+        g.add_edge(n1, n2)
+        if unionF.nClusters == 1:
             break
 
-    max_space = np.sqrt(max_space)
+    pos = {j: p for j, p in enumerate(points)}
+    g = QueueNetworkDiGraph(g.to_directed())
+    g.set_pos(pos)
 
-    pos = {k: p for k, p in enumerate(points)}
-    for k in range(10):
-        r = max_space * (1 + 0.1 * k)
-        g = nx.random_geometric_graph(nVertices, r, pos=pos)
-        nCC = nx.number_connected_components(g)
-        if nCC == 1:
-            break
+    #max_space = np.sqrt(max_space)
 
-    return QueueNetworkDiGraph(g.to_directed())
+    #pos = {k: p for k, p in enumerate(points)}
+    #for k in range(20):
+    #    r = max_space * (1 + 0.1 * k)
+    #    g = nx.random_geometric_graph(nVertices, r, pos=pos)
+    #    nCC = nx.number_connected_components(g)
+    #    if nCC == 1:
+    #        break
+
+    return g#QueueNetworkDiGraph(g.to_directed())
 
 
 def set_types_random(g, pTypes=None, seed=None, **kwargs):
@@ -323,7 +327,7 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
 
     Parameters
     ----------
-    g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, dict, etc.
+    g : :any:`networkx.DiGraph`, :class:`~numpy.ndarray`, dict, etc.
         Any object that :any:`DiGraph<networkx.DiGraph>` accepts.
     pType2 : float (optional, default: 0.1)
         Specifies the proportion of vertices that will be of type 2.
@@ -356,7 +360,7 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
     nDests = int(np.ceil(g.number_of_nodes() * pType2))
     dests  = np.where(rank >= tmp[-nDests])[0]
 
-    if 'pos' not in g.vertex_properties:
+    if 'pos' not in g.vertex_properties():
         g.set_pos()
 
     dest_pos   = np.array([g.vp(v, 'pos') for v in dests])
