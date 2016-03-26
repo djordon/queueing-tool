@@ -34,8 +34,8 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.g = qt.generate_pagerank_graph(20, seed=25)
-
+        cls.g = qt.QueueNetworkDiGraph(nx.krackhardt_kite_graph())
+        np.random.seed(10)
 
     @mock.patch.dict('sys.modules', matplotlib_mock)
     def testlines_scatter_args(self):
@@ -51,7 +51,11 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
 
 
     def test_draw_graph(self):
-        kwargs = {'fname': 'test1.png'}
+        pos = np.random.uniform(size=(self.g.number_of_nodes(), 2))
+        kwargs = {
+            'fname': 'test1.png',
+            'pos': pos
+        }
         self.g.draw_graph(**kwargs)
 
         img0 = mpimg.imread('tests/img/test.png')

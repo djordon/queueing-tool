@@ -2,11 +2,11 @@ import queueing_tool as qt
 import numpy as np
 
 # Make an adjacency list
-adja_list = [[1], [k for k in range(2, 22)]]
+adja_list = {0: {1: {}}, 1: {k: {} for k in range(2, 22)}}
 
 # Make an object that has the same dimensions as your adjacency list that
 # specifies the type of queue along each edge.
-edge_list = [[1], [2 for k in range(20)]]
+edge_list = {0: {1: 1}, 1: {k: 2 for k in range(2, 22)}}
 
 # Creates a graph-tool graph using the adjacency list and edge list
 g = qt.adjacency2graph(adjacency=adja_list, eType=edge_list)
@@ -22,25 +22,30 @@ ser_f = lambda t: t + np.random.exponential(0.2 / 2.5)
 
 # Make a mapping between the edge types and the parameters used to make those
 # queues. If a particular parameter is not given then th defaults are used.
-q_args    = {1: {'arrival_f': arr_f,
-                 'service_f': lambda t: t,
-                 'AgentClass': qt.GreedyAgent},
-             2: {'nServers': 1,
-                 'service_f': ser_f} }
-                  
+q_args = {
+    1: {'arrival_f': arr_f,
+        'service_f': lambda t: t,
+        'AgentClass': qt.GreedyAgent},
+    2: {'nServers': 1,
+        'service_f': ser_f}
+}
+
 # Put it all together to create the network
 qn = qt.QueueNetwork(g=g, q_classes=q_classes, q_args=q_args, seed=13)
 
 # The default layout is spring_layout, which doesn't look good for this network.
 # This makes a new one
-pos = g.new_vertex_property('pos')
-for v in g.nodes():
+qn.g.new_vertex_property('pos')
+pos = {}
+for v in qn.g.nodes():
     if v == 0:
-        pos[v] = [0, -0.25]
+        pos[v] = [0, 0.25]
     elif v == 1:
-        pos[v] = [0, -0.125]
+        pos[v] = [0, 0.125]
     else:
         pos[v] = [-0.5 + (v - 2.0) / 20, 0]
+
+qn.g.set_pos(pos)
 
 # List the maximum number of agents from the default of 1000 to infinity
 qn.max_agents = np.infty
@@ -61,4 +66,4 @@ qn.simulate(t=1.8)
 data = qn.get_queue_data()
 
 # Animate while simulating
-qn.animate(output_size=(700,200), pos=pos)
+qn.animate(figsize=(7, 2), pos=pos)

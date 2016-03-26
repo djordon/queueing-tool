@@ -187,22 +187,6 @@ class TestQueueNetwork(unittest.TestCase):
         with self.assertRaises(ImportError):
             self.qn.draw()
 
-    @unittest.skip("No animations")
-    def test_QueueNetwork_drawing_animation(self):
-
-        ct  = np.random.randint(15, 22)
-        ans = np.zeros(ct+4, bool)
-        self.qn.animate(out='test', n=ct, output_size=(200,200))
-
-        for k in range(ct):
-            ans[k] = os.path.isfile('test%s.png' % (k))
-            if ans[k] :
-                os.remove('test%s.png' % (k))
-
-        for k in range(4):
-            ans[ct+k] = not os.path.isfile('test%s.png' % (ct+k))
-
-        self.assertTrue( ans.all() )
 
     def test_QueueNetwork_drawing_animation_error(self):
         self.qn.clear()
@@ -214,24 +198,6 @@ class TestQueueNetwork(unittest.TestCase):
             with self.assertRaises(ImportError):
                 self.qn.animate()
 
-    @unittest.skip("No animations")
-    def test_QueueNetwork_drawing_animation_time(self):
-
-        nE0 = self.qn.nEvents
-        self.qn.animate(out='test', t=0.01, output_size=(200,200))
-        nE1 = self.qn.nEvents
-        ct  = nE1 - nE0
-        ans = np.zeros(ct+4, bool)
-
-        for k in range(ct):
-            ans[k] = os.path.isfile('test%s.png' % (k))
-            if ans[k] :
-                os.remove('test%s.png' % (k))
-
-        for k in range(4):
-            ans[ct+k] = not os.path.isfile('test%s.png' % (ct+k))
-
-        self.assertTrue( ans.all() )
 
     def test_QueueNetwork_init_error(self):
         g  = qt.generate_pagerank_graph(7)

@@ -32,7 +32,7 @@ def _test_graph(g) :
     return g
 
 
-def graph2dict(g) :
+def graph2dict(g, return_dict_of_dict=True) :
     """Takes a graph and returns an adjacency list.
 
     Parameters
@@ -40,6 +40,9 @@ def graph2dict(g) :
     g : :any:`networkx.DiGraph`, :any:`networkx.Graph`, etc.
         Any object that networkx can turn into a
         :any:`DiGraph<networkx.DiGraph>`.
+    return_dict_of_dict : bool (optional, default: True)
+        Specifies whether this function will return a dict of dicts
+        or a dict of lists.
 
     Returns
     -------
@@ -52,4 +55,8 @@ def graph2dict(g) :
     if not isinstance(g, nx.DiGraph):
         g = QueueNetworkDiGraph(g)
 
-    return nx.to_dict_of_dicts(g)
+    dict_of_dicts = nx.to_dict_of_dicts(g)
+    if return_dict_of_dict:
+        return dict_of_dicts
+    else:
+        return  {k: list(val.keys()) for k, val in dict_of_dicts.items()}

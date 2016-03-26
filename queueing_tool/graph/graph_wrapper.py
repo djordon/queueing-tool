@@ -24,7 +24,7 @@ def _matrix2dict(matrix, etype=False):
     return adj
 
 
-def _dict2dict(adj_dict, etype=False):
+def _dict2dict(adj_dict):
     """Takes a dictionary based representation of an adjacency list
     and returns a dict of dicts based representation.
     """
@@ -170,7 +170,7 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True, **kwargs)
         if isinstance(eType, np.ndarray):
             eType = _matrix2dict(eType, etype=True)
         elif isinstance(eType, dict):
-            eType = _dict2dict(eType, etype=True)
+            eType = _dict2dict(eType)
 
     for u, ty in eType.items():
         for v, et in ty.items():
@@ -241,7 +241,12 @@ class QueueNetworkDiGraph(nx.DiGraph):
         edges.sort()
         self.edge_index = {e: k for k, e in enumerate(edges)}
 
-        self.pos = None
+        pos = nx.get_node_attributes(self, 'pos')
+        if len(pos) == self.number_of_nodes():
+            self.pos = np.array([pos[v] for v in self.nodes()])
+        else:
+            self.pos = None
+
         self.edge_color = None
         self.vertex_color = None
         self.vertex_fill_color = None

@@ -64,7 +64,7 @@ def add_edge_lengths(g):
 
 
 
-def _prepare_graph(g, g_colors, q_cls, q_arg):
+def _prepare_graph(g, g_colors, q_cls, q_arg, adjust_graph):
     """Prepares a graph for use in :class:`.QueueNetwork`.
 
     This function is called by ``__init__`` in the
@@ -90,6 +90,9 @@ def _prepare_graph(g, g_colors, q_cls, q_arg):
         A dictionary where the keys are integers that represent an edge
         type, and the values are the arguments that are used when
         creating an instance of that :class:`.QueueServer` class.
+    adjust_graph : bool
+        Specifies whether the graph will be adjusted using
+        :func:`.adjacency2graph`.
 
     Returns
     -------
@@ -125,9 +128,10 @@ def _prepare_graph(g, g_colors, q_cls, q_arg):
     """
     g = _test_graph(g)
 
-    ans = nx.to_dict_of_dicts(g)
-    g = adjacency2graph(ans, adjust=1, is_directed=g.is_directed())
-    g = QueueNetworkDiGraph(g)
+    if adjust_graph:
+        ans = nx.to_dict_of_dicts(g)
+        g = adjacency2graph(ans, adjust=1, is_directed=g.is_directed())
+        g = QueueNetworkDiGraph(g)
 
     g.new_vertex_property('vertex_color')
     g.new_vertex_property('vertex_fill_color')

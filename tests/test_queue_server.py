@@ -281,34 +281,6 @@ class TestQueueServers(unittest.TestCase):
         self.assertEqual(ans, col)
 
 
-    @unittest.skip("No animations")
-    def test_ResourceQueue_animation(self):
-
-        g = nx.random_geometric_graph(100, 0.2).to_directed()
-        e = g.add_edge(1, 1)
-
-        q_cls = {1: qt.ResourceQueue, 2: qt.ResourceQueue}
-        q_arg = {1: {'nServers': 50}, 2: {'nServers': 500}}
-
-        qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg)
-        qn.max_agents = 400000
-        qn.initialize(queues=range(qn.g.number_of_edges()))
-
-        ct  = np.random.randint(25, 52)
-        ans = np.zeros(ct+4, bool)
-        qn.animate(out='test', n=ct, output_size=(200,200))
-
-        for k in range(ct+1):
-            ans[k] = os.path.isfile('test%s.png' % (k))
-            if ans[k]:
-                os.remove('test%s.png' % (k))
-
-        for k in range(4):
-            ans[ct+k] = not os.path.isfile('test%s.png' % (ct+k))
-
-        self.assertTrue( ans.all() )
-
-
     def test_InfoQueue_network(self):
 
         g = nx.random_geometric_graph(100, 0.2).to_directed()

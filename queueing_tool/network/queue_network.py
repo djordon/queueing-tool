@@ -96,6 +96,10 @@ class QueueNetwork(object):
             then checks to see if the desired queue is still at
             capacity, and if it is this process is repeated, otherwise
             she enters the queue.
+    adjust_graph : bool (optional, default: True)
+        Specifies whether the graph will be adjusted using
+        :func:`.adjacency2graph`. This makes sure terminal nodes
+        do not cause any issues when simulating.
 
     Attributes
     ----------
@@ -112,6 +116,12 @@ class QueueNetwork(object):
         on the edge with edge index ``k``.
     g : :class:`.QueueNetworkDiGraph`
         The graph for the network.
+    default_classes : dict
+        Specifies the default queue classes for each each edge type.
+    default_colors : dict
+        Specifies various the default colors.
+    default_q_colors : dict
+        Specifies the default colors used by the queues.
     in_edges : list
         A mapping between vertex indices and the in-edges at that
         vertex. Specifically, ``in_edges[v]`` returns a list containing
@@ -223,41 +233,37 @@ class QueueNetwork(object):
 
     Examples
     --------
-    The following creates a queueing network with 100 vertices:
+    The following creates a queueing network with the Moebius-Kantor
+    graph:
 
     >>> import queueing_tool as qt
     >>> import networkx as nx
     >>> import numpy as np
     >>>
-    >>> g = qt.generate_pagerank_graph(100, seed=13)
-    >>> q_cl = {2: qt.QueueServer}
+    >>> g = nx.moebius_kantor_graph()
+    >>> q_cl = {1: qt.QueueServer}
     >>> arr = lambda t: t + np.random.gamma(4, 0.0025)
-    >>> ser2 = lambda t: t + np.random.exponential(0.025)
-    >>> ser3 = lambda t: t + np.random.exponential(4)
+    >>> ser = lambda t: t + np.random.exponential(0.025)
     >>> q_ar = {
-    ...     2: {
+    ...     1: {
     ...         'arrival_f': arr,
-    ...         'service_f': ser2,
+    ...         'service_f': ser,
     ...         'nServers': 5
-    ...     },
-    ...     3: {
-    ...         'service_f': ser3,
-    ...         'nServers': 10
     ...     }
     ... }
     >>> net = qt.QueueNetwork(g, q_classes=q_cl, q_args=q_ar, seed=13)
 
-    To specify that arrivals enter from type 2 edges and simulate run:
+    To specify that arrivals enter from type 1 edges and simulate run:
 
-    >>> net.initialize(eType=2)
-    >>> net.simulate(n=10)
+    >>> net.initialize(eType=1)
+    >>> net.simulate(n=100)
 
-    Now we'd like to see how many agents are in type 2 edges:
+    Now we'd like to see how many agents are in type 1 edges:
 
-    >>> nA = [(q.nSystem, q.edge[2]) for q in net.edge2queue if q.edge[3] == 2]
+    >>> nA = [(q.nSystem, q.edge[2]) for q in net.edge2queue if q.edge[3] == 1]
     >>> nA.sort(reverse=True)
     >>> nA[:5]
-    [(2, 360), (2, 0), (1, 763), (1, 614), (1, 497)]
+    [(4, 37), (4, 34), (3, 43), (3, 32), (3, 30)]
 
     To view the state of the network do the following (note, your
     graph may be rotated):
@@ -299,7 +305,7 @@ class QueueNetwork(object):
     }
 
     def __init__(self, g, q_classes=None, q_args=None, seed=None, colors=None,
-                    max_agents=1000, blocking='BAS'):
+                 max_agents=1000, blocking='BAS', adjust_graph=True):
 
         if not isinstance(blocking, str):
             raise TypeError("blocking must be a string")
@@ -342,7 +348,7 @@ class QueueNetwork(object):
             np.random.seed(seed)
 
         if g is not None:
-            g, qs = _prepare_graph(g, self.colors, q_classes, q_args)
+            g, qs = _prepare_graph(g, self.colors, q_classes, q_args, adjust_graph)
 
             self.nV = g.number_of_nodes()
             self.nE = g.number_of_edges()
@@ -1430,24 +1436,44 @@ class QueueNetwork(object):
         likely. Lets change them randomly:
 
         >>> import queueing_tool as qt
-        >>> g = qt.generate_random_graph(5, seed=96)
+        >>> import networkx as nx
+        >>> g = nx.sedgewick_maze_graph()
         >>> mat = qt.generate_transition_matrix(g, seed=96)
         >>> net = qt.QueueNetwork(g)
+        >>> net.transitions(False)  # doctest: +ELLIPSIS
+        ...                         # doctest: +NORMALIZE_WHITESPACE
+        {0: [0.333..., 0.333..., 0.333...],
+         1: [1.0],
+         2: [0.5, 0.5],
+         3: [0.5, 0.5],
+         4: [0.25, 0.25, 0.25, 0.25],
+         5: [0.333..., 0.333..., 0.333...],
+         6: [0.5, 0.5],
+         7: [0.333..., 0.333..., 0.333...]}
         >>> net.set_transitions(mat)
         >>> net.transitions(False)  # doctest: +ELLIPSIS
         ...                         # doctest: +NORMALIZE_WHITESPACE
-        {0: [0.194..., 0.805...],
+        {0: [0.112..., 0.466..., 0.420...],
          1: [1.0],
-         2: [0.473..., 0.526...],
-         3: [0.763..., 0.129..., 0.107...],
-         4: [0.495..., 0.504...]}
-        >>> {k: list(val.keys()) for k, val in qt.graph2dict(g).items()}
+         2: [0.561..., 0.438...],
+         3: [0.545..., 0.454...],
+         4: [0.374..., 0.381..., 0.026..., 0.217...],
+         5: [0.265..., 0.460..., 0.274...],
+         6: [0.673..., 0.326...],
+         7: [0.033..., 0.336..., 0.630...]}
+
+        Below is an adjacency list for the graph ``g``.
+
+        >>> qt.graph2dict(g, False)
         ...                         # doctest: +NORMALIZE_WHITESPACE
-        {0: [1, 3],
-         1: [0],
-         2: [3, 4],
-         3: [0, 2, 4],
-         4: [2, 3]}
+        {0: [2, 5, 7],
+         1: [7],
+         2: [0, 6],
+         3: [4, 5],
+         4: [3, 5, 6, 7],
+         5: [0, 3, 4],
+         6: [2, 4],
+         7: [0, 1, 4]}
 
         What this shows is the following: when an :class:`.Agent` is at
         vertex ``0`` they will transition to vertex ``1`` with
