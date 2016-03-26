@@ -220,7 +220,7 @@ To simulate for a specified amount of simulation time run:
 
     >>> qn.simulate(t=1.8)
     >>> qn.nEvents
-    1...
+    1725
     >>> qn.draw(fname="sim.png", figsize=(7, 2), pos=pos)
     <...>
 
@@ -238,7 +238,7 @@ you have to tell it to do so:
     >>> qn.simulate(t=1.8)
     >>> data = qn.get_queue_data()
     >>> data.shape
-    (1..., 6)
+    (1139, 6)
 
 The above data also include the number of agent in the queue upon arrival to a
 queue (this includes the number of agents receiving service and the number of
@@ -252,7 +252,7 @@ we can specify that by having type ``0`` edges collect data:
     >>> qn.simulate(t=3)
     >>> data = qn.get_queue_data(eType=0)
     >>> data.shape
-    (5..., 6)
+    (550, 6)
 
 The above code collected the departure times of every agent over the simulated
 period, it did not collect each agent's arrival or waiting time. See
