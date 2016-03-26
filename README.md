@@ -53,7 +53,6 @@ Code and documentation Copyright 2014-2016 Daniel Jordon. Code released under th
   [loss networks]: http://en.wikipedia.org/wiki/Loss_network
   [cython]: http://cython.org/
   [online]: http://queueing-tool.readthedocs.org/
-  [1]: http://graph-tool.skewed.de/download#packages
   [matplotlib]: http://matplotlib.org/
   [numpy]: http://www.numpy.org/
   [networkx]: http://networkx.readthedocs.org/en/stable/

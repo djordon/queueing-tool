@@ -89,10 +89,9 @@ to model such routing.
 The network is represented as a :any:`networkx.DiGraph`. On top of
 each edge in the graph sits the queues, where each queue is represented as a
 :class:`.QueueServer`. In our model, each checkout line is it's own ``QueueServer``.
-These checkout queues receive arrivals from people who are already in the store,
-not from people outside the store. This means the store serves as its own queue
---- it receives arrivals from the neighborhood, and they get funneled into the
-checkout area. This is a relatively, simple network that is easy create using
+These checkout queues receive arrivals from people who are already in the store.
+The store receives arrivals from the neighborhood, and after some time they go to
+the checkout area. This is a relatively, simple network that is easy to create using
 queueing-tool.
 
 To create the network you need to specify an adjacency list (or adjacency
@@ -108,16 +107,10 @@ lines. Let's get started
 
     >>> import queueing_tool as qt
     >>> import numpy as np
-    >>> adja_list = [0: [1], 1: [k for k in range(2, 22)]]
+    >>> adja_list = {0: [1], 1: [k for k in range(2, 22)]}
 
 This says that node 0 points to node one, and node 1 points to nodes 2 through
-21. We could define our adjacency list more explicitly as follows:
-
-.. doctest::
-
-    >>> adja_list = {0: 1, 1: [k for k in range(2, 22)]}
-
-Now in our simple system there are three types of queues, the two important ones
+21. Now in our simple system there are three types of queues, the two important ones
 are: checkout queues, and the queue that represents the store shopping area. The
 third type represents agents leaving the store and is handled automatically by
 ``queueing_tool``. To specify what type of queue sits on each edge, you specify
@@ -125,13 +118,13 @@ an adjacency list like object:
 
 .. doctest::
 
-    >>> edge_list = [0: [1], 1: [2 for k in range(20)]]
+    >>> edge_list = {0: {1: 1}, 1: {k: 2 for k in range(2, 22)}}
 
 This says there are two main types of queues/edges, type ``1`` and type ``2``.
 All the checkout lines are of type ``2`` while the store queue (the edge
-connecting vertices zero to one) is type ``1``. The queue that represents
-agents leaving the store are type 0 queues, and is handled automatically. Now
-we can make our graph
+connecting vertex zero to vertex one) is type ``1``. The queue that represents
+agents leaving the store are type 0 queues, and is handled automatically by
+queueing-tool. Now we can make our graph
 
 .. doctest::
 
@@ -181,15 +174,17 @@ The default layout was a little hard on the eyes so I changed it a little:
 
 .. doctest::
 
-    >>> g.new_vertex_property('pos') ### FIX THIS
-    >>> for v in g.nodes() :
-    ...     vi = int(v)
-    ...     if vi == 0 :
-    ...         g.set_vp(v, 'pos', [0, -0.25])
-    ...     elif vi == 1 :
-    ...         g.set_vp(v, 'pos', [0, -0.125])
-    ...     else :
-    ...         g.set_vp(v, 'pos', [-0.5 + (vi - 2.0) / 20, 0])
+    >>> g.new_vertex_property('pos')
+    >>> pos = {}
+    >>> for v in qn.g.nodes():
+    ...     if v == 0:
+    ...         pos[v] = [0, 0.25]
+    ...     elif v == 1:
+    ...         pos[v] = [0, 0.125]
+    ...     else:
+    ...         pos[v] = [-0.5 + (v - 2.0) / 20, 0]
+    ...
+    >>> qn.g.set_pos(pos)
 
 To view the model (using this layout), do the following:
 
@@ -206,7 +201,7 @@ to save this image to disk:
 
 .. doctest::
 
-    >>> qn.draw(output="store.png", output_size=(700,200), pos=pos)
+    >>> qn.draw(fname="store.png", figsize=(7, 2), pos=pos)
 
 By default, each :class:`.QueueServer` starts with no arrivals from outside the
 network and it needs to be initialized before any simulations can run. You can
@@ -225,7 +220,7 @@ To simulate for a specified amount of simulation time run:
 
     >>> qn.simulate(t=1.8)
     >>> qn.nEvents
-    1725
+    1...
     >>> qn.draw(fname="sim.png", figsize=(7, 2), pos=pos)
     <...>
 
@@ -243,7 +238,7 @@ you have to tell it to do so:
     >>> qn.simulate(t=1.8)
     >>> data = qn.get_queue_data()
     >>> data.shape
-    (1139, 6)
+    (1..., 6)
 
 The above data also include the number of agent in the queue upon arrival to a
 queue (this includes the number of agents receiving service and the number of
@@ -257,7 +252,7 @@ we can specify that by having type ``0`` edges collect data:
     >>> qn.simulate(t=3)
     >>> data = qn.get_queue_data(eType=0)
     >>> data.shape
-    (550, 6)
+    (5..., 6)
 
 The above code collected the departure times of every agent over the simulated
 period, it did not collect each agent's arrival or waiting time. See

@@ -2,37 +2,22 @@ Installation
 ============
 
 The queueing-tool module provides a framework for creating, simulating, and
-visualizing queueing networks. The network visualizations are handled by graph-tool,
-which is required in order to use this package. You will also need numpy.
-The package works with python versions 2.7 and 3.2 or greater.
+visualizing queueing networks. The network visualizations are handled by matplotlib,
+which is only required for plotting. You will also need numpy.
+The package works with python versions 2.7 and 3.3 or greater.
 
-Installation instructions for numpy can be found in the `numpy docs`_\. There
-are installable binary packages available for Windows, Mac OS X, and many
-distributions of Linux. For graph-tool, there are precompiled `packages`_ made
-for Debian & Ubuntu, as well as `Macports`_ portfiles for those using Mac OS X.
-Unfortunately, there does not seem to be any options available for Windows users.
+The fastest was to install is with::
 
-You can obtain queueing-tool from it's `github repository`_. If you follow
-the link you can download a zip file of the package. Alternatively, you can clone
-it to your desktop using git::
+    $ pip install queueing_tool
 
-    $ git clone https://github.com/djordon/queueing-tool
+Note that this package was tested using numpy version 1.10.1 and networkx
+version 1.11.
 
-Once you have the package locally on your computer, change directories to the
-queueing-tool directory in your terminal and install using::
+You can obtain the development version of queueing-tool from it's
+`github repository`_ using::
 
-    $ python3 setup.py build
-    $ sudo python3 setup.py install
-
-Alternatively, you could install it locally with::
-
-    $ python3 setup.py build
-    $ python3 setup.py install --user
-
-Note that this package was tested using numpy version 1.9.1 and graph-tool
-versions 2.2.31.
+    $ pip install git+https://github.com/djordon/queueing-tool/zipball/master
 
 .. _numpy docs: http://docs.scipy.org/doc/numpy/user/install.html
-.. _packages: http://graph-tool.skewed.de/download#packages
-.. _Macports: http://graph-tool.skewed.de/download#macos
+.. _networkx: http://networkx.readthedocs.org/en/stable/install.html
 .. _github repository: https://github.com/djordon/queueing-tool

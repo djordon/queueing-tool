@@ -104,10 +104,7 @@ with open('../VERSION', 'r') as a_file :
 
 # The short X.Y version.
 import queueing_tool as qt
-i = release.rfind('.')
-version = release[:i] #'0.5.0'
-
-release = '0.5.0'
+version = qt.__version__
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

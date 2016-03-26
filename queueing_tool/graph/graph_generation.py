@@ -192,7 +192,7 @@ def minimal_random_graph(nVertices, seed=None, **kwargs):
     if isinstance(seed, numbers.Integral):
         np.random.seed(seed)
 
-    points = np.random.random((nVertices, 2)) * np.float(10)
+    points = np.random.random((nVertices, 2)) * 10
     nEdges = nVertices * (nVertices - 1) // 2
     edges  = []
 

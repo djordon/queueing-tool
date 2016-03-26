@@ -8,6 +8,7 @@ ctypedef cnp.float64_t F64_t
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+@cython.nonecheck(False)
 def _choice(cnp.ndarray[F64_t, ndim=1] pr, cnp.float64_t u, Py_ssize_t n):
     cdef cnp.float64_t z
     cdef int k
@@ -28,6 +29,7 @@ def _choice(cnp.ndarray[F64_t, ndim=1] pr, cnp.float64_t u, Py_ssize_t n):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+@cython.nonecheck(False)
 def _argmin(list a):
     cdef int minv, amin, k, v
     minv = a[0]

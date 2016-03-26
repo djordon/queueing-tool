@@ -428,7 +428,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
             'transOffset': None,
             'cmap': plt.cm.ocean_r,
             'pickradius': 5,
-            'zorder': 2,
+            'zorder': 0,
             'facecolors': None,
             'norm': None
         }
@@ -442,6 +442,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
             'vmin': None,
             'vmax': None,
             'marker': 'o',
+            'zorder': 2,
             'cmap': plt.cm.ocean_r,
             'linewidths': 1,
             'edgecolors': self.vertex_color

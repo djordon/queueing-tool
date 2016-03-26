@@ -8,7 +8,7 @@ adja_list = {0: {1: {}}, 1: {k: {} for k in range(2, 22)}}
 # specifies the type of queue along each edge.
 edge_list = {0: {1: 1}, 1: {k: 2 for k in range(2, 22)}}
 
-# Creates a graph-tool graph using the adjacency list and edge list
+# Creates a networkx directed graph using the adjacency list and edge list
 g = qt.adjacency2graph(adjacency=adja_list, eType=edge_list)
 
 # Make a mapping between the edge types and the queue classes that sit on each
