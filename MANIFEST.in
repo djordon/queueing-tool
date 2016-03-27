@@ -1,6 +1,6 @@
-include README
+include README.rst
 include VERSION
-include LICENSE
+include LICENSE.txt
 include MANIFEST.in
 include tests/test_*.py
 include examples/*.py

@@ -49,7 +49,7 @@ else:
     ])
 
 
-with open('README', 'r') as a_file :
+with open('README.rst', 'r') as a_file :
     long_description = a_file.read()
 
 with open('VERSION', 'r') as a_file :
@@ -80,7 +80,6 @@ setup(
     'Programming Language :: Python :: 2',
     'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.2',
     'Programming Language :: Python :: 3.3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
