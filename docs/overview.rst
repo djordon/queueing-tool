@@ -178,11 +178,11 @@ The default layout was a little hard on the eyes so I changed it a little:
     >>> pos = {}
     >>> for v in qn.g.nodes():
     ...     if v == 0:
-    ...         pos[v] = [0, 0.25]
+    ...         pos[v] = [0, 0.8]
     ...     elif v == 1:
-    ...         pos[v] = [0, 0.125]
+    ...         pos[v] = [0, 0.4]
     ...     else:
-    ...         pos[v] = [-0.5 + (v - 2.0) / 20, 0]
+    ...         pos[v] = [-5. + (v - 2.0) / 2, 0]
     ...
     >>> qn.g.set_pos(pos)
 
@@ -190,7 +190,7 @@ To view the model (using this layout), do the following:
 
 .. doctest::
 
-    >>> qn.draw(figsize=(7, 2), pos=pos)
+    >>> qn.draw(figsize=(16, 3.5), pos=pos)
     <...>
 
 .. figure:: store.png
@@ -221,7 +221,7 @@ To simulate for a specified amount of simulation time run:
     >>> qn.simulate(t=1.8)
     >>> qn.nEvents
     1725
-    >>> qn.draw(fname="sim.png", figsize=(7, 2), pos=pos)
+    >>> qn.draw(fname="sim.png", figsize=(16, 3.5), pos=pos)
     <...>
 
 .. figure:: sim.png

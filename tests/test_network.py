@@ -159,7 +159,7 @@ class TestQueueNetwork(unittest.TestCase):
 
         stamp = [(q.nArrivals, q.time) for q in qn2.edge2queue]
         qn2.simulate(n=25000)
-        print(qn.time, qn2.time)
+
         self.assertFalse(qn.current_time == qn2.current_time)
         self.assertFalse(qn.time == qn2.time)
 
@@ -172,15 +172,16 @@ class TestQueueNetwork(unittest.TestCase):
 
     @mock.patch('queueing_tool.network.queue_network.HAS_MATPLOTLIB', True)
     def test_QueueNetwork_drawing(self):
-        args = {'c': 'b', 'bgcolor': 'green'}
-        self.qn.draw(**args)
-        self.qn.g.draw_graph.assert_called_with(**args)
+        scatter_kwargs = {'c': 'b'}
+        kwargs = {'bgcolor': 'green'}
+        self.qn.draw(scatter_kwargs=scatter_kwargs, **kwargs)
+        self.qn.g.draw_graph.assert_called_with(scatter_kwargs=scatter_kwargs,
+                                                line_kwargs=None, **kwargs)
 
-        args = {'c': 'b'}
-        self.qn.draw(**args)
-        self.assertTrue('bgcolor' not in args)
-        args['bgcolor'] = self.qn.colors['bgcolor']
-        self.qn.g.draw_graph.assert_called_with(**args)
+        self.qn.draw(scatter_kwargs=scatter_kwargs)
+        bgcolor = self.qn.colors['bgcolor']
+        self.qn.g.draw_graph.assert_called_with(scatter_kwargs=scatter_kwargs,
+                                                line_kwargs=None, bgcolor=bgcolor)
 
     @mock.patch('queueing_tool.network.queue_network.HAS_MATPLOTLIB', False)
     def test_QueueNetwork_drawing_importerror(self):
@@ -489,7 +490,8 @@ class TestQueueNetwork(unittest.TestCase):
     def test_QueueNetwork_show_type(self):
         args = {'c': 'b', 'bgcolor': 'green'}
         self.qn.show_type(eType=2, **args)
-        self.qn.g.draw_graph.assert_called_with(**args)
+        self.qn.g.draw_graph.assert_called_with(scatter_kwargs=None,
+                                                line_kwargs=None, **args)
 
         #ans = []
         #for q in self.qn.edge2queue:
@@ -506,7 +508,8 @@ class TestQueueNetwork(unittest.TestCase):
             'bgcolor': 'green'
         }
         self.qn.show_active(**args)
-        self.qn.g.draw_graph.assert_called_with(**args)
+        self.qn.g.draw_graph.assert_called_with(scatter_kwargs=None,
+                                                line_kwargs=None, **args)
 
     def test_QueueNetwork_sorting(self):
 

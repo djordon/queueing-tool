@@ -294,7 +294,7 @@ class QueueServer(object):
         self._current_t   = 0         # The time of the last event.
         self._time        = infty     # The time of the next event.
         self._next_ct     = 0         # The next time an arrival from outside the network can arrive.
-        self._black_cap   = 5.        # Used to help color edges and vertices.
+        self._black_cap   = 4.        # Used to help color edges and vertices.
 
         if isinstance(seed, numbers.Integral):
             np.random.seed(seed)
@@ -717,16 +717,15 @@ class QueueServer(object):
             color = self.colors['vertex_color']
 
         else:
-            nSy = self.nSystem
-            cap = self.nServers
-            tmp = 0.9 - min(nSy / (self._black_cap * cap), 0.9)
+            div = (self.nSystem * self.nServers) + 2.
+            tmp = 1. - min(self.nSystem / div, 1.)
 
             if self.edge[0] == self.edge[1] :
-                color    = [i * tmp / 0.9 for i in self.colors['vertex_fill_color']]
+                color    = [i * tmp for i in self.colors['vertex_fill_color']]
                 color[3] = 1.0
             else:
-                color    = [i * tmp / 0.9 for i in self.colors['edge_color']]
-                color[3] = 0.7 - tmp / 1.8
+                color    = [i * tmp for i in self.colors['edge_color']]
+                color[3] = 0.7 - tmp / 2.
 
         return color
 

@@ -277,12 +277,12 @@ class QueueNetwork(object):
     """
 
     default_colors = {
-        'vertex_fill_color': [0.9, 0.9, 0.9, 1.0],
+        'vertex_fill_color': [0.95, 0.95, 0.95, 1.0],
         'vertex_color'     : [0.0, 0.5, 1.0, 1.0],
         'vertex_highlight' : [0.5, 0.5, 0.5, 1.0],
         'edge_departure'   : [0, 0, 0, 1],
         'vertex_active'    : [0.1, 1.0, 0.5, 1.0],
-        'vertex_inactive'  : [0.9, 0.9, 0.9, 0.8],
+        'vertex_inactive'  : [0.95, 0.95, 0.95, 1.0],
         'edge_active'      : [0.1, 0.1, 0.1, 1.0],
         'edge_inactive'    : [0.8, 0.8, 0.8, 0.3],
         'bgcolor'          : [1, 1, 1, 1]
@@ -299,7 +299,7 @@ class QueueNetwork(object):
     default_q_colors  = {
         k: {'edge_loop_color'  : [0, 0, 0, 0],
             'edge_color'       : [0.7, 0.7, 0.7, 0.5],
-            'vertex_fill_color': [0.9, 0.9, 0.9, 1.0],
+            'vertex_fill_color': [0.95, 0.95, 0.95, 1.0],
             'vertex_color'     : v_pens[k]}
         for k in range(5)
     }
@@ -411,7 +411,8 @@ class QueueNetwork(object):
         return t
 
 
-    def animate(self, out=None, t=None, **kwargs):
+    def animate(self, out=None, t=None, line_kwargs=None,
+                scatter_kwargs=None, **kwargs):
         """Animates the network as it's simulating.
 
         The animations can be saved to disk or view in interactive
@@ -428,6 +429,12 @@ class QueueNetwork(object):
             The amount of simulation time to simulate forward. If
             given, and ``out`` is given, ``t`` is used instead of
             ``n``.
+        line_kwargs : (optional, defaults: None)
+            Any keyword arguments accepted by
+            :class:`~matplotlib.collections.LineCollection`
+        scatter_kwargs : (optional, defaults: None)
+            Any keyword arguments accepted by
+            :meth:`~matplotlib.axes.Axes.scatter`.
         **kwargs :
             This method calls :meth:`~matplotlib.axes.scatter`,
             :class:`~matplotlib.collections.LineCollection`,
@@ -522,7 +529,13 @@ class QueueNetwork(object):
         fig = plt.figure(figsize=kwargs.get('figsize', (7, 7)))
         ax  = fig.gca()
 
-        line_args, scat_args = self.g.lines_scatter_args(**kwargs)
+        mpl_kwargs = {
+            'line_kwargs': line_kwargs,
+            'scatter_kwargs': scatter_kwargs,
+            'pos': kwargs.get('pos')
+        }
+
+        line_args, scat_args = self.g.lines_scatter_args(**mpl_kwargs)
 
         lines = LineCollection(**line_args)
         lines = ax.add_collection(lines)
@@ -661,7 +674,8 @@ class QueueNetwork(object):
         return net
 
 
-    def draw(self, update_colors=True, **kwargs):
+    def draw(self, update_colors=True, line_kwargs=None,
+             scatter_kwargs=None, **kwargs):
         """Draws the network. The coloring of the network corresponds
         to the number of agents at each queue.
 
@@ -669,16 +683,15 @@ class QueueNetwork(object):
         ----------
         update_colors : ``bool`` (optional, default: ``True``).
             Specifies whether all the colors are updated.
+        line_kwargs : (optional, defaults: None)
+            Any keyword arguments accepted by
+            :class:`~matplotlib.collections.LineCollection`
+        scatter_kwargs : (optional, defaults: None)
+            Any keyword arguments accepted by
+            :meth:`~matplotlib.axes.Axes.scatter`.
         **kwargs
             Any parameters to pass to
             :func:`.QueueNetworkDiGraph.draw_graph`.
-        output_size : tuple (optional, default: ``(7, 7)``).
-            This is :func:`.QueueNetworkDiGraph.draw_graph` parameter
-            for specifying the size of canvas.
-        output : str (optional, default: ``None``)
-            Specifies the directory where the drawing is saved. If
-            output is ``None``, then the results are drawn using
-            GraphViz.
 
         Notes
         -----
@@ -715,7 +728,7 @@ class QueueNetwork(object):
         saved to disk. For example, to save the drawing to the current
         working directory do the following:
 
-        >>> net.draw(output="current_state.png", output_size=(400,400)) # doctest: +SKIP
+        >>> net.draw(output="current_state.png", figsize=(4, 4)) # doctest: +SKIP
 
         .. figure:: current_state.png
             :align: center
@@ -731,7 +744,7 @@ class QueueNetwork(object):
         valid. For example, to show the vertex number in the graph, you
         could do the following:
 
-        >>> net.draw(linestyle='dashed') # doctest: +SKIP
+        >>> net.draw(line_kwargs={'linestyle': 'dashed'}) # doctest: +SKIP
         """
         if not HAS_MATPLOTLIB:
             raise ImportError("matplotlib is necessary to draw the network.")
@@ -742,7 +755,8 @@ class QueueNetwork(object):
         if 'bgcolor' not in kwargs:
             kwargs['bgcolor'] = self.colors['bgcolor']
 
-        ans = self.g.draw_graph(**kwargs)
+        self.g.draw_graph(line_kwargs=line_kwargs,
+                          scatter_kwargs=scatter_kwargs, **kwargs)
 
 
     def get_agent_data(self, queues=None, edge=None, eType=None, return_header=False):
@@ -1526,11 +1540,11 @@ class QueueNetwork(object):
                 nSy += self.edge2queue[ei].nSystem
                 cap += self.edge2queue[ei].nServers
 
-            div = 5. if cap <= 1 else (2. * cap)
-            tmp = 0.9 - min(nSy / div, 0.9)
+            div = 4. if cap <= 1 else (2. * cap) + 2.
+            tmp = 1. - min(nSy / div, 1.)
 
-            color = [i * tmp / 0.9 for i in self.colors['vertex_fill_color']]
-            color[3] = 1.0 - tmp
+            color    = [i * tmp for i in self.colors['vertex_fill_color']]
+            color[3] = 1.0
             self.g.set_vp(v, 'vertex_fill_color', color)
             if not ee_is_edge:
                 self.g.set_vp(v, 'vertex_color', self.colors['vertex_color'])

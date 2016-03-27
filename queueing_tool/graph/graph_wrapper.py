@@ -331,7 +331,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         self.pos = np.array([pos[v] for v in self.nodes()])
 
 
-    def draw_graph(self, fname=None, **kwargs):
+    def draw_graph(self, line_kwargs=None, scatter_kwargs=None, **kwargs):
         """Draws the graph.
 
         Uses matplotlib, specifically
@@ -342,15 +342,26 @@ class QueueNetworkDiGraph(nx.DiGraph):
 
         Parameters
         ----------
-        fname : str (optional, default: None)
-            The name of the file to save to disk. If fname is None then
-            nothing is saved to disk.
+        line_kwargs : (optional, defaults: None)
+            Any keyword arguments accepted by
+            :class:`~matplotlib.collections.LineCollection`
+        scatter_kwargs : (optional, defaults: None)
+            Any keyword arguments accepted by
+            :meth:`~matplotlib.axes.Axes.scatter`.
+        kwargs :
+            Any keyword arguments used by
+            :meth:`~matplotlib.figure.Figure.savefig`.
 
         Raises
         ------
         ImportError :
             If Matplotlib is not installed then an :exc:`ImportError`
             is raised.
+
+        Notes
+        -----
+        If the ``fname`` keyword is passed, then the figure is saved to
+        locally.
         """
         if not HAS_MATPLOTLIB:
             raise ImportError("Matplotlib is required to draw the graph.")
@@ -358,9 +369,15 @@ class QueueNetworkDiGraph(nx.DiGraph):
         fig = plt.figure(figsize=kwargs.get('figsize', (7, 7)))
         ax  = fig.gca()
 
-        lines_kwargs, scatter_kwargs = self.lines_scatter_args(**kwargs)
+        mpl_kwargs = {
+            'line_kwargs': line_kwargs,
+            'scatter_kwargs': scatter_kwargs,
+            'pos': kwargs.get('pos')
+        }
 
-        edge_collection = LineCollection(**lines_kwargs)
+        line_kwargs, scatter_kwargs = self.lines_scatter_args(**mpl_kwargs)
+
+        edge_collection = LineCollection(**line_kwargs)
         ax.add_collection(edge_collection)
         ax.scatter(**scatter_kwargs)
 
@@ -368,17 +385,17 @@ class QueueNetworkDiGraph(nx.DiGraph):
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
-        if fname is not None:
+        if 'fname' in kwargs:
             # savefig needs a positional argument for some reason
             new_kwargs = {k: v for k, v in kwargs.items() if k in SAVEFIG_KWARGS}
-            fig.savefig(fname, **new_kwargs)
+            fig.savefig(kwargs['fname'], **new_kwargs)
         else:
             plt.ion()
             plt.show()
             plt.ioff()
 
 
-    def lines_scatter_args(self, **kwargs):
+    def lines_scatter_args(self, line_kwargs=None, scatter_kwargs=None, pos=None):
         """Returns the arguments used when plotting.
 
         Takes any keyword arguments for
@@ -388,9 +405,11 @@ class QueueNetworkDiGraph(nx.DiGraph):
 
         Parameters
         ----------
-        **kwargs :
+        line_kwargs : (optional, defaults: None)
             Any keyword arguments accepted by
-            :class:`~matplotlib.collections.LineCollection` and
+            :class:`~matplotlib.collections.LineCollection`
+        scatter_kwargs : (optional, defaults: None)
+            Any keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.scatter`.
 
         Returns
@@ -404,17 +423,11 @@ class QueueNetworkDiGraph(nx.DiGraph):
 
         Notes
         -----
-        There are two keyword arguments that overlap for
-        :class:`~matplotlib.collections.LineCollection` and
-        :meth:`~matplotlib.axes.Axes.scatter`, and they are ``cmap``
-        and ``linewidths``. To distinguish them, prepend ``line_``
-        or ``scatter_`` to the keywords, e.g. use ``line_cmap`` to
-        denote
-        :class:`LineCollection's<matplotlib.collections.LineCollection>`
-        cmap argument.
+        If a specific keyword argument is not passed then the defaults
+        are used.
         """
-        if 'pos' in kwargs:
-            self.set_pos(kwargs['pos'])
+        if pos is not None:
+            self.set_pos(pos)
         elif self.pos is None:
             self.set_pos()
 
@@ -430,12 +443,16 @@ class QueueNetworkDiGraph(nx.DiGraph):
             'pickradius': 5,
             'zorder': 0,
             'facecolors': None,
-            'norm': None
+            'norm': None,
+            'antialiaseds': None,
+            'offsets': None,
+            'offset_position': 'screen',
+            'hatch': None,
         }
-        scatter_kwargs = {
+        scatter_kwargs_ = {
             'x': self.pos[:, 0],
             'y': self.pos[:, 1],
-            's': 100,
+            's': 50,
             'c': self.vertex_fill_color,
             'alpha': None,
             'norm': None,
@@ -445,20 +462,22 @@ class QueueNetworkDiGraph(nx.DiGraph):
             'zorder': 2,
             'cmap': plt.cm.ocean_r,
             'linewidths': 1,
-            'edgecolors': self.vertex_color
+            'edgecolors': self.vertex_color,
+            'facecolors': None,
+            'antialiaseds': None,
+            'offset_position': 'screen',
+            'hatch': None,
         }
 
-        for key, value in kwargs.items():
+        line_kwargs = {} if line_kwargs is None else line_kwargs
+        scatter_kwargs = {} if scatter_kwargs is None else scatter_kwargs
+
+        for key, value in line_kwargs.items():
             if key in line_collecton_kwargs:
                 line_collecton_kwargs[key] = value
-            if key in scatter_kwargs:
-                scatter_kwargs[key] = value
-        if 'line_cmap' in kwargs:
-            line_collecton_kwargs['cmap'] = kwargs['line_cmap']
-        if 'line_cmap' in kwargs:
-            scatter_kwargs['cmap'] = kwargs['scatter_cmap']
-        if 'line_linewidths' in kwargs:
-            line_collecton_kwargs['linewidths'] = kwargs['line_linewidths']
-        if 'line_linewidths' in kwargs:
-            scatter_kwargs['linewidths'] = kwargs['scatter_linewidths']
-        return line_collecton_kwargs, scatter_kwargs
+
+        for key, value in scatter_kwargs.items():
+            if key in scatter_kwargs_:
+                scatter_kwargs_[key] = value
+
+        return line_collecton_kwargs, scatter_kwargs_

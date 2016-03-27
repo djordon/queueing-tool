@@ -41,9 +41,11 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
     def testlines_scatter_args(self):
         ax = mock.Mock()
         ax.transData = mock.Mock()
-        kwargs = {'linewidths': 77, 'vmax': 107, 'beefy': 910}
+        line_args = {'linewidths': 77, 'vmax': 107}
+        scat_args = {'vmax': 107}
+        kwargs = {'pos': {v: (910, 10) for v in self.g.nodes()}}
 
-        a, b = self.g.lines_scatter_args(**kwargs)
+        a, b = self.g.lines_scatter_args(line_args, scat_args, **kwargs)
 
         self.assertTrue(a['linewidths'] == 77)
         self.assertTrue(b['vmax'] == 107)
@@ -56,7 +58,7 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
             'fname': 'test1.png',
             'pos': pos
         }
-        self.g.draw_graph(**kwargs)
+        self.g.draw_graph(scatter_kwargs={'s': 100},**kwargs)
 
         img0 = mpimg.imread('tests/img/test.png')
         img1 = mpimg.imread('test1.png')

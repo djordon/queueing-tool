@@ -77,7 +77,7 @@ Copyright and license
 
 Code and documentation Copyright 2014-2016 Daniel Jordon. Code released
 under the `MIT
-license <https://github.com/djordon/queueing-tool/blob/master/LICENSE>`__.
+license <https://github.com/djordon/queueing-tool/blob/master/LICENSE.txt>`__.
 
 .. |Build Status| image:: https://travis-ci.org/djordon/queueing-tool.svg?branch=master
    :target: https://travis-ci.org/djordon/queueing-tool

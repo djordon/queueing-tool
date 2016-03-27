@@ -39,11 +39,11 @@ qn.g.new_vertex_property('pos')
 pos = {}
 for v in qn.g.nodes():
     if v == 0:
-        pos[v] = [0, 0.25]
+        pos[v] = [0, .8]
     elif v == 1:
-        pos[v] = [0, 0.125]
+        pos[v] = [0, 0.4]
     else:
-        pos[v] = [-0.5 + (v - 2.0) / 20, 0]
+        pos[v] = [-5. + (v - 2.0) / 2, 0]
 
 qn.g.set_pos(pos)
 
@@ -66,4 +66,4 @@ qn.simulate(t=1.8)
 data = qn.get_queue_data()
 
 # Animate while simulating
-qn.animate(figsize=(7, 2), pos=pos)
+qn.animate(figsize=(16, 3.5), pos=pos)
