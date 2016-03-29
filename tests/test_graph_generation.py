@@ -130,6 +130,8 @@ class TestGraphFunctions(unittest.TestCase):
         pType = {eType[k] : prob[k] for k in range(nT)}
         with self.assertRaises(ValueError):
             g = qt.set_types_random(g, proportions=pType, seed=10)
+        with self.assertRaises(ValueError):
+            g = qt.set_types_random(g, loop_proportions=pType, seed=10)
 
 
     def test_test_graph_importerror(self):
