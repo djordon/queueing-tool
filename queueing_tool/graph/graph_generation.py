@@ -64,7 +64,7 @@ def generate_transition_matrix(g, seed=None):
     return mat
 
 
-def generate_random_graph(nVertices=250, **kwargs):
+def generate_random_graph(nVertices=250, prob_loop=0.5, **kwargs):
     """Creates a random graph where the edge and with different
     vertex types.
 
@@ -78,6 +78,8 @@ def generate_random_graph(nVertices=250, **kwargs):
     ----------
     nVertices : int (optional, default: 250)
         The number of vertices in the graph.
+    prob_loop: float (optional, default: 0.5)
+        The probability that a loop gets added to a vertex.
     **kwargs :
         Any parameters to send to :func:`.minimal_random_graph` or
         :func:`.set_types_random`.
@@ -124,7 +126,7 @@ def generate_random_graph(nVertices=250, **kwargs):
     for v in g.nodes():
         e = (v, v)
         if not g.is_edge(e):
-            if np.random.uniform() < 0.5:
+            if np.random.uniform() < prob_loop:
                 g.add_edge(*e)
     g = set_types_random(g, **kwargs)
     return g
@@ -295,10 +297,10 @@ def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
     props  = list(proportions.values())
     lprops = list(loop_proportions.values())
 
-    if np.isclose(sum(proportions), 1.0):
+    if not np.isclose(sum(props), 1.0):
         msg = "proportions values must sum to one."
         raise ValueError("proportions values must sum to one.")
-    if np.isclose(sum(loop_proportions), 1.0):
+    if not np.isclose(sum(lprops), 1.0):
         msg = "loop_proportions values must sum to one."
         raise ValueError("loop_proportions values must sum to one.")
 

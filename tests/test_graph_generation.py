@@ -123,7 +123,7 @@ class TestGraphFunctions(unittest.TestCase):
         mat   = [[g.ep(e, 'eType') == k for e in non_loops] for k in eType]
         props = (np.array(mat).sum(1) + 0.0) / len(non_loops)
         ps    = np.array([pType[k] for k in eType])
-        print(max(abs(props - ps)))
+
         self.assertTrue(np.allclose(props , ps, atol=0.01))
 
         prob[-1] = 2
