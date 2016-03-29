@@ -298,7 +298,7 @@ class QueueNetwork(object):
 
     default_q_colors  = {
         k: {'edge_loop_color'  : [0, 0, 0, 0],
-            'edge_color'       : [0.7, 0.7, 0.7, 0.5],
+            'edge_color'       : [0.8, 0.8, 0.8, 1.0],
             'vertex_fill_color': [0.95, 0.95, 0.95, 1.0],
             'vertex_color'     : v_pens[k]}
         for k in range(5)
@@ -917,7 +917,7 @@ class QueueNetwork(object):
         return data
 
 
-    def initialize(self, nActive=1, queues=None, edge=None, eType=None):
+    def initialize(self, nActive=1, queues=None, edges=None, eType=None):
         """Prepares the ``QueueNetwork`` for simulation.
 
         Each :class:`.QueueServer` in the network starts inactive,
@@ -936,7 +936,7 @@ class QueueNetwork(object):
         queues : int *array_like* (optional)
             The edge index (or an iterable of edge indices) identifying
             the :class:`QueueServer(s)<.QueueServer>` to make active by.
-        edge : 2-tuple of int or *array_like* (optional)
+        edges : 2-tuple of int or *array_like* (optional)
             Explicitly specify which queues to make active. Must be
             either: a 2-tuple of the edge's source and target vertex
             indices or an iterable of 2-tuples of the edge's source and
@@ -952,7 +952,7 @@ class QueueNetwork(object):
             and ``nActive`` is not an integer or is less than 1 then a
             :exc:`~RuntimeError` is raised.
         """
-        if queues is None and edge is None and eType is None:
+        if queues is None and edges is None and eType is None:
             if nActive >= 1 and isinstance(nActive, numbers.Integral):
                 n = min(nActive, self.nE)
                 queues = np.random.choice(self.nE, size=n, replace=False)
@@ -961,7 +961,7 @@ class QueueNetwork(object):
                        "positive int.")
                 raise ValueError(msg)
         else:
-            queues = _get_queues(self.g, queues, edge, eType)
+            queues = _get_queues(self.g, queues, edges, eType)
 
         if len(queues) > self.max_agents:
             queues = queues[:self.max_agents]
@@ -1046,7 +1046,7 @@ class QueueNetwork(object):
         ...                         # doctest: +NORMALIZE_WHITESPACE
         {0: [1.0],
          1: [0.5, 0.5],
-         2: [0.333..., 0.333..., 0.333...],
+         2: [0.25, 0.25, 0.25, 0.25],
          3: [1.0],
          4: [1.0]}
 
@@ -1058,7 +1058,7 @@ class QueueNetwork(object):
         ...                         # doctest: +NORMALIZE_WHITESPACE
         {0: [1.0],
          1: [0.75, 0.25],
-         2: [0.333..., 0.333..., 0.333...],
+         2: [0.25, 0.25, 0.25, 0.25],
          3: [1.0],
          4: [1.0]}
 
@@ -1072,7 +1072,7 @@ class QueueNetwork(object):
         ...                         # doctest: +NORMALIZE_WHITESPACE
         {0: [1.0],
          1: [0.962..., 0.037...],
-         2: [0.338..., 0.396..., 0.264...],
+         2: [0.301..., 0.353..., 0.235..., 0.108...],
          3: [1.0],
          4: [1.0]}
         """

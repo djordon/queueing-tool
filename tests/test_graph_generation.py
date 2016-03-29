@@ -108,7 +108,7 @@ class TestGraphFunctions(unittest.TestCase):
 
     def test_set_types_random(self):
 
-        nV = 1000
+        nV = 1200
         nT = np.random.randint(5, 10)
         g  = nx.random_geometric_graph(nV, 0.1).to_directed()
 
@@ -117,18 +117,19 @@ class TestGraphFunctions(unittest.TestCase):
         prob  = prob / sum(prob)
 
         pType = {eType[k] : prob[k] for k in range(nT)}
-        g = qt.set_types_random(g, pTypes=pType, seed=10)
+        g = qt.set_types_random(g, proportions=pType)
 
-        mat   = [[g.ep(e, 'eType') == k for e in g.edges()] for k in eType]
-        props = (np.array(mat).sum(1) + 0.0) / g.number_of_edges()
+        non_loops = [e for e in g.edges() if e[0] != e[1]]
+        mat   = [[g.ep(e, 'eType') == k for e in non_loops] for k in eType]
+        props = (np.array(mat).sum(1) + 0.0) / len(non_loops)
         ps    = np.array([pType[k] for k in eType])
-
-        self.assertTrue( np.allclose(props , ps, atol=0.001) )
+        print(max(abs(props - ps)))
+        self.assertTrue(np.allclose(props , ps, atol=0.01))
 
         prob[-1] = 2
         pType = {eType[k] : prob[k] for k in range(nT)}
         with self.assertRaises(ValueError):
-            g = qt.set_types_random(g, pTypes=pType, seed=10)
+            g = qt.set_types_random(g, proportions=pType, seed=10)
 
 
     def test_test_graph_importerror(self):

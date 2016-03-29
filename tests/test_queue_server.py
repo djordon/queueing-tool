@@ -219,7 +219,7 @@ class TestQueueServers(unittest.TestCase):
         qcl = {1: qt.QueueServer, 2: qt.NullQueue}
 
         qn  = qt.QueueNetwork(g, q_classes=qcl)
-        qn.initialize(edge=(0, 1))
+        qn.initialize(edges=(0, 1))
         qn.start_collecting_data(eType=2)
         qn.max_agents = 5000
         qn.simulate(n=10000)

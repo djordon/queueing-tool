@@ -539,19 +539,19 @@ class QueueServer(object):
         --------
         :meth:`.simulate` : Simulates the queue forward.
         """
-        if self._departures[0]._time < self._arrivals[0]._time :
+        if self._departures[0]._time < self._arrivals[0]._time:
             new_depart        = heappop(self._departures)
             self._current_t   = new_depart._time
             self._nTotal     -= 1
             self.nSystem     -= 1
             self.nDepartures += 1
 
-            if self.collect_data and new_depart.issn in self.data :
+            if self.collect_data and new_depart.issn in self.data:
                 self.data[new_depart.issn][-1][2] = self._current_t
 
-            if len(self.queue) > 0 :
+            if len(self.queue) > 0:
                 agent = self.queue.popleft()
-                if self.collect_data and agent.issn in self.data :
+                if self.collect_data and agent.issn in self.data:
                     self.data[agent.issn][-1][1] = self._current_t
 
                 agent._time = self.service_f(self._current_t)
@@ -560,34 +560,34 @@ class QueueServer(object):
 
             new_depart.queue_action(self, 2)
 
-            if self._arrivals[0]._time < self._departures[0]._time :
+            if self._arrivals[0]._time < self._departures[0]._time:
                 self._time = self._arrivals[0]._time
             else:
                 self._time = self._departures[0]._time
 
             return new_depart
 
-        elif self._arrivals[0]._time < infty :
+        elif self._arrivals[0]._time < infty:
             arrival = heappop(self._arrivals)
             self._current_t = arrival._time
 
-            if self._active :
+            if self._active:
                 self._add_arrival()
 
             self.nSystem    += 1
             self._nArrivals += 1
 
-            if self.collect_data :
+            if self.collect_data:
                 b = 0 if self.nSystem <= self.nServers else 1
-                if arrival.issn not in self.data :
+                if arrival.issn not in self.data:
                     self.data[arrival.issn] = [[arrival._time, 0, 0, len(self.queue)+b, self.nSystem]]
                 else:
                     self.data[arrival.issn].append([arrival._time, 0, 0, len(self.queue)+b, self.nSystem])
 
             arrival.queue_action(self, 0)
 
-            if self.nSystem <= self.nServers :
-                if self.collect_data :
+            if self.nSystem <= self.nServers:
+                if self.collect_data:
                     self.data[arrival.issn][-1][1] = arrival._time
 
                 arrival._time = self.service_f(arrival._time)
@@ -596,7 +596,7 @@ class QueueServer(object):
             else:
                 self.queue.append(arrival)
 
-            if self._arrivals[0]._time < self._departures[0]._time :
+            if self._arrivals[0]._time < self._departures[0]._time:
                 self._time = self._arrivals[0]._time
             else:
                 self._time = self._departures[0]._time
@@ -668,15 +668,15 @@ class QueueServer(object):
                 tmp = self.next_event()
         elif t is not None:
             then = self._current_t + t
-            while self._current_t < then and self._time < infty :
+            while self._current_t < then and self._time < infty:
                 tmp = self.next_event()
         elif nD is not None:
             nDepartures = self.nDepartures + nD
-            while self.nDepartures < nDepartures and self._time < infty :
+            while self.nDepartures < nDepartures and self._time < infty:
                 tmp = self.next_event()
         elif nA is not None:
             nArrivals = self._oArrivals + nA
-            while self._oArrivals < nArrivals and self._time < infty :
+            while self._oArrivals < nArrivals and self._time < infty:
                 tmp = self.next_event()
 
 
@@ -710,22 +710,22 @@ class QueueServer(object):
               ``colors['vertex_fill_color']`` if the queue sits on a
               loop, and ``colors['edge_color']`` otherwise.
         """
-        if which == 1 :
+        if which == 1:
             color = self.colors['edge_loop_color']
 
-        elif which == 2 :
+        elif which == 2:
             color = self.colors['vertex_color']
 
         else:
             div = (self.nSystem * self.nServers) + 2.
             tmp = 1. - min(self.nSystem / div, 1.)
 
-            if self.edge[0] == self.edge[1] :
+            if self.edge[0] == self.edge[1]:
                 color    = [i * tmp for i in self.colors['vertex_fill_color']]
                 color[3] = 1.0
             else:
                 color    = [i * tmp for i in self.colors['edge_color']]
-                color[3] = 0.7 - tmp / 2.
+                color[3] = 1. - tmp / 2.
 
         return color
 
@@ -867,10 +867,10 @@ class LossQueue(QueueServer):
             If the next event is a departure then the departing agent
             is returned, otherwise nothing is returned.
         """
-        if self._departures[0]._time < self._arrivals[0]._time :
+        if self._departures[0]._time < self._arrivals[0]._time:
             return super(LossQueue, self).next_event()
-        elif self._arrivals[0]._time < infty :
-            if self.nSystem < self.nServers + self.buffer :
+        elif self._arrivals[0]._time < infty:
+            if self.nSystem < self.nServers + self.buffer:
                 super(LossQueue, self).next_event()
             else:
                 self.nBlocked += 1
@@ -881,16 +881,16 @@ class LossQueue(QueueServer):
 
                 self._current_t = arrival._time
 
-                if self._active :
+                if self._active:
                     self._add_arrival()
 
-                if self.collect_data :
-                    if arrival.issn in self.data :
+                if self.collect_data:
+                    if arrival.issn in self.data:
                         self.data[arrival.issn].append([arrival._time, 0, 0, len(self.queue), self.nSystem])
                     else:
                         self.data[arrival.issn] = [[arrival._time, 0, 0, len(self.queue), self.nSystem]]
 
-                if self._arrivals[0]._time < self._departures[0]._time :
+                if self._arrivals[0]._time < self._departures[0]._time:
                     self._time = self._arrivals[0]._time
                 else:
                     self._time = self._departures[0]._time
@@ -928,7 +928,7 @@ class NullQueue(QueueServer):
 
     _default_colors = {
         'edge_loop_color'  : [0, 0, 0, 0],
-        'edge_color'       : [0.7, 0.7, 0.7, 0.3],
+        'edge_color'       : [0.7, 0.7, 0.7, 0.5],
         'vertex_fill_color': [1.0, 1.0, 1.0, 1.0],
         'vertex_color'     : [0.5, 0.5, 0.5, 0.5]
     }
@@ -954,7 +954,7 @@ class NullQueue(QueueServer):
 
     def _add_arrival(self, agent=None):
         if self.collect_data and agent is not None:
-            if agent.issn not in self.data :
+            if agent.issn not in self.data:
                 self.data[agent.issn] = [[agent._time, 0, 0, 0, 0]]
             else:
                 self.data[agent.issn].append([agent._time, 0, 0, 0, 0])
@@ -969,12 +969,12 @@ class NullQueue(QueueServer):
         pass
 
     def _current_color(self, which=0):
-        if which == 1 :
+        if which == 1:
             color = self.colors['edge_loop_color']
-        elif which == 2 :
+        elif which == 2:
             color = self.colors['vertex_color']
         else:
-            if self.edge[0] == self.edge[1] :
+            if self.edge[0] == self.edge[1]:
                 color = self.colors['vertex_fill_color']
             else:
                 color = self.colors['edge_color']

@@ -6,11 +6,11 @@ visualizing queueing networks. The network visualizations are handled by matplot
 which is only required for plotting. You will also need numpy.
 The package works with python versions 2.7 and 3.3 or greater.
 
-The fastest was to install is with::
+The fastest was to install ``queueing-tool`` is with::
 
     $ pip install queueing_tool
 
-Note that this package was tested using numpy version 1.10.1 and networkx
+Note that this package was tested using Numpy version 1.10.1 and NetworkX
 version 1.11.
 
 You can obtain the development version of queueing-tool from it's

@@ -155,6 +155,8 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True, **kwargs)
     2: {},
     3: {0: {'eType': 1}}}
     """
+    import copy
+    dd = copy.deepcopy(adjacency)
     if isinstance(adjacency, np.ndarray):
         adjacency = _matrix2dict(adjacency)
     elif isinstance(adjacency, dict):
@@ -252,6 +254,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         self.vertex_fill_color = None
         self._nE = self.number_of_edges()
 
+
     def freeze(self):
         nx.freeze(self)
 
@@ -331,6 +334,45 @@ class QueueNetworkDiGraph(nx.DiGraph):
         self.pos = np.array([pos[v] for v in self.nodes()])
 
 
+    def get_edge_type(self, eType):
+        """Returns all edges with the specified edge type.
+
+        Parameters
+        ----------
+        eType : int
+            The an integer specifying what type of edge is to be
+            returned.
+
+        Returns
+        -------
+        out : list of 2-tuples
+            A list of 2-tuples representing the edges in the graph
+            with the specified edge type.
+
+        Examples
+        --------
+        Lets get type 2 edges from the following graph
+        >>> import queueing_tool as qt
+        >>> adjacency = {
+        ...     0: {1: {'eType': 2}},
+        ...     1: {2: {'eType': 1}, 3: {'eType': 4}},
+        ...     2: {0: {'eType': 2}},
+        ...     3: {3: {'eType': 0}}
+        ... }
+        >>> G = qt.QueueNetworkDiGraph(adjacency)
+        >>> ans = G.get_edge_type(2)
+        >>> ans.sort()
+        >>> ans
+        [(0, 1), (2, 0)]
+        """
+        edges = []
+        for e in self.edges():
+            if self.edge[e[0]][e[1]].get('eType') == eType:
+                edges.append(e)
+        return edges
+            
+            
+
     def draw_graph(self, line_kwargs=None, scatter_kwargs=None, **kwargs):
         """Draws the graph.
 
@@ -392,7 +434,6 @@ class QueueNetworkDiGraph(nx.DiGraph):
         else:
             plt.ion()
             plt.show()
-            plt.ioff()
 
 
     def lines_scatter_args(self, line_kwargs=None, scatter_kwargs=None, pos=None):
@@ -431,7 +472,11 @@ class QueueNetworkDiGraph(nx.DiGraph):
         elif self.pos is None:
             self.set_pos()
 
-        edge_pos = [(self.pos[e[0]], self.pos[e[1]]) for e in self.edges()]
+        edge_pos = [0 for e in self.edges()]
+        for e in self.edges():
+            ei = self.edge_index[e]
+            edge_pos[ei] = (self.pos[e[0]], self.pos[e[1]])
+
         line_collecton_kwargs = {
             'segments': edge_pos,
             'colors': self.edge_color,

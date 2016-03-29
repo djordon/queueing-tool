@@ -64,15 +64,15 @@ def generate_transition_matrix(g, seed=None):
     return mat
 
 
-
 def generate_random_graph(nVertices=250, **kwargs):
     """Creates a random graph where the edge and with different
     vertex types.
 
     The vertex types are selected using the
     :func:`.set_types_random` method. This method calls
-    :func:`.minimal_random_graph` and then calls
-    :func:`.set_types_random`.
+    :func:`.minimal_random_graph`, then adds loops to roughly half
+    the vertices, and then calls :func:`.set_types_random` on the
+    resulting graph.
 
     Parameters
     ----------
@@ -96,29 +96,36 @@ def generate_random_graph(nVertices=250, **kwargs):
 
     >>> import queueing_tool as qt
     >>> pTypes = {1: 0.5, 2: 0.25, 3: 0.25}
-    >>> g = qt.generate_random_graph(50, pTypes=pTypes, seed=15)
-    >>> p1 = np.sum([g.ep(e, 'eType') == 1 for e in g.edges()])
-    >>> float(p1) / g.number_of_edges()
-    0.5
-    >>> p2 = np.sum([g.ep(e, 'eType') == 2 for e in g.edges()])
-    >>> float(p2) / g.number_of_edges() # doctest: +ELLIPSIS
-    0.251...
-    >>> p3 = np.sum([g.ep(e, 'eType') == 3 for e in g.edges()])
-    >>> float(p3) / g.number_of_edges() # doctest: +ELLIPSIS
-    0.248...
+    >>> g = qt.generate_random_graph(100, proportions=pTypes, seed=17)
+    >>> non_loops = [e for e in g.edges() if e[0] != e[1]]
+    >>> p1 = np.sum([g.ep(e, 'eType') == 1 for e in non_loops])
+    >>> float(p1) / len(non_loops) # doctest: +ELLIPSIS
+    0.486...
+    >>> p2 = np.sum([g.ep(e, 'eType') == 2 for e in non_loops])
+    >>> float(p2) / len(non_loops) # doctest: +ELLIPSIS
+    0.249...
+    >>> p3 = np.sum([g.ep(e, 'eType') == 3 for e in non_loops])
+    >>> float(p3) / len(non_loops) # doctest: +ELLIPSIS
+    0.264...
 
     To make an undirected graph with 25 vertices where there are 4
     different edge types with random proportions:
 
     >>> p = np.random.rand(4)
     >>> p = {k + 1: p[k] / sum(p) for k in range(4)}
-    >>> g = qt.generate_random_graph(nVertices=25, is_directed=False, pTypes=p)
+    >>> g = qt.generate_random_graph(nVertices=25, is_directed=False, proportions=p)
 
     Note that none of the edge types in the above example are 0. It is
     recommended let use edge type indices starting at 1, since 0 is
     typically used for terminal edges.
     """
     g = minimal_random_graph(nVertices, **kwargs)
+    nNodes  = g.number_of_nodes()
+    for v in g.nodes():
+        e = (v, v)
+        if not g.is_edge(e):
+            if np.random.uniform() < 0.5:
+                g.add_edge(*e)
     g = set_types_random(g, **kwargs)
     return g
 
@@ -218,11 +225,11 @@ def minimal_random_graph(nVertices, seed=None, **kwargs):
     pos = {j: p for j, p in enumerate(points)}
     g = QueueNetworkDiGraph(g.to_directed())
     g.set_pos(pos)
-
     return g
 
 
-def set_types_random(g, pTypes=None, seed=None, **kwargs):
+def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
+                     **kwargs):
     """Randomly sets ``eType`` (edge type) properties of the graph.
 
     This function randomly assigns each edge a type. The probability of
@@ -233,11 +240,16 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs):
     ----------
     g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, dict, etc.
         Any object that :any:`DiGraph<networkx.DiGraph>` accepts.
-    pTypes : dict (optional)
-        A dictionary of types and proportions, where the keys are the
-        types and the values are the proportion of edges that are
-        expected to be of that type. The values can must be proportions
-        (that add to one).
+    proportions : dict (optional, default: ``{k: 0.25 for k in range(1, 4)}``)
+        A dictionary of edge types and proportions, where the keys are
+        the types and the values are the proportion of non-loop edges
+        that are expected to be of that type. The values can must sum
+        to one.
+    loop_proportions : dict (optional, default: ``{k: 0.25 for k in range(4)}``)
+        A dictionary of edge types and proportions, where the keys are
+        the types and the values are the proportion of loop edges
+        that are expected to be of that type. The values can must sum
+        to one.
     seed : int (optional)
         An integer used to initialize numpy's psuedorandom number
         generator.
@@ -262,36 +274,46 @@ def set_types_random(g, pTypes=None, seed=None, **kwargs):
     Notes
     -----
     If ``pTypes`` is not explicitly specified in the arguments, then it
-    defaults to three types in the graph (types 1, 2, and 3) and sets
-    their proportions to be 1/3 each.
+    defaults to four types in the graph (types 0, 1, 2, and 3). It sets
+    non-loop edges to be either 1, 2, or 3 33\% chance, and loops are
+    types 0, 1, 2, 3 with 25\% chance.
     """
     g = _test_graph(g)
 
     if isinstance(seed, numbers.Integral):
         np.random.seed(seed)
 
-    if pTypes is None:
-        pTypes = {k : 1.0 / 3 for k in range(1, 4)}
+    if proportions is None:
+        proportions = {k : 1. / 3 for k in range(1, 4)}
 
-    nEdges  = g.number_of_edges()
-    edges   = [e for e in g.edges()]
-    cut_off = np.cumsum( np.array(list(pTypes.values())) )
+    if loop_proportions is None:
+        loop_proportions = {k : 1. / 4 for k in range(4)}
 
-    if np.isclose(cut_off[-1], 1.0):
-        cut_off = np.array(np.round(cut_off * nEdges)).astype(int)
-    else:
-        msg = "pTypes values must sum to one."
-        raise ValueError("pTypes values must sum to one.")
+    nEdges = g.number_of_edges()
+    edges  = [e for e in g.edges() if e[0] != e[1]]
+    loops  = [e for e in g.edges() if e[0] == e[1]]
+    props  = list(proportions.values())
+    lprops = list(loop_proportions.values())
 
-    np.random.shuffle(edges)
+    if np.isclose(sum(proportions), 1.0):
+        msg = "proportions values must sum to one."
+        raise ValueError("proportions values must sum to one.")
+    if np.isclose(sum(loop_proportions), 1.0):
+        msg = "loop_proportions values must sum to one."
+        raise ValueError("loop_proportions values must sum to one.")
+
     eTypes = {}
-    for k, key in enumerate(pTypes.keys()):
-        if k == 0:
-            for e in edges[:cut_off[k]]:
-                eTypes[e] = key
-        else:
-            for e in edges[cut_off[k-1]:cut_off[k]]:
-                eTypes[e] = key
+    types  = list(proportions.keys())
+    values = np.random.choice(types, size=len(edges), replace=True, p=props)
+
+    for k, e in enumerate(edges):
+        eTypes[e] = values[k]
+
+    types  = list(loop_proportions.keys())
+    values = np.random.choice(types, size=len(loops), replace=True, p=lprops)
+
+    for k, e in enumerate(loops):
+        eTypes[e] = values[k]
 
     g.new_edge_property('eType')
     for e in g.edges():
@@ -319,6 +341,8 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
     ----------
     g : :any:`networkx.DiGraph`, :class:`~numpy.ndarray`, dict, etc.
         Any object that :any:`DiGraph<networkx.DiGraph>` accepts.
+    rank : :class:`numpy.ndarray`
+        An ordering of the vertices.
     pType2 : float (optional, default: 0.1)
         Specifies the proportion of vertices that will be of type 2.
     pType3 : float (optional, default: 0.1)

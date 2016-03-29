@@ -1,7 +1,7 @@
 Overview
 ========
 
-Queueing-tool is an Python simulation package for analyzing networks of queues.
+Queueing-tool is a Python simulation package for analyzing networks of queues.
 The simulations are event based, where events are comprised as arrivals and
 departures of agents that move from queue to queue in the network. The network
 is represented as a graph, which is handled by NetworkX.
@@ -11,7 +11,7 @@ classes, :class:`.Agent` classes, and :class:`.QueueNetwork` class. This package
 includes several different types of each class.
 
 1. The :class:`.QueueServer` class is a standard implementation of a
-   `waiting line <http://en.wikipedia.org/wiki/Queueing_theory>`_. It's basic
+   `waiting line <http://en.wikipedia.org/wiki/Queueing_theory>`_. Its basic
    function is facilitating the arrival of agents --- which arrive with some
    regularity according to some distribution --- and servicing those agents before
    they leave. Each queue can have any arrival and service distribution, and these
@@ -30,8 +30,8 @@ includes several different types of each class.
 2. An :class:`.Agent` is an objects that moves throughout the network. When an
    instance of the network is created it starts empty. Agents are created by a
    queue and once serviced the agent moves on to another queue in the network.
-   Each agent *decides* where in the network it wants to arrive at next. Two of
-   the agent implementation are the following:
+   Each agent *decides* where in the network it wants to arrive at next. Two
+   examples of the agent implementation are:
 
     - The :class:`.Agent` class routes itself throughout the network randomly.
       More specifically, when at node ``i`` in the network, the :class:`.Agent`
@@ -50,19 +50,16 @@ includes several different types of each class.
       wait until an agent departs from that queue.
     - *Repetitive Service Blocking*: when an agent attempts to enter a
       :class:`.LossQueue` that is at capacity, the agent is forced to
-      receive another service from the queue it is departing from.
-      After the agent receives the service, he then checks to see if
-      the desired queue is still at capacity, and this process
-      is repeated if it is, otherwise the agent enters the queue.
+      receive another service from its current queue. This process is
+      repeated until the agent's desired queue is no longer at capacity.
 
-   One can also limiting the maximum number of agents within the system for
-   modeling closed networks.
+   One can also limit the maximum number of agents within the system.
 
 .. _loss networks: http://en.wikipedia.org/wiki/Loss_network
 .. _finite capacity queue: http://en.wikipedia.org/wiki/M/M/c_queue#Finite_capacity
 .. _Kendall's notation: http://en.wikipedia.org/wiki/Kendall%27s_notation
 
-This package also contains visualization component, whereby the user can see
+This package also contains a visualization component, whereby the user can see
 queueing dynamics in real-time as the simulations take place. See
 :meth:`~.QueueNetwork.animate` and :meth:`~.QueueNetwork.draw` for more on
 this package's visualization capabilities.
@@ -71,12 +68,12 @@ this package's visualization capabilities.
 An example
 ----------
 
-Its probably best to become acquainted with queueing-tool by way of an example.
+It's probably best to become acquainted with queueing-tool by way of an example.
 
-Lets model the checkout process of a busy grocery store. People enter the store
+Let's model the checkout process of a busy grocery store. People enter the store
 according to some random process, shop around for some time, and then checkout.
-They also arrive at greater frequency in the middle of the day. When it's time
-to checkout customers choose their checkout line by searching for the shortest
+They also arrive at a greater frequency in the middle of the day. When it's time
+to checkout, customers choose their checkout line by searching for the shortest
 line. They wait in line before receiving service from the checkout counter and
 when they're done they leave the store.
 
@@ -201,7 +198,7 @@ to save this image to disk:
 
 .. doctest::
 
-    >>> qn.draw(fname="store.png", figsize=(7, 2), pos=pos)
+    >>> qn.draw(fname="store.png", figsize=(16, 3.5), pos=pos)
 
 By default, each :class:`.QueueServer` starts with no arrivals from outside the
 network and it needs to be initialized before any simulations can run. You can

@@ -1,15 +1,15 @@
 import sys
 import numpy
 
-try :
+try:
     from setuptools import setup, Extension
-except ImportError :
+except ImportError:
     from distutils.core import setup, Extension
 
-try :
+try:
     from Cython.Distutils import build_ext
     use_cython = True
-except ImportError :
+except ImportError:
     use_cython = False
 
 
@@ -49,10 +49,10 @@ else:
     ])
 
 
-with open('README.rst', 'r') as a_file :
+with open('README.rst', 'r') as a_file:
     long_description = a_file.read()
 
-with open('VERSION', 'r') as a_file :
+with open('VERSION', 'r') as a_file:
     version = a_file.read()[:-1]
 
 
