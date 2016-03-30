@@ -370,8 +370,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
             if self.edge[e[0]][e[1]].get('eType') == eType:
                 edges.append(e)
         return edges
-            
-            
+
 
     def draw_graph(self, line_kwargs=None, scatter_kwargs=None, **kwargs):
         """Draws the graph.

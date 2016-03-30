@@ -99,7 +99,8 @@ class QueueNetwork(object):
     adjust_graph : bool (optional, default: True)
         Specifies whether the graph will be adjusted using
         :func:`.adjacency2graph`. This makes sure terminal nodes
-        do not cause any issues when simulating.
+        do not cause any issues when simulating. For most cases, this
+        should be set to ``True``.
 
     Attributes
     ----------
@@ -954,8 +955,9 @@ class QueueNetwork(object):
         """
         if queues is None and edges is None and eType is None:
             if nActive >= 1 and isinstance(nActive, numbers.Integral):
-                n = min(nActive, self.nE)
-                queues = np.random.choice(self.nE, size=n, replace=False)
+                qs = [q.edge[2] for q in self.edge2queue if q.edge[3] != 0]
+                n  = min(nActive, len(qs))
+                queues = np.random.choice(qs, size=n, replace=False)
             else:
                 msg = ("If queues is None, then nActive must be a strictly "
                        "positive int.")

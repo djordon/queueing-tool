@@ -1,10 +1,7 @@
 import sys
 import numpy
 
-try:
-    from setuptools import setup, Extension
-except ImportError:
-    from distutils.core import setup, Extension
+from setuptools import setup, Extension
 
 try:
     from Cython.Distutils import build_ext
@@ -56,24 +53,7 @@ with open('VERSION', 'r') as a_file:
     version = a_file.read()[:-1]
 
 
-setup(
-    name='queueing_tool',
-    version=version,
-    description='Queueing network simulator',
-    long_description=long_description,
-    license='MIT',
-    author='Daniel Jordon',
-    author_email='dan.jordon@gmail.com',
-    url='https://github.com/djordon/queueing-tool',
-    packages=['queueing_tool',
-              'queueing_tool.network',
-              'queueing_tool.queues',
-              'queueing_tool.graph'],
-    cmdclass=cmdclass,
-    ext_modules=ext_modules,
-    keywords=['queueing theory', 'queueing', 'simulation', 'queueing simulator',
-              'queueing network simulation', 'networks', 'queueing simulation'],
-    classifiers=[
+classifiers = [
     'Development Status :: 5 - Production/Stable',
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: MIT License',
@@ -85,5 +65,48 @@ setup(
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Cython',
     'Topic :: Scientific/Engineering',
-    'Topic :: Scientific/Engineering :: Mathematics']
+    'Topic :: Scientific/Engineering :: Mathematics'
+]
+
+install_requires = ['networkx>=1.11', 'numpy>=1.10']
+
+keywords = [
+    'queueing theory',
+    'queueing',
+    'simulation',
+    'queueing simulator',
+    'queueing network simulation',
+    'networks',
+    'queueing simulation'
+]
+
+packages = [
+    'queueing_tool',
+    'queueing_tool.graph',
+    'queueing_tool.network',
+    'queueing_tool.queues'
+]
+
+tests_requires = ['nose>=1.3.7']
+
+if _version[0] == 2:
+    tests_requires.append('mock')
+
+setup(
+    author='Daniel Jordon',
+    author_email='dan.jordon@gmail.com',
+    cmdclass=cmdclass,
+    description='Queueing network simulator',
+    ext_modules=ext_modules,
+    classifiers=classifiers,
+    install_requires=install_requires,
+    keywords=keywords,
+    long_description=long_description,
+    license='MIT',
+    name='queueing_tool',
+    packages=packages,
+    tests_requires=tests_requires,
+    test_suite='nose.collector',
+    url='https://github.com/djordon/queueing-tool',
+    version=version
 )
