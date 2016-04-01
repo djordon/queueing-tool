@@ -114,7 +114,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg, adjust_graph):
     The following properties are assigned as a properties to the graph;
     their default values for each edge or vertex is shown:
 
-        * ``vertex_pen_width``: ``1.1``,
+        * ``vertex_pen_width``: ``1``,
         * ``vertex_size``: ``8``,
         * ``edge_control_points``: ``[]``
         * ``edge_marker_size``: ``8``
@@ -160,7 +160,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg, adjust_graph):
             g.set_ep(e, 'edge_color', queues[k].colors['edge_color'])
 
     for v in g.nodes():
-        g.set_vp(v, 'vertex_pen_width', 1.1)
+        g.set_vp(v, 'vertex_pen_width', 1)
         g.set_vp(v, 'vertex_size', 8)
         e = (v, v)
         if g.is_edge(e):

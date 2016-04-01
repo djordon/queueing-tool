@@ -155,7 +155,7 @@ with the following:
     ...     1: {
     ...         'arrival_f': arr_f,
     ...         'service_f': lambda t: t,
-    ...         'AgentClass': qt.GreedyAgent
+    ...         'AgentFactory': qt.GreedyAgent
     ...     },
     ...     2: {
     ...         'nServers': 1,

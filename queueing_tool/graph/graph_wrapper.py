@@ -352,6 +352,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         Examples
         --------
         Lets get type 2 edges from the following graph
+
         >>> import queueing_tool as qt
         >>> adjacency = {
         ...     0: {1: {'eType': 2}},

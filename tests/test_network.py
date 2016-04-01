@@ -104,7 +104,7 @@ class TestQueueNetwork(unittest.TestCase):
         q_arg = {
             3: {'net_size': g.number_of_edges()},
             4: {'nServers': 500},
-            6: {'AgentClass' : qt.GreedyAgent}
+            6: {'AgentFactory' : qt.GreedyAgent}
         }
 
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
@@ -278,7 +278,7 @@ class TestQueueNetwork(unittest.TestCase):
             1: {
                 'arrival_f': arr,
                 'service_f': lambda t: t,
-                'AgentClass': qt.GreedyAgent
+                'AgentFactory': qt.GreedyAgent
             },
             2: {
                 'service_f': ser,
@@ -300,7 +300,7 @@ class TestQueueNetwork(unittest.TestCase):
             qn.simulate(n=1)
             if qn.next_event_description() == ('Departure', e01):
                 d0 = qn.edge2queue[e01]._departures[0].desired_destination(qn, edg)
-                a1 = np.argmin([qn.edge2queue[e].nQueued() for e in qn.out_edges[1]])
+                a1 = np.argmin([qn.edge2queue[e].number_queued() for e in qn.out_edges[1]])
                 d1 = qn.out_edges[1][a1]
                 ans[c] = d0 == d1
                 c += 1
@@ -313,6 +313,16 @@ class TestQueueNetwork(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.qn.initialize(nActive=0)
 
+        with self.assertRaises(TypeError):
+            self.qn.initialize(nActive=1.6)
+
+        _get_queues_mock = mock.Mock()
+        _get_queues_mock.return_value = []
+        mock_location = 'queueing_tool.network.queue_network._get_queues'
+
+        with mock.patch(mock_location, _get_queues_mock):
+            with self.assertRaises(qt.QueueingToolError):
+                self.qn.initialize(eType=1)
 
     def test_QueueNetwork_initialization(self):
 
@@ -420,28 +430,28 @@ class TestQueueNetwork(unittest.TestCase):
 
 
     def test_QueueNetwork_set_transitions_Error(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             self.qn.set_transitions({-1: [0.75, 0.25]})
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             self.qn.set_transitions({self.qn.nV: [0.75, 0.25]})
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             self.qn.set_transitions({0: [0.75, -0.25]})
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             self.qn.set_transitions({0: [0.75, -0.25]})
 
         mat = np.zeros((2, 2))
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             self.qn.set_transitions(mat)
 
         mat = np.zeros((self.qn.nV, self.qn.nV))
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             self.qn.set_transitions(mat)
 
         mat[0, 0] = -1
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             self.qn.set_transitions(mat)
 
         mat = 1

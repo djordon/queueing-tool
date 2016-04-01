@@ -18,8 +18,7 @@ def poisson_random_measure(rate, rate_max, t):
     ----------
     rate : function
         The *intensity function* for the measure, where ``rate(t)`` is
-        the expected arrival rate at time ``t``. This function should
-        be bounded.
+        the expected arrival rate at time ``t``.
     rate_max : float
         The maximum value of the ``rate`` function.
     t : float
@@ -27,7 +26,7 @@ def poisson_random_measure(rate, rate_max, t):
 
     Returns
     -------
-    float
+    out : float
         The time of the next arrival.
 
     Notes
@@ -44,7 +43,7 @@ def poisson_random_measure(rate, rate_max, t):
     can only simulate processes that have bounded intensity functions.
     See chapter 6 of [3]_ for more on the mathematics behind Poisson
     random measures; the book's publisher, Springer, has that chapter
-    available online (`pdf`_\).
+    available online for free at (`pdf`_\).
 
     A Poisson random measure is sometimes called a non-homogeneous
     Poisson process. A Poisson process is a special type of Poisson
@@ -55,14 +54,17 @@ def poisson_random_measure(rate, rate_max, t):
 
     Examples
     --------
-    Suppose you wanted to modeled the arrival process as a Poisson
+    Suppose you wanted to model the arrival process as a Poisson
     random measure with rate function :math:`r(t) = 2 + \sin( 2\pi t)`.
     Then you could do so as follows:
 
     >>> import queueing_tool as qt
     >>> import numpy as np
+    >>> np.random.seed(10)
     >>> rate  = lambda t: 2 + np.sin(2 * np.pi * t)
     >>> arr_f = lambda t: qt.poisson_random_measure(rate, 3, t)
+    >>> arr_f(1)  # doctest: +ELLIPSIS
+    1.491...
 
     References
     ----------
@@ -87,7 +89,7 @@ class QueueServer(object):
     the stopping time attribute, ``deactive_t``, after which no more
     arrivals can enter the queue. When connected to a network of queues
     via a :class:`.QueueNetwork`, the ``active_cap`` and ``deactive_t``
-    attributes applies only to arrivals from outside the network, the
+    attributes applies only to arrivals from outside the network; the
     :class:`.QueueServer` instance always accepts arrivals from other
     queues inside the :class:`.QueueNetwork`.
 
@@ -117,9 +119,9 @@ class QueueServer(object):
         slot is the ``edge_index`` of that edge, and the last slot is
         the edge type for this queue. This is automatically created
         when a :class:`.QueueNetwork` instance is created.
-    AgentClass : class (optional, default: the :class:`~Agent` class)
-        A class object for an :class:`.Agent` or any class object that
-        has inherited the :class:`.Agent` class.
+    AgentFactory : class (optional, default: the :class:`~Agent` class)
+        Any function that can create agents. Note that the function
+        must take one parameter.
     active_cap : int (optional, default: ``infty``)
         The maximum number of arrivals the queue will accept from
         outside the network.
@@ -130,8 +132,8 @@ class QueueServer(object):
     collect_data : bool (optional, default: ``False``)
         A bool that defines whether the queue collects each
         :class:`Agent's<.Agent>` arrival, service start, and departure
-        times, as well as the number of other agents in the queue upon
-        arrival.
+        times and other data. See :meth:`~QueueServer.fetch_data` for
+        more on the information that is collected.
     colors : dict (optional)
         A dictionary of the colors used when drawing the graph. The
         possible colors are:
@@ -142,21 +144,21 @@ class QueueServer(object):
                 The normal color a non-loop edge.
             ``vertex_fill_color``
                 The normal fill color for a vertex; this also colors
-                the target vertex in the graph.
+                the target vertex in the graph if the edge is a loop.
             ``vertex_color``
-                The color of the vertex pen of the target vertex.
+                The color of the vertex border if the edge is a loop.
 
         The defaults are listed in the notes.
     seed : int (optional)
-        If supplied ``seed`` is used to initialize numpy's psuedorandom
-        number generator.
+        If supplied ``seed`` is used to initialize numpy's
+        psuedo-random number generator.
 
     Attributes
     ----------
     active : bool
         Returns whether the queue accepts arrivals from outside the
         network (the queue will always accept arrivals from inside the
-        network). The default is false. To change call
+        network). The default is ``False``. To change call
         :meth:`.set_active`.
     current_time : float
         The time of the last event.
@@ -165,9 +167,9 @@ class QueueServer(object):
         start, and departure times, as well as how many other agents
         were waiting to be served and the total number agents in the
         system (upon arrival). The keys are the :class:`Agent's<.Agent>`
-        unique ``issn``, and the values is a list of lists. Each time
-        an agent arrives at the queue it appends this data to the end
-        of the list. Use :meth:`.fetch_data` to retrieve a formated
+        unique ``agent_id``, and the values is a list of lists. Each
+        time an agent arrives at the queue it appends this data to the
+        end of the list. Use :meth:`.fetch_data` to retrieve a formated
         version of this data.
     nArrivals : list
         A list with two entries. The first slot is the total number of
@@ -179,7 +181,7 @@ class QueueServer(object):
         The number of agents in the entire :class:`.QueueServer` --
         this includes those being served and those waiting to be served.
     queue : :class:`~.collections.deque`
-        The agents waiting to enter service.
+        A queue for the agents waiting to enter service.
     time : float
         The time of the next event.
 
@@ -197,7 +199,7 @@ class QueueServer(object):
     >>> rate = lambda t: 2 + 16 * np.sin(np.pi * t / 8)**2
     >>> arr = lambda t: qt.poisson_random_measure(rate, 18, t)
     >>> ser = lambda t: t + np.random.gamma(4, 0.1)
-    >>> q = qt.QueueServer(5, arrival_f=arr, service_f=ser, seed=13)
+    >>> q = qt.QueueServer(5, arrival_f=arr, service_f=ser)
 
     Before you can simulate the queue, it must be set to active; also,
     no data is collected by default, we change these with the following:
@@ -260,7 +262,7 @@ class QueueServer(object):
 
     def __init__(self, nServers=1, arrival_f=lambda t: t + exponential(1),
                  service_f=lambda t: t + exponential(0.9), edge=(0,0,0,1),
-                 AgentClass=Agent, collect_data=False, active_cap=infty,
+                 AgentFactory=Agent, collect_data=False, active_cap=infty,
                  deactive_t=infty, colors=None, seed=None, **kwargs):
 
         if not isinstance(nServers, numbers.Integral) and nServers is not infty:
@@ -274,12 +276,12 @@ class QueueServer(object):
         self.nServers     = nServers
         self.nDepartures  = 0
         self.nSystem      = 0
-        self.data         = {}   # times; issn : [arrival, service start, departure]
+        self.data         = {}   # times; agent_id : [arrival, service start, departure]
         self.queue        = collections.deque()
 
         self.arrival_f    = arrival_f
         self.service_f    = service_f
-        self.AgentClass   = AgentClass
+        self.AgentFactory   = AgentFactory
         self.collect_data = collect_data
         self.active_cap   = active_cap
         self.deactive_t   = deactive_t
@@ -294,7 +296,6 @@ class QueueServer(object):
         self._current_t   = 0         # The time of the last event.
         self._time        = infty     # The time of the next event.
         self._next_ct     = 0         # The next time an arrival from outside the network can arrive.
-        self._black_cap   = 4.        # Used to help color edges and vertices.
 
         if isinstance(seed, numbers.Integral):
             np.random.seed(seed)
@@ -332,8 +333,30 @@ class QueueServer(object):
         return my_str.format(*arg)
 
 
-    def _key(self):
-        return self._time, self.edge[2]
+    def _add_arrival(self, agent=None):
+        if agent is not None:
+            self._nTotal += 1
+            heappush(self._arrivals, agent)
+        else:
+            if self._current_t >= self._next_ct:
+                self._next_ct = self.arrival_f(self._current_t)
+
+                if self._next_ct >= self.deactive_t:
+                    self._active = False
+                    return
+
+                self._nTotal += 1
+                new_agent = self.AgentFactory((self.edge[2], self._oArrivals))
+                new_agent._time = self._next_ct
+                heappush(self._arrivals, new_agent)
+
+                self._oArrivals += 1
+
+                if self._oArrivals >= self.active_cap:
+                    self._active = False
+
+        if self._arrivals[0]._time < self._departures[0]._time:
+            self._time = self._arrivals[0]._time
 
 
     def at_capacity(self):
@@ -348,53 +371,109 @@ class QueueServer(object):
         return False
 
 
-    def set_active(self):
-        """Changes the ``active`` attribute to True. The queue now has
-        arrivals arriving from outside the network.
+    def clear(self):
+        """Clears out the queue. Removes all arrivals, departures, and
+        queued agents from the :class:`.QueueServer`, resets
+        ``nArrivals``, ``nDepartures``, ``nSystem``, and the clock to
+        zero. It also clears any stored ``data`` and the server is then
+        set to inactive.
         """
-        self._active = True
-        self._add_arrival()
+        self.data        = {}
+        self._nArrivals  = 0
+        self._oArrivals  = 0
+        self.nDepartures = 0
+        self.nSystem     = 0
+        self._nTotal     = 0
+        self._current_t  = 0
+        self._time       = infty
+        self._next_ct    = 0
+        self._active     = False
+        self.queue       = collections.deque()
+        inftyAgent       = InftyAgent()
+        self._arrivals   = [inftyAgent]
+        self._departures = [inftyAgent]
 
 
-    def set_inactive(self):
-        """Changes the ``active`` attribute to False."""
-        self._active = False
+    def copy(self):
+        """Returns a deep copy of itself."""
+        return copy.deepcopy(self)
 
 
-    def set_nServers(self, n):
-        """Change the number of servers in the queue to ``n``.
+    def _current_color(self, which=0):
+        """Returns a color for the queue.
 
         Parameters
         ----------
-        n : int or :const:`numpy.infty`
-            A positive integer (or ``np.infty``) to set the number of
-            queues in the system to.
-
-        Raises
-        ------
-        RuntimeError
-            If ``n`` is not a positive integer or infinity then this
-            error is raised.
-        """
-        if not isinstance(n, numbers.Integral) and n is not infty:
-            the_str = "n must be an integer or infinity.\n{0}"
-            raise TypeError(the_str.format(str(self)))
-        elif n <= 0:
-            the_str = "n must be a positive integer or infinity.\n{0}"
-            raise ValueError( the_str.format(str(self)) )
-        else:
-            self.nServers = n
-
-
-    def nQueued(self):
-        """Returns the number of agents waiting in line to be served.
+        which : int (optional, default: ``0``)
+            Specifies the type of color to return.
 
         Returns
         -------
-        int
-            The number of agents waiting in line to be served.
+        color : list
+            Returns a RGBA color that is represented as a list with 4
+            entries where each entry can be any floating point number
+            between 0 and 1.
+
+            * If ``which`` is 1 then it returns the color of the edge
+              as if it were a self loop. This is specified in
+              ``colors['edge_loop_color']``.
+            * If ``which`` is 2 then it returns the color of the vertex
+              pen color (defined as color/vertex_color in
+              :meth:`.QueueNetworkDiGraph.graph_draw`). This is
+              specified in ``colors['vertex_color']``.
+            * If ``which`` is anything else, then it returns the a
+              shade of the edge that is proportional to the number of
+              agents in the system -- which includes those being
+              servered and those waiting to be served. More agents
+              correspond to darker edge colors. Uses
+              ``colors['vertex_fill_color']`` if the queue sits on a
+              loop, and ``colors['edge_color']`` otherwise.
         """
-        return len(self.queue)
+        if which == 1:
+            color = self.colors['edge_loop_color']
+
+        elif which == 2:
+            color = self.colors['vertex_color']
+
+        else:
+            div = (2 * self.nServers) + 2.
+            tmp = 1. - min(self.nSystem / div, 1.)
+
+            if self.edge[0] == self.edge[1]:
+                color    = [i * tmp for i in self.colors['vertex_fill_color']]
+                color[3] = 1.0
+            else:
+                color    = [i * tmp for i in self.colors['edge_color']]
+                color[3] = 1. - tmp / 2.
+
+        return color
+
+
+    def delay_service(self, t=None):
+        """Adds an extra service time to the next departing
+        :class:`Agent's<.Agent>` service time.
+
+        Parameters
+        ----------
+        t : float (optional)
+            Specifies the departing time for the agent scheduled
+            to depart next. If ``t`` is not given, then an additional
+            service time is added to the next departing agent.
+        """
+        if len(self._departures) > 1:
+            agent = heappop(self._departures)
+
+            if t is None:
+                agent._time = self.service_f(agent._time)
+            else:
+                agent._time = t
+
+            heappush(self._departures, agent)
+
+            if self._arrivals[0]._time < self._departures[0]._time:
+                self._time = self._arrivals[0]._time
+            else:
+                self._time = self._departures[0]._time
 
 
     def fetch_data(self, return_header=False):
@@ -402,22 +481,22 @@ class QueueServer(object):
 
         Parameters
         ----------
-        return_header : bool (optonal, default: False)
+        return_header : bool (optonal, default: ``False``)
             Determines whether the column headers are returned.
 
         Returns
         -------
         data : :class:`~numpy.ndarray`
             A six column :class:`~numpy.ndarray` of all the data. The
+            columns are:
 
-            * First: The arrival time of an agent.
-            * Second: The service start time of an agent.
-            * Third: The departure time of an agent.
-            * Fourth: The length of the queue upon the agents arrival.
-            * Fifth: The total number of :class:`Agents<.Agent>` in the
+            * 1st: The arrival time of an agent.
+            * 2nd: The service start time of an agent.
+            * 3rd: The departure time of an agent.
+            * 4th: The length of the queue upon the agents arrival.
+            * 5th: The total number of :class:`Agents<.Agent>` in the
               :class:`.QueueServer`.
-            * Sixth: the :class:`QueueServer's<.QueueServer>` id
-              (it's edge index).
+            * 6th: The :class:`QueueServer's<.QueueServer>` edge index.
 
         headers : str (optional)
             A comma seperated string of the column headers. Returns
@@ -451,52 +530,92 @@ class QueueServer(object):
         return dat
 
 
-    def _add_arrival(self, agent=None):
-        if agent is not None:
-            self._nTotal += 1
-            heappush(self._arrivals, agent)
-        else:
-            if self._current_t >= self._next_ct:
-                self._next_ct = self.arrival_f(self._current_t)
-
-                if self._next_ct >= self.deactive_t:
-                    self._active = False
-                    return
-
-                self._nTotal += 1
-                new_agent = self.AgentClass((self.edge[2], self._oArrivals))
-                new_agent._time = self._next_ct
-                heappush(self._arrivals, new_agent)
-
-                self._oArrivals += 1
-
-                if self._oArrivals >= self.active_cap:
-                    self._active = False
-
-        if self._arrivals[0]._time < self._departures[0]._time:
-            self._time = self._arrivals[0]._time
+    def _key(self):
+        return self._time, self.edge[2]
 
 
-    def delay_service(self, t=None):
-        """Adds an extra service time to the next departing
-        :class:`Agent's<.Agent>` service time.
+    def number_queued(self):
+        """Returns the number of agents waiting in line to be served.
 
-        Parameters
-        ----------
-        t : float (optional)
-            Specifies when the departing time for the agent scheduled
-            to depart next. If ``t`` is not given, then an additional
-            service time is added to the next departing agent.
+        Returns
+        -------
+        out : int
+            The number of agents waiting in line to be served.
         """
-        if len(self._departures) > 1:
-            agent = heappop(self._departures)
+        return len(self.queue)
 
-            if t is None:
-                agent._time = self.service_f(agent._time)
+
+    def next_event(self):
+        """Simulates the queue forward one event.
+
+        Use :meth:`.simulate` instead.
+
+        Returns
+        -------
+        out : :class:`.Agent` (sometimes)
+            If the next event is a departure then the departing agent
+            is returned, otherwise nothing is returned.
+
+        See Also
+        --------
+        :meth:`.simulate` : Simulates the queue forward.
+        """
+        if self._departures[0]._time < self._arrivals[0]._time:
+            new_depart        = heappop(self._departures)
+            self._current_t   = new_depart._time
+            self._nTotal     -= 1
+            self.nSystem     -= 1
+            self.nDepartures += 1
+
+            if self.collect_data and new_depart.agent_id in self.data:
+                self.data[new_depart.agent_id][-1][2] = self._current_t
+
+            if len(self.queue) > 0:
+                agent = self.queue.popleft()
+                if self.collect_data and agent.agent_id in self.data:
+                    self.data[agent.agent_id][-1][1] = self._current_t
+
+                agent._time = self.service_f(self._current_t)
+                agent.queue_action(self, 1)
+                heappush(self._departures, agent)
+
+            new_depart.queue_action(self, 2)
+
+            if self._arrivals[0]._time < self._departures[0]._time:
+                self._time = self._arrivals[0]._time
             else:
-                agent._time = t
+                self._time = self._departures[0]._time
 
-            heappush(self._departures, agent)
+            return new_depart
+
+        elif self._arrivals[0]._time < infty:
+            arrival = heappop(self._arrivals)
+            self._current_t = arrival._time
+
+            if self._active:
+                self._add_arrival()
+
+            self.nSystem    += 1
+            self._nArrivals += 1
+
+            if self.collect_data:
+                b = 0 if self.nSystem <= self.nServers else 1
+                if arrival.agent_id not in self.data:
+                    self.data[arrival.agent_id] = [[arrival._time, 0, 0, len(self.queue)+b, self.nSystem]]
+                else:
+                    self.data[arrival.agent_id].append([arrival._time, 0, 0, len(self.queue)+b, self.nSystem])
+
+            arrival.queue_action(self, 0)
+
+            if self.nSystem <= self.nServers:
+                if self.collect_data:
+                    self.data[arrival.agent_id][-1][1] = arrival._time
+
+                arrival._time = self.service_f(arrival._time)
+                arrival.queue_action(self, 1)
+                heappush(self._departures, arrival)
+            else:
+                self.queue.append(arrival)
 
             if self._arrivals[0]._time < self._departures[0]._time:
                 self._time = self._arrivals[0]._time
@@ -524,87 +643,50 @@ class QueueServer(object):
             return 0
 
 
-    def next_event(self):
-        """Simulates the queue forward one event.
-
-        Use :meth:`.simulate` instead.
-
-        Returns
-        -------
-        out :
-            If the next event is a departure then the departing agent
-            is returned, otherwise nothing is returned.
-
-        See Also
-        --------
-        :meth:`.simulate` : Simulates the queue forward.
+    def set_active(self):
+        """Changes the ``active`` attribute to True. Agents may now
+        arrive from outside the network.
         """
-        if self._departures[0]._time < self._arrivals[0]._time:
-            new_depart        = heappop(self._departures)
-            self._current_t   = new_depart._time
-            self._nTotal     -= 1
-            self.nSystem     -= 1
-            self.nDepartures += 1
+        if not self._active:
+            self._active = True
+            self._add_arrival()
 
-            if self.collect_data and new_depart.issn in self.data:
-                self.data[new_depart.issn][-1][2] = self._current_t
 
-            if len(self.queue) > 0:
-                agent = self.queue.popleft()
-                if self.collect_data and agent.issn in self.data:
-                    self.data[agent.issn][-1][1] = self._current_t
+    def set_inactive(self):
+        """Changes the ``active`` attribute to False."""
+        self._active = False
 
-                agent._time = self.service_f(self._current_t)
-                agent.queue_action(self, 1)
-                heappush(self._departures, agent)
 
-            new_depart.queue_action(self, 2)
+    def set_nServers(self, n):
+        """Change the number of servers in the queue to ``n``.
 
-            if self._arrivals[0]._time < self._departures[0]._time:
-                self._time = self._arrivals[0]._time
-            else:
-                self._time = self._departures[0]._time
+        Parameters
+        ----------
+        n : int or :const:`numpy.infty`
+            A positive integer (or ``np.infty``) to set the number of
+            queues in the system to.
 
-            return new_depart
-
-        elif self._arrivals[0]._time < infty:
-            arrival = heappop(self._arrivals)
-            self._current_t = arrival._time
-
-            if self._active:
-                self._add_arrival()
-
-            self.nSystem    += 1
-            self._nArrivals += 1
-
-            if self.collect_data:
-                b = 0 if self.nSystem <= self.nServers else 1
-                if arrival.issn not in self.data:
-                    self.data[arrival.issn] = [[arrival._time, 0, 0, len(self.queue)+b, self.nSystem]]
-                else:
-                    self.data[arrival.issn].append([arrival._time, 0, 0, len(self.queue)+b, self.nSystem])
-
-            arrival.queue_action(self, 0)
-
-            if self.nSystem <= self.nServers:
-                if self.collect_data:
-                    self.data[arrival.issn][-1][1] = arrival._time
-
-                arrival._time = self.service_f(arrival._time)
-                arrival.queue_action(self, 1)
-                heappush(self._departures, arrival)
-            else:
-                self.queue.append(arrival)
-
-            if self._arrivals[0]._time < self._departures[0]._time:
-                self._time = self._arrivals[0]._time
-            else:
-                self._time = self._departures[0]._time
+        Raises
+        ------
+        TypeError
+            If ``n`` is not an integer or positive infinity then this
+            error is raised.
+        ValueError
+            If ``n`` is not positive.
+        """
+        if not isinstance(n, numbers.Integral) and n is not infty:
+            the_str = "n must be an integer or infinity.\n{0}"
+            raise TypeError(the_str.format(str(self)))
+        elif n <= 0:
+            the_str = "n must be a positive integer or infinity.\n{0}"
+            raise ValueError( the_str.format(str(self)) )
+        else:
+            self.nServers = n
 
 
     def simulate(self, n=1, t=None, nA=None, nD=None):
         """This method simulates the queue forward for a specified
-        amount of simulation time ``t``, or for a specific number of
+        amount of simulation time, or for a specific number of
         events.
 
         Parameters
@@ -680,84 +762,6 @@ class QueueServer(object):
                 tmp = self.next_event()
 
 
-    def _current_color(self, which=0):
-        """Returns a color for the queue.
-
-        Parameters
-        ----------
-        which : int (optional, default: ``0``)
-            Specifies the type of color to return.
-
-        Returns
-        -------
-        color : list
-            Returns a RGBA color that is represented as a list with 4
-            entries where each entry can be any floating point number
-            between 0 and 1.
-
-            * If ``which`` is 1 then it returns the color of the edge
-              as if it were a self loop. This is specified in
-              ``colors['edge_loop_color']``.
-            * If ``which`` is 2 then it returns the color of the vertex
-              pen color (defined as color/vertex_color in
-              :meth:`.QueueNetworkDiGraph.graph_draw`). This is
-              specified in ``colors['vertex_color']``.
-            * If ``which`` is anything else, then it returns the a
-              shade of the edge that is proportional to the number of
-              agents in the system -- which includes those being
-              servered and those waiting to be served. More agents
-              correspond to darker edge colors. Uses
-              ``colors['vertex_fill_color']`` if the queue sits on a
-              loop, and ``colors['edge_color']`` otherwise.
-        """
-        if which == 1:
-            color = self.colors['edge_loop_color']
-
-        elif which == 2:
-            color = self.colors['vertex_color']
-
-        else:
-            div = (self.nSystem * self.nServers) + 2.
-            tmp = 1. - min(self.nSystem / div, 1.)
-
-            if self.edge[0] == self.edge[1]:
-                color    = [i * tmp for i in self.colors['vertex_fill_color']]
-                color[3] = 1.0
-            else:
-                color    = [i * tmp for i in self.colors['edge_color']]
-                color[3] = 1. - tmp / 2.
-
-        return color
-
-
-    def clear(self):
-        """Clears out the queue. Removes all arrivals, departures, and
-        queued agents from the :class:`.QueueServer`, resets
-        ``nArrivals``, ``nDepartures``, ``nSystem``, and the clock to
-        zero. It also clears any stored ``data`` and the server is then
-        set to inactive.
-        """
-        self.data        = {}
-        self._nArrivals  = 0
-        self._oArrivals  = 0
-        self.nDepartures = 0
-        self.nSystem     = 0
-        self._nTotal     = 0
-        self._current_t  = 0
-        self._time       = infty
-        self._next_ct    = 0
-        self._active     = False
-        self.queue       = collections.deque()
-        inftyAgent       = InftyAgent()
-        self._arrivals   = [inftyAgent]
-        self._departures = [inftyAgent]
-
-
-    def copy(self):
-        """Returns a deep copy of itself."""
-        return copy.deepcopy(self)
-
-
     def __deepcopy__(self, memo):
         new_server              = self.__class__()
         new_server.edge         = copy.copy(self.edge)
@@ -781,7 +785,7 @@ class QueueServer(object):
         new_server._departures  = copy.deepcopy(self._departures, memo)
         new_server.arrival_f    = self.arrival_f
         new_server.service_f    = self.service_f
-        new_server.AgentClass   = self.AgentClass
+        new_server.AgentFactory   = self.AgentFactory
         return new_server
 
 
@@ -789,14 +793,16 @@ class QueueServer(object):
 class LossQueue(QueueServer):
     """A finite capacity queue.
 
-    If the buffer is some finite value, then agents that arrive to the
-    queue are lost.
+    If an agent arrives to a queue that is at capacity, then the agent
+    gets blocked. If this agent is arriving from inside the network
+    then that agent has to stay at their current queue. If the agent
+    is arriving from outside the network then the agent is deleted.
 
     Parameters
     ----------
-    qbuffer : int (optional, the default is 0)
-        Specifies the length of the buffer i.e. specifies the maximum
-        number of agents that can be waiting in line to be served.
+    qbuffer : int (optional, default: ``0``)
+        Specifies the maximum number of agents that can be waiting to
+        be serviced.
     **kwargs
         Any :class:`~QueueServer` parameters.
 
@@ -806,8 +812,7 @@ class LossQueue(QueueServer):
         The number of times arriving agents have been blocked because
         the server was full.
     buffer : int
-        Specifies the length of the buffer (i.e. specifies how long the
-        size of the queue can be).
+        Specifies how many agents can be waiting to be serviced.
 
     Notes
     -----
@@ -829,7 +834,6 @@ class LossQueue(QueueServer):
 
         self.nBlocked   = 0
         self.buffer     = qbuffer
-        self._black_cap = 1
 
 
     def __repr__(self):
@@ -845,28 +849,21 @@ class LossQueue(QueueServer):
 
         Returns
         -------
-        bool
-            Returns whether the number of agents in the system --- the
+        out : bool
+            Returns whether the number of agents in the system -- the
             number of agents being serviced plus those waiting to be
-            serviced --- theis greater than or equal to
-            ``nServers + buffer``.
+            serviced -- is equal to ``nServers + buffer``.
         """
         return self.nSystem >= self.nServers + self.buffer
 
 
+    def clear(self):
+        super(LossQueue, self).clear()
+        self.nBlocked = 0
+
+
     def next_event(self):
-        """Simulates the queue forward one event.
 
-        If the queue is at capacity, then the arriving agent is lost.
-
-        Use :meth:`~QueueServer.simulate` for simulating instead.
-
-        Returns
-        -------
-        out :
-            If the next event is a departure then the departing agent
-            is returned, otherwise nothing is returned.
-        """
         if self._departures[0]._time < self._arrivals[0]._time:
             return super(LossQueue, self).next_event()
         elif self._arrivals[0]._time < infty:
@@ -885,20 +882,15 @@ class LossQueue(QueueServer):
                     self._add_arrival()
 
                 if self.collect_data:
-                    if arrival.issn in self.data:
-                        self.data[arrival.issn].append([arrival._time, 0, 0, len(self.queue), self.nSystem])
+                    if arrival.agent_id in self.data:
+                        self.data[arrival.agent_id].append([arrival._time, 0, 0, len(self.queue), self.nSystem])
                     else:
-                        self.data[arrival.issn] = [[arrival._time, 0, 0, len(self.queue), self.nSystem]]
+                        self.data[arrival.agent_id] = [[arrival._time, 0, 0, len(self.queue), self.nSystem]]
 
                 if self._arrivals[0]._time < self._departures[0]._time:
                     self._time = self._arrivals[0]._time
                 else:
                     self._time = self._departures[0]._time
-
-
-    def clear(self):
-        super(LossQueue, self).clear()
-        self.nBlocked = 0
 
 
     def __deepcopy__(self, memo):
@@ -913,17 +905,16 @@ class NullQueue(QueueServer):
     """A terminal queue.
 
     A queue that is used by the :class:`.QueueNetwork` class to
-    represent agents leaving the network. It can collect the arrival
-    times of every agent that arrives.
+    represent agents leaving the network. Since the ``NullQueue``
+    is used to represent agents leaving the network, all agents
+    that arrive to this queue are deleted.
 
-    Since the ``NullQueue`` is used to represent agents leaving the
-    network, all agents that arrive to this queue are deleted.
-
-    This class can collect data on arriving agents. With the exception
-    of ``next_event_description``, ``nQueued``, and ``current_color``,
-    all functions have been replaced with ``pass``. The methods
-    :meth:`~QueueServer.next_event_description` and
-    :meth:`~QueueServer.nQueued` will always return ``0``.
+    This class can collect data on agents, but only collects each
+    agent's arrival time. With the exception of
+    ``next_event_description``, ``number_queued``, and
+    ``current_color``, all functions have been replaced with ``pass``.
+    The methods :meth:`~QueueServer.next_event_description` and
+    :meth:`~QueueServer.number_queued` will always return ``0``.
     """
 
     _default_colors = {
@@ -949,15 +940,15 @@ class NullQueue(QueueServer):
     def set_nServers(self, *args, **kwargs):
         pass
 
-    def nQueued(self):
+    def number_queued(self):
         return 0
 
     def _add_arrival(self, agent=None):
         if self.collect_data and agent is not None:
-            if agent.issn not in self.data:
-                self.data[agent.issn] = [[agent._time, 0, 0, 0, 0]]
+            if agent.agent_id not in self.data:
+                self.data[agent.agent_id] = [[agent._time, 0, 0, 0, 0]]
             else:
-                self.data[agent.issn].append([agent._time, 0, 0, 0, 0])
+                self.data[agent.agent_id].append([agent._time, 0, 0, 0, 0])
 
     def delay_service(self):
         pass

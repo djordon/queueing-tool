@@ -15,35 +15,35 @@ class Agent(object):
     *decides* where in the network it wants to arrive at next but
     choosing amongst its options randomly. The probabilities are
     specified in :class:`QueueNetwork's<.QueueNetwork>` transition
-    matrix. See :meth:`.set_transition` for changing the routing
+    matrix. See :meth:`.set_transitions` for changing the routing
     probabilities.
 
     Parameters
     ----------
-    issn : tuple (optional, default: ``(0, 0)``)
+    agent_id : tuple (optional, default: ``(0, 0)``)
         A unique identifier for an agent. Is set automatically by the
         :class:`.QueueServer` that instantiates the ``Agent``. The
         first slot is the :class:`QueueServer's<.QueueServer>` edge
-        index and the second slot is specifies the ``Agent's``
+        index and the second slot is the ``Agent's``
         instantiation number for that queue.
     **kwargs :
         Unused.
 
     Attributes
     ----------
-    issn : tuple
+    agent_id : tuple
         A unique identifier for an agent.
     blocked : int
         Specifies how many times an agent has been blocked by a finite
         capacity queue.
     """
-    def __init__(self, issn=(0,0), **kwargs):
-        self.issn    = issn
+    def __init__(self, agent_id=(0,0), **kwargs):
+        self.agent_id = agent_id
         self.blocked = 0
         self._time   = 0         # agents arrival or departure time
 
     def __repr__(self):
-        return "Agent; issn:{0}. time: {1}".format(self.issn, round(self._time, 3))
+        return "Agent; agent_id:{0}. time: {1}".format(self.agent_id, round(self._time, 3))
 
     def __lt__(a, b):
         return a._time < b._time
@@ -63,7 +63,7 @@ class Agent(object):
 
     def add_loss(self, *args, **kwargs):
         """Adds one to the number of times the agent has been blocked
-        from entering a finite capacity queue.
+        from entering a queue.
         """
         self.blocked += 1
 
@@ -80,6 +80,7 @@ class Agent(object):
         Parameters
         ----------
         network : :class:`.QueueNetwork`
+            The :class:`.QueueNetwork` where the Agent resides.
         edge : tuple
             A 4-tuple indicating which edge this agent is located at.
             The first two slots indicate the current edge's source and
@@ -89,7 +90,7 @@ class Agent(object):
 
         Returns
         -------
-        int
+        out : int
             Returns an the edge index corresponding to the agents next
             edge to visit in the network.
 
@@ -106,9 +107,9 @@ class Agent(object):
         u  = uniform()
         pr = network._route_probs[edge[1]]
         k  = _choice(pr, u, n)
+
         # _choice returns an integer between 0 and n-1 where the
         # probability of k being selected is equal to pr[k].
-
         return network.out_edges[edge[1]][k]
 
 
@@ -125,27 +126,29 @@ class Agent(object):
 
 
     def __deepcopy__(self, memo):
-        new_agent         = self.__class__()
-        new_agent.issn    = copy.copy(self.issn)
-        new_agent._time   = copy.copy(self._time)
-        new_agent.blocked = copy.copy(self.blocked)
+        new_agent = self.__class__()
+        new_agent.agent_id = copy.copy(self.agent_id)
+        new_agent._time    = copy.copy(self._time)
+        new_agent.blocked  = copy.copy(self.blocked)
         return new_agent
 
 
 class GreedyAgent(Agent):
-    """An agent that chooses the queue with the shortest line as his
+    """An agent that chooses the queue with the shortest line as their
     next destination.
 
+    Notes
+    -----
     If there are any ties, the ``GreedyAgent`` chooses the first queue
     with the shortest line (where the ordering is given by
     :class:`QueueNetwork's<.QueueNetwork>` ``out_edges`` attribute).
     """
-    def __init__(self, issn=(0, 0)):
-        Agent.__init__(self, issn)
+    def __init__(self, agent_id=(0, 0)):
+        Agent.__init__(self, agent_id)
 
     def __repr__(self):
-        msg = "GreedyAgent; issn:{0}. time: {1}"
-        return msg.format(self.issn, round(self._time, 3))
+        msg = "GreedyAgent; agent_id:{0}. time: {1}"
+        return msg.format(self.agent_id, round(self._time, 3))
 
     def desired_destination(self, network, edge):
         """Returns the agents next destination given their current
@@ -158,6 +161,7 @@ class GreedyAgent(Agent):
         Parameters
         ----------
         network : :class:`.QueueNetwork`
+            The :class:`.QueueNetwork` where the Agent resides.
         edge : tuple
             A 4-tuple indicating which edge this agent is located at.
             The first two slots indicate the current edge's source and
@@ -167,12 +171,12 @@ class GreedyAgent(Agent):
 
         Returns
         -------
-        int
+        out : int
             Returns an the edge index corresponding to the agents next
             edge to visit in the network.
         """
         adjacent_edges = network.out_edges[edge[1]]
-        d = _argmin([network.edge2queue[d].nQueued() for d in adjacent_edges])
+        d = _argmin([network.edge2queue[d].number_queued() for d in adjacent_edges])
         return adjacent_edges[d]
 
 

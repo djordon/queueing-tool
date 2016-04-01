@@ -49,7 +49,8 @@ class QueueNetwork(object):
     this class handles the scheduling of events.
 
     Each edge on the graph has a *type*, and this *type* is used to
-    define the type of :class:`.QueueServer` that sits on that edge.
+    specify the subclass of :class:`.QueueServer` and arguments used
+    when creating the queue that sits on each edge.
 
     Parameters
     ----------
@@ -65,16 +66,16 @@ class QueueNetwork(object):
     q_args : dict (optional)
         Used to specify the class arguments for each type of
         :class:`.QueueServer`. The keys are integers for the edge types
-        and the values are the arguments that are passed when
-        instantiating each :class:`.QueueServer` created with that edge
-        type.
+        and the values are dictionarys holding the arguments that are
+        passed when instantiating each :class:`.QueueServer` created
+        with that edge type.
     seed : int (optional)
-        An integer used to initialize numpy's psuedorandom number
-        generators.
+        An integer used to initialize numpy's psuedo-random number
+        generator.
     colors : dict (optional)
         A dictionary of RGBA colors used to color the graph. The keys
         are specified in the Notes section. If this parameter is
-        supplied and a particular key is missing, then the default
+        supplied but a particular key is missing, then the default
         value for that key is used.
     max_agents : int (optional, default: 1000)
         The maximum number of agents that can be in the network at any
@@ -84,23 +85,22 @@ class QueueNetwork(object):
         is not ``'RS'``, then it is assumed to be ``'BAS'``.
 
         ``'BAS'``
-            Blocking After Service: when an agent attempts to enter a
+            *Blocking After Service*: when an agent attempts to enter a
             :class:`.LossQueue` that is at capacity the agent is forced
             to wait at his current queue until an agent departs from
-            the queue.
+            the target queue.
         ``'RS'``
-            Repetitive Service Blocking: when an agent attempts to
+            *Repetitive Service Blocking*: when an agent attempts to
             enter a :class:`.LossQueue` that is at capacity, the agent
             is forced to receive another service from the queue it is
             departing from. After the agent receives the service, she
             then checks to see if the desired queue is still at
             capacity, and if it is this process is repeated, otherwise
             she enters the queue.
-    adjust_graph : bool (optional, default: True)
-        Specifies whether the graph will be adjusted using
-        :func:`.adjacency2graph`. This makes sure terminal nodes
-        do not cause any issues when simulating. For most cases, this
-        should be set to ``True``.
+    adjust_graph : bool (optional, default: ``True``)
+        Specifies whether the graph will be adjusted to make sure
+        terminal nodes do not cause any issues when simulating. For
+        most cases, this should be set to ``True``.
 
     Attributes
     ----------
@@ -118,9 +118,9 @@ class QueueNetwork(object):
     g : :class:`.QueueNetworkDiGraph`
         The graph for the network.
     default_classes : dict
-        Specifies the default queue classes for each each edge type.
+        Specifies the default queue classes for each edge type.
     default_colors : dict
-        Specifies various the default colors.
+        Specifies various default colors.
     default_q_colors : dict
         Specifies the default colors used by the queues.
     in_edges : list
@@ -132,10 +132,11 @@ class QueueNetwork(object):
         The maximum number of agents that can be in the network at any
         time.
     nAgents : :class:`~numpy.ndarray`
-        A one-dimensional array where the ``k``'th entry corresponds to
+        A one-dimensional array where the ``k``th entry corresponds to
         the total number of agents in the :class:`.QueueServer` with
-        edge index ``k``. This include agents that are scheduled to
-        arrive at the queue at some future time but haven't yet.
+        edge index ``k``. This number includes agents that are
+        scheduled to arrive at the queue at some future time but
+        haven't yet.
     nEdges : int
         The number of edges in the graph.
     nEvents : int
@@ -180,8 +181,7 @@ class QueueNetwork(object):
       treated by ``QueueNetwork`` as terminal edges (edges that point
       to a terminal vertex).
     * If an edge type is used in your network but not given in
-      ``q_classes`` parameter then the defaults are used, where the
-      defaults are:
+      ``q_classes`` parameter then the defaults are used, which are:
 
       >>> default_classes = { # doctest: +SKIP
       ...     0: qt.NullQueue,
@@ -196,10 +196,10 @@ class QueueNetwork(object):
 
       >>> my_classes = {1 : qt.ResourceQueue} # doctest: +SKIP
 
-      then each type ``0`` or type ``2`` edge is a :class:`.NullQueue`
-      or :class:`.LossQueue` respectively.
+      then each type ``0`` and type ``2`` edge is a :class:`.NullQueue`
+      and :class:`.LossQueue` respectively.
     * The following properties are assigned as a node or edge attribute
-      oo the graph; their default values for each edge or node is shown:
+      to the graph; their default values for each edge or node is shown:
 
         * ``vertex_pen_width``: ``1.1``,
         * ``vertex_size``: ``8``,
@@ -224,18 +224,13 @@ class QueueNetwork(object):
       ...     'bgcolor'          : [1, 1, 1, 1]
       ... }
 
-    If the graph is not connected then there may be issues with
-    :class:`Agents<.Agent>` that arrive at an edge that points to
-    terminal vertex. If the graph was created using
-    :func:`.adjacency2graph` then this is not an issue so long as
-    ``q_classes`` key  ``0`` is a :class:`.NullQueue` (or not given).
-
     .. _Jackson network: http://en.wikipedia.org/wiki/Jackson_network
 
     Examples
     --------
     The following creates a queueing network with the Moebius-Kantor
-    graph:
+    graph. Each queue has 5 servers, and the same arrival and service
+    distributions:
 
     >>> import queueing_tool as qt
     >>> import networkx as nx
@@ -269,11 +264,12 @@ class QueueNetwork(object):
     To view the state of the network do the following (note, your
     graph may be rotated):
 
-    >>> pos = nx.shell_layout(g) # doctest: +SKIP
-    >>> net.draw(fame="my_network.png", pos=pos, figsize=(7, 3)) # doctest: +SKIP
+    >>> net.simulate(n=500)
+    >>> pos = nx.nx_agraph.graphviz_layout(g.to_undirected(), prog='neato')
+    >>> net.draw(pos=pos) # doctest: +SKIP
     <...>
 
-    .. figure:: my_network.png
+    .. figure:: my_network1.png
        :align: center
     """
 
@@ -416,9 +412,12 @@ class QueueNetwork(object):
                 scatter_kwargs=None, **kwargs):
         """Animates the network as it's simulating.
 
-        The animations can be saved to disk or view in interactive
+        The animations can be saved to disk or viewed in interactive
         mode. Closing the window ends the animation if viewed in
-        interactive mode.
+        interactive mode. This method calls
+        :meth:`~matplotlib.axes.scatter`, and
+        :class:`~matplotlib.collections.LineCollection`, and any
+        keyword arguments they accept can be passed to them.
 
         Parameters
         ----------
@@ -437,15 +436,11 @@ class QueueNetwork(object):
             Any keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.scatter`.
         **kwargs :
-            This method calls :meth:`~matplotlib.axes.scatter`,
-            :class:`~matplotlib.collections.LineCollection`,
-            :class:`~matplotlib.animation.FuncAnimation`, and
+            This method calls
+            :class:`~matplotlib.animation.FuncAnimation` and
             optionally :meth:`.matplotlib.animation.FuncAnimation.save`.
             Any keyword that can be passed to these functions are
-            passed via ``kwargs``. Note that only the ``cmap`` keyword
-            arg in :meth:`~matplotlib.axes.scatter`, and
-            :class:`~matplotlib.collections.LineCollection` overlap.
-
+            passed via ``kwargs``.
 
         Notes
         -----
@@ -457,10 +452,9 @@ class QueueNetwork(object):
 
             * :class:`~matplotlib.animation.FuncAnimation`: Uses the
               defaults for that function. Saving the animation is done
-              using :meth:`~matplotlib.animation.FuncAnimation.save`,
-              and if the 'filename' is a key in ``kwargs`` then any
-              :meth:`~matplotlib.animation.FuncAnimation.save`
-              arguments in ``kwargs`` are passed to it.
+              by passing the 'filename' keyword argument to this method.
+              This method also accepts any keyword arguments accepted
+              by :meth:`~matplotlib.animation.FuncAnimation.save`.
             * :class:`~matplotlib.collections.LineCollection`: The default
               arguments are taken from
               :meth:`.QueueNetworkDiGraph.lines_scatter_args`.
@@ -469,8 +463,7 @@ class QueueNetwork(object):
               :meth:`.QueueNetworkDiGraph.lines_scatter_args`.
 
 
-        Each of these properties are used by ``animate`` to style the
-        canvas. Also, the ``bgcolor`` parameter is defined in the
+        The ``bgcolor`` parameter is defined in the
         dict ``QueueNetwork.colors``. The ``figsize`` defaults to
         ``(7, 7)``. If any of these parameters are supplied as
         arguments then they are used over the defaults.
@@ -494,7 +487,7 @@ class QueueNetwork(object):
         >>> net.animate(figsize=(4, 4)) # doctest: +SKIP
 
         To stop the animation just close the window. If you want to
-        write the frames to disk run something like the following:
+        write the animation to disk run something like the following:
 
         >>> kwargs = {
         ...     'filename': 'test.mp4',
@@ -504,13 +497,7 @@ class QueueNetwork(object):
         ...     'figsize': (4, 4),
         ...     'vertex_size': 15
         ... }
-        >>> net.animate(fname="test.mp4", **kwargs) # doctest: +SKIP
-
-        The above code outputs the frames in the current working
-        directory and outputs 25 ``png`` images whose names start with
-        ``test`` e.g. ``test0.png``, ``test1.png``, ... etc. Also, the
-        vertex size for each vertex was changed from the default
-        (of 8) to 15.
+        >>> net.animate(**kwargs) # doctest: +SKIP
         """
 
         if not self._initialized:
@@ -623,7 +610,7 @@ class QueueNetwork(object):
 
 
     def clear_data(self, queues=None, edge=None, eType=None):
-        """Clears data from queues.
+        """Clears data from all queues.
 
         If none of the parameters are given then every queue's data is
         cleared.
@@ -636,9 +623,13 @@ class QueueNetwork(object):
             be cleared.
         edge : 2-tuple of int or *array_like* (optional)
             Explicitly specify which queues' data to clear. Must be
-            either: a 2-tuple of the edge's source and target vertex
-            indices or an iterable of 2-tuples of the edge's source and
-            target vertex indices.
+            either:
+
+            * A 2-tuple of the edge's source and target vertex
+              indices, or
+            * An iterable of 2-tuples of the edge's source and
+              target vertex indices.
+
         eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which
             edge types will have their data cleared.
@@ -692,29 +683,14 @@ class QueueNetwork(object):
             :meth:`~matplotlib.axes.Axes.scatter`.
         **kwargs
             Any parameters to pass to
-            :func:`.QueueNetworkDiGraph.draw_graph`.
+            :meth:`.QueueNetworkDiGraph.draw_graph`.
 
         Notes
         -----
-        There are several parameters passed to
-        :func:`.QueueNetworkDiGraph.draw_graph` by default. The
-        following are parameters that are automatically set to the
-        graph when a ``QueueNetwork`` instance is created. These
-        include:
-
-          * ``vertex_color``, ``vertex_fill_color``, ``vertex_size``,
-            ``vertex_pen_width``, ``pos``.
-          * ``edge_color``, ``edge_control_points``,
-            ``edge_marker_size``, ``edge_pen_width``.
-
-        Each of these properties are used by ``draw`` to style the
-        canvas. There is also a parameter that sets the background
-        color of the canvas, which is the ``bgcolor`` parameter. This
-        color is defined in the class property ``QueueNetwork.colors``
-        (which is a dict).
-
-        If any of these parameters are supplied as arguments to
-        ``draw`` then the passed arguments are used over the defaults.
+        This method relies heavily on
+        :meth:`.QueueNetworkDiGraph.draw_graph`. Also, there is a
+        parameter that sets the background color of the canvas, which
+        is the ``bgcolor`` parameter.
 
         Examples
         --------
@@ -741,9 +717,9 @@ class QueueNetwork(object):
         how many agents are in that loop.
 
         There are several additional parameters that can be passed --
-        all :func:`.QueueNetworkDiGraph.draw_graph` parameters are
-        valid. For example, to show the vertex number in the graph, you
-        could do the following:
+        all :meth:`.QueueNetworkDiGraph.draw_graph` parameters are
+        valid. For example, to show the edges as dashed lines do the
+        following.
 
         >>> net.draw(line_kwargs={'linestyle': 'dashed'}) # doctest: +SKIP
         """
@@ -774,9 +750,13 @@ class QueueNetwork(object):
             be retrieved.
         edge : 2-tuple of int or *array_like* (optional)
             Explicitly specify which queues to retrieve agent data
-            from. Must be either: a 2-tuple of the edge's source and
-            target vertex indices, or an iterable of 2-tuples of the
-            edge's source and target vertex indices.
+            from. Must be either:
+
+            * A 2-tuple of the edge's source and target vertex
+              indices, or
+            * An iterable of 2-tuples of the edge's source and
+              target vertex indices.
+
         eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which
             edge types to retrieve agent data from.
@@ -787,7 +767,7 @@ class QueueNetwork(object):
         -------
         dict
             Returns a ``dict`` where the keys are the
-            :class:`Agent's<.Agent>` ``issn`` and the values are
+            :class:`Agent's<.Agent>` ``agent_id`` and the values are
             :class:`ndarrays<~numpy.ndarray>` for that
             :class:`Agent's<.Agent>` data. The columns of this array
             are as follows:
@@ -809,14 +789,14 @@ class QueueNetwork(object):
 
         data = {}
         for qid in queues:
-            for issn, dat in self.edge2queue[qid].data.items():
+            for agent_id, dat in self.edge2queue[qid].data.items():
                 datum = np.zeros((len(dat), 6))
                 datum[:,:5] = np.array(dat)
                 datum[:, 5] = qid
-                if issn in data:
-                    data[issn] = np.vstack((data[issn], datum))
+                if agent_id in data:
+                    data[agent_id] = np.vstack((data[agent_id], datum))
                 else:
-                    data[issn] = datum
+                    data[agent_id] = datum
 
         dType = [
             ('a', float),
@@ -826,10 +806,10 @@ class QueueNetwork(object):
             ('n', float),
             ('id', float)
         ]
-        for issn, dat in data.items():
+        for agent_id, dat in data.items():
             datum = np.array([tuple(d) for d in dat.tolist()], dtype=dType)
             datum = np.sort(datum, order='a')
-            data[issn] = np.array([tuple(d) for d in datum])
+            data[agent_id] = np.array([tuple(d) for d in datum])
 
         if return_header:
             return data, 'arrival,service,departure,num_queued,num_total,q_id'
@@ -851,9 +831,13 @@ class QueueNetwork(object):
             be retrieved.
         edge : 2-tuple of int or *array_like* (optional)
             Explicitly specify which queues to retrieve data from. Must
-            be either: a 2-tuple of the edge's source and target vertex
-            indices, or an iterable of 2-tuples of the edge's source
-            and target vertex indices.
+            be either:
+
+            * A 2-tuple of the edge's source and target vertex
+              indices, or
+            * An iterable of 2-tuples of the edge's source and
+              target vertex indices.
+
         eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which
             edge types to retrieve data from.
@@ -862,17 +846,16 @@ class QueueNetwork(object):
 
         Returns
         -------
-        :class:`~numpy.ndarray`
-            * First: The arrival time of an agent.
-            * Second: The service start time of an agent.
-            * Third: The departure time of an agent.
-            * Fourth: The length of the queue upon the agents arrival.
-            * Fifth: The total number of :class:`Agents<.Agent>` in the
+        out : :class:`~numpy.ndarray`
+            * 1st: The arrival time of an agent.
+            * 2nd: The service start time of an agent.
+            * 3rd: The departure time of an agent.
+            * 4th: The length of the queue upon the agents arrival.
+            * 5th: The total number of :class:`Agents<.Agent>` in the
               :class:`.QueueServer`.
-            * Sixth: the :class:`QueueServer's<.QueueServer>` id
-              (it's edge index).
+            * 6th: The :class:`QueueServer's<.QueueServer>` edge index.
 
-        headers : str (optional)
+        out : str (optional)
             A comma seperated string of the column headers. Returns
             ``'arrival,service,departure,num_queued,num_total,q_id'```
 
@@ -923,10 +906,8 @@ class QueueNetwork(object):
 
         Each :class:`.QueueServer` in the network starts inactive,
         which means they do not accept arrivals from outside the
-        network, and they have no agents in their system. Note that in
-        order to simulate the :class:`.QueueNetwork`, there must be at
-        least one :class:`.Agent` in the network. This method sets
-        queues to active, which then allows agents to arrive from
+        network, and they have no agents in their system. This method
+        sets queues to active, which then allows agents to arrive from
         outside the network.
 
         Parameters
@@ -939,31 +920,56 @@ class QueueNetwork(object):
             the :class:`QueueServer(s)<.QueueServer>` to make active by.
         edges : 2-tuple of int or *array_like* (optional)
             Explicitly specify which queues to make active. Must be
-            either: a 2-tuple of the edge's source and target vertex
-            indices or an iterable of 2-tuples of the edge's source and
-            target vertex indices.
+            either:
+
+            * A 2-tuple of the edge's source and target vertex
+              indices, or
+            * An iterable of 2-tuples of the edge's source and
+              target vertex indices.
+
         eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which
             edge types will be set active.
 
         Raises
         ------
-        RuntimeError
+        ValueError
             If ``queues``, ``egdes``, and ``eType`` are all ``None``
-            and ``nActive`` is not an integer or is less than 1 then a
-            :exc:`~RuntimeError` is raised.
+            and ``nActive`` is an integer less than 1
+            :exc:`~ValueError` is raised.
+        TypeError
+            If ``queues``, ``egdes``, and ``eType`` are all ``None``
+            and ``nActive`` is not an integer then a :exc:`~TypeError`
+            is raised.
+        QueueingToolError
+            Raised if all the queues specified are
+            :class:`NullQueues<.NullQueue>`.
+
+        Notes
+        -----
+        :class:`NullQueues<.NullQueue>` cannot be activated, and are
+        sifted out if they are specified. More specifically, every edge
+        with edge type 0 is sifted out.
         """
         if queues is None and edges is None and eType is None:
             if nActive >= 1 and isinstance(nActive, numbers.Integral):
                 qs = [q.edge[2] for q in self.edge2queue if q.edge[3] != 0]
                 n  = min(nActive, len(qs))
                 queues = np.random.choice(qs, size=n, replace=False)
+            elif not isinstance(nActive, numbers.Integral):
+                msg = "If queues is None, then nActive must be an integer."
+                raise TypeError(msg)
             else:
-                msg = ("If queues is None, then nActive must be a strictly "
+                msg = ("If queues is None, then nActive must be a "
                        "positive int.")
                 raise ValueError(msg)
         else:
             queues = _get_queues(self.g, queues, edges, eType)
+
+        queues = [e for e in queues if self.edge2queue[e].edge[3] != 0]
+
+        if len(queues) == 0:
+            raise QueueingToolError("There were no queues to initialize.")
 
         if len(queues) > self.max_agents:
             queues = queues[:self.max_agents]
@@ -1020,13 +1026,12 @@ class QueueNetwork(object):
         mat : dict or :class:`~numpy.ndarray`
             A transition routing matrix or transition dictionary. If
             passed a dictionary, the keys should be vertex indices and
-            the values are the probabilities for each adjacent vertex,
-            or all vertices adjacent or otherwise.
+            the values are the probabilities for each out vertex.
 
         Raises
         ------
-        RuntimeError
-            A :exc:`.RuntimeError` is raised if: the keys in the dict
+        ValueError
+            A :exc:`.ValueError` is raised if: the keys in the dict
             don't match with a vertex index in the graph; or if the
             :class:`~numpy.ndarray` is passed with the wrong shape,
             must be (``nVertices``, ``nVertices``); or the values
@@ -1077,15 +1082,25 @@ class QueueNetwork(object):
          2: [0.301..., 0.353..., 0.235..., 0.108...],
          3: [1.0],
          4: [1.0]}
+
+        See Also
+        --------
+        :meth:`.transitions` : Return the current routing
+            probabilities.
+        :func:`.generate_transition_matrix` : Generate a random routing
+            matrix.
         """
         if isinstance(mat, dict):
             for key, value in mat.items():
-                if key >= self.nV or key < 0:
-                    raise RuntimeError("One of the keys don't correspond to a vertex.")
+                if key not in self.g.node:
+                    msg = "One of the keys don't correspond to a vertex."
+                    raise ValueError(msg)
                 elif len(self.out_edges[key]) > 0 and not np.isclose(np.sum(value), 1):
-                    raise RuntimeError("Sum of transition probabilities at a vertex was not 1.")
+                    msg = "Sum of transition probabilities at a vertex was not 1."
+                    raise ValueError(msg)
                 elif (np.array(value) < 0).any():
-                    raise RuntimeError("Some transition probabilities were negative.")
+                    msg = "Some transition probabilities were negative."
+                    raise ValueError(msg)
 
                 if len(value) == self.nV:
                     tmp = []
@@ -1101,12 +1116,12 @@ class QueueNetwork(object):
             if mat.shape != (self.nV, self.nV):
                 msg = ("Matrix is the wrong shape, should "
                        "be {0} x {1}.").format(self.nV, self.nV)
-                raise RuntimeError(msg)
+                raise ValueError(msg)
             elif not np.allclose(np.sum(mat[non_terminal,:], axis=1), 1):
                 msg = "Sum of transition probabilities at a vertex was not 1."
-                raise RuntimeError(msg)
+                raise ValueError(msg)
             elif (mat < 0).any():
-                raise RuntimeError("Some transition probabilities were negative.")
+                raise ValueError("Some transition probabilities were negative.")
 
             for k in range(self.nV):
                 p = mat[k, [e[1] for e in self.g.out_edges(k)]]
@@ -1127,7 +1142,7 @@ class QueueNetwork(object):
         ----------
         **kwargs
             Any additional parameters to pass to :meth:`.draw`, and
-            :func:`.QueueNetworkDiGraph.draw_graph`.
+            :meth:`.QueueNetworkDiGraph.draw_graph`.
 
         Notes
         -----
@@ -1175,7 +1190,7 @@ class QueueNetwork(object):
             The type of vertices and edges to be shown.
         **kwargs
             Any additional parameters to pass to :meth:`.draw`, and
-            :func:`.QueueNetworkDiGraph.draw_graph`
+            :meth:`.QueueNetworkDiGraph.draw_graph`
 
         Notes
         -----
@@ -1221,8 +1236,8 @@ class QueueNetwork(object):
     def simulate(self, n=1, t=None):
         """Simulates the network forward.
 
-        Simulates forward either a specific number of events ``n`` or
-        for a specified amount of simulation time ``t``.
+        Simulates either a specific number of events or for a specified
+        amount of simulation time.
 
         Parameters
         ----------
@@ -1254,15 +1269,15 @@ class QueueNetwork(object):
 
         To simulate the network 50000 events run:
 
-        >>> nE = net.nEvents
+        >>> net.nEvents
+        0
         >>> net.simulate(50000)
-        >>> net.nEvents - nE
+        >>> net.nEvents
         50000
 
-        To simulate the network for at least 25 simulation time units
+        To simulate the network for at least 75 simulation time units
         run:
 
-        >>> nE = net.nEvents
         >>> t0 = net.current_time
         >>> net.simulate(t=75)
         >>> t1 = net.current_time
@@ -1379,7 +1394,7 @@ class QueueNetwork(object):
             either:
 
             * A 2-tuple of the edge's source and target vertex
-              indices,
+              indices, or
             * An iterable of 2-tuples of the edge's source and
               target vertex indices.
 
@@ -1407,9 +1422,13 @@ class QueueNetwork(object):
             collecting data.
         edge : 2-tuple of int or *array_like* (optional)
             Explicitly specify which queues will stop collecting data.
-            Must be either: a 2-tuple of the edge's source and target
-            vertex indices, or an iterable of 2-tuples of the edge's
-            source and target vertex indices.
+            Must be either:
+
+            * A 2-tuple of the edge's source and target vertex
+              indices, or
+            * An iterable of 2-tuples of the edge's source and
+              target vertex indices.
+
         eType : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which
             edge types will stop collecting data.
@@ -1421,14 +1440,14 @@ class QueueNetwork(object):
 
 
     def transitions(self, return_matrix=True):
-        """Returns the transition probabilities for each vertex in the
+        """Returns the routing probabilities for each vertex in the
         graph.
 
         Parameters
         ----------
         return_matrix : bool (optional, the default is ``True``)
-            Specifies whether a :class:`~numpy.ndarray` is returned. If
-            ``False``, a dict is returned instead.
+            Specifies whether an :class:`~numpy.ndarray` is returned.
+            If ``False``, a dict is returned instead.
 
         Returns
         -------
@@ -1443,8 +1462,10 @@ class QueueNetwork(object):
 
         Notes
         -----
-        Use ``qn.g.out_edges(v)`` to get a generator of all out edges
+        Use ``qn.g.out_edges(v)`` to get a list of all out edges
         from ``v`` where ``v`` is an integer representing a vertex/node.
+        Also, the ``i``\ th element in ``qn.transitions(False)[v]``
+        cooresponds to the ``i``\ th element in ``qn.g.out_edges(v)``
 
         Examples
         --------
@@ -1492,11 +1513,11 @@ class QueueNetwork(object):
          7: [0, 1, 4]}
 
         What this shows is the following: when an :class:`.Agent` is at
-        vertex ``0`` they will transition to vertex ``1`` with
-        probability ``0.805`` and route to vertex ``3`` probability
-        ``0.195``, when at vertex ``3`` they will transition to vertex
-        ``4`` with probability ``0.474`` and route back to vertex ``0``
-        probability ``0.526``,... etc.
+        vertex ``2`` they will transition to vertex ``0`` with
+        probability ``0.561`` and route to vertex ``6`` probability
+        ``0.438``, when at vertex ``6`` they will transition back to
+        vertex ``2`` with probability ``0.673`` and route vertex ``4``
+        probability ``0.326``, etc.
         """
         if return_matrix:
             mat = np.zeros( (self.nV, self.nV) )
@@ -1542,7 +1563,7 @@ class QueueNetwork(object):
                 nSy += self.edge2queue[ei].nSystem
                 cap += self.edge2queue[ei].nServers
 
-            div = 4. if cap <= 1 else (2. * cap) + 2.
+            div = (2 * cap) + 2.
             tmp = 1. - min(nSy / div, 1.)
 
             color    = [i * tmp for i in self.colors['vertex_fill_color']]

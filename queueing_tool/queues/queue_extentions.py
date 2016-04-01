@@ -20,18 +20,17 @@ class ResourceAgent(Agent):
     they take a *resource* from the queue if the agent does not have
     a resource yet. It does this by reducing the number of servers at
     that queue by one. When a ``ResourceAgent`` with a resource arrives
-    at a :class:`.ResourceQueue` (this could be the same queue) the
-    :class:`.ResourceQueue` adds a resource to that queue by adding
-    increasing the number of servers there by one; the
-    ``ResourceAgent`` is then deleted.
+    at a :class:`.ResourceQueue`, the ``ResourceAgent`` adds
+    a resource to that queue by increasing the number of
+    servers there by one; the ``ResourceAgent`` is then deleted.
     """
-    def __init__(self, issn=(0,0)):
-        super(ResourceAgent, self).__init__(issn)
+    def __init__(self, agent_id=(0,0)):
+        super(ResourceAgent, self).__init__(agent_id)
         self._has_resource = False
         self._had_resource = False
 
     def __repr__(self):
-        return "ResourceAgent; issn:{0}. Time: {1}".format(self.issn, round(self._time, 3))
+        return "ResourceAgent; agent_id:{0}. Time: {1}".format(self.agent_id, round(self._time, 3))
 
 
     def queue_action(self, queue, *args, **kwargs):
@@ -100,10 +99,10 @@ class ResourceQueue(LossQueue):
         'vertex_pen_color' : [0.0, 0.235, 0.718, 1.0]
     }
 
-    def __init__(self, nServers=10, AgentClass=ResourceAgent, qbuffer=0, **kwargs):
+    def __init__(self, nServers=10, AgentFactory=ResourceAgent, qbuffer=0, **kwargs):
         super(ResourceQueue, self).__init__(
             nServers=nServers,
-            AgentClass=AgentClass,
+            AgentFactory=AgentFactory,
             qbuffer=qbuffer,
             **kwargs
         )
@@ -160,10 +159,10 @@ class ResourceQueue(LossQueue):
 
                     if self.collect_data:
                         t = arrival._time
-                        if arrival.issn not in self.data:
-                            self.data[arrival.issn] = [[t, t, t, len(self.queue), self.nSystem]]
+                        if arrival.agent_id not in self.data:
+                            self.data[arrival.agent_id] = [[t, t, t, len(self.queue), self.nSystem]]
                         else:
-                            self.data[arrival.issn].append([t, t, t, len(self.queue), self.nSystem])
+                            self.data[arrival.agent_id].append([t, t, t, len(self.queue), self.nSystem])
 
                     if self._arrivals[0]._time < self._departures[0]._time:
                         self._time = self._arrivals[0]._time
@@ -181,10 +180,10 @@ class ResourceQueue(LossQueue):
                     self._current_t  = arrival._time
 
                     if self.collect_data:
-                        if arrival.issn not in self.data:
-                            self.data[arrival.issn] = [[arrival._time, 0, 0, len(self.queue), self.nSystem]]
+                        if arrival.agent_id not in self.data:
+                            self.data[arrival.agent_id] = [[arrival._time, 0, 0, len(self.queue), self.nSystem]]
                         else:
-                            self.data[arrival.issn].append([arrival._time, 0, 0, len(self.queue), self.nSystem])
+                            self.data[arrival.agent_id].append([arrival._time, 0, 0, len(self.queue), self.nSystem])
 
                     if self._arrivals[0]._time < self._departures[0]._time:
                         self._time = self._arrivals[0]._time
@@ -237,7 +236,9 @@ class ResourceQueue(LossQueue):
 
 
 class InfoAgent(Agent):
-    """An agent that carries information about the queue around.
+    """\
+    An agent that carries information about the :class:`.QueueNetwork`
+    around.
 
     This agent is designed to work with the :class:`.InfoQueue`. It
     collects load data (utilization rate, and the number of agents
@@ -245,24 +246,24 @@ class InfoAgent(Agent):
 
     Parameters
     ----------
-    issn : tuple (optional, default: ``(0, 0)``)
+    agent_id : tuple (optional, default: ``(0, 0)``)
         A unique identifier for an agent. Is set automatically by the
         queue that instantiates the agent. The first slot is queues
         edge index and the second slot is specifies the instantiation
         number for that queue.
     net_size : int (optional, default: 1)
-        The size of the network.
+        The number of edges in the network.
     **kwargs :
         Any arguments to pass to :class:`.Agent`.
     """
-    def __init__(self, issn=(0,0), net_size=1, **kwargs):
-        super(InfoAgent, self).__init__(issn, **kwargs)
+    def __init__(self, agent_id=(0,0), net_size=1, **kwargs):
+        super(InfoAgent, self).__init__(agent_id, **kwargs)
 
         self.stats = np.zeros((net_size, 3), np.int32 )
         self.net_data = np.ones((net_size, 3)) * -1
 
     def __repr__(self):
-        return "InfoAgent; issn:{0}. Time: {1}".format(self.issn, round(self._time, 3))
+        return "InfoAgent; agent_id:{0}. Time: {1}".format(self.agent_id, round(self._time, 3))
 
 
     def add_loss(self, qedge, *args, **kwargs): # qedge[2] is the edge_index of the queue
@@ -281,8 +282,8 @@ class InfoAgent(Agent):
 
             ### stamp this information
             n   = queue.edge[2]    # This is the edge_index of the queue
-            if self.issn in queue.data:
-                tmp = queue.data[self.issn][-1][1] - queue.data[self.issn][-1][0]
+            if self.agent_id in queue.data:
+                tmp = queue.data[self.agent_id][-1][1] - queue.data[self.agent_id][-1][0]
                 self.stats[n, 0]  = self.stats[n, 0] + tmp
                 self.stats[n, 1] += 1 if tmp > 0 else 0
             self.net_data[n, :] = queue._current_t, queue.nServers, queue.nSystem / queue.nServers
@@ -300,7 +301,7 @@ class InfoQueue(LossQueue):
     """A queue that stores information about the network.
 
     This queue gets information about the state of the network (number
-    of :class:`Agent's<.Agent>` at other queues and loads) from arriving
+    of :class:`Agent's<.Agent>` at other queues) from arriving
     :class:`InfoAgent's<.InfoAgent>`. When an :class:`.InfoAgent`
     arrives, the queue extracts all the information the agent has and
     replaces it's out-of-date network information with the agents more
@@ -311,17 +312,18 @@ class InfoQueue(LossQueue):
 
     Parameters
     ----------
-    net_size : int (optional, the default is ``1``)
-        The total number of queues/edges in the network.
-    AgentClass : class (optional, the default is :class:`.InfoAgent`)
+    net_size : int (optional, default: ``1``)
+        The total number of edges in the network.
+    AgentFactory : class (optional, default: :class:`.InfoAgent`)
         The class of agents that arrive from outside the network.
     qbuffer : int (optional, default: ``infty``)
-        The maximum length of the queue/line.
+        The maximum number of agents that can be waiting to be
+        serviced.
     **kwargs :
         Extra parameters to pass to :class:`.LossQueue`.
     """
-    def __init__(self, net_size=1, AgentClass=InfoAgent, qbuffer=np.infty, **kwargs):
-        super(InfoQueue, self).__init__(AgentClass=AgentClass, qbuffer=qbuffer, **kwargs)
+    def __init__(self, net_size=1, AgentFactory=InfoAgent, qbuffer=np.infty, **kwargs):
+        super(InfoQueue, self).__init__(AgentFactory=AgentFactory, qbuffer=qbuffer, **kwargs)
 
         self.networking(net_size)
 
@@ -356,7 +358,7 @@ class InfoQueue(LossQueue):
                     return
 
                 self._nTotal += 1
-                new_agent = self.AgentClass((self.edge[2], self._oArrivals), len(self.net_data))
+                new_agent = self.AgentFactory((self.edge[2], self._oArrivals), len(self.net_data))
                 new_agent._time = self._next_ct
                 heappush(self._arrivals, new_agent)
 

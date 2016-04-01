@@ -25,7 +25,7 @@ ser_f = lambda t: t + np.random.exponential(0.2 / 2.5)
 q_args = {
     1: {'arrival_f': arr_f,
         'service_f': lambda t: t,
-        'AgentClass': qt.GreedyAgent},
+        'AgentFactory': qt.GreedyAgent},
     2: {'nServers': 1,
         'service_f': ser_f}
 }
