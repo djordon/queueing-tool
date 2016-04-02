@@ -38,9 +38,9 @@ class TestGraphFunctions(unittest.TestCase):
 
     def test_graph2dict(self):
         adj = generate_adjacency()
-        g1  = qt.adjacency2graph(adj, adjust=1)
+        g1  = qt.adjacency2graph(adj, adjust=2)
         aj1 = qt.graph2dict(g1)
-        g2  = qt.adjacency2graph(aj1, adjust=1)
+        g2  = qt.adjacency2graph(aj1, adjust=2)
         self.assertTrue(nx.is_isomorphic(g1, g2))
 
 
@@ -76,7 +76,7 @@ class TestGraphFunctions(unittest.TestCase):
                         [0, 0, 0, 0]])
         ety = {0 : {1: 5}, 1: {2: 9, 3: 14}}
 
-        g   = qt.adjacency2graph(adj, eType=ety, adjust=1)
+        g   = qt.adjacency2graph(adj, eType=ety, adjust=2)
         ans = qt.graph2dict(g)
 
         expected_response = {
@@ -96,7 +96,7 @@ class TestGraphFunctions(unittest.TestCase):
                         [0, 0, 0, 0],
                         [0, 0, 0, 0]])
 
-        g   = qt.adjacency2graph(adj, eType=ety, adjust=0)
+        g   = qt.adjacency2graph(adj, eType=ety, adjust=1)
         ans = qt.graph2dict(g)
         self.assertTrue(ans == self.expected_response0)
 

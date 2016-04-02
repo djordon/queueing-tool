@@ -50,7 +50,7 @@ def _adjacency_adjust(adjacency, adjust, is_directed):
                 properties['eType'] = 1
 
     if is_directed:
-        if adjust == 1:
+        if adjust == 2:
             null_nodes = set()
 
             for k, adj in adjacency.items():
@@ -70,43 +70,41 @@ def _adjacency_adjust(adjacency, adjust, is_directed):
     return adjacency
 
 
-def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True, **kwargs):
+def adjacency2graph(adjacency, eType=None, adjust=1, **kwargs):
     """Takes an adjacency list, dict, or matrix and returns a graph.
 
     The purpose of this function is take an adjacency list (or matrix)
     and return a :class:`.QueueNetworkDiGraph` that can be used with a
     :class:`.QueueNetwork` instance. The Graph returned has the
-    ``eType`` edge property for each edge. Note that the graph may be
-    altered.
+    ``eType`` edge property set for each edge. Note that the graph may
+    be altered.
 
     Parameters
     ----------
-    adjacency : dict, or :class:`~numpy.ndarray`
+    adjacency : dict or :class:`~numpy.ndarray`
         An adjacency list as either a dict, or an adjacency matrix.
-    adjust : int ``{0, 1}`` (optional, default: 0)
+    adjust : int ``{1, 2}`` (optional, default: 1)
         Specifies what to do when the graph has terminal vertices
-        (nodes with no out-edges). Note that if ``adjust`` is not 1
-        then it assumed to be 0. There are two choices:
+        (nodes with no out-edges). Note that if ``adjust`` is not 2
+        then it is assumed to be 1. There are two choices:
 
-        * ``adjust = 0``: A loop is added to each terminal node in the
+        * ``adjust = 1``: A loop is added to each terminal node in the
           graph, and their ``eType`` of that loop is set to 0.
-        * ``adjust = 1``: All edges leading to terminal nodes have
+        * ``adjust = 2``: All edges leading to terminal nodes have
           their ``eType`` set to 0.
 
-    is_directed : bool (optional, default: True)
-        Sets whether the returned graph is directed or not.
     **kwargs :
         Unused.
 
     Returns
     -------
-    :any:`networkx.DiGraph`
+    out : :any:`networkx.DiGraph`
         A directed graph with the ``eType`` edge property.
 
     Raises
     ------
     TypeError
-        Is raised if ``adjacency`` is not a dict or a
+        Is raised if ``adjacency`` is not a dict or
         :class:`~numpy.ndarray`.
 
     Examples
@@ -122,8 +120,9 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True, **kwargs)
     ...         3: {}},
     ...     3: {0: {}}}
     >>> eTy = {0: {1: 1}, 1: {2: 2, 3: 4}, 3: {0: 1}}
+    >>> # A loop will be added to vertex 2
     >>> g = qt.adjacency2graph(adj, eType=eTy)
-    >>> ans = qt.graph2dict(g)  # A loop was added to vertex 2
+    >>> ans = qt.graph2dict(g)
     >>> ans                     # doctest: +NORMALIZE_WHITESPACE
     {0: {1: {'eType': 1}},
      1: {2: {'eType': 2},
@@ -146,8 +145,9 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True, **kwargs)
     Alternatively, you could have this function adjust the edges that
     lead to terminal vertices by changing their edge type to 0:
 
-    >>> g = qt.adjacency2graph(adj, eType=eTy, adjust=1)
-    >>> ans = qt.graph2dict(g)  # The graph is unaltered
+    >>> # The graph is unaltered
+    >>> g = qt.adjacency2graph(adj, eType=eTy, adjust=2)
+    >>> ans = qt.graph2dict(g)
     >>> ans                     # doctest: +NORMALIZE_WHITESPACE
     {0: {1: {'eType': 1}},
      1: {2: {'eType': 0},
@@ -180,9 +180,9 @@ def adjacency2graph(adjacency, eType=None, adjust=0, is_directed=True, **kwargs)
 
     g = nx.from_dict_of_dicts(adjacency, create_using=nx.DiGraph())
     adjacency = nx.to_dict_of_dicts(g)
-    adjacency = _adjacency_adjust(adjacency, adjust, is_directed)
-    g = nx.from_dict_of_dicts(adjacency, create_using=nx.DiGraph())
-    return g
+    adjacency = _adjacency_adjust(adjacency, adjust, True)
+
+    return nx.from_dict_of_dicts(adjacency, create_using=nx.DiGraph())
 
 
 
@@ -202,7 +202,7 @@ SAVEFIG_KWARGS = set([
 
 
 class QueueNetworkDiGraph(nx.DiGraph):
-    """A directed graph class built to work with a
+    """A directed graph class built to work with a\
     :class:`.QueueNetwork`
 
     If data is a dict then :func:`.adjacency2graph` is called first.
@@ -213,7 +213,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         Any object that networkx can turn into a
         :any:`DiGraph<networkx.DiGraph>`.
     kwargs :
-        Any additional arguments for :any:`DiGraph<networkx.DiGraph>`.
+        Any additional arguments for :any:`networkx.DiGraph`.
 
     Attributes
     ----------
@@ -224,15 +224,16 @@ class QueueNetworkDiGraph(nx.DiGraph):
         An ``(E, 4)`` array for the RGBA colors for each edge.
         (``E`` is the number of edges). By default this is ``None``.
     vertex_color : :class:`~numpy.ndarray` or ``None``
-        An ``(V, 4)`` array for the RGBA colors for each of vertex
+        An ``(V, 4)`` array for the RGBA colors for each vertex
         border. By default this is ``None``.
     vertex_fill_color : :class:`~numpy.ndarray` or ``None``
-        An ``(V, 4)`` array for the RGBA colors for the body of each.
+        An ``(V, 4)`` array for the RGBA colors for the body of each
         vertex. By default this is ``None``.
 
     Notes
     -----
-    Only use with a :class:`.QueueNetwork`.
+    Not suitable for stand alone use; only use with a
+    :class:`.QueueNetwork`.
     """
     def __init__(self, data=None, **kwargs):
         if isinstance(data, dict):
@@ -340,8 +341,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         Parameters
         ----------
         eType : int
-            The an integer specifying what type of edge is to be
-            returned.
+            An integer specifying what type of edges to return.
 
         Returns
         -------
@@ -379,15 +379,15 @@ class QueueNetworkDiGraph(nx.DiGraph):
         Uses matplotlib, specifically
         :class:`~matplotlib.collections.LineCollection` and
         :meth:`~matplotlib.axes.Axes.scatter`. Gets the default
-        keyword arguments by calling
+        keyword arguments for both methods by calling
         :meth:`~.QueueNetworkDiGraph.lines_scatter_args` first.
 
         Parameters
         ----------
-        line_kwargs : (optional, defaults: None)
+        line_kwargs : (optional, defaults: ``None``)
             Any keyword arguments accepted by
             :class:`~matplotlib.collections.LineCollection`
-        scatter_kwargs : (optional, defaults: None)
+        scatter_kwargs : (optional, defaults: ``None``)
             Any keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.scatter`.
         kwargs :
@@ -402,7 +402,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
 
         Notes
         -----
-        If the ``fname`` keyword is passed, then the figure is saved to
+        If the ``fname`` keyword is passed, then the figure is saved
         locally.
         """
         if not HAS_MATPLOTLIB:
@@ -446,10 +446,10 @@ class QueueNetworkDiGraph(nx.DiGraph):
 
         Parameters
         ----------
-        line_kwargs : (optional, defaults: None)
+        line_kwargs : (optional, defaults: ``None``)
             Any keyword arguments accepted by
             :class:`~matplotlib.collections.LineCollection`
-        scatter_kwargs : (optional, defaults: None)
+        scatter_kwargs : (optional, defaults: ``None``)
             Any keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.scatter`.
 

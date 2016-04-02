@@ -261,11 +261,11 @@ class QueueNetwork(object):
     >>> nA[:5]
     [(4, 37), (4, 34), (3, 43), (3, 32), (3, 30)]
 
-    To view the state of the network do the following (note, your
-    graph may be rotated):
+    To view the state of the network do the following (note, you need
+    to have pygraphviz installed and your graph may be rotated):
 
     >>> net.simulate(n=500)
-    >>> pos = nx.nx_agraph.graphviz_layout(g.to_undirected(), prog='neato')
+    >>> pos = nx.nx_agraph.graphviz_layout(g.to_undirected(), prog='neato') # doctest: +SKIP
     >>> net.draw(pos=pos) # doctest: +SKIP
     <...>
 
@@ -1039,7 +1039,7 @@ class QueueNetwork(object):
             positive and sum to 1);
         TypeError
             A :exc:`.TypeError` is raised if mat is not a dict or
-            an :class:`~numpy.ndarray`.
+            :class:`~numpy.ndarray`.
 
         Examples
         --------
@@ -1451,7 +1451,7 @@ class QueueNetwork(object):
 
         Returns
         -------
-        out : an :class:`~numpy.ndarray` or a dict
+        out : a dict or :class:`~numpy.ndarray`
             The transition probabilities for each vertex in the graph.
             If ``out`` is an :class:`~numpy.ndarray`, then
             ``out[v, u]`` returns the probability of a transition from

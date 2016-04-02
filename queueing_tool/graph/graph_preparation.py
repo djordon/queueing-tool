@@ -131,7 +131,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg, adjust_graph):
     if adjust_graph:
         pos = nx.get_node_attributes(g, 'pos')
         ans = nx.to_dict_of_dicts(g)
-        g = adjacency2graph(ans, adjust=1, is_directed=g.is_directed())
+        g = adjacency2graph(ans, adjust=2, is_directed=g.is_directed())
         g = QueueNetworkDiGraph(g)
         if len(pos) > 0:
             g.set_pos(pos)

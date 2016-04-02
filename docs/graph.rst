@@ -1,6 +1,9 @@
 Graph utilities
 ========================
 
+Graph
+-----
+
 .. automodule:: queueing_tool.graph
 
    .. autoclass:: QueueNetworkDiGraph
@@ -22,7 +25,6 @@ Miscellaneous functions
 -----------------------
 
     .. autofunction:: graph2dict
-    .. autofunction:: add_edge_lengths
 
 Exceptions
 ----------

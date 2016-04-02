@@ -30,7 +30,7 @@ def generate_transition_matrix(g, seed=None):
     g : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, dict, etc.
         Any object that :any:`DiGraph<networkx.DiGraph>` accepts.
     seed : int (optional)
-        An integer used to initialize numpy's psuedorandom number
+        An integer used to initialize numpy's psuedo-random number
         generator.
 
     Returns
@@ -65,20 +65,17 @@ def generate_transition_matrix(g, seed=None):
 
 
 def generate_random_graph(nVertices=250, prob_loop=0.5, **kwargs):
-    """Creates a random graph where the edge and with different
-    vertex types.
+    """Creates a random graph where the edges have different types.
 
-    The vertex types are selected using the
-    :func:`.set_types_random` method. This method calls
-    :func:`.minimal_random_graph`, then adds loops to roughly half
-    the vertices, and then calls :func:`.set_types_random` on the
-    resulting graph.
+    This method calls :func:`.minimal_random_graph`, and then adds
+    a loop to each vertex with ``prob_loop`` probability. It then
+    calls :func:`.set_types_random` on the resulting graph.
 
     Parameters
     ----------
     nVertices : int (optional, default: 250)
         The number of vertices in the graph.
-    prob_loop: float (optional, default: 0.5)
+    prob_loop : float (optional, default: 0.5)
         The probability that a loop gets added to a vertex.
     **kwargs :
         Any parameters to send to :func:`.minimal_random_graph` or
@@ -114,11 +111,12 @@ def generate_random_graph(nVertices=250, prob_loop=0.5, **kwargs):
     different edge types with random proportions:
 
     >>> p = np.random.rand(4)
-    >>> p = {k + 1: p[k] / sum(p) for k in range(4)}
+    >>> p = p / sum(p)
+    >>> p = {k + 1: p[k] for k in range(4)}
     >>> g = qt.generate_random_graph(nVertices=25, is_directed=False, proportions=p)
 
     Note that none of the edge types in the above example are 0. It is
-    recommended let use edge type indices starting at 1, since 0 is
+    recommended use edge type indices starting at 1, since 0 is
     typically used for terminal edges.
     """
     g = minimal_random_graph(nVertices, **kwargs)
@@ -133,21 +131,12 @@ def generate_random_graph(nVertices=250, prob_loop=0.5, **kwargs):
 
 
 def generate_pagerank_graph(nVertices=250, **kwargs):
-    """Creates a random graph where the edge and vertex types are
-    selected using the :func:`.set_types_rank` method.
+    """Creates a random graph where the vertex types are
+    selected using their pagerank.
 
-    Calls :func:`.minimal_random_graph` and then calls
-    :func:`.set_types_rank`.
-
-    This function sets the edge types of a graph to be either 1, 2, or
-    3. It sets the vertices to type 2 by selecting the top
-    ``pType2 * g.number_of_nodes()`` vertices given by the
-    :func:`~networkx.pagerank` of the graph. A loop is added
-    to all vertices identified this way (if one does not exist
-    already). It then randomly sets vertices close to the type 2
-    vertices as type 3, and adds loops to these vertices as well. These
-    loops then have edge types the correspond to the vertices type. The
-    rest of the edges are set to type 1.
+    Calls :func:`.minimal_random_graph` and then
+    :func:`.set_types_rank` where the ``rank`` keyword argument
+    is given by :func:`networkx.pagerank`.
 
     Parameters
     ----------
@@ -162,6 +151,18 @@ def generate_pagerank_graph(nVertices=250, **kwargs):
     :class:`.QueueNetworkDiGraph`
         A graph with a ``pos`` vertex property and the ``eType`` edge
         property.
+
+    Notes
+    -----
+    This function sets the edge types of a graph to be either 1, 2, or
+    3. It sets the vertices to type 2 by selecting the top
+    ``pType2 * g.number_of_nodes()`` vertices given by the
+    :func:`~networkx.pagerank` of the graph. A loop is added
+    to all vertices identified this way (if one does not exist
+    already). It then randomly sets vertices close to the type 2
+    vertices as type 3, and adds loops to these vertices as well. These
+    loops then have edge types that correspond to the vertices type.
+    The rest of the edges are set to type 1.
     """
     g = minimal_random_graph(nVertices, **kwargs)
     r = np.zeros(nVertices)
@@ -172,7 +173,7 @@ def generate_pagerank_graph(nVertices=250, **kwargs):
 
 
 def minimal_random_graph(nVertices, seed=None, **kwargs):
-    """Creates a connected graph by selecting vertex locations.
+    """Creates a connected graph with random vertex locations.
 
     Parameters
     ----------
@@ -193,10 +194,10 @@ def minimal_random_graph(nVertices, seed=None, **kwargs):
     Notes
     -----
     This function first places ``nVertices`` points in the unit square
-    randomly. Then, for every vertex ``v``, all other vertices with
-    Euclidean distance less or equal to ``r`` are connect by an edge
-    --- where ``r`` is the smallest number such that the graph ends up
-    connected at the end of this process.
+    randomly (using the uniform distribution). Then, for every vertex
+    ``v``, all other vertices with Euclidean distance less or equal to
+    ``r`` are connect by an edge --- where ``r`` is the smallest number
+    such that the graph ends up connected.
     """
     if isinstance(seed, numbers.Integral):
         np.random.seed(seed)
@@ -235,8 +236,8 @@ def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
     """Randomly sets ``eType`` (edge type) properties of the graph.
 
     This function randomly assigns each edge a type. The probability of
-    an edge being a specific type is proscribed in the ``pTypes``
-    variable.
+    an edge being a specific type is proscribed in the
+    ``proportions``, ``loop_proportions`` variables.
 
     Parameters
     ----------
@@ -351,8 +352,8 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
         Specifies the proportion of vertices that will be of type 3 and
         that are near pType2 vertices.
     seed : int (optional)
-        An integer used to initialize numpy's psuedorandom number
-        generators.
+        An integer used to initialize numpy's psuedo-random number
+        generator.
     **kwargs :
         Unused.
 
