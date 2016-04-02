@@ -9,7 +9,7 @@ adja_list = {0: {1: {}}, 1: {k: {} for k in range(2, 22)}}
 edge_list = {0: {1: 1}, 1: {k: 2 for k in range(2, 22)}}
 
 # Creates a networkx directed graph using the adjacency list and edge list
-g = qt.adjacency2graph(adjacency=adja_list, eType=edge_list)
+g = qt.adjacency2graph(adjacency=adja_list, edge_type=edge_list)
 
 # Make a mapping between the edge types and the queue classes that sit on each
 # edge. Do not use 0 as a key, it's used to map to NullQueues.
@@ -53,7 +53,7 @@ qn.max_agents = np.infty
 # Before any simulations can take place the network must be initialized to
 # allow arrivals from outside the network. This specifies that only type 1
 # edges accept arrivals from outside the network.
-qn.initialize(eType=1)
+qn.initialize(edge_type=1)
 
 # Data is not collected by default. This makes all queues collect data as the
 # simulations take place.

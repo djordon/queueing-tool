@@ -251,7 +251,7 @@ class QueueNetwork(object):
 
     To specify that arrivals enter from type 1 edges and simulate run:
 
-    >>> net.initialize(eType=1)
+    >>> net.initialize(edge_type=1)
     >>> net.simulate(n=100)
 
     Now we'd like to see how many agents are in type 1 edges:
@@ -609,7 +609,7 @@ class QueueNetwork(object):
             q.clear()
 
 
-    def clear_data(self, queues=None, edge=None, eType=None):
+    def clear_data(self, queues=None, edge=None, edge_type=None):
         """Clears data from all queues.
 
         If none of the parameters are given then every queue's data is
@@ -630,11 +630,11 @@ class QueueNetwork(object):
             * An iterable of 2-tuples of the edge's source and
               target vertex indices.
 
-        eType : int or an iterable of int (optional)
+        edge_type : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which
             edge types will have their data cleared.
         """
-        queues = _get_queues(self.g, queues, edge, eType)
+        queues = _get_queues(self.g, queues, edge, edge_type)
 
         for k in queues:
             self.edge2queue[k].data = {}
@@ -736,7 +736,7 @@ class QueueNetwork(object):
                           scatter_kwargs=scatter_kwargs, **kwargs)
 
 
-    def get_agent_data(self, queues=None, edge=None, eType=None, return_header=False):
+    def get_agent_data(self, queues=None, edge=None, edge_type=None, return_header=False):
         """Gets data from queues and organizes it by agent.
 
         If none of the parameters are given then data from every
@@ -757,7 +757,7 @@ class QueueNetwork(object):
             * An iterable of 2-tuples of the edge's source and
               target vertex indices.
 
-        eType : int or an iterable of int (optional)
+        edge_type : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which
             edge types to retrieve agent data from.
         return_header : bool (optonal, default: False)
@@ -785,7 +785,7 @@ class QueueNetwork(object):
             A comma seperated string of the column headers. Returns
             ``'arrival,service,departure,num_queued,num_total,q_id'```
         """
-        queues = _get_queues(self.g, queues, edge, eType)
+        queues = _get_queues(self.g, queues, edge, edge_type)
 
         data = {}
         for qid in queues:
@@ -817,7 +817,7 @@ class QueueNetwork(object):
         return data
 
 
-    def get_queue_data(self, queues=None, edge=None, eType=None, return_header=False):
+    def get_queue_data(self, queues=None, edge=None, edge_type=None, return_header=False):
         """Gets data from all the queues.
 
         If none of the parameters are given then data from every
@@ -838,7 +838,7 @@ class QueueNetwork(object):
             * An iterable of 2-tuples of the edge's source and
               target vertex indices.
 
-        eType : int or an iterable of int (optional)
+        edge_type : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which
             edge types to retrieve data from.
         return_header : bool (optonal, default: False)
@@ -863,7 +863,7 @@ class QueueNetwork(object):
         --------
         Data is not collected by default. Before simulating, by sure to
         turn it on (as well as initialize the network). The following
-        returns data from queues with ``eType`` 1 or 3:
+        returns data from queues with ``edge_type`` 1 or 3:
 
         >>> import queueing_tool as qt
         >>> g = qt.generate_pagerank_graph(100, seed=13)
@@ -871,7 +871,7 @@ class QueueNetwork(object):
         >>> net.start_collecting_data()
         >>> net.initialize(10)
         >>> net.simulate(2000)
-        >>> data = net.get_queue_data(eType=(1,3))
+        >>> data = net.get_queue_data(edge_type=(1,3))
 
         To get data from an edge connecting two vertices do the
         following:
@@ -886,7 +886,7 @@ class QueueNetwork(object):
 
         >>> data = net.get_queue_data(queues=(20, 14, 0, 4))
         """
-        queues = _get_queues(self.g, queues, edge, eType)
+        queues = _get_queues(self.g, queues, edge, edge_type)
 
         data = np.zeros((0, 6))
         for q in queues:
@@ -901,7 +901,7 @@ class QueueNetwork(object):
         return data
 
 
-    def initialize(self, nActive=1, queues=None, edges=None, eType=None):
+    def initialize(self, nActive=1, queues=None, edges=None, edge_type=None):
         """Prepares the ``QueueNetwork`` for simulation.
 
         Each :class:`.QueueServer` in the network starts inactive,
@@ -927,18 +927,18 @@ class QueueNetwork(object):
             * An iterable of 2-tuples of the edge's source and
               target vertex indices.
 
-        eType : int or an iterable of int (optional)
+        edge_type : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which
             edge types will be set active.
 
         Raises
         ------
         ValueError
-            If ``queues``, ``egdes``, and ``eType`` are all ``None``
+            If ``queues``, ``egdes``, and ``edge_type`` are all ``None``
             and ``nActive`` is an integer less than 1
             :exc:`~ValueError` is raised.
         TypeError
-            If ``queues``, ``egdes``, and ``eType`` are all ``None``
+            If ``queues``, ``egdes``, and ``edge_type`` are all ``None``
             and ``nActive`` is not an integer then a :exc:`~TypeError`
             is raised.
         QueueingToolError
@@ -951,7 +951,7 @@ class QueueNetwork(object):
         sifted out if they are specified. More specifically, every edge
         with edge type 0 is sifted out.
         """
-        if queues is None and edges is None and eType is None:
+        if queues is None and edges is None and edge_type is None:
             if nActive >= 1 and isinstance(nActive, numbers.Integral):
                 qs = [q.edge[2] for q in self.edge2queue if q.edge[3] != 0]
                 n  = min(nActive, len(qs))
@@ -964,7 +964,7 @@ class QueueNetwork(object):
                        "positive int.")
                 raise ValueError(msg)
         else:
-            queues = _get_queues(self.g, queues, edges, eType)
+            queues = _get_queues(self.g, queues, edges, edge_type)
 
         queues = [e for e in queues if self.edge2queue[e].edge[3] != 0]
 
@@ -1178,15 +1178,15 @@ class QueueNetwork(object):
         self._update_all_colors()
 
 
-    def show_type(self, eType, **kwargs):
+    def show_type(self, edge_type, **kwargs):
         """Draws the network, highlighting queues of a certain type.
 
-        The colored vertices represent self loops of type ``eType``.
-        Dark edges represent queues of type ``eType``.
+        The colored vertices represent self loops of type ``edge_type``.
+        Dark edges represent queues of type ``edge_type``.
 
         Parameters
         ----------
-        eType : int
+        edge_type : int
             The type of vertices and edges to be shown.
         **kwargs
             Any additional parameters to pass to :meth:`.draw`, and
@@ -1215,7 +1215,7 @@ class QueueNetwork(object):
         """
         for v in self.g.nodes():
             e = (v, v)
-            if self.g.is_edge(e) and self.g.ep(e, 'eType') == eType:
+            if self.g.is_edge(e) and self.g.ep(e, 'edge_type') == edge_type:
                 ei = self.g.edge_index[e]
                 self.g.set_vp(v, 'vertex_fill_color', self.colors['vertex_highlight'])
                 self.g.set_vp(v, 'vertex_color', self.edge2queue[ei].colors['vertex_color'])
@@ -1224,7 +1224,7 @@ class QueueNetwork(object):
                 self.g.set_vp(v, 'vertex_color', [0, 0, 0, 0.9])
 
         for e in self.g.edges():
-            if self.g.ep(e, 'eType') == eType:
+            if self.g.ep(e, 'edge_type') == edge_type:
                 self.g.set_ep(e, 'edge_color', self.colors['edge_active'])
             else:
                 self.g.set_ep(e, 'edge_color', self.colors['edge_inactive'])
@@ -1376,7 +1376,7 @@ class QueueNetwork(object):
                 self._fancy_heap.push(*new_q1k)
 
 
-    def start_collecting_data(self, queues=None, edge=None, eType=None):
+    def start_collecting_data(self, queues=None, edge=None, edge_type=None):
         """Tells the queues to collect data on agents' arrival, service
         start, and departure times.
 
@@ -1398,17 +1398,17 @@ class QueueNetwork(object):
             * An iterable of 2-tuples of the edge's source and
               target vertex indices.
 
-        eType : int or an iterable of int (optional)
+        edge_type : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which
             edge types will be set active.
         """
-        queues = _get_queues(self.g, queues, edge, eType)
+        queues = _get_queues(self.g, queues, edge, edge_type)
 
         for k in queues:
             self.edge2queue[k].collect_data = True
 
 
-    def stop_collecting_data(self, queues=None, edge=None, eType=None):
+    def stop_collecting_data(self, queues=None, edge=None, edge_type=None):
         """Tells the queues to stop collecting data on agents.
 
         If none of the parameters are given then every
@@ -1429,11 +1429,11 @@ class QueueNetwork(object):
             * An iterable of 2-tuples of the edge's source and
               target vertex indices.
 
-        eType : int or an iterable of int (optional)
+        edge_type : int or an iterable of int (optional)
             A integer, or a collection of integers identifying which
             edge types will stop collecting data.
         """
-        queues = _get_queues(self.g, queues, edge, eType)
+        queues = _get_queues(self.g, queues, edge, edge_type)
 
         for k in queues:
             self.edge2queue[k].collect_data = False
@@ -1604,7 +1604,7 @@ class QueueNetwork(object):
 
 
 
-def _get_queues(g, queues, edge, eType):
+def _get_queues(g, queues, edge, edge_type):
     """Used to specify edge indices from different types of arguments."""
     INT = numbers.Integral
     if isinstance(queues, INT):
@@ -1620,14 +1620,14 @@ def _get_queues(g, queues, edge, eType):
                     queues = [g.edge_index[e] for e in edge]
             else:
                 queues = [g.edge_index[edge]]
-        elif eType is not None:
-            if isinstance(eType, collections.Iterable):
-                eType = set(eType)
+        elif edge_type is not None:
+            if isinstance(edge_type, collections.Iterable):
+                edge_type = set(edge_type)
             else:
-                eType = set([eType])
+                edge_type = set([edge_type])
             tmp = []
             for e in g.edges():
-                if g.ep(e, 'eType') in eType:
+                if g.ep(e, 'edge_type') in edge_type:
                     tmp.append(g.edge_index[e])
 
             queues = np.array(tmp, int)

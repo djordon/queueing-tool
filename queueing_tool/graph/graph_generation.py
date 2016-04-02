@@ -85,7 +85,7 @@ def generate_random_graph(nVertices=250, prob_loop=0.5, **kwargs):
     -------
     :class:`.QueueNetworkDiGraph`
         A graph with the position of the vertex set as a property.
-        The position property is called ``pos``. Also, the ``eType``
+        The position property is called ``pos``. Also, the ``edge_type``
         edge property is set for each edge.
 
     Examples
@@ -97,13 +97,13 @@ def generate_random_graph(nVertices=250, prob_loop=0.5, **kwargs):
     >>> pTypes = {1: 0.5, 2: 0.25, 3: 0.25}
     >>> g = qt.generate_random_graph(100, proportions=pTypes, seed=17)
     >>> non_loops = [e for e in g.edges() if e[0] != e[1]]
-    >>> p1 = np.sum([g.ep(e, 'eType') == 1 for e in non_loops])
+    >>> p1 = np.sum([g.ep(e, 'edge_type') == 1 for e in non_loops])
     >>> float(p1) / len(non_loops) # doctest: +ELLIPSIS
     0.486...
-    >>> p2 = np.sum([g.ep(e, 'eType') == 2 for e in non_loops])
+    >>> p2 = np.sum([g.ep(e, 'edge_type') == 2 for e in non_loops])
     >>> float(p2) / len(non_loops) # doctest: +ELLIPSIS
     0.249...
-    >>> p3 = np.sum([g.ep(e, 'eType') == 3 for e in non_loops])
+    >>> p3 = np.sum([g.ep(e, 'edge_type') == 3 for e in non_loops])
     >>> float(p3) / len(non_loops) # doctest: +ELLIPSIS
     0.264...
 
@@ -149,8 +149,8 @@ def generate_pagerank_graph(nVertices=250, **kwargs):
     Returns
     -------
     :class:`.QueueNetworkDiGraph`
-        A graph with a ``pos`` vertex property and the ``eType`` edge
-        property.
+        A graph with a ``pos`` vertex property and the ``edge_type``
+        edge property.
 
     Notes
     -----
@@ -233,7 +233,7 @@ def minimal_random_graph(nVertices, seed=None, **kwargs):
 
 def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
                      **kwargs):
-    """Randomly sets ``eType`` (edge type) properties of the graph.
+    """Randomly sets ``edge_type`` (edge type) properties of the graph.
 
     This function randomly assigns each edge a type. The probability of
     an edge being a specific type is proscribed in the
@@ -262,7 +262,7 @@ def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
     Returns
     -------
     :class:`.QueueNetworkDiGraph`
-        Returns the a graph with an ``eType`` edge property.
+        Returns the a graph with an ``edge_type`` edge property.
 
     Raises
     ------
@@ -318,9 +318,9 @@ def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
     for k, e in enumerate(loops):
         eTypes[e] = values[k]
 
-    g.new_edge_property('eType')
+    g.new_edge_property('edge_type')
     for e in g.edges():
-        g.set_ep(e, 'eType', eTypes[e])
+        g.set_ep(e, 'edge_type', eTypes[e])
 
     return g
 
@@ -360,7 +360,7 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
     Returns
     -------
     :class:`.QueueNetworkDiGraph`
-        Returns the a graph with an ``eType`` edge property.
+        Returns the a graph with an ``edge_type`` edge property.
 
     Raises
     ------
@@ -410,16 +410,16 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
             if not g.is_edge((v, v)):
                 g.add_edge(v, v)
 
-    g.new_edge_property('eType')
+    g.new_edge_property('edge_type')
     for e in g.edges():
-        g.set_ep(e, 'eType', 1)
+        g.set_ep(e, 'edge_type', 1)
 
     for v in g.nodes():
         if g.vp(v, 'loop_type') in [2, 3]:
             e = (v, v)
             if g.vp(v, 'loop_type') == 2:
-                g.set_ep(e, 'eType', 2)
+                g.set_ep(e, 'edge_type', 2)
             else:
-                g.set_ep(e, 'eType', 3)
+                g.set_ep(e, 'edge_type', 3)
 
     return g

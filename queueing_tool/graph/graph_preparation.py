@@ -104,8 +104,9 @@ def _prepare_graph(g, g_colors, q_cls, q_arg, adjust_graph):
 
     Notes
     -----
-    The graph ``g`` should have the ``eType`` edge property map. If it
-    does not then an ``eType`` edge property is created and set to 1.
+    The graph ``g`` should have the ``edge_type`` edge property map.
+    If it does not then an ``edge_type`` edge property is
+    created and set to 1.
 
     The following properties are set by each queue: ``vertex_color``,
     ``vertex_fill_color``, ``vertex_fill_color``, ``edge_color``.
@@ -177,7 +178,7 @@ def _set_queues(g, q_cls, q_arg, has_cap):
     queues = [0 for k in range(g.number_of_edges())]
 
     for e in g.edges():
-        eType = g.ep(e, 'eType')
+        eType = g.ep(e, 'edge_type')
         qedge = (e[0], e[1], g.edge_index[e], eType)
 
         if has_cap and 'nServers' not in q_arg[eType]:

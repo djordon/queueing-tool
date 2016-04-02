@@ -125,7 +125,7 @@ queueing-tool. Now we can make our graph
 
 .. doctest::
 
-    >>> g = qt.adjacency2graph(adjacency=adja_list, eType=edge_list)
+    >>> g = qt.adjacency2graph(adjacency=adja_list, edge_type=edge_list)
 
 So we've created a graph where each edge/queue has a type. Since our edge of
 type ``1`` represents the store, it will accept shoppers from outside the network.
@@ -209,7 +209,7 @@ following:
 
 .. doctest::
 
-    >>> qn.initialize(eType=1)
+    >>> qn.initialize(edge_type=1)
 
 To simulate for a specified amount of simulation time run:
 
@@ -245,9 +245,9 @@ we can specify that by having type ``0`` edges collect data:
 .. doctest::
 
     >>> qn.clear_data()
-    >>> qn.start_collecting_data(eType=0)
+    >>> qn.start_collecting_data(edge_type=0)
     >>> qn.simulate(t=3)
-    >>> data = qn.get_queue_data(eType=0)
+    >>> data = qn.get_queue_data(edge_type=0)
     >>> data.shape
     (550, 6)
 

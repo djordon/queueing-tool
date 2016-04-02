@@ -209,10 +209,10 @@ class TestQueueServers(unittest.TestCase):
 
     def test_NullQueue_data_collection(self):
         adj = {
-            0 : {1: {'eType': 1}},
-            1 : {2: {'eType': 2},
-                 3: {'eType': 2},
-                 4: {'eType': 2}}
+            0 : {1: {'edge_type': 1}},
+            1 : {2: {'edge_type': 2},
+                 3: {'edge_type': 2},
+                 4: {'edge_type': 2}}
         }
         g = qt.adjacency2graph(adj)
 
@@ -220,7 +220,7 @@ class TestQueueServers(unittest.TestCase):
 
         qn  = qt.QueueNetwork(g, q_classes=qcl)
         qn.initialize(edges=(0, 1))
-        qn.start_collecting_data(eType=2)
+        qn.start_collecting_data(edge_type=2)
         qn.max_agents = 5000
         qn.simulate(n=10000)
         data = qn.get_queue_data()

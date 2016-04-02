@@ -6,7 +6,7 @@ Queues and agents
 Queues
 ------
 
-   .. autoclass:: QueueServer(nServers=1, edge=(0,0,0), eType=1, arrival_f=lambda t: t + np.random.exponential(1), service_f=lambda t: t + np.random.exponential(0.9), AgentFactory=Agent, keep_data=False, active_cap=np.infty, deactive_t=np.infty, **kwargs)
+   .. autoclass:: QueueServer(nServers=1, edge=(0,0,0,1), arrival_f=lambda t: t + np.random.exponential(1), service_f=lambda t: t + np.random.exponential(0.9), AgentFactory=Agent, keep_data=False, active_cap=np.infty, deactive_t=np.infty, **kwargs)
       :members:
    .. autoclass:: LossQueue
       :show-inheritance:

@@ -23,15 +23,15 @@ class TestGraphFunctions(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.expected_response0 = {
-            0: {1: {'eType': 5}},
-            1: {2: {'eType': 9}, 3: {'eType': 14}},
-            2: {0: {'eType': 1}},
-            3: {3: {'eType': 0}}
+            0: {1: {'edge_type': 5}},
+            1: {2: {'edge_type': 9}, 3: {'edge_type': 14}},
+            2: {0: {'edge_type': 1}},
+            3: {3: {'edge_type': 0}}
         }
         cls.expected_response1 = {
-            0: {1: {'eType': 5}},
-            1: {2: {'eType': 9}, 3: {'eType': 0}},
-            2: {0: {'eType': 1}},
+            0: {1: {'edge_type': 5}},
+            1: {2: {'edge_type': 9}, 3: {'edge_type': 0}},
+            2: {0: {'edge_type': 1}},
             3: {}
         }
 
@@ -76,13 +76,13 @@ class TestGraphFunctions(unittest.TestCase):
                         [0, 0, 0, 0]])
         ety = {0 : {1: 5}, 1: {2: 9, 3: 14}}
 
-        g   = qt.adjacency2graph(adj, eType=ety, adjust=2)
+        g   = qt.adjacency2graph(adj, edge_type=ety, adjust=2)
         ans = qt.graph2dict(g)
 
         expected_response = {
-            0: {1: {'eType': 5}},
-            1: {2: {'eType': 9}, 3: {'eType': 0}},
-            2: {0: {'eType': 1}},
+            0: {1: {'edge_type': 5}},
+            1: {2: {'edge_type': 9}, 3: {'edge_type': 0}},
+            2: {0: {'edge_type': 1}},
             3: {}
         }
         self.assertTrue(ans == self.expected_response1)
@@ -96,7 +96,7 @@ class TestGraphFunctions(unittest.TestCase):
                         [0, 0, 0, 0],
                         [0, 0, 0, 0]])
 
-        g   = qt.adjacency2graph(adj, eType=ety, adjust=1)
+        g   = qt.adjacency2graph(adj, edge_type=ety, adjust=1)
         ans = qt.graph2dict(g)
         self.assertTrue(ans == self.expected_response0)
 
@@ -120,7 +120,7 @@ class TestGraphFunctions(unittest.TestCase):
         g = qt.set_types_random(g, proportions=pType)
 
         non_loops = [e for e in g.edges() if e[0] != e[1]]
-        mat   = [[g.ep(e, 'eType') == k for e in non_loops] for k in eType]
+        mat   = [[g.ep(e, 'edge_type') == k for e in non_loops] for k in eType]
         props = (np.array(mat).sum(1) + 0.0) / len(non_loops)
         ps    = np.array([pType[k] for k in eType])
 

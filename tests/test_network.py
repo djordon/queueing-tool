@@ -266,10 +266,10 @@ class TestQueueNetwork(unittest.TestCase):
         ser = lambda t : t + np.random.exponential(1/mu)
 
         adj = {
-            0 : {1: {'eType': 1}},
-            1 : {2: {'eType': 2},
-                 3: {'eType': 2},
-                 4: {'eType': 2}}
+            0 : {1: {'edge_type': 1}},
+            1 : {2: {'edge_type': 2},
+                 3: {'edge_type': 2},
+                 4: {'edge_type': 2}}
         }
         g = qt.adjacency2graph(adj)
 
@@ -322,7 +322,7 @@ class TestQueueNetwork(unittest.TestCase):
 
         with mock.patch(mock_location, _get_queues_mock):
             with self.assertRaises(qt.QueueingToolError):
-                self.qn.initialize(eType=1)
+                self.qn.initialize(edge_type=1)
 
     def test_QueueNetwork_initialization(self):
 
@@ -379,18 +379,18 @@ class TestQueueNetwork(unittest.TestCase):
         ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
         self.assertTrue( (ans == k).all() )
 
-        # Single eType
+        # Single edge_type
         k = np.random.randint(1, 4)
         self.qn.clear()
-        self.qn.initialize(eType=k)
+        self.qn.initialize(edge_type=k)
 
         ans = np.array([q.edge[3] == k for q in self.qn.edge2queue if q.active])
         self.assertTrue(ans.all())
 
-        # Multiple eTypes
+        # Multiple edge_types
         k = np.unique(np.random.randint(1, 4, 3))
         self.qn.clear()
-        self.qn.initialize(eType=k)
+        self.qn.initialize(edge_type=k)
 
         ans = np.array([q.edge[3] in k for q in self.qn.edge2queue if q.active])
         self.assertTrue(ans.all())
@@ -514,7 +514,7 @@ class TestQueueNetwork(unittest.TestCase):
     @mock.patch('queueing_tool.network.queue_network.HAS_MATPLOTLIB', True)
     def test_QueueNetwork_show_type(self):
         args = {'c': 'b', 'bgcolor': 'green'}
-        self.qn.show_type(eType=2, **args)
+        self.qn.show_type(edge_type=2, **args)
         self.qn.g.draw_graph.assert_called_with(scatter_kwargs=None,
                                                 line_kwargs=None, **args)
 

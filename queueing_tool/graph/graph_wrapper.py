@@ -46,8 +46,8 @@ def _adjacency_adjust(adjacency, adjust, is_directed):
 
     for v, adj in adjacency.items():
         for u, properties in adj.items():
-            if properties.get('eType') is None:
-                properties['eType'] = 1
+            if properties.get('edge_type') is None:
+                properties['edge_type'] = 1
 
     if is_directed:
         if adjust == 2:
@@ -60,23 +60,23 @@ def _adjacency_adjust(adjacency, adjust, is_directed):
             for k, adj in adjacency.items():
                 for v in adj.keys():
                     if v in null_nodes:
-                        adj[v]['eType'] = 0
+                        adj[v]['edge_type'] = 0
 
         else:
             for k, adj in adjacency.items():
                 if len(adj) == 0:
-                    adj[k] = {'eType': 0}
+                    adj[k] = {'edge_type': 0}
 
     return adjacency
 
 
-def adjacency2graph(adjacency, eType=None, adjust=1, **kwargs):
+def adjacency2graph(adjacency, edge_type=None, adjust=1, **kwargs):
     """Takes an adjacency list, dict, or matrix and returns a graph.
 
     The purpose of this function is take an adjacency list (or matrix)
     and return a :class:`.QueueNetworkDiGraph` that can be used with a
     :class:`.QueueNetwork` instance. The Graph returned has the
-    ``eType`` edge property set for each edge. Note that the graph may
+    ``edge_type`` edge property set for each edge. Note that the graph may
     be altered.
 
     Parameters
@@ -89,9 +89,9 @@ def adjacency2graph(adjacency, eType=None, adjust=1, **kwargs):
         then it is assumed to be 1. There are two choices:
 
         * ``adjust = 1``: A loop is added to each terminal node in the
-          graph, and their ``eType`` of that loop is set to 0.
+          graph, and their ``edge_type`` of that loop is set to 0.
         * ``adjust = 2``: All edges leading to terminal nodes have
-          their ``eType`` set to 0.
+          their ``edge_type`` set to 0.
 
     **kwargs :
         Unused.
@@ -99,7 +99,7 @@ def adjacency2graph(adjacency, eType=None, adjust=1, **kwargs):
     Returns
     -------
     out : :any:`networkx.DiGraph`
-        A directed graph with the ``eType`` edge property.
+        A directed graph with the ``edge_type`` edge property.
 
     Raises
     ------
@@ -121,39 +121,39 @@ def adjacency2graph(adjacency, eType=None, adjust=1, **kwargs):
     ...     3: {0: {}}}
     >>> eTy = {0: {1: 1}, 1: {2: 2, 3: 4}, 3: {0: 1}}
     >>> # A loop will be added to vertex 2
-    >>> g = qt.adjacency2graph(adj, eType=eTy)
+    >>> g = qt.adjacency2graph(adj, edge_type=eTy)
     >>> ans = qt.graph2dict(g)
     >>> ans                     # doctest: +NORMALIZE_WHITESPACE
-    {0: {1: {'eType': 1}},
-     1: {2: {'eType': 2},
-         3: {'eType': 4}},
-     2: {2: {'eType': 0}},
-     3: {0: {'eType': 1}}}
+    {0: {1: {'edge_type': 1}},
+     1: {2: {'edge_type': 2},
+         3: {'edge_type': 4}},
+     2: {2: {'edge_type': 0}},
+     3: {0: {'edge_type': 1}}}
 
     You can use a dict of lists to represent the adjacency list.
 
     >>> adj = {0 : [1], 1: [2, 3], 3: [0]}
-    >>> g = qt.adjacency2graph(adj, eType=eTy)
+    >>> g = qt.adjacency2graph(adj, edge_type=eTy)
     >>> ans = qt.graph2dict(g)
     >>> ans                     # doctest: +NORMALIZE_WHITESPACE
-    {0: {1: {'eType': 1}},
-     1: {2: {'eType': 2},
-         3: {'eType': 4}},
-     2: {2: {'eType': 0}},
-     3: {0: {'eType': 1}}}
+    {0: {1: {'edge_type': 1}},
+     1: {2: {'edge_type': 2},
+         3: {'edge_type': 4}},
+     2: {2: {'edge_type': 0}},
+     3: {0: {'edge_type': 1}}}
 
     Alternatively, you could have this function adjust the edges that
     lead to terminal vertices by changing their edge type to 0:
 
     >>> # The graph is unaltered
-    >>> g = qt.adjacency2graph(adj, eType=eTy, adjust=2)
+    >>> g = qt.adjacency2graph(adj, edge_type=eTy, adjust=2)
     >>> ans = qt.graph2dict(g)
     >>> ans                     # doctest: +NORMALIZE_WHITESPACE
-    {0: {1: {'eType': 1}},
-     1: {2: {'eType': 0},
-         3: {'eType': 4}},
+    {0: {1: {'edge_type': 1}},
+     1: {2: {'edge_type': 0},
+         3: {'edge_type': 4}},
     2: {},
-    3: {0: {'eType': 1}}}
+    3: {0: {'edge_type': 1}}}
     """
     import copy
     dd = copy.deepcopy(adjacency)
@@ -166,17 +166,17 @@ def adjacency2graph(adjacency, eType=None, adjust=1, **kwargs):
                "dict, or a numpy.ndarray.")
         raise TypeError(msg)
 
-    if eType is None:
-        eType = {}
+    if edge_type is None:
+        edge_type = {}
     else:
-        if isinstance(eType, np.ndarray):
-            eType = _matrix2dict(eType, etype=True)
-        elif isinstance(eType, dict):
-            eType = _dict2dict(eType)
+        if isinstance(edge_type, np.ndarray):
+            edge_type = _matrix2dict(edge_type, etype=True)
+        elif isinstance(edge_type, dict):
+            edge_type = _dict2dict(edge_type)
 
-    for u, ty in eType.items():
+    for u, ty in edge_type.items():
         for v, et in ty.items():
-            adjacency[u][v]['eType'] = et
+            adjacency[u][v]['edge_type'] = et
 
     g = nx.from_dict_of_dicts(adjacency, create_using=nx.DiGraph())
     adjacency = nx.to_dict_of_dicts(g)
@@ -335,12 +335,12 @@ class QueueNetworkDiGraph(nx.DiGraph):
         self.pos = np.array([pos[v] for v in self.nodes()])
 
 
-    def get_edge_type(self, eType):
+    def get_edge_type(self, edge_type):
         """Returns all edges with the specified edge type.
 
         Parameters
         ----------
-        eType : int
+        edge_type : int
             An integer specifying what type of edges to return.
 
         Returns
@@ -355,10 +355,10 @@ class QueueNetworkDiGraph(nx.DiGraph):
 
         >>> import queueing_tool as qt
         >>> adjacency = {
-        ...     0: {1: {'eType': 2}},
-        ...     1: {2: {'eType': 1}, 3: {'eType': 4}},
-        ...     2: {0: {'eType': 2}},
-        ...     3: {3: {'eType': 0}}
+        ...     0: {1: {'edge_type': 2}},
+        ...     1: {2: {'edge_type': 1}, 3: {'edge_type': 4}},
+        ...     2: {0: {'edge_type': 2}},
+        ...     3: {3: {'edge_type': 0}}
         ... }
         >>> G = qt.QueueNetworkDiGraph(adjacency)
         >>> ans = G.get_edge_type(2)
@@ -368,7 +368,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         """
         edges = []
         for e in self.edges():
-            if self.edge[e[0]][e[1]].get('eType') == eType:
+            if self.edge[e[0]][e[1]].get('edge_type') == edge_type:
                 edges.append(e)
         return edges
 
