@@ -87,10 +87,10 @@ packages = [
     'queueing_tool.queues'
 ]
 
-tests_requires = ['nose>=1.3.7']
+tests_require = ['nose>=1.3.7']
 
 if _version[0] == 2:
-    tests_requires.append('mock')
+    tests_require.append('mock')
 
 setup(
     author='Daniel Jordon',
