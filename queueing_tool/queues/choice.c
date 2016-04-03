@@ -1221,9 +1221,9 @@ static PyObject *__pyx_tuple__9;
 static PyObject *__pyx_codeobj__8;
 static PyObject *__pyx_codeobj__10;
 
-/* "queueing_tool/queues/choice.pyx":11
- * @cython.boundscheck(False)
+/* "queueing_tool/queues/choice.pyx":12
  * @cython.wraparound(False)
+ * @cython.nonecheck(False)
  * def _choice(cnp.ndarray[F64_t, ndim=1] pr, cnp.float64_t u, Py_ssize_t n):             # <<<<<<<<<<<<<<
  *     cdef cnp.float64_t z
  *     cdef int k
@@ -1263,16 +1263,16 @@ static PyObject *__pyx_pw_13queueing_tool_6queues_6choice_1_choice(PyObject *__p
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_u)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_choice", 1, 3, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("_choice", 1, 3, 3, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
         case  2:
         if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_n)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("_choice", 1, 3, 3, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("_choice", 1, 3, 3, 2); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "_choice") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "_choice") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -1282,18 +1282,18 @@ static PyObject *__pyx_pw_13queueing_tool_6queues_6choice_1_choice(PyObject *__p
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
     }
     __pyx_v_pr = ((PyArrayObject *)values[0]);
-    __pyx_v_u = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_u == (npy_float64)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
-    __pyx_v_n = __Pyx_PyIndex_AsSsize_t(values[2]); if (unlikely((__pyx_v_n == (Py_ssize_t)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_u = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_u == (npy_float64)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+    __pyx_v_n = __Pyx_PyIndex_AsSsize_t(values[2]); if (unlikely((__pyx_v_n == (Py_ssize_t)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("_choice", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("_choice", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("queueing_tool.queues.choice._choice", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_pr), __pyx_ptype_5numpy_ndarray, 1, "pr", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_pr), __pyx_ptype_5numpy_ndarray, 1, "pr", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_13queueing_tool_6queues_6choice__choice(__pyx_self, __pyx_v_pr, __pyx_v_u, __pyx_v_n);
 
   /* function exit code */
@@ -1330,11 +1330,11 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
   __pyx_pybuffernd_pr.rcbuffer = &__pyx_pybuffer_pr;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_pr.rcbuffer->pybuffer, (PyObject*)__pyx_v_pr, &__Pyx_TypeInfo_nn___pyx_t_13queueing_tool_6queues_6choice_F64_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_pr.rcbuffer->pybuffer, (PyObject*)__pyx_v_pr, &__Pyx_TypeInfo_nn___pyx_t_13queueing_tool_6queues_6choice_F64_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __pyx_pybuffernd_pr.diminfo[0].strides = __pyx_pybuffernd_pr.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_pr.diminfo[0].shape = __pyx_pybuffernd_pr.rcbuffer->pybuffer.shape[0];
 
-  /* "queueing_tool/queues/choice.pyx":15
+  /* "queueing_tool/queues/choice.pyx":16
  *     cdef int k
  * 
  *     if u <= pr[0]:             # <<<<<<<<<<<<<<
@@ -1345,7 +1345,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
   __pyx_t_2 = ((__pyx_v_u <= (*__Pyx_BufPtrStrided1d(__pyx_t_13queueing_tool_6queues_6choice_F64_t *, __pyx_pybuffernd_pr.rcbuffer->pybuffer.buf, __pyx_t_1, __pyx_pybuffernd_pr.diminfo[0].strides))) != 0);
   if (__pyx_t_2) {
 
-    /* "queueing_tool/queues/choice.pyx":16
+    /* "queueing_tool/queues/choice.pyx":17
  * 
  *     if u <= pr[0]:
  *         k = 0             # <<<<<<<<<<<<<<
@@ -1354,7 +1354,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
  */
     __pyx_v_k = 0;
 
-    /* "queueing_tool/queues/choice.pyx":15
+    /* "queueing_tool/queues/choice.pyx":16
  *     cdef int k
  * 
  *     if u <= pr[0]:             # <<<<<<<<<<<<<<
@@ -1364,7 +1364,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
     goto __pyx_L3;
   }
 
-  /* "queueing_tool/queues/choice.pyx":18
+  /* "queueing_tool/queues/choice.pyx":19
  *         k = 0
  *     else:
  *         z = pr[0]             # <<<<<<<<<<<<<<
@@ -1375,7 +1375,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
     __pyx_t_3 = 0;
     __pyx_v_z = (*__Pyx_BufPtrStrided1d(__pyx_t_13queueing_tool_6queues_6choice_F64_t *, __pyx_pybuffernd_pr.rcbuffer->pybuffer.buf, __pyx_t_3, __pyx_pybuffernd_pr.diminfo[0].strides));
 
-    /* "queueing_tool/queues/choice.pyx":19
+    /* "queueing_tool/queues/choice.pyx":20
  *     else:
  *         z = pr[0]
  *         with nogil:             # <<<<<<<<<<<<<<
@@ -1389,7 +1389,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
         #endif
         /*try:*/ {
 
-          /* "queueing_tool/queues/choice.pyx":20
+          /* "queueing_tool/queues/choice.pyx":21
  *         z = pr[0]
  *         with nogil:
  *             for k in range(1, n):             # <<<<<<<<<<<<<<
@@ -1400,7 +1400,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
           for (__pyx_t_5 = 1; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
             __pyx_v_k = __pyx_t_5;
 
-            /* "queueing_tool/queues/choice.pyx":21
+            /* "queueing_tool/queues/choice.pyx":22
  *         with nogil:
  *             for k in range(1, n):
  *                 if u <= z + pr[k]:             # <<<<<<<<<<<<<<
@@ -1411,7 +1411,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
             __pyx_t_2 = ((__pyx_v_u <= (__pyx_v_z + (*__Pyx_BufPtrStrided1d(__pyx_t_13queueing_tool_6queues_6choice_F64_t *, __pyx_pybuffernd_pr.rcbuffer->pybuffer.buf, __pyx_t_6, __pyx_pybuffernd_pr.diminfo[0].strides)))) != 0);
             if (__pyx_t_2) {
 
-              /* "queueing_tool/queues/choice.pyx":22
+              /* "queueing_tool/queues/choice.pyx":23
  *             for k in range(1, n):
  *                 if u <= z + pr[k]:
  *                     break             # <<<<<<<<<<<<<<
@@ -1420,7 +1420,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
  */
               goto __pyx_L8_break;
 
-              /* "queueing_tool/queues/choice.pyx":21
+              /* "queueing_tool/queues/choice.pyx":22
  *         with nogil:
  *             for k in range(1, n):
  *                 if u <= z + pr[k]:             # <<<<<<<<<<<<<<
@@ -1429,7 +1429,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
  */
             }
 
-            /* "queueing_tool/queues/choice.pyx":24
+            /* "queueing_tool/queues/choice.pyx":25
  *                     break
  *                 else:
  *                     z += pr[k]             # <<<<<<<<<<<<<<
@@ -1444,7 +1444,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
           __pyx_L8_break:;
         }
 
-        /* "queueing_tool/queues/choice.pyx":19
+        /* "queueing_tool/queues/choice.pyx":20
  *     else:
  *         z = pr[0]
  *         with nogil:             # <<<<<<<<<<<<<<
@@ -1464,7 +1464,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
   }
   __pyx_L3:;
 
-  /* "queueing_tool/queues/choice.pyx":26
+  /* "queueing_tool/queues/choice.pyx":27
  *                     z += pr[k]
  * 
  *     return k             # <<<<<<<<<<<<<<
@@ -1472,15 +1472,15 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_8 = __Pyx_PyInt_From_int(__pyx_v_k); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 26; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_8 = __Pyx_PyInt_From_int(__pyx_v_k); if (unlikely(!__pyx_t_8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_8);
   __pyx_r = __pyx_t_8;
   __pyx_t_8 = 0;
   goto __pyx_L0;
 
-  /* "queueing_tool/queues/choice.pyx":11
- * @cython.boundscheck(False)
+  /* "queueing_tool/queues/choice.pyx":12
  * @cython.wraparound(False)
+ * @cython.nonecheck(False)
  * def _choice(cnp.ndarray[F64_t, ndim=1] pr, cnp.float64_t u, Py_ssize_t n):             # <<<<<<<<<<<<<<
  *     cdef cnp.float64_t z
  *     cdef int k
@@ -1504,9 +1504,9 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice__choice(CYTHON_UNUSED 
   return __pyx_r;
 }
 
-/* "queueing_tool/queues/choice.pyx":31
- * @cython.boundscheck(False)
+/* "queueing_tool/queues/choice.pyx":33
  * @cython.wraparound(False)
+ * @cython.nonecheck(False)
  * def _argmin(list a):             # <<<<<<<<<<<<<<
  *     cdef int minv, amin, k, v
  *     minv = a[0]
@@ -1522,7 +1522,7 @@ static PyObject *__pyx_pw_13queueing_tool_6queues_6choice_3_argmin(PyObject *__p
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("_argmin (wrapper)", 0);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_a), (&PyList_Type), 1, "a", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_a), (&PyList_Type), 1, "a", 1))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_r = __pyx_pf_13queueing_tool_6queues_6choice_2_argmin(__pyx_self, ((PyObject*)__pyx_v_a));
 
   /* function exit code */
@@ -1552,7 +1552,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice_2_argmin(CYTHON_UNUSED
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_argmin", 0);
 
-  /* "queueing_tool/queues/choice.pyx":33
+  /* "queueing_tool/queues/choice.pyx":35
  * def _argmin(list a):
  *     cdef int minv, amin, k, v
  *     minv = a[0]             # <<<<<<<<<<<<<<
@@ -1561,12 +1561,12 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice_2_argmin(CYTHON_UNUSED
  */
   if (unlikely(__pyx_v_a == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 35; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_1 = __Pyx_PyInt_As_int(PyList_GET_ITEM(__pyx_v_a, 0)); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = __Pyx_PyInt_As_int(PyList_GET_ITEM(__pyx_v_a, 0)); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 35; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_v_minv = __pyx_t_1;
 
-  /* "queueing_tool/queues/choice.pyx":34
+  /* "queueing_tool/queues/choice.pyx":36
  *     cdef int minv, amin, k, v
  *     minv = a[0]
  *     amin = -1             # <<<<<<<<<<<<<<
@@ -1575,7 +1575,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice_2_argmin(CYTHON_UNUSED
  */
   __pyx_v_amin = -1;
 
-  /* "queueing_tool/queues/choice.pyx":35
+  /* "queueing_tool/queues/choice.pyx":37
  *     minv = a[0]
  *     amin = -1
  *     for k, v in enumerate(a[1:]):             # <<<<<<<<<<<<<<
@@ -1585,27 +1585,27 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice_2_argmin(CYTHON_UNUSED
   __pyx_t_1 = 0;
   if (unlikely(__pyx_v_a == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 35; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 37; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
-  __pyx_t_2 = __Pyx_PyList_GetSlice(__pyx_v_a, 1, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 35; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_2 = __Pyx_PyList_GetSlice(__pyx_v_a, 1, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 37; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = __pyx_t_2; __Pyx_INCREF(__pyx_t_3); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   for (;;) {
     if (__pyx_t_4 >= PyList_GET_SIZE(__pyx_t_3)) break;
     #if CYTHON_COMPILING_IN_CPYTHON
-    __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 35; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_4); __Pyx_INCREF(__pyx_t_2); __pyx_t_4++; if (unlikely(0 < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 37; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     #else
-    __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 35; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_2 = PySequence_ITEM(__pyx_t_3, __pyx_t_4); __pyx_t_4++; if (unlikely(!__pyx_t_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 37; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_GOTREF(__pyx_t_2);
     #endif
-    __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 35; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 37; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_v = __pyx_t_5;
     __pyx_v_k = __pyx_t_1;
     __pyx_t_1 = (__pyx_t_1 + 1);
 
-    /* "queueing_tool/queues/choice.pyx":36
+    /* "queueing_tool/queues/choice.pyx":38
  *     amin = -1
  *     for k, v in enumerate(a[1:]):
  *         if v < minv:             # <<<<<<<<<<<<<<
@@ -1615,7 +1615,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice_2_argmin(CYTHON_UNUSED
     __pyx_t_6 = ((__pyx_v_v < __pyx_v_minv) != 0);
     if (__pyx_t_6) {
 
-      /* "queueing_tool/queues/choice.pyx":37
+      /* "queueing_tool/queues/choice.pyx":39
  *     for k, v in enumerate(a[1:]):
  *         if v < minv:
  *             minv = v             # <<<<<<<<<<<<<<
@@ -1624,7 +1624,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice_2_argmin(CYTHON_UNUSED
  */
       __pyx_v_minv = __pyx_v_v;
 
-      /* "queueing_tool/queues/choice.pyx":38
+      /* "queueing_tool/queues/choice.pyx":40
  *         if v < minv:
  *             minv = v
  *             amin = k             # <<<<<<<<<<<<<<
@@ -1632,7 +1632,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice_2_argmin(CYTHON_UNUSED
  */
       __pyx_v_amin = __pyx_v_k;
 
-      /* "queueing_tool/queues/choice.pyx":36
+      /* "queueing_tool/queues/choice.pyx":38
  *     amin = -1
  *     for k, v in enumerate(a[1:]):
  *         if v < minv:             # <<<<<<<<<<<<<<
@@ -1641,7 +1641,7 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice_2_argmin(CYTHON_UNUSED
  */
     }
 
-    /* "queueing_tool/queues/choice.pyx":35
+    /* "queueing_tool/queues/choice.pyx":37
  *     minv = a[0]
  *     amin = -1
  *     for k, v in enumerate(a[1:]):             # <<<<<<<<<<<<<<
@@ -1651,21 +1651,21 @@ static PyObject *__pyx_pf_13queueing_tool_6queues_6choice_2_argmin(CYTHON_UNUSED
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "queueing_tool/queues/choice.pyx":39
+  /* "queueing_tool/queues/choice.pyx":41
  *             minv = v
  *             amin = k
  *     return amin + 1             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_3 = __Pyx_PyInt_From_long((__pyx_v_amin + 1)); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 39; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_3 = __Pyx_PyInt_From_long((__pyx_v_amin + 1)); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 41; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_r = __pyx_t_3;
   __pyx_t_3 = 0;
   goto __pyx_L0;
 
-  /* "queueing_tool/queues/choice.pyx":31
- * @cython.boundscheck(False)
+  /* "queueing_tool/queues/choice.pyx":33
  * @cython.wraparound(False)
+ * @cython.nonecheck(False)
  * def _argmin(list a):             # <<<<<<<<<<<<<<
  *     cdef int minv, amin, k, v
  *     minv = a[0]
@@ -3880,8 +3880,8 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 20; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 35; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 37; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 218; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_builtin_RuntimeError = __Pyx_GetBuiltinName(__pyx_n_s_RuntimeError); if (!__pyx_builtin_RuntimeError) {__pyx_filename = __pyx_f[1]; __pyx_lineno = 799; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   return 0;
@@ -3959,29 +3959,29 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__6);
   __Pyx_GIVEREF(__pyx_tuple__6);
 
-  /* "queueing_tool/queues/choice.pyx":11
- * @cython.boundscheck(False)
+  /* "queueing_tool/queues/choice.pyx":12
  * @cython.wraparound(False)
+ * @cython.nonecheck(False)
  * def _choice(cnp.ndarray[F64_t, ndim=1] pr, cnp.float64_t u, Py_ssize_t n):             # <<<<<<<<<<<<<<
  *     cdef cnp.float64_t z
  *     cdef int k
  */
-  __pyx_tuple__7 = PyTuple_Pack(5, __pyx_n_s_pr, __pyx_n_s_u, __pyx_n_s_n, __pyx_n_s_z, __pyx_n_s_k); if (unlikely(!__pyx_tuple__7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__7 = PyTuple_Pack(5, __pyx_n_s_pr, __pyx_n_s_u, __pyx_n_s_n, __pyx_n_s_z, __pyx_n_s_k); if (unlikely(!__pyx_tuple__7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__7);
   __Pyx_GIVEREF(__pyx_tuple__7);
-  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_home_dan_math_code_python_modul, __pyx_n_s_choice, 11, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_home_dan_math_code_python_modul, __pyx_n_s_choice, 12, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
-  /* "queueing_tool/queues/choice.pyx":31
- * @cython.boundscheck(False)
+  /* "queueing_tool/queues/choice.pyx":33
  * @cython.wraparound(False)
+ * @cython.nonecheck(False)
  * def _argmin(list a):             # <<<<<<<<<<<<<<
  *     cdef int minv, amin, k, v
  *     minv = a[0]
  */
-  __pyx_tuple__9 = PyTuple_Pack(5, __pyx_n_s_a, __pyx_n_s_minv, __pyx_n_s_amin, __pyx_n_s_k, __pyx_n_s_v); if (unlikely(!__pyx_tuple__9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__9 = PyTuple_Pack(5, __pyx_n_s_a, __pyx_n_s_minv, __pyx_n_s_amin, __pyx_n_s_k, __pyx_n_s_v); if (unlikely(!__pyx_tuple__9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__9);
   __Pyx_GIVEREF(__pyx_tuple__9);
-  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(1, 0, 5, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__9, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_home_dan_math_code_python_modul, __pyx_n_s_argmin, 31, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(1, 0, 5, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__9, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_home_dan_math_code_python_modul, __pyx_n_s_argmin, 33, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -4112,28 +4112,28 @@ PyMODINIT_FUNC PyInit_choice(void)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "queueing_tool/queues/choice.pyx":11
- * @cython.boundscheck(False)
+  /* "queueing_tool/queues/choice.pyx":12
  * @cython.wraparound(False)
+ * @cython.nonecheck(False)
  * def _choice(cnp.ndarray[F64_t, ndim=1] pr, cnp.float64_t u, Py_ssize_t n):             # <<<<<<<<<<<<<<
  *     cdef cnp.float64_t z
  *     cdef int k
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13queueing_tool_6queues_6choice_1_choice, NULL, __pyx_n_s_queueing_tool_queues_choice); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13queueing_tool_6queues_6choice_1_choice, NULL, __pyx_n_s_queueing_tool_queues_choice); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_choice, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 11; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_choice, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 12; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "queueing_tool/queues/choice.pyx":31
- * @cython.boundscheck(False)
+  /* "queueing_tool/queues/choice.pyx":33
  * @cython.wraparound(False)
+ * @cython.nonecheck(False)
  * def _argmin(list a):             # <<<<<<<<<<<<<<
  *     cdef int minv, amin, k, v
  *     minv = a[0]
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13queueing_tool_6queues_6choice_3_argmin, NULL, __pyx_n_s_queueing_tool_queues_choice); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13queueing_tool_6queues_6choice_3_argmin, NULL, __pyx_n_s_queueing_tool_queues_choice); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_argmin, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 31; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_argmin, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "queueing_tool/queues/choice.pyx":1

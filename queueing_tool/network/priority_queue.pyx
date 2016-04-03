@@ -25,6 +25,8 @@ cdef class PriorityQueue:
         pass
 
     def __init__(self, object keys=None, int n=0):
+        cdef tuple key
+
         if keys is None:
             keys = []
 
