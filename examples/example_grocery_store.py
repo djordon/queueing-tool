@@ -48,6 +48,7 @@ for v in qn.g.nodes():
 qn.g.set_pos(pos)
 #qn.draw(fname="store1.png", transparent=True, figsize=(12, 3),
 #        bgcolor=[0,0,0,0], bbox_inches='tight')
+
 # List the maximum number of agents from the default of 1000 to infinity
 qn.max_agents = np.infty
 
