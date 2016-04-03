@@ -50,7 +50,7 @@ with open('README.rst', 'r') as a_file:
     long_description = a_file.read()
 
 with open('VERSION', 'r') as a_file:
-    version = a_file.read()[:-1]
+    version = a_file.read().strip()
 
 
 classifiers = [
@@ -87,7 +87,7 @@ packages = [
     'queueing_tool.queues'
 ]
 
-tests_requires = ['nose>=1.3.7']
+tests_requires = {'test': 'nose>=1.3.7'}
 
 if _version[0] == 2:
     tests_requires.append('mock')
@@ -103,9 +103,9 @@ setup(
     keywords=keywords,
     long_description=long_description,
     license='MIT',
-    name='queueing_tool',
+    name='queueing-tool',
     packages=packages,
-    tests_requires=tests_requires,
+    extra_requires=tests_requires,
     test_suite='nose.collector',
     url='https://github.com/djordon/queueing-tool',
     version=version
