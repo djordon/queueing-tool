@@ -15,23 +15,26 @@
 
 import sys
 import os
-from unittest.mock import MagicMock
+import unittest.mock as mock
 
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-            return Mock()
+import alabaster
 
-MOCK_MODULES = ['gi.repository', 'Gtk', 'GObject', 'sorting', 'choice',
-                'queueing_tool.queues.choice', 'queueing_tool.network.sorting',
-                'scipy', 'numpy', 'numpy.random', 'graph_tool.all', 'graph_tool']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+MOCK_MODULES = [
+    'choice',
+    'queueing_tool.queues.choice',
+    'numpy',
+    'numpy.random',
+    'priority_queue',
+    'queueing_tool.network.priority_queue',
+]
+sys.modules.update((mod_name, mock.Mock()) for mod_name in MOCK_MODULES)
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('..'))
 sys.path.append(os.path.abspath('sphinxext'))
 
 # -- General configuration ------------------------------------------------
@@ -52,14 +55,20 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     'numpydoc',
+    'alabaster',
 ]
 
-intersphinx_mapping = {'python': ('http://docs.python.org/3', None),
-                       'numpy': ('http://docs.scipy.org/doc/numpy', None),
-                       'graphtool': ('http://graph-tool.skewed.de/static/doc/', None)}
+intersphinx_mapping = {
+    'python': ('http://docs.python.org/3', None),
+    'matplotlib': ('http://matplotlib.sourceforge.net', None),
+    'numpy': ('http://docs.scipy.org/doc/numpy', None),
+    'networkx': ('http://networkx.readthedocs.org/en/networkx-1.11/', None)
+}
 
-extlinks = {'doi': ('http://dx.doi.org/%s', 'DOI: '),
-            'arxiv': ('http://arxiv.org/abs/%s', 'arXiv: ')}
+extlinks = {
+    'doi': ('http://dx.doi.org/%s', 'DOI: '),
+    'arxiv': ('http://arxiv.org/abs/%s', 'arXiv: ')
+}
 
 numpydoc_show_class_members = False
 
@@ -76,7 +85,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'queueuing-tool'
+project = 'Queueing-tool'
 copyright = '2015, Daniel Jordon'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -86,14 +95,12 @@ copyright = '2015, Daniel Jordon'
 
 # The full version, including alpha/beta/rc tags.
 with open('../VERSION', 'r') as a_file :
-    release = a_file.read()
+    release = a_file.read().strip()
 
 
 # The short X.Y version.
-i = release.rfind('.')
-version = release[:i] #'0.5.0'
-
-release = '0.5.0'
+import queueing_tool as qt
+version = qt.__version__
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -116,15 +123,30 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes. http://sphinx-doc.org/theming.html
-html_theme = 'qt_sphinx13' #'bootstrap' #'qt_sphinx13' #'gt_theme' 'sphinx_rtd_theme'
-
+html_theme = 'alabaster'#'qt_sphinx13'#
+#html_style = 'adjust_alabaster.css'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {}
+html_theme_options = {
+    'code_font_size': '0.81em',
+    'github_user': 'djordon',
+    'github_repo': 'queueing-tool',
+}
+html_context = {'css_files': ['_static/adjust_alabaster.css',]}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = ['_themes']
+html_theme_path = [alabaster.get_path()]#'_themes']
+
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+        'relations.html',
+        'searchbox.html',
+        'donate.html',
+    ]
+}
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -250,3 +272,6 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+def setup(app):
+    app.add_javascript('copybutton.js')

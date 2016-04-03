@@ -5,21 +5,44 @@ Summary
 .. autosummary::
     :nosignatures:
 
-    QueueServer
-    InfoQueue
-    LossQueue
-    ResourceQueue
-    NullQueue
     Agent
-    GreedyAgent
     InfoAgent
-    ResourceAgent
+    InfoQueue
+    GreedyAgent
+    LossQueue
+    NullQueue
     poisson_random_measure
+    QueueServer
+    ResourceAgent
+    ResourceQueue
 """
 
-from .queue_servers     import QueueServer, LossQueue, NullQueue, poisson_random_measure
-from .agents            import Agent, GreedyAgent
-from .queue_extentions  import ResourceAgent, ResourceQueue, InfoAgent, InfoQueue
+from queueing_tool.queues.queue_servers import (
+    QueueServer,
+    LossQueue,
+    NullQueue,
+    poisson_random_measure
+)
+from queueing_tool.queues.agents import (
+    Agent,
+    GreedyAgent
+)
+from queueing_tool.queues.queue_extentions import (
+    ResourceAgent,
+    ResourceQueue,
+    InfoAgent,
+    InfoQueue
+)
 
-__all__ = ['InfoQueue', 'LossQueue', 'NullQueue', 'QueueServer', 'ResourceQueue', 
-           'poisson_random_measure', 'Agent', 'GreedyAgent', 'InfoAgent', 'ResourceAgent']
+__all__ = [
+    'InfoQueue',
+    'LossQueue',
+    'NullQueue',
+    'QueueServer',
+    'ResourceQueue',
+    'poisson_random_measure',
+    'Agent',
+    'GreedyAgent',
+    'InfoAgent',
+    'ResourceAgent'
+]
