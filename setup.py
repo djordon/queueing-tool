@@ -87,7 +87,7 @@ packages = [
     'queueing_tool.queues'
 ]
 
-tests_requires = {'test': 'nose>=1.3.7'}
+tests_requires = ['nose>=1.3.7']
 
 if _version[0] == 2:
     tests_requires.append('mock')
@@ -105,7 +105,7 @@ setup(
     license='MIT',
     name='queueing-tool',
     packages=packages,
-    extra_requires=tests_requires,
+    tests_require=tests_require,
     test_suite='nose.collector',
     url='https://github.com/djordon/queueing-tool',
     version=version
