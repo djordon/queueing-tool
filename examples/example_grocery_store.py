@@ -39,14 +39,15 @@ qn.g.new_vertex_property('pos')
 pos = {}
 for v in qn.g.nodes():
     if v == 0:
-        pos[v] = [0, .8]
+        pos[v] = [0, 1]
     elif v == 1:
-        pos[v] = [0, 0.4]
+        pos[v] = [0, 0.5]
     else:
         pos[v] = [-5. + (v - 2.0) / 2, 0]
 
 qn.g.set_pos(pos)
-
+#qn.draw(fname="store1.png", transparent=True, figsize=(12, 3),
+#        bgcolor=[0,0,0,0], bbox_inches='tight')
 # List the maximum number of agents from the default of 1000 to infinity
 qn.max_agents = np.infty
 
@@ -60,7 +61,9 @@ qn.initialize(edge_type=1)
 qn.start_collecting_data()
 
 # Simulate the network 1.8 simulation time units
-qn.simulate(t=1.8)
+qn.simulate(t=1.9)
+#qn.draw(fname="sim1.png", transparent=True, figsize=(12, 3),
+#        bgcolor=[0,0,0,0], bbox_inches='tight')
 
 # Collect data
 data = qn.get_queue_data()

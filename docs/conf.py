@@ -15,14 +15,10 @@
 
 import sys
 import os
-from unittest.mock import MagicMock
+import unittest.mock as mock
 
 import alabaster
 
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return Mock()
 
 MOCK_MODULES = [
     'choice',
@@ -32,7 +28,7 @@ MOCK_MODULES = [
     'priority_queue',
     'queueing_tool.network.priority_queue',
 ]
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+sys.modules.update((mod_name, mock.Mock()) for mod_name in MOCK_MODULES)
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -99,7 +95,7 @@ copyright = '2015, Daniel Jordon'
 
 # The full version, including alpha/beta/rc tags.
 with open('../VERSION', 'r') as a_file :
-    release = a_file.read()
+    release = a_file.read().strip()
 
 
 # The short X.Y version.
@@ -133,7 +129,9 @@ html_theme = 'alabaster'#'qt_sphinx13'#
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    'code_font_size': '0.81em'
+    'code_font_size': '0.81em',
+    'github_user': 'djordon',
+    'github_repo': 'queueing-tool',
 }
 html_context = {'css_files': ['_static/adjust_alabaster.css',]}
 
@@ -274,3 +272,6 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+def setup(app):
+    app.add_javascript('copybutton.js')

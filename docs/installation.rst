@@ -2,9 +2,9 @@ Installation
 ============
 
 The queueing-tool module provides a framework for creating, simulating, and
-visualizing queueing networks. The network visualizations are handled by matplotlib,
-which is only required for plotting. You will also need numpy.
-The package works with python versions 2.7 and 3.3 or greater.
+visualizing queueing networks. The required packages are NetworkX and Numpy.
+The network visualizations are handled by matplotlib, but is only required
+for plotting. The package works with python versions 2.7 and 3.3-3.5.
 
 The fastest was to install ``queueing-tool`` is with::
 

@@ -3,13 +3,14 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-The Documentation
-=================
+Queueing-tool: A network simulator
+==================================
 
-Welcome to Queueing-tool's documentation!
-+++++++++++++++++++++++++++++++++++++++++
+Queueing-tool is a simple agent based network simulator. The
+`queues <https://en.wikipedia.org/wiki/Queueing_theory>`_
+are used to add congestion between nodes.
 
-A simple network simulator::
+Getting set up is simple::
 
     >>> import queueing_tool as qt
     >>> import networkx as nx

@@ -93,7 +93,7 @@ queueing-tool.
 
 To create the network you need to specify an adjacency list (or adjacency
 matrix). In our toy example, we are going to assume the store has 20 checkout
-lines. Let's get started
+lines. Let's get started:
 
 .. testsetup::
 
@@ -111,9 +111,7 @@ This says that node 0 points to node one, and node 1 points to nodes 2 through
 are: checkout queues, and the queue that represents the store shopping area. The
 third type represents agents leaving the store and is handled automatically by
 ``queueing_tool``. To specify what type of queue sits on each edge, you specify
-an adjacency list like object:
-
-.. doctest::
+an adjacency list like object::
 
     >>> edge_list = {0: {1: 1}, 1: {k: 2 for k in range(2, 22)}}
 
@@ -121,9 +119,7 @@ This says there are two main types of queues/edges, type ``1`` and type ``2``.
 All the checkout lines are of type ``2`` while the store queue (the edge
 connecting vertex zero to vertex one) is type ``1``. The queue that represents
 agents leaving the store are type 0 queues, and is handled automatically by
-queueing-tool. Now we can make our graph
-
-.. doctest::
+queueing-tool. Now we can make our graph::
 
     >>> g = qt.adjacency2graph(adjacency=adja_list, edge_type=edge_list)
 
@@ -131,24 +127,18 @@ So we've created a graph where each edge/queue has a type. Since our edge of
 type ``1`` represents the store, it will accept shoppers from outside the network.
 We will take the arrival process to be time varying and random (more
 specifically, we'll let it be a non-homogeneous Poisson process), with a rate
-that's sinusoidal. To set that, run:
-
-.. doctest::
+that's sinusoidal. To set that, run::
 
     >>> rate  = lambda t: 25 + 350 * np.sin(np.pi * t / 2)**2
     >>> arr_f = lambda t: qt.poisson_random_measure(rate, 375, t)
 
 Lastly, we need to specify the departure process for each checkout counter. Let's
-choose the exponential distribution:
-
-.. doctest ::
+choose the exponential distribution::
 
     >>> ser_f = lambda t: t + np.random.exponential(0.2 / 2.1)
 
 Now is time to put this all together to make out queueing network; we do this
-with the following:
-
-.. doctest::
+with the following::
 
     >>> q_classes = {1: qt.QueueServer, 2: qt.QueueServer}
     >>> q_args    = {
@@ -167,9 +157,7 @@ with the following:
 For simplicity, we've made it so that when a customer enters the store they
 immediately try to checkout.
 
-The default layout was a little hard on the eyes so I changed it a little:
-
-.. doctest::
+The default layout was a little hard on the eyes so I changed it a little::
 
     >>> g.new_vertex_property('pos')
     >>> pos = {}
@@ -183,31 +171,25 @@ The default layout was a little hard on the eyes so I changed it a little:
     ...
     >>> qn.g.set_pos(pos)
 
-To view the model (using this layout), do the following:
+To view the model (using this layout), do the following::
 
-.. doctest::
-
-    >>> qn.draw(figsize=(16, 3.5), pos=pos)
+    >>> qn.draw(figsize=(12, 3))
     <...>
 
-.. figure:: store.png
+.. figure:: store1.png
     :align: center
 
 The network is empty so the edges are light. Use the following code if you want
-to save this image to disk:
+to save this image to disk::
 
-.. doctest::
-
-    >>> qn.draw(fname="store.png", figsize=(16, 3.5), pos=pos)
+    >>> qn.draw(fname="store.png", figsize=(12, 3), bbox_inches='tight')
 
 By default, each :class:`.QueueServer` starts with no arrivals from outside the
 network and it needs to be initialized before any simulations can run. You can
 specify which queues allow arrivals from outside the system with
 :class:`QueueNetwork's<.QueueNetwork>` :meth:`~.QueueNetwork.initialize` function.
 In this example, we only want agents arriving from the type ``1`` edge so we do the
-following:
-
-.. doctest::
+following::
 
     >>> qn.initialize(edge_type=1)
 
@@ -215,13 +197,13 @@ To simulate for a specified amount of simulation time run:
 
 .. doctest::
 
-    >>> qn.simulate(t=1.8)
+    >>> qn.simulate(t=1.9)
     >>> qn.nEvents
-    1725
-    >>> qn.draw(fname="sim.png", figsize=(16, 3.5), pos=pos)
+    1167
+    >>> qn.draw(fname="sim.png", figsize=(12, 3), bbox_inches='tight')
     <...>
 
-.. figure:: sim.png
+.. figure:: sim1.png
     :align: center
 
 The darker edges represent greater congestion at that checkout counter.
@@ -235,7 +217,7 @@ you have to tell it to do so:
     >>> qn.simulate(t=1.8)
     >>> data = qn.get_queue_data()
     >>> data.shape
-    (1139, 6)
+    (2261, 6)
 
 The above data also include the number of agent in the queue upon arrival to a
 queue (this includes the number of agents receiving service and the number of
@@ -249,7 +231,7 @@ we can specify that by having type ``0`` edges collect data:
     >>> qn.simulate(t=3)
     >>> data = qn.get_queue_data(edge_type=0)
     >>> data.shape
-    (550, 6)
+    (575, 6)
 
 The above code collected the departure times of every agent over the simulated
 period, it did not collect each agent's arrival or waiting time. See

@@ -699,15 +699,18 @@ class QueueNetwork(object):
         >>> import queueing_tool as qt
         >>> g = qt.generate_pagerank_graph(100, seed=13)
         >>> net = qt.QueueNetwork(g, seed=13)
+        >>> net.initialize(100)
+        >>> net.simulate(1200)
         >>> net.draw() # doctest: +SKIP
 
         If you specify a file name and location, the drawing will be
         saved to disk. For example, to save the drawing to the current
         working directory do the following:
 
-        >>> net.draw(output="current_state.png", figsize=(4, 4)) # doctest: +SKIP
+        >>> net.draw(fname="state.png", \
+                     scatter_kwargs={'s': 40}) # doctest: +SKIP
 
-        .. figure:: current_state.png
+        .. figure:: current_state1.png
             :align: center
 
         The shade of each edge depicts how many agents are located at
@@ -871,16 +874,16 @@ class QueueNetwork(object):
         >>> net.start_collecting_data()
         >>> net.initialize(10)
         >>> net.simulate(2000)
-        >>> data = net.get_queue_data(edge_type=(1,3))
+        >>> data = net.get_queue_data(edge_type=(1, 3))
 
         To get data from an edge connecting two vertices do the
         following:
 
-        >>> data = net.get_queue_data(edge=(1,50))
+        >>> data = net.get_queue_data(edge=(1, 50))
 
         To get data from several edges do the following:
 
-        >>> data = net.get_queue_data(edge=[(1,50), (10,91), (99,99)])
+        >>> data = net.get_queue_data(edge=[(1, 50), (10, 91), (99, 99)])
 
         You can specify the edge indices as well:
 
@@ -1208,9 +1211,9 @@ class QueueNetwork(object):
         >>> g = qt.generate_pagerank_graph(100, seed=13)
         >>> net = qt.QueueNetwork(g, seed=13)
         >>> fname = 'edge_type_2.png'
-        >>> net.show_type(2, figsize=(4, 4), fname=fname) # doctest: +SKIP
+        >>> net.show_type(2, fname=fname) # doctest: +SKIP
 
-        .. figure:: edge_type_2.png
+        .. figure:: edge_type_2-1.png
            :align: center
         """
         for v in self.g.nodes():
