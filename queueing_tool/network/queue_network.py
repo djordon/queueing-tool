@@ -1004,7 +1004,9 @@ class QueueNetwork(object):
             event_type = 'Nothing'
             edge_index = None
         else:
-            e = self._fancy_heap.array_edges[0]
+            s = [q._key() for q in self.edge2queue]
+            s.sort()
+            e = s[0][1]
             q = self.edge2queue[e]
 
             event_type = 'Arrival' if q.next_event_description() == 1 else 'Departure'
@@ -1028,8 +1030,10 @@ class QueueNetwork(object):
         ----------
         mat : dict or :class:`~numpy.ndarray`
             A transition routing matrix or transition dictionary. If
-            passed a dictionary, the keys should be vertex indices and
-            the values are the probabilities for each out vertex.
+            passed a dictionary, the keys are source vertex indices and
+            the values are dictionaries with target vertex indicies
+            as the keys and the probabilities of routing from the
+            source to the target as the values.
 
         Raises
         ------
@@ -1054,23 +1058,23 @@ class QueueNetwork(object):
         >>> net = qt.QueueNetwork(g)
         >>> net.transitions(False)  # doctest: +ELLIPSIS
         ...                         # doctest: +NORMALIZE_WHITESPACE
-        {0: [1.0],
-         1: [0.5, 0.5],
-         2: [0.25, 0.25, 0.25, 0.25],
-         3: [1.0],
-         4: [1.0]}
+        {0: {2: 1.0},
+         1: {2: 0.5, 3: 0.5},
+         2: {0: 0.25, 1: 0.25, 2: 0.25, 4: 0.25},
+         3: {1: 1.0},
+         4: {2: 1.0}}
 
         If you want to change only one vertex's transition
         probabilities, you can do so with the following:
 
-        >>> net.set_transitions({1 : [0.75, 0.25]})
+        >>> net.set_transitions({1 : {2: 0.75, 3: 0.25}})
         >>> net.transitions(False)  # doctest: +ELLIPSIS
         ...                         # doctest: +NORMALIZE_WHITESPACE
-        {0: [1.0],
-         1: [0.75, 0.25],
-         2: [0.25, 0.25, 0.25, 0.25],
-         3: [1.0],
-         4: [1.0]}
+        {0: {2: 1.0},
+         1: {2: 0.75, 3: 0.25},
+         2: {0: 0.25, 1: 0.25, 2: 0.25, 4: 0.25},
+         3: {1: 1.0},
+         4: {2: 1.0}}
 
         One can generate a transition matrix using
         :func:`.generate_transition_matrix`. You can change all
@@ -1080,11 +1084,11 @@ class QueueNetwork(object):
         >>> net.set_transitions(mat)
         >>> net.transitions(False)  # doctest: +ELLIPSIS
         ...                         # doctest: +NORMALIZE_WHITESPACE
-        {0: [1.0],
-         1: [0.962..., 0.037...],
-         2: [0.301..., 0.353..., 0.235..., 0.108...],
-         3: [1.0],
-         4: [1.0]}
+        {0: {2: 1.0},
+         1: {2: 0.962..., 3: 0.037...},
+         2: {0: 0.301..., 1: 0.353..., 2: 0.235..., 4: 0.108...},
+         3: {1: 1.0},
+         4: {2: 1.0}}
 
         See Also
         --------
@@ -1095,24 +1099,20 @@ class QueueNetwork(object):
         """
         if isinstance(mat, dict):
             for key, value in mat.items():
+                probs = list(value.values())
+
                 if key not in self.g.node:
                     msg = "One of the keys don't correspond to a vertex."
                     raise ValueError(msg)
-                elif len(self.out_edges[key]) > 0 and not np.isclose(np.sum(value), 1):
+                elif len(self.out_edges[key]) > 0 and not np.isclose(sum(probs), 1):
                     msg = "Sum of transition probabilities at a vertex was not 1."
                     raise ValueError(msg)
-                elif (np.array(value) < 0).any():
+                elif (np.array(probs) < 0).any():
                     msg = "Some transition probabilities were negative."
                     raise ValueError(msg)
 
-                if len(value) == self.nV:
-                    tmp = []
-                    for e in self.g.out_edges(key):
-                        p = value[e[1]]
-                        tmp.append(p)
-                    self._route_probs[key][:] = tmp
-                elif len(value) == len(self._route_probs[key]):
-                    self._route_probs[key][:] = value
+                for k, e in enumerate(self.g.out_edges(key)):
+                    self._route_probs[key][k] = value.get(e[1], 0)
 
         elif isinstance(mat, np.ndarray):
             non_terminal = np.array([self.g.out_degree(v) > 0 for v in self.g.nodes()])
@@ -1459,48 +1459,17 @@ class QueueNetwork(object):
             If ``out`` is an :class:`~numpy.ndarray`, then
             ``out[v, u]`` returns the probability of a transition from
             vertex ``v`` to vertex ``u``. If ``out`` is a dict
-            then ``out_edge[v][k]`` is the probability of moving from
-            vertex ``v`` to the vertex at the head of the ``k``-th
-            out-edge.
-
-        Notes
-        -----
-        Use ``qn.g.out_edges(v)`` to get a list of all out edges
-        from ``v`` where ``v`` is an integer representing a vertex/node.
-        Also, the ``i``\ th element in ``qn.transitions(False)[v]``
-        cooresponds to the ``i``\ th element in ``qn.g.out_edges(v)``
+            then ``out_edge[v][u]`` is the probability of moving from
+            vertex ``v`` to the vertex ``u``.
 
         Examples
         --------
-        The default transition matrix is every out edge being equally
-        likely. Lets change them randomly:
+        Lets change the routing probabilities:
 
         >>> import queueing_tool as qt
         >>> import networkx as nx
         >>> g = nx.sedgewick_maze_graph()
-        >>> mat = qt.generate_transition_matrix(g, seed=96)
         >>> net = qt.QueueNetwork(g)
-        >>> net.transitions(False)  # doctest: +ELLIPSIS
-        ...                         # doctest: +NORMALIZE_WHITESPACE
-        {0: [0.333..., 0.333..., 0.333...],
-         1: [1.0],
-         2: [0.5, 0.5],
-         3: [0.5, 0.5],
-         4: [0.25, 0.25, 0.25, 0.25],
-         5: [0.333..., 0.333..., 0.333...],
-         6: [0.5, 0.5],
-         7: [0.333..., 0.333..., 0.333...]}
-        >>> net.set_transitions(mat)
-        >>> net.transitions(False)  # doctest: +ELLIPSIS
-        ...                         # doctest: +NORMALIZE_WHITESPACE
-        {0: [0.112..., 0.466..., 0.420...],
-         1: [1.0],
-         2: [0.561..., 0.438...],
-         3: [0.545..., 0.454...],
-         4: [0.374..., 0.381..., 0.026..., 0.217...],
-         5: [0.265..., 0.460..., 0.274...],
-         6: [0.673..., 0.326...],
-         7: [0.033..., 0.336..., 0.630...]}
 
         Below is an adjacency list for the graph ``g``.
 
@@ -1515,6 +1484,35 @@ class QueueNetwork(object):
          6: [2, 4],
          7: [0, 1, 4]}
 
+        The default transition matrix is every out edge being equally
+        likely:
+
+        >>> net.transitions(False)  # doctest: +ELLIPSIS
+        ...                         # doctest: +NORMALIZE_WHITESPACE
+        {0: {2: 0.333..., 5: 0.333..., 7: 0.333...},
+         1: {7: 1.0},
+         2: {0: 0.5, 6: 0.5},
+         3: {4: 0.5, 5: 0.5},
+         4: {3: 0.25, 5: 0.25, 6: 0.25, 7: 0.25},
+         5: {0: 0.333..., 3: 0.333..., 4: 0.333...},
+         6: {2: 0.5, 4: 0.5},
+         7: {0: 0.333..., 1: 0.333..., 4: 0.333...}}
+
+        Now we will generate a random routing matrix:
+
+        >>> mat = qt.generate_transition_matrix(g, seed=96)
+        >>> net.set_transitions(mat)
+        >>> net.transitions(False)  # doctest: +ELLIPSIS
+        ...                         # doctest: +NORMALIZE_WHITESPACE
+        {0: {2: 0.112..., 5: 0.466..., 7: 0.420...},
+         1: {7: 1.0},
+         2: {0: 0.561..., 6: 0.438...},
+         3: {4: 0.545..., 5: 0.454...},
+         4: {3: 0.374..., 5: 0.381..., 6: 0.026..., 7: 0.217...},
+         5: {0: 0.265..., 3: 0.460..., 4: 0.274...},
+         6: {2: 0.673..., 4: 0.326...},
+         7: {0: 0.033..., 1: 0.336..., 4: 0.630...}}
+
         What this shows is the following: when an :class:`.Agent` is at
         vertex ``2`` they will transition to vertex ``0`` with
         probability ``0.561`` and route to vertex ``6`` probability
@@ -1528,7 +1526,10 @@ class QueueNetwork(object):
                 ind = [e[1] for e in self.g.out_edges(v)]
                 mat[v, ind] = self._route_probs[v]
         else:
-            mat = {k: value.tolist() for k, value in enumerate(self._route_probs)}
+            mat = {
+                k: {e[1]: p for e, p in zip(self.g.out_edges(k), value.tolist())}
+                    for k, value in enumerate(self._route_probs)
+            }
 
         return mat
 
