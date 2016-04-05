@@ -248,9 +248,11 @@ class TestQueueServers(unittest.TestCase):
 
 
     def test_ResourceQueue_network_data_collection(self):
-        g = nx.random_geometric_graph(100, 0.2).to_directed()
+        g = qt.generate_random_graph(100)
         q_cls = {1: qt.ResourceQueue, 2: qt.ResourceQueue}
-        q_arg = {1: {'nServers': 50}, 2: {'nServers': 500}}
+        q_arg = {1: {'nServers': 500},
+                 2: {'nServers': 500,
+                     'AgentFactory': qt.Agent}}
 
         qn = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg)
         qn.max_agents = 40000
