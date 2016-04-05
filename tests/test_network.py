@@ -440,7 +440,7 @@ class TestQueueNetwork(unittest.TestCase):
             self.qn.set_transitions({0: {0: 0.75, 1: -0.25}})
 
         with self.assertRaises(ValueError):
-            self.qn.set_transitions({0: {0: 0.75, 1: -0.25}})
+            self.qn.set_transitions({0: {0: 1.25, 1: -0.25}})
 
         mat = np.zeros((2, 2))
         with self.assertRaises(ValueError):
