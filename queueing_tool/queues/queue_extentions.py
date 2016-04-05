@@ -79,8 +79,8 @@ class ResourceQueue(LossQueue):
     adds one to the number of servers here. The :class:`.ResourceAgent`
     is then deleted.
 
-    Additional Attributes
-    ---------------------
+    Attributes
+    ----------
     max_servers : int
         The maximum number of servers that can be here. This is a soft
         max, and it is only used to keep track of how often the queue
