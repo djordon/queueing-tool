@@ -10,9 +10,6 @@ The fastest was to install ``queueing-tool`` is with::
 
     $ pip install queueing_tool
 
-Note that this package was tested using Numpy version 1.10.1 and NetworkX
-version 1.11.
-
 You can obtain the development version of queueing-tool from it's
 `github repository`_ using::
 

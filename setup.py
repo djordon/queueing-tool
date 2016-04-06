@@ -57,10 +57,10 @@ classifiers = [
     'Development Status :: 4 - Beta',
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: MIT License',
-    'Operating System :: MacOS',
+    'Operating System :: MacOS :: MacOS X',
     'Operating System :: Microsoft :: Windows',
     'Operating System :: POSIX :: Linux',
-    'Operating System :: Unix ',
+    'Operating System :: Unix',
     'Programming Language :: Python :: 2',
     'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
@@ -68,7 +68,6 @@ classifiers = [
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Cython',
-    'Topic :: Scientific/Engineering',
     'Topic :: Scientific/Engineering :: Information Analysis',
     'Topic :: Scientific/Engineering :: Mathematics'
 ]

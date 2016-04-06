@@ -41,21 +41,17 @@ requires `networkx <http://networkx.readthedocs.org/en/stable/>`__ and
 `numpy <http://www.numpy.org/>`__. If you want to plot, you will need
 to install `matplotlib <http://matplotlib.org/>`__ as well.
 
-**Installation**: Download the latest release from github and run
-the following commands in a terminal:
+**Installation**: To install, use:
 
 .. code:: bash
 
     pip install queueing-tool
-    cd queueing_tool-[VERSION].zip
-    python setup.py build
-    sudo python setup.py install
 
-To install locally run the following command in a terminal:
+Import with something like:
 
-.. code:: bash
+.. code:: python
 
-    python setup.py develop --user
+    import queueing_tool as qt
 
 Copyright and license
 ---------------------
