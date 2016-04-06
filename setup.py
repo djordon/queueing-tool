@@ -109,6 +109,7 @@ setup(
     license='MIT',
     name='queueing-tool',
     packages=packages,
+    setup_requires=["numpy>=1.9"],
     tests_require=tests_require,
     test_suite='nose.collector',
     url='https://github.com/djordon/queueing-tool',
