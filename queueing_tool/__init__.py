@@ -10,7 +10,7 @@ from queueing_tool.graph import *
 import queueing_tool.graph as graph
 
 __all__ = []
-__version__ = '1.1.0'
+__version__ = '1.0.0'
 
 __all__.extend(['__version__'])
 __all__.extend(queues.__all__)

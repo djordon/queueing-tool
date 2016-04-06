@@ -54,9 +54,13 @@ with open('VERSION', 'r') as a_file:
 
 
 classifiers = [
-    'Development Status :: 5 - Production/Stable',
+    'Development Status :: 4 - Beta',
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: MIT License',
+    'Operating System :: MacOS',
+    'Operating System :: Microsoft :: Windows',
+    'Operating System :: POSIX :: Linux',
+    'Operating System :: Unix ',
     'Programming Language :: Python :: 2',
     'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
@@ -65,10 +69,11 @@ classifiers = [
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Cython',
     'Topic :: Scientific/Engineering',
+    'Topic :: Scientific/Engineering :: Information Analysis',
     'Topic :: Scientific/Engineering :: Mathematics'
 ]
 
-install_requires = ['networkx>=1.11', 'numpy>=1.10']
+install_requires = ['networkx>=1.9', 'numpy>=1.9']
 
 keywords = [
     'queueing theory',
