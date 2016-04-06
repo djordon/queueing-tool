@@ -246,10 +246,10 @@ class QueueServer(object):
     If the queue is in a :class:`.QueueNetwork` and lies on a non-loop
     edge, the coloring of the edge is given by the following code:
 
-    >>> div = coloring_sensitivity * nServers + 1.
-    >>> tmp = 1. - min(nSystem / div, 1)
-    >>> color = [i * tmp for i in colors['edge_color']]
-    >>> color[3] = 1 / 2.
+    >>> div = coloring_sensitivity * nServers + 1. # doctest: +SKIP
+    >>> tmp = 1. - min(nSystem / div, 1)  # doctest: +SKIP
+    >>> color = [i * tmp for i in colors['edge_color']] # doctest: +SKIP
+    >>> color[3] = 1 / 2. # doctest: +SKIP
 
     References
     ----------
