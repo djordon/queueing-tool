@@ -18,10 +18,8 @@ http://queueing-tool.readthedocs.org/.
 Features
 --------
 
--  **Fast simulation**. Queueing-tool is designed to run very quickly.
-   The core algorithms were written using
-   `cython <http://cython.org/>`__, which exports C-extensions of those
-   routines.
+-  **Fast simulation**. Queueing-tool is designed to run very quickly;
+   the core algorithms were written in `cython <http://cython.org/>`__.
 -  **Visualizations**. There are several tools that allow you to easily
    view congestion and movement within your network. This includes ready
    made functions for animating network dynamics, while your simulations
@@ -43,12 +41,12 @@ requires `networkx <http://networkx.readthedocs.org/en/stable/>`__ and
 `numpy <http://www.numpy.org/>`__. If you want to plot, you will need
 to install `matplotlib <http://matplotlib.org/>`__ as well.
 
-**Manual installation**: Download the latest release from github and run
+**Installation**: Download the latest release from github and run
 the following commands in a terminal:
 
 .. code:: bash
 
-    tar xzvf queueing_tool-[VERSION].zip
+    pip install queueing-tool
     cd queueing_tool-[VERSION].zip
     python setup.py build
     sudo python setup.py install
