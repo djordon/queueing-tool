@@ -132,7 +132,7 @@ class QueueNetwork(object):
         The maximum number of agents that can be in the network at any
         time.
     nAgents : :class:`~numpy.ndarray`
-        A one-dimensional array where the ``k``th entry corresponds to
+        A one-dimensional array where the ``k``\ th entry corresponds to
         the total number of agents in the :class:`.QueueServer` with
         edge index ``k``. This number includes agents that are
         scheduled to arrive at the queue at some future time but
@@ -707,7 +707,7 @@ class QueueNetwork(object):
         saved to disk. For example, to save the drawing to the current
         working directory do the following:
 
-        >>> net.draw(fname="state.png", \
+        >>> net.draw(fname="state.png", \r
                      scatter_kwargs={'s': 40}) # doctest: +SKIP
 
         .. figure:: current_state1.png

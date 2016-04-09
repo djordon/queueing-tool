@@ -356,7 +356,8 @@ class QueueNetworkDiGraph(nx.DiGraph):
         >>> import queueing_tool as qt
         >>> adjacency = {
         ...     0: {1: {'edge_type': 2}},
-        ...     1: {2: {'edge_type': 1}, 3: {'edge_type': 4}},
+        ...     1: {2: {'edge_type': 1},
+        ...         3: {'edge_type': 4}},
         ...     2: {0: {'edge_type': 2}},
         ...     3: {3: {'edge_type': 0}}
         ... }
