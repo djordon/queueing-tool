@@ -451,7 +451,7 @@ class TestQueueNetwork(unittest.TestCase):
             self.qn.set_transitions(mat)
 
         mat[0, 0] = -1
-        mat[0, 1] = 1
+        mat[0, 1] = 2
         with self.assertRaises(ValueError):
             self.qn.set_transitions(mat)
 

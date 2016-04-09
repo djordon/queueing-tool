@@ -1,50 +1,48 @@
 import sys
-import numpy
 
 from setuptools import setup, Extension
+from setuptools.command.build_ext import build_ext
 
 try:
     from Cython.Distutils import build_ext
-    use_cython = True
+    ext = '.pyx'
 except ImportError:
-    use_cython = False
+    ext = '.c'
 
 
-_version = sys.version_info[:2]
-if _version < (2, 7) or (3, 0) <=  _version < (3, 3):
+python_version = sys.version_info[:2]
+if python_version < (2, 7) or (3, 0) <=  python_version < (3, 3):
     raise RuntimeError('Python version 2.7 or >= 3.3 required.')
 
-cmdclass = {}
-ext_modules = []
+# Taken from the following stack overflow answer
+# https://stackoverflow.com/questions/19919905
+class custom_build_ext(build_ext):
+    def finalize_options(self):
+        build_ext.finalize_options(self)
 
-if use_cython:
-    ext_modules.extend([
-        Extension(
-            'queueing_tool.network.priority_queue',
-            ['queueing_tool/network/priority_queue.pyx'],
-            include_dirs=[numpy.get_include()]
-        ),
-        Extension(
-            'queueing_tool.queues.choice',
-            ['queueing_tool/queues/choice.pyx'],
-            include_dirs=[numpy.get_include()]
-        )
-    ])
-    cmdclass.update({ 'build_ext': build_ext })
-else:
-    ext_modules.extend([
-        Extension(
-            'queueing_tool.network.priority_queue',
-            ['queueing_tool/network/priority_queue.c'],
-            include_dirs=[numpy.get_include()]
-        ),
-        Extension(
-            'queueing_tool.queues.choice',
-            ['queueing_tool/queues/choice.c'],
-            include_dirs=[numpy.get_include()]
-        )
-    ])
+        if isinstance(__builtins__, dict):
+            __builtins__["__NUMPY_SETUP__"] = False
+        else:
+            __builtins__.__NUMPY_SETUP__ = False
 
+        import numpy
+        self.include_dirs.append(numpy.get_include())
+
+
+cmdclass = {'build_ext': custom_build_ext}
+
+extension_paths = [
+    'queueing_tool.network.priority_queue',
+    'queueing_tool.queues.choice'
+]
+
+ext_modules = [
+    Extension(
+        path,
+        [path.replace('.', '/') + ext]
+    )
+    for path in extension_paths
+]
 
 with open('README.rst', 'r') as a_file:
     long_description = a_file.read()
@@ -52,11 +50,14 @@ with open('README.rst', 'r') as a_file:
 with open('VERSION', 'r') as a_file:
     version = a_file.read().strip()
 
-
 classifiers = [
-    'Development Status :: 5 - Production/Stable',
+    'Development Status :: 4 - Beta',
     'Intended Audience :: Science/Research',
     'License :: OSI Approved :: MIT License',
+    'Operating System :: MacOS :: MacOS X',
+    'Operating System :: Microsoft :: Windows',
+    'Operating System :: POSIX :: Linux',
+    'Operating System :: Unix',
     'Programming Language :: Python :: 2',
     'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
@@ -64,11 +65,11 @@ classifiers = [
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Cython',
-    'Topic :: Scientific/Engineering',
+    'Topic :: Scientific/Engineering :: Information Analysis',
     'Topic :: Scientific/Engineering :: Mathematics'
 ]
 
-install_requires = ['networkx>=1.11', 'numpy>=1.10']
+install_requires = ['networkx>=1.9', 'numpy>=1.9']
 
 keywords = [
     'queueing theory',
@@ -89,7 +90,7 @@ packages = [
 
 tests_require = ['nose>=1.3.7']
 
-if _version[0] == 2:
+if python_version[0] == 2:
     tests_require.append('mock')
 
 setup(
@@ -105,6 +106,7 @@ setup(
     license='MIT',
     name='queueing-tool',
     packages=packages,
+    setup_requires=["numpy>=1.9"],
     tests_require=tests_require,
     test_suite='nose.collector',
     url='https://github.com/djordon/queueing-tool',

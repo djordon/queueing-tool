@@ -58,7 +58,7 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
             'fname': 'test1.png',
             'pos': pos
         }
-        self.g.draw_graph(scatter_kwargs={'s': 100},**kwargs)
+        self.g.draw_graph(scatter_kwargs={'s': 100}, **kwargs)
 
         img0 = mpimg.imread('tests/img/test.png')
         img1 = mpimg.imread('test1.png')

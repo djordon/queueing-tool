@@ -149,6 +149,10 @@ class QueueServer(object):
                 The color of the vertex border if the edge is a loop.
 
         The defaults are listed in the notes.
+    coloring_sensitivity : int (optional, default: 2)
+        Specifies how sensitive the coloring of the queue is to the
+        number of arrivals. See the notes for how this parameter
+        affects coloring.
     seed : int (optional)
         If supplied ``seed`` is used to initialize numpy's
         psuedo-random number generator.
@@ -160,6 +164,9 @@ class QueueServer(object):
         network (the queue will always accept arrivals from inside the
         network). The default is ``False``. To change call
         :meth:`.set_active`.
+    coloring_sensitivity : int
+        Specifies how sensitive the coloring of the edge is to the
+        number of arrivals.
     current_time : float
         The time of the last event.
     data : dict
@@ -236,6 +243,13 @@ class QueueServer(object):
     ...     'vertex_color'      : [0.0, 0.5, 1.0, 1.0]
     ... }
 
+    If the queue is in a :class:`.QueueNetwork` and lies on a non-loop
+    edge, the coloring of the edge is given by the following code:
+
+    >>> div = coloring_sensitivity * nServers + 1. # doctest: +SKIP
+    >>> tmp = 1. - min(nSystem / div, 1)  # doctest: +SKIP
+    >>> color = [i * tmp for i in colors['edge_color']] # doctest: +SKIP
+    >>> color[3] = 1 / 2. # doctest: +SKIP
 
     References
     ----------
@@ -263,7 +277,8 @@ class QueueServer(object):
     def __init__(self, nServers=1, arrival_f=lambda t: t + exponential(1),
                  service_f=lambda t: t + exponential(0.9), edge=(0,0,0,1),
                  AgentFactory=Agent, collect_data=False, active_cap=infty,
-                 deactive_t=infty, colors=None, seed=None, **kwargs):
+                 deactive_t=infty, colors=None, seed=None,
+                 coloring_sensitivity=2, **kwargs):
 
         if not isinstance(nServers, numbers.Integral) and nServers is not infty:
             msg = "nServers must be an integer or infinity."
@@ -296,6 +311,7 @@ class QueueServer(object):
         self._current_t   = 0         # The time of the last event.
         self._time        = infty     # The time of the next event.
         self._next_ct     = 0         # The next time an arrival from outside the network can arrive.
+        self.coloring_sensitivity = coloring_sensitivity
 
         if isinstance(seed, numbers.Integral):
             np.random.seed(seed)
@@ -436,15 +452,15 @@ class QueueServer(object):
             color = self.colors['vertex_color']
 
         else:
-            div = (2 * self.nServers) + 2.
-            tmp = 1. - min(self.nSystem / div, 1.)
+            div = self.coloring_sensitivity * self.nServers + 1.
+            tmp = 1. - min(self.nSystem / div, 1)
 
             if self.edge[0] == self.edge[1]:
                 color    = [i * tmp for i in self.colors['vertex_fill_color']]
                 color[3] = 1.0
             else:
                 color    = [i * tmp for i in self.colors['edge_color']]
-                color[3] = 1. - tmp / 2.
+                color[3] = 1 / 2.
 
         return color
 
