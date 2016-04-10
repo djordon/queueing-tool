@@ -1,9 +1,6 @@
 Graph utilities
 ========================
 
-Graph
------
-
 .. automodule:: queueing_tool.graph
 
    .. autoclass:: QueueNetworkDiGraph

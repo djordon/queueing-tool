@@ -1,7 +1,4 @@
 """
-Summary
-'''''''
-
 .. autosummary::
     :nosignatures:
 
