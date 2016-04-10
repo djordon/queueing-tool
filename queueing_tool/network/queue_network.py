@@ -707,7 +707,7 @@ class QueueNetwork(object):
         saved to disk. For example, to save the drawing to the current
         working directory do the following:
 
-        >>> net.draw(fname="state.png", \r
+        >>> net.draw(fname="state.png",\r # doctest: +SKIP
                      scatter_kwargs={'s': 40}) # doctest: +SKIP
 
         .. figure:: current_state1.png
