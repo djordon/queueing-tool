@@ -1,6 +1,7 @@
 import collections
 import numbers
 import copy
+import array
 
 import networkx as nx
 import numpy as np
@@ -361,7 +362,7 @@ class QueueNetwork(object):
 
             for v in g.nodes():
                 vod = g.out_degree(v)
-                probs = np.array([1. / vod for i in range(vod)])
+                probs = array.array('d', [1. / vod for i in range(vod)])
                 self.out_edges[v] = [i for i in map(edge_index, g.out_edges(v))]
                 self.in_edges[v]  = [i for i in map(edge_index, g.in_edges(v))]
                 self._route_probs[v] = probs
@@ -1127,8 +1128,9 @@ class QueueNetwork(object):
                 raise ValueError("Some transition probabilities were negative.")
 
             for k in range(self.nV):
-                p = mat[k, [e[1] for e in self.g.out_edges(k)]]
-                self._route_probs[k][:] = p#.append(np.float64(p))
+                for j, e in enumerate(self.g.out_edges(k)):
+                    #p = mat[k, [e[1] for e in self.g.out_edges(k)]]
+                    self._route_probs[k][j] = mat[k, e[1]]#p#.append(np.float64(p))
         else:
             raise TypeError("mat must be a numpy array or a dict.")
 
