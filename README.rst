@@ -47,14 +47,6 @@ to install `matplotlib <http://matplotlib.org/>`__ as well.
 
     pip install queueing-tool
 
-Because of setuptools and some numpy jujitsu going on the in background,
-it's often faster to do:
-
-.. code:: bash
-
-    pip install numpy
-    pip install queueing-tool
-
 If you want to install all optional packages, use:
 
 .. code:: bash
