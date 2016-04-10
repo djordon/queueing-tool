@@ -2,13 +2,6 @@ cimport cython
 from cpython cimport array
 import array
 
-import numpy as np
-cimport numpy as cnp
-
-
-ctypedef cnp.int64_t I64_t
-ctypedef cnp.float64_t F64_t
-
 
 cdef class PriorityQueue:
     """A specialized version of a priority queue for a QueueNetwork"""
@@ -41,21 +34,21 @@ cdef class PriorityQueue:
 
         heapify(self.sorted_times, self.sorted_edges, self.size)
 
-        self.q_times = np.ones(n) * np.infty
+        self.q_times = array.array('d', [float('inf') for k in range(n)])
 
         for key in keys:
             self.q_times[key[1]] = key[0]
 
+    @property
+    def times(self):
+        return self.array_times[:self.size]
 
-    def times_edges(self):
-        cdef int i = self.size
-        cdef cnp.ndarray[F64_t, ndim=1] times = np.asarray(self.array_times[:i])
-        cdef cnp.ndarray[I64_t, ndim=1] edges = np.asarray(self.array_edges[:i], int)
-        return times, edges
-        
+    @property
+    def edges(self):
+        return self.array_edges[:self.size]
 
     def q_map(self):
-        return np.asarray(self.q_times)
+        return array.array('d', self.q_times)
 
     @property
     def arraysize(self):

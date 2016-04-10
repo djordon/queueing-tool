@@ -14,22 +14,7 @@ python_version = sys.version_info[:2]
 if python_version < (2, 7) or (3, 0) <=  python_version < (3, 3):
     raise RuntimeError('Python version 2.7 or >= 3.3 required.')
 
-# Taken from the following stack overflow answer
-# https://stackoverflow.com/questions/19919905
-class custom_build_ext(build_ext):
-    def finalize_options(self):
-        build_ext.finalize_options(self)
-
-        if isinstance(__builtins__, dict):
-            __builtins__["__NUMPY_SETUP__"] = False
-        else:
-            __builtins__.__NUMPY_SETUP__ = False
-
-        import numpy
-        self.include_dirs.append(numpy.get_include())
-
-
-cmdclass = {'build_ext': custom_build_ext}
+cmdclass = {'build_ext': build_ext}
 
 extension_paths = [
     'queueing_tool.network.priority_queue',
@@ -106,7 +91,6 @@ setup(
     license='MIT',
     name='queueing-tool',
     packages=packages,
-    setup_requires=["numpy>=1.9"],
     tests_require=tests_require,
     test_suite='nose.collector',
     url='https://github.com/djordon/queueing-tool',
