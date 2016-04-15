@@ -45,20 +45,20 @@ class Agent(object):
     def __repr__(self):
         return "Agent; agent_id:{0}. time: {1}".format(self.agent_id, round(self._time, 3))
 
-    def __lt__(a, b):
-        return a._time < b._time
+    def __lt__(self, b):
+        return self._time < b._time
 
-    def __gt__(a, b):
-        return a._time > b._time
+    def __gt__(self, b):
+        return self._time > b._time
 
-    def __eq__(a, b):
-        return a._time == b._time
+    def __eq__(self, b):
+        return self._time == b._time
 
-    def __le__(a, b):
-        return a._time <= b._time
+    def __le__(self, b):
+        return self._time <= b._time
 
-    def __ge__(a, b):
-        return a._time >= b._time
+    def __ge__(self, b):
+        return self._time >= b._time
 
 
     def add_loss(self, *args, **kwargs):

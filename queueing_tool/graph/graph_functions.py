@@ -15,7 +15,6 @@ def _test_graph(g) :
     Returns
     -------
     :class:`.QueueNetworkDiGraph`
-        
 
     Raises
     ------

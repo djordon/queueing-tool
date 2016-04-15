@@ -1,7 +1,6 @@
 import copy
 from heapq import heappush, heappop
 
-from numpy.random import exponential
 from numpy import logical_or, infty
 import numpy as np
 

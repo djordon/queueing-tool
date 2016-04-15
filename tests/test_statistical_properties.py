@@ -149,7 +149,7 @@ class TestRandomMeasure(unittest.TestCase):
                 arrival_times[k, j] = t
                 if t > 12 :
                     break
-        
+
         mu1 = 5 * np.sum(rate(np.linspace(3, 8, 200))) / 200 # or 2*(5 + (sqrt(3) + 2) * 3/pi) + 2.5
         mu2 = 4 * np.sum(rate(np.linspace(8, 12, 200))) / 200 # or 2*(4 - 3*sqrt(3)/pi) + 2
         mus = [mu1, mu2]

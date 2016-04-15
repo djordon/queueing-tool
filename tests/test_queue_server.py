@@ -56,7 +56,7 @@ class TestQueueServers(unittest.TestCase):
 
 
     def test_QueueServer_copy(self):
-        
+
         q1 = qt.QueueServer(seed=15)
         q1.set_active()
         q1.simulate(t=100)
