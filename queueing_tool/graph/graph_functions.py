@@ -1,5 +1,4 @@
 import networkx as nx
-import numpy as np
 
 from queueing_tool.graph.graph_wrapper import QueueNetworkDiGraph
 

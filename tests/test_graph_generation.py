@@ -41,11 +41,11 @@ class TestGraphFunctions(unittest.TestCase):
 
 
     def test_add_edge_lengths(self):
-        g = qt.generate_pagerank_graph(10)
-        g = qt.add_edge_lengths(g)
+        g1 = qt.generate_pagerank_graph(10)
+        g2 = qt.add_edge_lengths(g1)
 
         edge_props = set()
-        for key in g.edge_properties():
+        for key in g2.edge_properties():
             edge_props.add(key)
 
         self.assertTrue('edge_length' in edge_props)
