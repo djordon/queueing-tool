@@ -1,8 +1,4 @@
 import unittest
-try:
-    import unittest.mock as mock
-except ImportError:
-    import mock
 
 from numpy.random import randint
 import networkx as nx
@@ -45,11 +41,11 @@ class TestGraphFunctions(unittest.TestCase):
 
 
     def test_add_edge_lengths(self):
-        g   = qt.generate_pagerank_graph(10)
-        g2  = qt.add_edge_lengths(g)
+        g1 = qt.generate_pagerank_graph(10)
+        g2 = qt.add_edge_lengths(g1)
 
         edge_props = set()
-        for key in g.edge_properties():
+        for key in g2.edge_properties():
             edge_props.add(key)
 
         self.assertTrue('edge_length' in edge_props)
@@ -79,12 +75,6 @@ class TestGraphFunctions(unittest.TestCase):
         g   = qt.adjacency2graph(adj, edge_type=ety, adjust=2)
         ans = qt.graph2dict(g)
 
-        expected_response = {
-            0: {1: {'edge_type': 5}},
-            1: {2: {'edge_type': 9}, 3: {'edge_type': 0}},
-            2: {0: {'edge_type': 1}},
-            3: {}
-        }
         self.assertTrue(ans == self.expected_response1)
 
 

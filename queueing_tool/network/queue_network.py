@@ -3,7 +3,6 @@ import numbers
 import copy
 import array
 
-import networkx as nx
 import numpy as np
 from numpy.random import uniform
 
@@ -18,7 +17,7 @@ try:
 except ImportError:
     HAS_MATPLOTLIB = False
 
-from queueing_tool.graph import _prepare_graph, QueueNetworkDiGraph
+from queueing_tool.graph import _prepare_graph
 from queueing_tool.queues import (
     NullQueue,
     QueueServer,
@@ -1320,7 +1319,6 @@ class QueueNetwork(object):
             e2  = q1._departures[0].desired_destination(self, q1.edge)
             q2  = self.edge2queue[e2]
             q2k = q2._key()
-            q2t = q2k[0]
 
             if q2.at_capacity() and e2 != e1:
                 q2.nBlocked += 1

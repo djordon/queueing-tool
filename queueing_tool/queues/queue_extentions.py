@@ -1,15 +1,12 @@
 import copy
 from heapq import heappush, heappop
 
-from numpy.random import randint, exponential
+from numpy.random import exponential
 from numpy import logical_or, infty
 import numpy as np
 
 from queueing_tool.queues.agents import Agent
-from queueing_tool.queues.queue_servers import (
-    QueueServer,
-    LossQueue
-)
+from queueing_tool.queues.queue_servers import LossQueue
 
 
 class ResourceAgent(Agent):
@@ -202,7 +199,7 @@ class ResourceQueue(LossQueue):
 
             color    = [i * tmp / 0.9 for i in self.colors['edge_loop_color']]
             color[3] = 0.0
-  
+
         elif which == 2:
             color = self.colors['vertex_pen_color']
         else:
