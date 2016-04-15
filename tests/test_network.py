@@ -100,7 +100,7 @@ class TestQueueNetwork(unittest.TestCase):
             5: qt.ResourceQueue,
             6: qt.QueueServer
         }
-                 
+
         q_arg = {
             3: {'net_size': g.number_of_edges()},
             4: {'nServers': 500},
@@ -210,7 +210,7 @@ class TestQueueNetwork(unittest.TestCase):
     def test_QueueNetwork_init_error(self):
         g  = qt.generate_pagerank_graph(7)
         with self.assertRaises(TypeError):
-            qn = qt.QueueNetwork(g, blocking=2)
+            qt.QueueNetwork(g, blocking=2)
 
     def test_QueueNetwork_get_agent_data(self):
 

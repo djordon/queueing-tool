@@ -45,7 +45,7 @@ def _adjacency_adjust(adjacency, adjust, is_directed):
     """
 
     for v, adj in adjacency.items():
-        for u, properties in adj.items():
+        for properties in adj.values():
             if properties.get('edge_type') is None:
                 properties['edge_type'] = 1
 
@@ -155,8 +155,7 @@ def adjacency2graph(adjacency, edge_type=None, adjust=1, **kwargs):
     2: {},
     3: {0: {'edge_type': 1}}}
     """
-    import copy
-    dd = copy.deepcopy(adjacency)
+
     if isinstance(adjacency, np.ndarray):
         adjacency = _matrix2dict(adjacency)
     elif isinstance(adjacency, dict):
@@ -490,7 +489,6 @@ class QueueNetworkDiGraph(nx.DiGraph):
             'zorder': 0,
             'facecolors': None,
             'norm': None,
-            'antialiaseds': None,
             'offsets': None,
             'offset_position': 'screen',
             'hatch': None,

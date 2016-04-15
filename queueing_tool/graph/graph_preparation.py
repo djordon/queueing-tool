@@ -1,12 +1,7 @@
-import numbers
-
 import networkx as nx
 import numpy as np
 
-from queueing_tool.graph.graph_functions  import (
-    graph2dict,
-    _test_graph
-)
+from queueing_tool.graph.graph_functions  import _test_graph
 from queueing_tool.graph.graph_wrapper import (
     adjacency2graph,
     QueueNetworkDiGraph

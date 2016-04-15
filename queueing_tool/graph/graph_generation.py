@@ -1,5 +1,4 @@
 import numbers
-import copy
 
 import networkx as nx
 import numpy as np
@@ -120,7 +119,6 @@ def generate_random_graph(nVertices=250, prob_loop=0.5, **kwargs):
     typically used for terminal edges.
     """
     g = minimal_random_graph(nVertices, **kwargs)
-    nNodes  = g.number_of_nodes()
     for v in g.nodes():
         e = (v, v)
         if not g.is_edge(e):
@@ -203,7 +201,6 @@ def minimal_random_graph(nVertices, seed=None, **kwargs):
         np.random.seed(seed)
 
     points = np.random.random((nVertices, 2)) * 10
-    nEdges = nVertices * (nVertices - 1) // 2
     edges  = []
 
     for k in range(nVertices-1):
@@ -219,7 +216,6 @@ def minimal_random_graph(nVertices, seed=None, **kwargs):
     g = nx.Graph()
 
     for n1, n2, d in edges:
-        max_space = d
         unionF.union(n1, n2)
         g.add_edge(n1, n2)
         if unionF.nClusters == 1:
@@ -292,17 +288,14 @@ def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
     if loop_proportions is None:
         loop_proportions = {k : 1. / 4 for k in range(4)}
 
-    nEdges = g.number_of_edges()
     edges  = [e for e in g.edges() if e[0] != e[1]]
     loops  = [e for e in g.edges() if e[0] == e[1]]
     props  = list(proportions.values())
     lprops = list(loop_proportions.values())
 
     if not np.isclose(sum(props), 1.0):
-        msg = "proportions values must sum to one."
         raise ValueError("proportions values must sum to one.")
     if not np.isclose(sum(lprops), 1.0):
-        msg = "loop_proportions values must sum to one."
         raise ValueError("loop_proportions values must sum to one.")
 
     eTypes = {}

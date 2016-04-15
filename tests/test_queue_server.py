@@ -1,9 +1,4 @@
-import os
 import unittest
-try:
-    import unittest.mock as mock
-except ImportError:
-    import mock
 
 import networkx as nx
 import numpy as np
@@ -49,7 +44,7 @@ class TestQueueServers(unittest.TestCase):
             q.set_nServers(0)
 
     def test_QueueServer_set_inactive(self):
-        
+
         q   = qt.QueueServer()
         q.set_active()
 
@@ -203,7 +198,6 @@ class TestQueueServers(unittest.TestCase):
             else :
                 q.simulate(n=1)
 
-        tmp = np.ones(5)
         self.assertTrue( ans.all() )
 
 

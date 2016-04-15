@@ -87,7 +87,6 @@ class TestQueueServers(unittest.TestCase):
         q.clear()
 
         ind  = data[:,2] > 0
-        souj = data[ind, 2] - data[ind, 0]
         wait = data[ind, 1] - data[ind, 0]
         ans  = np.mean(wait) * self.lam - np.mean(data[:, 3]) * self.rho
 
@@ -135,9 +134,8 @@ class TestRandomMeasure(unittest.TestCase):
         # Poisson random variables using a chi-squared test (testing the
         # composite null hypothesis). It does not look for independence of the
         # random variables.
+        # This test should fail some percentage of the time
 
-        # This test should fail about
-        
         rate  = lambda t: 0.5 + 4 * np.sin(np.pi * t / 12)**2
         arr_f = lambda t: qt.poisson_random_measure(rate, 4.5, t)
 

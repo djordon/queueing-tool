@@ -763,19 +763,19 @@ class QueueServer(object):
         """
         if t is None and nD is None and nA is None:
             for k in range(n):
-                tmp = self.next_event()
+                self.next_event()
         elif t is not None:
             then = self._current_t + t
             while self._current_t < then and self._time < infty:
-                tmp = self.next_event()
+                self.next_event()
         elif nD is not None:
             nDepartures = self.nDepartures + nD
             while self.nDepartures < nDepartures and self._time < infty:
-                tmp = self.next_event()
+                self.next_event()
         elif nA is not None:
             nArrivals = self._oArrivals + nA
             while self._oArrivals < nArrivals and self._time < infty:
-                tmp = self.next_event()
+                self.next_event()
 
 
     def __deepcopy__(self, memo):
@@ -966,7 +966,7 @@ class NullQueue(QueueServer):
             else:
                 self.data[agent.agent_id].append([agent._time, 0, 0, 0, 0])
 
-    def delay_service(self):
+    def delay_service(self, *args, **kwargs):
         pass
 
     def next_event_description(self):
