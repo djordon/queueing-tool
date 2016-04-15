@@ -153,14 +153,14 @@ class TestRandomMeasure(unittest.TestCase):
         mu1 = 5 * np.sum(rate(np.linspace(3, 8, 200))) / 200 # or 2*(5 + (sqrt(3) + 2) * 3/pi) + 2.5
         mu2 = 4 * np.sum(rate(np.linspace(8, 12, 200))) / 200 # or 2*(4 - 3*sqrt(3)/pi) + 2
         mus = [mu1, mu2]
-        
+
         rv1 = np.sum(np.logical_and(3 < arrival_times, arrival_times < 8), axis=1)
         rv2 = np.sum(np.logical_and(8 < arrival_times, arrival_times < 12), axis=1)
         rvs = [rv1, rv2]
         df  = [max(rv1)+2, max(rv2)+2]
-        
+
         Q = np.zeros( (max(df), len(rvs)) )
-        
+
         for i, sample in enumerate(rvs):
             for k in range(df[i]-1):
                 pi_hat  = nSamp * np.exp(-mus[i]) * mus[i]**k / math.factorial(k)
@@ -169,7 +169,7 @@ class TestRandomMeasure(unittest.TestCase):
             ans = np.array([math.factorial(j) for j in range(k+1)])
             pois_cdf = np.sum(np.exp(-mus[i]) * mus[i]**np.arange(k+1) / ans)
             Q[k+1, i] = nSamp * (1 - pois_cdf)
-        
+
         Qs = np.sum(Q, axis=0)
         p  = np.array([1 - chi2_cdf(Qs[i], df[i]-2) for i in range(len(rvs))])
         self.assertTrue( (p > 0.1).any() )
