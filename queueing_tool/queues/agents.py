@@ -192,14 +192,14 @@ class InftyAgent(object):
     def __repr__(self):
         return "InftyAgent"
 
-    def __lt__(a, b):
-        return a._time < b._time
+    def __lt__(self, b):
+        return self._time < b._time
 
-    def __gt__(a, b):
-        return a._time > b._time
+    def __gt__(self, b):
+        return self._time > b._time
 
-    def __eq__(a, b):
-        return a._time == b._time
+    def __eq__(self, b):
+        return self._time == b._time
 
     def __deepcopy__(self, memo):
         return self.__class__()
