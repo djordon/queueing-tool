@@ -4,13 +4,13 @@ from queueing_tool.graph.graph_wrapper import QueueNetworkDiGraph
 
 
 
-def _test_graph(g) :
-    """A function that makes sure ``g`` is either a
+def _test_graph(graph):
+    """A function that makes sure ``graph`` is either a
     :any:`networkx.DiGraph` or a string or file object to one.
 
     Parameters
     ----------
-    g : A **str** or a :any:`networkx.DiGraph`.
+    graph : A **str** or a :any:`networkx.DiGraph`.
 
     Returns
     -------
@@ -19,18 +19,18 @@ def _test_graph(g) :
     Raises
     ------
     TypeError
-        Raises a :exc:`~TypeError` if ``g`` cannot be turned into a
+        Raises a :exc:`~TypeError` if ``graph`` cannot be turned into a
         :any:`networkx.DiGraph`.
     """
-    if not isinstance(g, QueueNetworkDiGraph):
+    if not isinstance(graph, QueueNetworkDiGraph):
         try:
-            g = QueueNetworkDiGraph(g)
+            graph = QueueNetworkDiGraph(graph)
         except (nx.NetworkXError, TypeError):
-            raise TypeError("Couldn't turn g into a graph.")
-    return g
+            raise TypeError("Couldn't turn graph into a DiGraph.")
+    return graph
 
 
-def graph2dict(g, return_dict_of_dict=True) :
+def graph2dict(g, return_dict_of_dict=True):
     """Takes a graph and returns an adjacency list.
 
     Parameters

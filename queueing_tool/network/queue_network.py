@@ -895,7 +895,7 @@ class QueueNetwork(object):
             dat = self.edge2queue[q].fetch_data()
 
             if len(dat) > 0:
-                data = np.vstack( (data, dat) )
+                data = np.vstack((data, dat))
 
         if return_header:
             return data, 'arrival,service,departure,num_queued,num_total,q_id'
@@ -1119,7 +1119,7 @@ class QueueNetwork(object):
                 msg = ("Matrix is the wrong shape, should "
                        "be {0} x {1}.").format(self.nV, self.nV)
                 raise ValueError(msg)
-            elif not np.allclose(np.sum(mat[non_terminal,:], axis=1), 1):
+            elif not np.allclose(np.sum(mat[non_terminal, :], axis=1), 1):
                 msg = "Sum of transition probabilities at a vertex was not 1."
                 raise ValueError(msg)
             elif (mat < 0).any():
@@ -1315,7 +1315,7 @@ class QueueNetwork(object):
         self._qkey = q1k
         self.nEvents += 1
 
-        if event == 2 : # This is a departure
+        if event == 2: # This is a departure
             e2  = q1._departures[0].desired_destination(self, q1.edge)
             q2  = self.edge2queue[e2]
             q2k = q2._key()
@@ -1371,7 +1371,7 @@ class QueueNetwork(object):
 
             if slow:
                 self._update_graph_colors(qedge=q1.edge)
-                self._prev_edge  = q1.edge
+                self._prev_edge = q1.edge
 
             new_q1k = q1._key()
             if new_q1k[0] < np.infty:
@@ -1520,7 +1520,7 @@ class QueueNetwork(object):
         probability ``0.326``, etc.
         """
         if return_matrix:
-            mat = np.zeros( (self.nV, self.nV) )
+            mat = np.zeros((self.nV, self.nV))
             for v in self.g.nodes():
                 ind = [e[1] for e in self.g.out_edges(v)]
                 mat[v, ind] = self._route_probs[v]
@@ -1534,7 +1534,7 @@ class QueueNetwork(object):
 
 
     def _update_all_colors(self):
-        do  = [True for v in range(self.nV)]
+        do = [True for v in range(self.nV)]
         for q in self.edge2queue:
             e = q.edge[:2]
             v = q.edge[1]
@@ -1555,7 +1555,7 @@ class QueueNetwork(object):
 
 
     def _update_vertex_color(self, v):
-        ee  = (v, v)
+        ee = (v, v)
         ee_is_edge = self.g.is_edge(ee)
         eei = self.g.edge_index[ee] if ee_is_edge else 0
 

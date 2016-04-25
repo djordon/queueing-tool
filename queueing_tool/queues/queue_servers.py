@@ -73,9 +73,9 @@ def poisson_random_measure(rate, rate_max, t):
            :doi:`10.1007/978-0-387-87859-1`
     """
     scale = 1.0 / rate_max
-    t     = t + exponential(scale)
+    t = t + exponential(scale)
     while rate_max * uniform() > rate(t):
-        t   = t + exponential(scale)
+        t = t + exponential(scale)
     return t
 
 
@@ -275,7 +275,7 @@ class QueueServer(object):
     }
 
     def __init__(self, nServers=1, arrival_f=lambda t: t + exponential(1),
-                 service_f=lambda t: t + exponential(0.9), edge=(0,0,0,1),
+                 service_f=lambda t: t + exponential(0.9), edge=(0, 0, 0, 1),
                  AgentFactory=Agent, collect_data=False, active_cap=infty,
                  deactive_t=infty, colors=None, seed=None,
                  coloring_sensitivity=2, **kwargs):
@@ -296,7 +296,7 @@ class QueueServer(object):
 
         self.arrival_f    = arrival_f
         self.service_f    = service_f
-        self.AgentFactory   = AgentFactory
+        self.AgentFactory = AgentFactory
         self.collect_data = collect_data
         self.active_cap   = active_cap
         self.deactive_t   = deactive_t
@@ -306,11 +306,11 @@ class QueueServer(object):
         self._departures  = [inftyAgent]    # A list of departing agents.
         self._nArrivals   = 0
         self._oArrivals   = 0
-        self._nTotal      = 0         # The number of agents scheduled to arrive + nSystem
+        self._nTotal      = 0       # The number of agents scheduled to arrive + nSystem
         self._active      = False
-        self._current_t   = 0         # The time of the last event.
-        self._time        = infty     # The time of the next event.
-        self._next_ct     = 0         # The next time an arrival from outside the network can arrive.
+        self._current_t   = 0       # The time of the last event.
+        self._time        = infty   # The time of the next event.
+        self._next_ct     = 0       # The next time an arrival from outside the network can arrive.
         self.coloring_sensitivity = coloring_sensitivity
 
         if isinstance(seed, numbers.Integral):
@@ -617,9 +617,9 @@ class QueueServer(object):
             if self.collect_data:
                 b = 0 if self.nSystem <= self.nServers else 1
                 if arrival.agent_id not in self.data:
-                    self.data[arrival.agent_id] = [[arrival._time, 0, 0, len(self.queue)+b, self.nSystem]]
+                    self.data[arrival.agent_id] = [[arrival._time, 0, 0, len(self.queue) + b, self.nSystem]]
                 else:
-                    self.data[arrival.agent_id].append([arrival._time, 0, 0, len(self.queue)+b, self.nSystem])
+                    self.data[arrival.agent_id].append([arrival._time, 0, 0, len(self.queue) + b, self.nSystem])
 
             arrival.queue_action(self, 0)
 
@@ -695,7 +695,7 @@ class QueueServer(object):
             raise TypeError(the_str.format(str(self)))
         elif n <= 0:
             the_str = "n must be a positive integer or infinity.\n{0}"
-            raise ValueError( the_str.format(str(self)) )
+            raise ValueError(the_str.format(str(self)))
         else:
             self.nServers = n
 

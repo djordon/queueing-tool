@@ -37,7 +37,7 @@ class Agent(object):
         Specifies how many times an agent has been blocked by a finite
         capacity queue.
     """
-    def __init__(self, agent_id=(0,0), **kwargs):
+    def __init__(self, agent_id=(0, 0), **kwargs):
         self.agent_id = agent_id
         self.blocked = 0
         self._time   = 0         # agents arrival or departure time

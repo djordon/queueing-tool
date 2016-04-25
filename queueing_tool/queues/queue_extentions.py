@@ -20,7 +20,7 @@ class ResourceAgent(Agent):
     a resource to that queue by increasing the number of
     servers there by one; the ``ResourceAgent`` is then deleted.
     """
-    def __init__(self, agent_id=(0,0)):
+    def __init__(self, agent_id=(0, 0)):
         super(ResourceAgent, self).__init__(agent_id)
         self._has_resource = False
         self._had_resource = False
@@ -252,10 +252,10 @@ class InfoAgent(Agent):
     **kwargs :
         Any arguments to pass to :class:`.Agent`.
     """
-    def __init__(self, agent_id=(0,0), net_size=1, **kwargs):
+    def __init__(self, agent_id=(0, 0), net_size=1, **kwargs):
         super(InfoAgent, self).__init__(agent_id, **kwargs)
 
-        self.stats = np.zeros((net_size, 3), np.int32 )
+        self.stats = np.zeros((net_size, 3), np.int32)
         self.net_data = np.ones((net_size, 3)) * -1
 
     def __repr__(self):
@@ -376,7 +376,7 @@ class InfoQueue(LossQueue):
 
     def clear(self):
         super(InfoQueue, self).clear()
-        self.networking( len(self.net_data) )
+        self.networking(len(self.net_data))
 
 
     def __deepcopy__(self, memo):
