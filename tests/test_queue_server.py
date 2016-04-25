@@ -159,7 +159,7 @@ class TestQueueServers(unittest.TestCase):
         q   = qt.LossQueue(nServers=nSe, arrival_f=arr, service_f=ser)
         q.set_active()
         nEvents = 15000
-        
+
         ans = np.zeros((nEvents,3), bool)
 
         for k in range(nEvents):
