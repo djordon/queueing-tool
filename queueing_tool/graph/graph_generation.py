@@ -17,7 +17,7 @@ def _calculate_distance(latlon1, latlon2):
     dlon  = lon2 - lon1
     dlat  = lat2 - lat1
     a = np.sin(dlat / 2.)**2 + np.cos(lat1) * np.cos(lat2) * (np.sin(dlon / 2.))**2
-    c = 2 * np.pi * R * np.arctan2( np.sqrt(a), np.sqrt(1-a) ) / 180.
+    c = 2 * np.pi * R * np.arctan2(np.sqrt(a), np.sqrt(1-a)) / 180.
     return c
 
 
@@ -206,7 +206,7 @@ def minimal_random_graph(nVertices, seed=None, **kwargs):
     for k in range(nVertices-1):
         for j in range(k+1, nVertices):
             v = points[k] - points[j]
-            edges.append( (k, j, v[0]**2 + v[1]**2) )
+            edges.append((k, j, v[0]**2 + v[1]**2))
 
     mytype = [('n1', int), ('n2', int), ('distance', np.float)]
     edges  = np.array(edges, dtype=mytype)
@@ -215,7 +215,7 @@ def minimal_random_graph(nVertices, seed=None, **kwargs):
 
     g = nx.Graph()
 
-    for n1, n2, d in edges:
+    for n1, n2, dummy in edges:
         unionF.union(n1, n2)
         g.add_edge(n1, n2)
         if unionF.nClusters == 1:
@@ -389,7 +389,7 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
             ind_g_dist[min_g_dist == tmp] = v
 
     ind_g_dist = np.unique(ind_g_dist)
-    fcqs  = set(ind_g_dist[:min( (nFCQ, len(ind_g_dist)) )])
+    fcqs  = set(ind_g_dist[:min(nFCQ, len(ind_g_dist))])
     dests = set(dests)
     g.new_vertex_property('loop_type')
 

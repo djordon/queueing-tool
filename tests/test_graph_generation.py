@@ -114,7 +114,7 @@ class TestGraphFunctions(unittest.TestCase):
         props = (np.array(mat).sum(1) + 0.0) / len(non_loops)
         ps    = np.array([pType[k] for k in eType])
 
-        self.assertTrue(np.allclose(props , ps, atol=0.01))
+        self.assertTrue(np.allclose(props, ps, atol=0.01))
 
         prob[-1] = 2
         pType = {eType[k] : prob[k] for k in range(nT)}

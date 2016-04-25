@@ -23,7 +23,7 @@ reason = "Test takes long."
 class TestQueueServers(unittest.TestCase):
 
     def setUp(self):
-        self.lam = np.random.randint(1,10) + 0.0
+        self.lam = np.random.randint(1, 10) + 0.0
         self.rho = np.random.uniform(0.5, 1)
 
     @unittest.skipIf(TRAVIS_TEST, reason)
@@ -32,8 +32,8 @@ class TestQueueServers(unittest.TestCase):
         nSe = np.random.randint(1, 10)
         mu  = self.lam / (self.rho * nSe)
 
-        arr = lambda t: t + np.random.exponential(1/self.lam)
-        ser = lambda t: t + np.random.exponential(1/mu)
+        arr = lambda t: t + np.random.exponential(1 / self.lam)
+        ser = lambda t: t + np.random.exponential(1 / mu)
 
         q = qt.QueueServer(nServers=nSe, arrival_f=arr, service_f=ser)
         n = 50000
@@ -50,10 +50,10 @@ class TestQueueServers(unittest.TestCase):
 
         n = len(dep)
         lamh = 1 / np.mean(dep)
-        upb  = - np.log( 6.0 / n) / lamh
+        upb  = -np.log(6.0 / n) / lamh
         nbin = n // 6 - 1 #np.floor( np.exp( lam * upb) - 1 )
         bins = np.zeros(nbin+2)
-        bins[1:-1] = upb - np.log( np.arange(nbin, 0, -1)) / lamh
+        bins[1:-1] = upb - np.log(np.arange(nbin, 0, -1)) / lamh
         bins[-1]   = np.infty
 
         N  = np.histogram(dep, bins=bins)[0]
@@ -63,9 +63,9 @@ class TestQueueServers(unittest.TestCase):
         p1 = 1 - chi2_cdf(Q, nbin-1)
 
         x, y = dep[1:], dep[:-1]
-        cc   = np.corrcoef(x,y)[0,1]
-        self.assertAlmostEqual( cc, 0, 1)
-        self.assertTrue( p1 > 0.05 )
+        cc   = np.corrcoef(x,y)[0, 1]
+        self.assertAlmostEqual(cc, 0, 1)
+        self.assertTrue(p1 > 0.05)
 
     @unittest.skipIf(TRAVIS_TEST, reason)
     def test_QueueServer_Littleslaw(self):
@@ -86,7 +86,7 @@ class TestQueueServers(unittest.TestCase):
         data = q.fetch_data()
         q.clear()
 
-        ind  = data[:,2] > 0
+        ind  = data[:, 2] > 0
         wait = data[ind, 1] - data[ind, 0]
         ans  = np.mean(wait) * self.lam - np.mean(data[:, 3]) * self.rho
 
@@ -100,8 +100,8 @@ class TestQueueServers(unittest.TestCase):
         k   = np.random.randint(5, 15)
         scl = 1 / (mu * k)
 
-        arr = lambda t : t + np.random.exponential(1/self.lam)
-        ser = lambda t : t + np.random.gamma(k, scl)
+        arr = lambda t: t + np.random.exponential(1 / self.lam)
+        ser = lambda t: t + np.random.gamma(k, scl)
 
         q2  = qt.LossQueue(nServers=nSe, arrival_f=arr, service_f=ser)
         q2.set_active()
@@ -141,26 +141,26 @@ class TestRandomMeasure(unittest.TestCase):
 
         nSamp = 15000
         nArr  = 1000
-        arrival_times = np.zeros( (nSamp, nArr) )
+        arrival_times = np.zeros((nSamp, nArr))
         for k in range(nSamp):
             t = 0
             for j in range(nArr):
                 t = arr_f(t)
                 arrival_times[k, j] = t
-                if t > 12 :
+                if t > 12:
                     break
 
         mu1 = 5 * np.sum(rate(np.linspace(3, 8, 200))) / 200 # or 2*(5 + (sqrt(3) + 2) * 3/pi) + 2.5
         mu2 = 4 * np.sum(rate(np.linspace(8, 12, 200))) / 200 # or 2*(4 - 3*sqrt(3)/pi) + 2
         mus = [mu1, mu2]
-        
+
         rv1 = np.sum(np.logical_and(3 < arrival_times, arrival_times < 8), axis=1)
         rv2 = np.sum(np.logical_and(8 < arrival_times, arrival_times < 12), axis=1)
         rvs = [rv1, rv2]
         df  = [max(rv1)+2, max(rv2)+2]
-        
-        Q = np.zeros( (max(df), len(rvs)) )
-        
+
+        Q = np.zeros((max(df), len(rvs)))
+
         for i, sample in enumerate(rvs):
             for k in range(df[i]-1):
                 pi_hat  = nSamp * np.exp(-mus[i]) * mus[i]**k / math.factorial(k)
@@ -169,10 +169,10 @@ class TestRandomMeasure(unittest.TestCase):
             ans = np.array([math.factorial(j) for j in range(k+1)])
             pois_cdf = np.sum(np.exp(-mus[i]) * mus[i]**np.arange(k+1) / ans)
             Q[k+1, i] = nSamp * (1 - pois_cdf)
-        
+
         Qs = np.sum(Q, axis=0)
         p  = np.array([1 - chi2_cdf(Qs[i], df[i]-2) for i in range(len(rvs))])
-        self.assertTrue( (p > 0.1).any() )
+        self.assertTrue((p > 0.1).any())
 
 
 if __name__ == '__main__':
