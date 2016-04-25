@@ -1292,7 +1292,7 @@ class QueueNetwork(object):
                    "Call '.initialize()' first.")
             raise QueueingToolError(msg)
         if t is None:
-            for k in range(n):
+            for dummy in range(n):
                 self._simulate_next_event(slow=False)
         else:
             now = self._t

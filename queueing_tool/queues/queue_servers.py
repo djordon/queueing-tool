@@ -762,7 +762,7 @@ class QueueServer(object):
 
         """
         if t is None and nD is None and nA is None:
-            for k in range(n):
+            for dummy in range(n):
                 self.next_event()
         elif t is not None:
             then = self._current_t + t

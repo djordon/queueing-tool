@@ -215,7 +215,7 @@ def minimal_random_graph(nVertices, seed=None, **kwargs):
 
     g = nx.Graph()
 
-    for n1, n2, d in edges:
+    for n1, n2, dummy in edges:
         unionF.union(n1, n2)
         g.add_edge(n1, n2)
         if unionF.nClusters == 1:
