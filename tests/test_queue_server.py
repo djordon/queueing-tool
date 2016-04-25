@@ -110,7 +110,7 @@ class TestQueueServers(unittest.TestCase):
         self.assertTrue(q.active)
         q.simulate(t=10)
         self.assertFalse(q.active)
-        
+
 
     def test_QueueServer_simulation(self):
 
