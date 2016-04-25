@@ -122,7 +122,7 @@ class TestQueueServers(unittest.TestCase):
         q   = qt.QueueServer(nServers=nSe, arrival_f=arr, service_f=ser)
         q.set_active()
         nEvents = 5000
-        
+
         ans = np.zeros(4, bool)
 
         k   = np.random.randint(nEvents * 0.75, nEvents * 1.25)
