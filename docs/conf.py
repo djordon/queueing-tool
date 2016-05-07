@@ -26,7 +26,7 @@ import alabaster
 class Mock(mock.MagicMock):
     @classmethod
     def __getattr__(cls, name):
-            return Mock()
+        return Mock()
 
 MOCK_MODULES = [
     'choice',
