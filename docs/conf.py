@@ -15,7 +15,11 @@
 
 import sys
 import os
-import unittest.mock as mock
+
+try:
+    import unittest.mock as mock
+except ImportError:
+    import mock
 
 import alabaster
 
@@ -280,5 +284,5 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
 
-#def setup(app):
-#    app.add_javascript('copybutton.js')
+def setup(app):
+    app.add_javascript('copybutton.js')
