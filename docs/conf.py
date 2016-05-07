@@ -17,13 +17,13 @@ import sys
 import os
 
 try:
-    import unittest.mock as mock
+    from unittest.mock import MagicMock
 except ImportError:
-    import mock
+    from mock import Mock as MagicMock
 
 import alabaster
 
-class Mock(mock.MagicMock):
+class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
         return Mock()
