@@ -15,14 +15,18 @@
 
 import sys
 import os
-import unittest.mock as mock
+
+try:
+    from unittest.mock import MagicMock
+except ImportError:
+    from mock import Mock as MagicMock
 
 import alabaster
 
-class Mock(mock.MagicMock):
+class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
-            return Mock()
+        return Mock()
 
 MOCK_MODULES = [
     'choice',
@@ -140,7 +144,7 @@ html_theme_options = {
     'github_user': 'djordon',
     'github_repo': 'queueing-tool',
 }
-html_context = {'css_files': ['_static/adjust_alabaster.css',]}
+#html_context = {'css_files': ['_static/adjust_alabaster.css',]}
 
 # Add any paths that contain custom themes here, relative to this directory.
 html_theme_path = [alabaster.get_path()]#'_themes']
