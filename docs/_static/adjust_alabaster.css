@@ -16,8 +16,8 @@ dl dl pre {
     padding-left: 10px;
 }
 
-body {
-    font-family: 15px;
+div.body p, div.body dd, div.body li {
+    line-height: 1.3em;
 }
 
 p > code {
