@@ -1,0 +1,76 @@
+
+/*@import url("alabaster.css_t");
+/* basic.css*/
+
+dl pre, blockquote pre, li pre {
+    margin-left: 0;
+    padding-left: 10px;
+}
+
+pre {
+    padding-left: 10px;
+}
+
+dl dl pre {
+    margin-left: 0;
+    padding-left: 10px;
+}
+
+div.body p, div.body dd, div.body li {
+    line-height: 1.3em;
+}
+
+p > code {
+    padding: 1px;
+}
+
+
+code > span {
+    padding: 2px;
+}
+
+table.field-list {
+    margin-left: 1px;
+    border-left: 5px solid #EEE !important;
+    border-collapse: collapse;
+    border-spacing: 5px;
+}
+
+table.field-list th.field-name {
+    display: inline-block;
+    padding-right: 0.4em;
+    margin-right: 0.4em;
+    background-color: #EEE;
+    white-space: nowrap;
+}
+
+table.docutils {
+    margin-bottom: 10px;
+}
+
+dl.function, dl.class, dl.exception {
+    border-top-style: solid;
+    border-top-width: 3px;
+}
+
+dl.function > dt, dl.class > dt, dl.exception > dt{
+    background-color: #e7f2fa;
+    padding-top: 0.5em;
+    padding-right: 0.5em;
+    padding-bottom: 0.5em;
+    padding-left: 0.5em;
+}
+
+dl.method {
+    border-top-style: solid;
+    border-top-width: 2px;
+    border-color: #6ab0de;
+}
+
+dl.method > dt {
+    background-color: #e7f2fa;
+    padding-top: 0.3em;
+    padding-right: 0.3em;
+    padding-bottom: 0.3em;
+    padding-left: 0.3em;
+}
