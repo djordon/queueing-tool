@@ -144,7 +144,7 @@ html_theme_options = {
     'github_user': 'djordon',
     'github_repo': 'queueing-tool',
 }
-html_context = {'css_files': ['_static/adjust_alabaster.css',]}
+#html_context = {'css_files': ['_static/adjust_alabaster.css',]}
 
 # Add any paths that contain custom themes here, relative to this directory.
 html_theme_path = [alabaster.get_path()]#'_themes']
