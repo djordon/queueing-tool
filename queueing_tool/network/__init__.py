@@ -22,11 +22,11 @@
     QueueNetwork.transitions
 """
 
+from queueing_tool.network.priority_queue import PriorityQueue
 from queueing_tool.network.queue_network import (
     QueueingToolError,
     QueueNetwork
 )
-from queueing_tool.network.priority_queue import PriorityQueue
 
 __all__ = [
     'PriorityQueue',
