@@ -74,7 +74,6 @@ cdef class PriorityQueue:
             return None
         return self.next_time, self.next_node
 
-
     @cython.boundscheck(False)
     @cython.wraparound(False)
     @cython.nonecheck(False)
@@ -98,7 +97,6 @@ cdef class PriorityQueue:
 
         self.size += 1
         _siftdown(self.sorted_times, self.sorted_edges, 0, self.size-1)
-
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
