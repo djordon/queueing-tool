@@ -10,19 +10,19 @@ import numpy as np
 from queueing_tool.queues.agents import Agent, InftyAgent
 
 
-def poisson_random_measure(rate, rate_max, t):
+def poisson_random_measure(t, rate, rate_max):
     """A function that returns the arrival time of the next arrival for
     a Poisson random measure.
 
     Parameters
     ----------
+    t : float
+        The start time from which to simulate the next arrival time.
     rate : function
         The *intensity function* for the measure, where ``rate(t)`` is
         the expected arrival rate at time ``t``.
     rate_max : float
         The maximum value of the ``rate`` function.
-    t : float
-        The start time from which to simulate the next arrival time.
 
     Returns
     -------
@@ -62,7 +62,7 @@ def poisson_random_measure(rate, rate_max, t):
     >>> import numpy as np
     >>> np.random.seed(10)
     >>> rate  = lambda t: 2 + np.sin(2 * np.pi * t)
-    >>> arr_f = lambda t: qt.poisson_random_measure(rate, 3, t)
+    >>> arr_f = lambda t: qt.poisson_random_measure(t, rate, 3)
     >>> arr_f(1)  # doctest: +ELLIPSIS
     1.491...
 
@@ -204,7 +204,7 @@ class QueueServer(object):
     >>> import queueing_tool as qt
     >>> import numpy as np
     >>> rate = lambda t: 2 + 16 * np.sin(np.pi * t / 8)**2
-    >>> arr = lambda t: qt.poisson_random_measure(rate, 18, t)
+    >>> arr = lambda t: qt.poisson_random_measure(t, rate, 18)
     >>> ser = lambda t: t + np.random.gamma(4, 0.1)
     >>> q = qt.QueueServer(5, arrival_f=arr, service_f=ser)
 
@@ -725,7 +725,7 @@ class QueueServer(object):
         >>> import queueing_tool as qt
         >>> import numpy as np
         >>> rate = lambda t: 2 + 16 * np.sin(np.pi * t / 8)**2
-        >>> arr = lambda t: qt.poisson_random_measure(rate, 18, t)
+        >>> arr = lambda t: qt.poisson_random_measure(t, rate, 18)
         >>> ser = lambda t: t + np.random.gamma(4, 0.1)
         >>> q = qt.QueueServer(5, arrival_f=arr, service_f=ser, seed=54)
         >>> q.set_active()
@@ -759,7 +759,6 @@ class QueueServer(object):
         >>> q.simulate(nA=1000)
         >>> q.nDepartures - nD0, q.nArrivals[1] - nA0,
         (987, 1000)
-
         """
         if t is None and nD is None and nA is None:
             for dummy in range(n):

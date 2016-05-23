@@ -63,7 +63,7 @@ cdef class PriorityQueue:
 
         self.heappop()
         with nogil:
-            while self.next_time < self.q_times[self.next_node]:
+            while self.next_time != self.q_times[self.next_node]:
                 if self.size == 0:
                     self.size -= 1
                     break

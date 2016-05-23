@@ -130,7 +130,7 @@ specifically, we'll let it be a non-homogeneous Poisson process), with a rate
 that's sinusoidal. To set that, run::
 
     >>> rate  = lambda t: 25 + 350 * np.sin(np.pi * t / 2)**2
-    >>> arr_f = lambda t: qt.poisson_random_measure(rate, 375, t)
+    >>> arr_f = lambda t: qt.poisson_random_measure(t, rate, 375)
 
 Lastly, we need to specify the departure process for each checkout counter. Let's
 choose the exponential distribution::

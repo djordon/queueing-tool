@@ -137,7 +137,7 @@ class TestRandomMeasure(unittest.TestCase):
         # This test should fail some percentage of the time
 
         rate  = lambda t: 0.5 + 4 * np.sin(np.pi * t / 12)**2
-        arr_f = lambda t: qt.poisson_random_measure(rate, 4.5, t)
+        arr_f = lambda t: qt.poisson_random_measure(t, rate, 4.5)
 
         nSamp = 15000
         nArr  = 1000
