@@ -42,7 +42,7 @@ requires `networkx <http://networkx.readthedocs.org/en/stable/>`__ and
 `numpy <http://www.numpy.org/>`__. If you want to plot, you will need
 to install `matplotlib <http://matplotlib.org/>`__ as well.
 
-**Installation**: To install, from
+**Installation**: To install from
 `PyPI <https://pypi.python.org/pypi/queueing-tool>`__ use:
 
 .. code:: bash
