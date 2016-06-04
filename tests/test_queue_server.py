@@ -71,7 +71,7 @@ class TestQueueServers(unittest.TestCase):
     def test_QueueServer_active_cap(self):
 
         r   = lambda t: 2 + np.sin(t)
-        arr = lambda t: qt.poisson_random_measure(r, 3, t)
+        arr = lambda t: qt.poisson_random_measure(t, r, 3)
         q   = qt.QueueServer(active_cap=1000, arrival_f=arr, seed=12)
         q.set_active()
         q.simulate(n=3000)

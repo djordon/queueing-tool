@@ -63,7 +63,7 @@ cdef class PriorityQueue:
 
         self.heappop()
         with nogil:
-            while self.next_time < self.q_times[self.next_node]:
+            while self.next_time != self.q_times[self.next_node]:
                 if self.size == 0:
                     self.size -= 1
                     break
@@ -73,7 +73,6 @@ cdef class PriorityQueue:
             self.size += 1
             return None
         return self.next_time, self.next_node
-
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -98,7 +97,6 @@ cdef class PriorityQueue:
 
         self.size += 1
         _siftdown(self.sorted_times, self.sorted_edges, 0, self.size-1)
-
 
     @cython.boundscheck(False)
     @cython.wraparound(False)

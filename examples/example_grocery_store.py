@@ -17,7 +17,7 @@ q_classes = {0: qt.NullQueue, 1: qt.QueueServer, 2: qt.QueueServer}
 
 # Define the parameters for each of the queues
 rate  = lambda t: 25 + 350 * np.sin(np.pi * t / 2)**2
-arr_f = lambda t: qt.poisson_random_measure(rate, 375, t)
+arr_f = lambda t: qt.poisson_random_measure(t, rate, 375)
 ser_f = lambda t: t + np.random.exponential(0.2 / 2.5)
 
 # Make a mapping between the edge types and the parameters used to make those
