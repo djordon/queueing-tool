@@ -384,16 +384,16 @@ class QueueNetworkDiGraph(nx.DiGraph):
 
         Parameters
         ----------
-        line_kwargs : (optional, defaults: ``None``)
+        line_kwargs : (optional, default: ``None``)
             Any keyword arguments accepted by
             :class:`~matplotlib.collections.LineCollection`
-        scatter_kwargs : (optional, defaults: ``None``)
+        scatter_kwargs : (optional, default: ``None``)
             Any keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.scatter`.
         bgcolor : list (optional, keyword only)
-            A list with 4 floats representing a RGBA color. Defaults
+            A list with 4 floats representing a RGBA color. default
             to ``[1, 1, 1, 1]``.
-        figsize : tuple (optional, keyword only, defaults: ``(7, 7)``)
+        figsize : tuple (optional, keyword only, default: ``(7, 7)``)
             The width and height of the figure in inches.
         kwargs :
             Any keyword arguments used by
@@ -451,10 +451,10 @@ class QueueNetworkDiGraph(nx.DiGraph):
 
         Parameters
         ----------
-        line_kwargs : (optional, defaults: ``None``)
+        line_kwargs : (optional, default: ``None``)
             Any keyword arguments accepted by
             :class:`~matplotlib.collections.LineCollection`.
-        scatter_kwargs : (optional, defaults: ``None``)
+        scatter_kwargs : (optional, default: ``None``)
             Any keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.scatter`.
 

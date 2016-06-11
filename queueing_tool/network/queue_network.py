@@ -429,16 +429,16 @@ class QueueNetwork(object):
             The amount of simulation time to simulate forward. If
             given, and ``out`` is given, ``t`` is used instead of
             ``n``.
-        line_kwargs : dict (optional, defaults: None)
+        line_kwargs : dict (optional, default: None)
             Any keyword arguments accepted by
             :class:`~matplotlib.collections.LineCollection`.
-        scatter_kwargs : dict (optional, defaults: None)
+        scatter_kwargs : dict (optional, default: None)
             Any keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.scatter`.
         bgcolor : list (optional, keyword only)
             A list with 4 floats representing a RGBA color. The
             default is defined in ``self.colors['bgcolor']``.
-        figsize : tuple (optional, keyword only, defaults: ``(7, 7)``)
+        figsize : tuple (optional, keyword only, default: ``(7, 7)``)
             The width and height of the figure in inches.
         **kwargs :
             This method calls
@@ -674,16 +674,16 @@ class QueueNetwork(object):
         ----------
         update_colors : ``bool`` (optional, default: ``True``).
             Specifies whether all the colors are updated.
-        line_kwargs : (optional, defaults: None)
+        line_kwargs : (optional, default: None)
             Any keyword arguments accepted by
             :class:`~matplotlib.collections.LineCollection`
-        scatter_kwargs : (optional, defaults: None)
+        scatter_kwargs : (optional, default: None)
             Any keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.scatter`.
         bgcolor : list (optional, keyword only)
             A list with 4 floats representing a RGBA color. The
             default is defined in ``self.colors['bgcolor']``.
-        figsize : tuple (optional, keyword only, defaults: ``(7, 7)``)
+        figsize : tuple (optional, keyword only, default: ``(7, 7)``)
             The width and height of the canvas in inches.
         **kwargs
             Any parameters to pass to
