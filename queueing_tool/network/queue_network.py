@@ -437,7 +437,7 @@ class QueueNetwork(object):
             :meth:`~matplotlib.axes.Axes.scatter`.
         bgcolor : list (optional, keyword only)
             A list with 4 floats representing a RGBA color. The
-            defaults are defined in ``QueueNetwork.colors``.
+            default is defined in ``self.colors['bgcolor']``.
         figsize : tuple (optional, keyword only, defaults: ``(7, 7)``)
             The width and height of the figure in inches.
         **kwargs :
@@ -682,7 +682,7 @@ class QueueNetwork(object):
             :meth:`~matplotlib.axes.Axes.scatter`.
         bgcolor : list (optional, keyword only)
             A list with 4 floats representing a RGBA color. The
-            defaults are defined in ``QueueNetwork.colors``.
+            default is defined in ``self.colors['bgcolor']``.
         figsize : tuple (optional, keyword only, defaults: ``(7, 7)``)
             The width and height of the canvas in inches.
         **kwargs
