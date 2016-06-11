@@ -429,12 +429,17 @@ class QueueNetwork(object):
             The amount of simulation time to simulate forward. If
             given, and ``out`` is given, ``t`` is used instead of
             ``n``.
-        line_kwargs : (optional, defaults: None)
+        line_kwargs : dict (optional, defaults: None)
             Any keyword arguments accepted by
-            :class:`~matplotlib.collections.LineCollection`
-        scatter_kwargs : (optional, defaults: None)
+            :class:`~matplotlib.collections.LineCollection`.
+        scatter_kwargs : dict (optional, defaults: None)
             Any keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.scatter`.
+        bgcolor : list (optional, keyword only)
+            A list with 4 floats representing a RGBA color. The
+            defaults are defined in ``QueueNetwork.colors``.
+        figsize : tuple (optional, keyword only, defaults: ``(7, 7)``)
+            The width and height of the canvas in inches.
         **kwargs :
             This method calls
             :class:`~matplotlib.animation.FuncAnimation` and
@@ -461,12 +466,6 @@ class QueueNetwork(object):
             * :meth:`~matplotlib.axes.Axes.scatter`: The default
               arguments are taken from
               :meth:`.QueueNetworkDiGraph.lines_scatter_args`.
-
-
-        The ``bgcolor`` parameter is defined in the
-        dict ``QueueNetwork.colors``. The ``figsize`` defaults to
-        ``(7, 7)``. If any of these parameters are supplied as
-        arguments then they are used over the defaults.
 
         Raises
         ------
@@ -681,6 +680,11 @@ class QueueNetwork(object):
         scatter_kwargs : (optional, defaults: None)
             Any keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.scatter`.
+        bgcolor : list (optional, keyword only)
+            A list with 4 floats representing a RGBA color. The
+            defaults are defined in ``QueueNetwork.colors``.
+        figsize : tuple (optional, keyword only, defaults: ``(7, 7)``)
+            The width and height of the canvas in inches.
         **kwargs
             Any parameters to pass to
             :meth:`.QueueNetworkDiGraph.draw_graph`.
