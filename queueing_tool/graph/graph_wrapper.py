@@ -390,6 +390,11 @@ class QueueNetworkDiGraph(nx.DiGraph):
         scatter_kwargs : (optional, defaults: ``None``)
             Any keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.scatter`.
+        bgcolor : list (optional, keyword only)
+            A list with 4 floats representing a RGBA color. Defaults
+            to ``[1, 1, 1, 1]``.
+        figsize : tuple (optional, keyword only, defaults: ``(7, 7)``)
+            The width and height of the figure in inches.
         kwargs :
             Any keyword arguments used by
             :meth:`~matplotlib.figure.Figure.savefig`.
