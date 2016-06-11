@@ -439,7 +439,7 @@ class QueueNetwork(object):
             A list with 4 floats representing a RGBA color. The
             defaults are defined in ``QueueNetwork.colors``.
         figsize : tuple (optional, keyword only, defaults: ``(7, 7)``)
-            The width and height of the canvas in inches.
+            The width and height of the figure in inches.
         **kwargs :
             This method calls
             :class:`~matplotlib.animation.FuncAnimation` and
