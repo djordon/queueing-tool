@@ -32,9 +32,7 @@ MOCK_MODULES = [
     'choice',
     'queueing_tool.queues.choice',
     'matplotlib',
-    'networkx',
     'numpy',
-    'numpy.random',
     'priority_queue',
     'queueing_tool.network.priority_queue',
     'pygraphviz'
