@@ -448,7 +448,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         ----------
         line_kwargs : (optional, defaults: ``None``)
             Any keyword arguments accepted by
-            :class:`~matplotlib.collections.LineCollection`
+            :class:`~matplotlib.collections.LineCollection`.
         scatter_kwargs : (optional, defaults: ``None``)
             Any keyword arguments accepted by
             :meth:`~matplotlib.axes.Axes.scatter`.
