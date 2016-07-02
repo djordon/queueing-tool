@@ -26,7 +26,7 @@ q_args = {
     1: {'arrival_f': arr_f,
         'service_f': lambda t: t,
         'AgentFactory': qt.GreedyAgent},
-    2: {'nServers': 1,
+    2: {'num_servers': 1,
         'service_f': ser_f}
 }
 

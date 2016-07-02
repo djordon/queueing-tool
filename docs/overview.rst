@@ -148,7 +148,7 @@ with the following::
     ...         'AgentFactory': qt.GreedyAgent
     ...     },
     ...     2: {
-    ...         'nServers': 1,
+    ...         'num_servers': 1,
     ...         'service_f': ser_f
     ...     }
     ... }

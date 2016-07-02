@@ -35,7 +35,7 @@ class TestQueueServers(unittest.TestCase):
         arr = lambda t: t + np.random.exponential(1 / self.lam)
         ser = lambda t: t + np.random.exponential(1 / mu)
 
-        q = qt.QueueServer(nServers=nSe, arrival_f=arr, service_f=ser)
+        q = qt.QueueServer(num_servers=nSe, arrival_f=arr, service_f=ser)
         n = 50000
 
         q.set_active()
@@ -76,7 +76,7 @@ class TestQueueServers(unittest.TestCase):
         arr = lambda t: t + np.random.exponential(1 / self.lam)
         ser = lambda t: t + np.random.exponential(1 / mu)
 
-        q = qt.QueueServer(nServers=nSe, arrival_f=arr, service_f=ser)
+        q = qt.QueueServer(num_servers=nSe, arrival_f=arr, service_f=ser)
         n = 500000
 
         q.set_active()
@@ -103,16 +103,16 @@ class TestQueueServers(unittest.TestCase):
         arr = lambda t: t + np.random.exponential(1 / self.lam)
         ser = lambda t: t + np.random.gamma(k, scl)
 
-        q2  = qt.LossQueue(nServers=nSe, arrival_f=arr, service_f=ser)
+        q2  = qt.LossQueue(num_servers=nSe, arrival_f=arr, service_f=ser)
         q2.set_active()
         q2.simulate(n=100000)    # Burn in period
 
-        nA0 = q2.nArrivals[1]
+        nA0 = q2.num_arrivals[1]
         nB0 = q2.nBlocked
 
         q2.simulate(n=250000)
 
-        nA1 = q2.nArrivals[1]
+        nA1 = q2.num_arrivals[1]
         nB1 = q2.nBlocked
 
         a = self.lam / mu

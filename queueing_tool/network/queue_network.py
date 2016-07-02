@@ -131,23 +131,27 @@ class QueueNetwork(object):
     max_agents : int
         The maximum number of agents that can be in the network at any
         time.
-    nAgents : :class:`~numpy.ndarray`
+    num_agents : :class:`~numpy.ndarray`
         A one-dimensional array where the ``k``\ th entry corresponds to
         the total number of agents in the :class:`.QueueServer` with
         edge index ``k``. This number includes agents that are
         scheduled to arrive at the queue at some future time but
-        haven't yet.
-    nEdges : int
-        The number of edges in the graph.
-    nEvents : int
+        haven't yet. Note: nAgents is an alias for num_agents.
+    num_edges : int
+        The number of edges in the graph. Note: nEdges is an alias for
+        num_edges.
+    num_events : int
         The number of events that have occurred thus far. Every arrival
         from outside the network counts as one event, but the departure
         of an agent from a queue and the arrival of that same agent to
-        another queue counts as one event.
-    nVertices : int
-        The number of vertices in the graph.
-    nNodes : int
-        The number of vertices in the graph.
+        another queue counts as one event. Note: nEvents is an alias
+        for num_events.
+    num_vertices : int
+        The number of vertices in the graph. Note: nVertices is an
+        alias for num_vertices.
+    num_nodes : int
+        The number of vertices in the graph. Note: nNodes is an
+        alias for num_nodes.
     out_edges : list
         A mapping between vertex indices and the out-edges at that
         vertex. Specifically, ``out_edges[v]`` returns a list
@@ -244,7 +248,7 @@ class QueueNetwork(object):
     ...     1: {
     ...         'arrival_f': arr,
     ...         'service_f': ser,
-    ...         'nServers': 5
+    ...         'num_servers': 5
     ...     }
     ... }
     >>> net = qt.QueueNetwork(g, q_classes=q_cl, q_args=q_ar, seed=13)
@@ -256,7 +260,7 @@ class QueueNetwork(object):
 
     Now we'd like to see how many agents are in type 1 edges:
 
-    >>> nA = [(q.nSystem, q.edge[2]) for q in net.edge2queue if q.edge[3] == 1]
+    >>> nA = [(q.num_system, q.edge[2]) for q in net.edge2queue if q.edge[3] == 1]
     >>> nA.sort(reverse=True)
     >>> nA[:5]
     [(4, 37), (4, 34), (3, 43), (3, 32), (3, 30)]
@@ -307,9 +311,9 @@ class QueueNetwork(object):
         if not isinstance(blocking, str):
             raise TypeError("blocking must be a string")
 
-        self.nEvents      = 0
-        self._t           = 0
-        self.max_agents   = max_agents
+        self._t = 0
+        self.num_events = 0
+        self.max_agents = max_agents
 
         self._initialized = False
         self._prev_edge   = None
@@ -351,7 +355,7 @@ class QueueNetwork(object):
             self.nE = g.number_of_edges()
 
             self.edge2queue   = qs
-            self.nAgents      = np.zeros(g.number_of_edges(), int)
+            self.num_agents   = np.zeros(g.number_of_edges(), int)
             self.out_edges    = [0 for v in range(self.nV)]
             self.in_edges     = [0 for v in range(self.nV)]
             self._route_probs = [0 for v in range(self.nV)]
@@ -371,7 +375,7 @@ class QueueNetwork(object):
 
     def __repr__(self):
         the_string = 'QueueNetwork. # nodes: {0}, edges: {1}, agents: {2}'
-        return  the_string.format(self.nV, self.nE, np.sum(self.nAgents))
+        return  the_string.format(self.nV, self.nE, np.sum(self.num_agents))
 
     @property
     def blocking(self):
@@ -383,12 +387,32 @@ class QueueNetwork(object):
         self._blocking = True if tmp.lower() != 'rs' else False
 
     @property
+    def nAgents(self):
+        return self.num_agents
+
+    @property
+    def nEvents(self):
+        return self.num_events
+
+    @property
     def nVertices(self):
+        return self.nV
+
+    @property
+    def num_vertices(self):
         return self.nV
 
     @property
     def nNodes(self):
         return self.nV
+
+    @property
+    def num_nodes(self):
+        return self.nV
+
+    @property
+    def num_edges(self):
+        return self.nE
 
     @property
     def nEdges(self):
@@ -587,8 +611,8 @@ class QueueNetwork(object):
     def clear(self):
         """Resets the queue to its initial state.
 
-        The attributes ``t``, ``nEvents``, ``nAgents`` are set to zero,
-        :meth:`.reset_colors` is called, and the
+        The attributes ``t``, ``num_events``, ``num_agents`` are set to
+         zero, :meth:`.reset_colors` is called, and the
         :meth:`.QueueServer.clear` method is called for each queue in
         the network.
 
@@ -598,8 +622,8 @@ class QueueNetwork(object):
         can run.
         """
         self._t           = 0
-        self.nEvents      = 0
-        self.nAgents      = np.zeros(self.nE, int)
+        self.num_events   = 0
+        self.num_agents   = np.zeros(self.nE, int)
         self._fancy_heap  = PriorityQueue()
         self._prev_edge   = None
         self._initialized = False
@@ -643,15 +667,15 @@ class QueueNetwork(object):
         """Returns a deep copy of itself."""
         net              = QueueNetwork(None)
         net.g            = self.g.copy()
-        net.max_agents   = copy.copy(self.max_agents)
-        net.nV           = copy.copy(self.nV)
-        net.nE           = copy.copy(self.nE)
-        net.nAgents      = copy.copy(self.nAgents)
-        net.nEvents      = copy.copy(self.nEvents)
-        net._t           = copy.copy(self._t)
-        net._initialized = copy.copy(self._initialized)
-        net._prev_edge   = copy.copy(self._prev_edge)
-        net._blocking    = copy.copy(self._blocking)
+        net.max_agents   = copy.deepcopy(self.max_agents)
+        net.nV           = copy.deepcopy(self.nV)
+        net.nE           = copy.deepcopy(self.nE)
+        net.num_agents   = copy.deepcopy(self.num_agents)
+        net.num_events   = copy.deepcopy(self.num_events)
+        net._t           = copy.deepcopy(self._t)
+        net._initialized = copy.deepcopy(self._initialized)
+        net._prev_edge   = copy.deepcopy(self._prev_edge)
+        net._blocking    = copy.deepcopy(self._blocking)
         net.colors       = copy.deepcopy(self.colors)
         net.out_edges    = copy.deepcopy(self.out_edges)
         net.in_edges     = copy.deepcopy(self.in_edges)
@@ -982,7 +1006,7 @@ class QueueNetwork(object):
 
         for ei in queues:
             self.edge2queue[ei].set_active()
-            self.nAgents[ei] = self.edge2queue[ei]._nTotal
+            self.num_agents[ei] = self.edge2queue[ei]._nTotal
 
         keys = [q._key() for q in self.edge2queue if q._time < np.infty]
         self._fancy_heap = PriorityQueue(keys, self.nE)
@@ -1044,7 +1068,7 @@ class QueueNetwork(object):
             A :exc:`.ValueError` is raised if: the keys in the dict
             don't match with a vertex index in the graph; or if the
             :class:`~numpy.ndarray` is passed with the wrong shape,
-            must be (``nVertices``, ``nVertices``); or the values
+            must be (``num_vertices``, ``num_vertices``); or the values
             passed are not probabilities (for each vertex they are
             positive and sum to 1);
         TypeError
@@ -1276,10 +1300,10 @@ class QueueNetwork(object):
 
         To simulate the network 50000 events run:
 
-        >>> net.nEvents
+        >>> net.num_events
         0
         >>> net.simulate(50000)
-        >>> net.nEvents
+        >>> net.num_events
         50000
 
         To simulate the network for at least 75 simulation time units
@@ -1317,7 +1341,7 @@ class QueueNetwork(object):
         event   = q1.next_event_description()
         self._t = q1t
         self._qkey = q1k
-        self.nEvents += 1
+        self.num_events += 1
 
         if event == 2: # This is a departure
             e2  = q1._departures[0].desired_destination(self, q1.edge)
@@ -1337,18 +1361,19 @@ class QueueNetwork(object):
                 agent._time = q1t
 
                 q2._add_arrival(agent)
-                self.nAgents[e1] = q1._nTotal
-                self.nAgents[e2] = q2._nTotal
+                self.num_agents[e1] = q1._nTotal
+                self.num_agents[e2] = q2._nTotal
 
                 if slow:
                     self._update_graph_colors(qedge=q1.edge)
                     self._prev_edge = q1.edge
 
-                if q2._active and self.max_agents < np.infty and np.sum(self.nAgents) > self.max_agents - 1:
+                if q2._active and self.max_agents < np.infty and \
+                        np.sum(self.num_agents) > self.max_agents - 1:
                     q2._active = False
 
                 q2.next_event()
-                self.nAgents[e2] = q2._nTotal
+                self.num_agents[e2] = q2._nTotal
 
                 if slow:
                     self._update_graph_colors(qedge=q2.edge)
@@ -1367,11 +1392,12 @@ class QueueNetwork(object):
                     self._fancy_heap.push(*new_q1k)
 
         elif event == 1: # This is an arrival
-            if q1._active and self.max_agents < np.infty and np.sum(self.nAgents) > self.max_agents - 1:
+            if q1._active and self.max_agents < np.infty and \
+                    np.sum(self.num_agents) > self.max_agents - 1:
                 q1._active = False
 
             q1.next_event()
-            self.nAgents[e1] = q1._nTotal
+            self.num_agents[e1] = q1._nTotal
 
             if slow:
                 self._update_graph_colors(qedge=q1.edge)
@@ -1567,8 +1593,8 @@ class QueueNetwork(object):
             nSy = 0
             cap = 0
             for ei in self.in_edges[v]:
-                nSy += self.edge2queue[ei].nSystem
-                cap += self.edge2queue[ei].nServers
+                nSy += self.edge2queue[ei].num_system
+                cap += self.edge2queue[ei].num_servers
 
             div = (2 * cap) + 2.
             tmp = 1. - min(nSy / div, 1.)

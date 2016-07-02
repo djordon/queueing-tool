@@ -102,7 +102,7 @@ class QueueServer(object):
 
     Parameters
     ----------
-    nServers : int or ``infty`` (optional, default: ``1``)
+    num_servers : int or ``infty`` (optional, default: ``1``)
         The number of servers servicing agents.
     arrival_f : function (optional, default: ``lambda t: t + exponential(1)``)
         A function that returns the time of next arrival from outside
@@ -178,15 +178,18 @@ class QueueServer(object):
         time an agent arrives at the queue it appends this data to the
         end of the list. Use :meth:`.fetch_data` to retrieve a formated
         version of this data.
-    nArrivals : list
+    num_arrivals : list
         A list with two entries. The first slot is the total number of
         arrivals, while the second slot is the number of arrivals from
-        outside the network.
-    nDepartures : int
-        The total number of departures from the queue.
-    nSystem : int
+        outside the network. Note: nArrivals is an alias for
+        num_arrivals.
+    num_departures : int
+        The total number of departures from the queue. Note:
+        nDepartures is an alias for num_departures.
+    num_system : int
         The number of agents in the entire :class:`.QueueServer` --
         this includes those being served and those waiting to be served.
+        Note: nSystem is an alias for num_system.
     queue : :class:`~.collections.deque`
         A queue for the agents waiting to enter service.
     time : float
@@ -224,7 +227,7 @@ class QueueServer(object):
     This is a generic multi-server queue implimentation (see [4]_).
     In `Kendall's notation`_\, this is a
     :math:`\\text{GI}_t/\\text{GI}_t/c/\infty/N/\\text{FIFO}` queue
-    class, where :math:`c` is set by ``nServers`` and :math:`N` is set
+    class, where :math:`c` is set by ``num_servers`` and :math:`N` is set
     by ``active_cap``. See chapter 1 of [3]_ (pdfs from `the author`_
     and `the publisher`_) for a good introduction to the theory behind
     the multi-server queue.
@@ -246,8 +249,8 @@ class QueueServer(object):
     If the queue is in a :class:`.QueueNetwork` and lies on a non-loop
     edge, the coloring of the edge is given by the following code:
 
-    >>> div = coloring_sensitivity * nServers + 1. # doctest: +SKIP
-    >>> tmp = 1. - min(nSystem / div, 1)  # doctest: +SKIP
+    >>> div = coloring_sensitivity * num_servers + 1. # doctest: +SKIP
+    >>> tmp = 1. - min(num_system / div, 1)  # doctest: +SKIP
     >>> color = [i * tmp for i in colors['edge_color']] # doctest: +SKIP
     >>> color[3] = 1 / 2. # doctest: +SKIP
 
@@ -274,43 +277,43 @@ class QueueServer(object):
         'vertex_color'     : [0.0, 0.5, 1.0, 1.0]
     }
 
-    def __init__(self, nServers=1, arrival_f=lambda t: t + exponential(1),
+    def __init__(self, num_servers=1, arrival_f=lambda t: t + exponential(1),
                  service_f=lambda t: t + exponential(0.9), edge=(0, 0, 0, 1),
                  AgentFactory=Agent, collect_data=False, active_cap=infty,
                  deactive_t=infty, colors=None, seed=None,
                  coloring_sensitivity=2, **kwargs):
 
-        if not isinstance(nServers, numbers.Integral) and nServers is not infty:
-            msg = "nServers must be an integer or infinity."
+        if not isinstance(num_servers, numbers.Integral) and num_servers is not infty:
+            msg = "num_servers must be an integer or infinity."
             raise TypeError(msg)
-        elif nServers <= 0:
-            msg = "nServers must be a positive integer or infinity."
+        elif num_servers <= 0:
+            msg = "num_servers must be a positive integer or infinity."
             raise ValueError(msg)
 
-        self.edge         = edge
-        self.nServers     = nServers
-        self.nDepartures  = 0
-        self.nSystem      = 0
-        self.data         = {}   # times; agent_id : [arrival, service start, departure]
-        self.queue        = collections.deque()
+        self.edge = edge
+        self.num_servers = kwargs.get('nServers', num_servers)
+        self.num_departures = 0
+        self.num_system = 0
+        self.data = {}   # times; agent_id : [arrival, service start, departure]
+        self.queue = collections.deque()
 
-        self.arrival_f    = arrival_f
-        self.service_f    = service_f
+        self.arrival_f = arrival_f
+        self.service_f = service_f
         self.AgentFactory = AgentFactory
         self.collect_data = collect_data
-        self.active_cap   = active_cap
-        self.deactive_t   = deactive_t
+        self.active_cap = active_cap
+        self.deactive_t = deactive_t
 
-        inftyAgent        = InftyAgent()
-        self._arrivals    = [inftyAgent]    # A list of arriving agents.
-        self._departures  = [inftyAgent]    # A list of departing agents.
-        self._nArrivals   = 0
-        self._oArrivals   = 0
-        self._nTotal      = 0       # The number of agents scheduled to arrive + nSystem
-        self._active      = False
-        self._current_t   = 0       # The time of the last event.
-        self._time        = infty   # The time of the next event.
-        self._next_ct     = 0       # The next time an arrival from outside the network can arrive.
+        inftyAgent = InftyAgent()
+        self._arrivals = [inftyAgent]    # A list of arriving agents.
+        self._departures = [inftyAgent]    # A list of departing agents.
+        self._num_arrivals = 0
+        self._oArrivals = 0
+        self._nTotal = 0       # The number of agents scheduled to arrive + num_system
+        self._active = False
+        self._current_t = 0       # The time of the last event.
+        self._time = infty   # The time of the next event.
+        self._next_ct = 0       # The next time an arrival from outside the network can arrive.
         self.coloring_sensitivity = coloring_sensitivity
 
         if isinstance(seed, numbers.Integral):
@@ -337,15 +340,40 @@ class QueueServer(object):
         return self._current_t
 
     @property
+    def num_arrivals(self):
+        return [self._num_arrivals, self._oArrivals]
+
+    @property
     def nArrivals(self):
-        return [self._nArrivals, self._oArrivals]
+        return self.num_arrivals
+
+    @property
+    def nDepartures(self):
+        return self.num_departures
+    @nDepartures.setter
+    def nDepartures(self, num_departures):
+        self.num_departures = num_departures
+
+    @property
+    def nSystem(self):
+        return self.num_system
+    @nSystem.setter
+    def nSystem(self, num_system):
+        self.num_system = num_system
+
+    @property
+    def nServers(self):
+        return self.num_servers
+    @nServers.setter
+    def nServers(self, num_servers):
+        self.num_servers = num_servers
 
 
     def __repr__(self):
         my_str = ("QueueServer:{0}. Servers: {1}, queued: {2}, arrivals: {3}, "
                   "departures: {4}, next time: {5}")
-        arg = (self.edge[2], self.nServers, len(self.queue), self.nArrivals,\
-               self.nDepartures, round(self._time, 3))
+        arg = (self.edge[2], self.num_servers, len(self.queue), self.num_arrivals,\
+               self.num_departures, round(self._time, 3))
         return my_str.format(*arg)
 
 
@@ -390,23 +418,23 @@ class QueueServer(object):
     def clear(self):
         """Clears out the queue. Removes all arrivals, departures, and
         queued agents from the :class:`.QueueServer`, resets
-        ``nArrivals``, ``nDepartures``, ``nSystem``, and the clock to
+        ``num_arrivals``, ``num_departures``, ``num_system``, and the clock to
         zero. It also clears any stored ``data`` and the server is then
         set to inactive.
         """
-        self.data        = {}
-        self._nArrivals  = 0
-        self._oArrivals  = 0
-        self.nDepartures = 0
-        self.nSystem     = 0
-        self._nTotal     = 0
-        self._current_t  = 0
-        self._time       = infty
-        self._next_ct    = 0
-        self._active     = False
-        self.queue       = collections.deque()
-        inftyAgent       = InftyAgent()
-        self._arrivals   = [inftyAgent]
+        self.data = {}
+        self._num_arrivals = 0
+        self._oArrivals = 0
+        self.num_departures = 0
+        self.num_system = 0
+        self._nTotal = 0
+        self._current_t = 0
+        self._time = infty
+        self._next_ct = 0
+        self._active = False
+        self.queue = collections.deque()
+        inftyAgent = InftyAgent()
+        self._arrivals = [inftyAgent]
         self._departures = [inftyAgent]
 
 
@@ -452,8 +480,8 @@ class QueueServer(object):
             color = self.colors['vertex_color']
 
         else:
-            div = self.coloring_sensitivity * self.nServers + 1.
-            tmp = 1. - min(self.nSystem / div, 1)
+            div = self.coloring_sensitivity * self.num_servers + 1.
+            tmp = 1. - min(self.num_system / div, 1)
 
             if self.edge[0] == self.edge[1]:
                 color    = [i * tmp for i in self.colors['vertex_fill_color']]
@@ -580,8 +608,8 @@ class QueueServer(object):
             new_depart        = heappop(self._departures)
             self._current_t   = new_depart._time
             self._nTotal     -= 1
-            self.nSystem     -= 1
-            self.nDepartures += 1
+            self.num_system     -= 1
+            self.num_departures += 1
 
             if self.collect_data and new_depart.agent_id in self.data:
                 self.data[new_depart.agent_id][-1][2] = self._current_t
@@ -611,19 +639,19 @@ class QueueServer(object):
             if self._active:
                 self._add_arrival()
 
-            self.nSystem    += 1
-            self._nArrivals += 1
+            self.num_system    += 1
+            self._num_arrivals += 1
 
             if self.collect_data:
-                b = 0 if self.nSystem <= self.nServers else 1
+                b = 0 if self.num_system <= self.num_servers else 1
                 if arrival.agent_id not in self.data:
-                    self.data[arrival.agent_id] = [[arrival._time, 0, 0, len(self.queue) + b, self.nSystem]]
+                    self.data[arrival.agent_id] = [[arrival._time, 0, 0, len(self.queue) + b, self.num_system]]
                 else:
-                    self.data[arrival.agent_id].append([arrival._time, 0, 0, len(self.queue) + b, self.nSystem])
+                    self.data[arrival.agent_id].append([arrival._time, 0, 0, len(self.queue) + b, self.num_system])
 
             arrival.queue_action(self, 0)
 
-            if self.nSystem <= self.nServers:
+            if self.num_system <= self.num_servers:
                 if self.collect_data:
                     self.data[arrival.agent_id][-1][1] = arrival._time
 
@@ -673,7 +701,7 @@ class QueueServer(object):
         self._active = False
 
 
-    def set_nServers(self, n):
+    def set_num_servers(self, n):
         """Change the number of servers in the queue to ``n``.
 
         Parameters
@@ -697,7 +725,7 @@ class QueueServer(object):
             the_str = "n must be a positive integer or infinity.\n{0}"
             raise ValueError(the_str.format(str(self)))
         else:
-            self.nServers = n
+            self.num_servers = n
 
 
     def simulate(self, n=1, t=None, nA=None, nD=None):
@@ -733,8 +761,8 @@ class QueueServer(object):
         To simulate 50000 events do the following:
 
         >>> q.simulate(50000)
-        >>> nEvents = q.nArrivals[0] + q.nDepartures
-        >>> nEvents
+        >>> num_events = q.num_arrivals[0] + q.num_departures
+        >>> num_events
         50000
 
         To simulate a 75 units of simulation time, do the following:
@@ -743,21 +771,21 @@ class QueueServer(object):
         >>> q.simulate(t=75)
         >>> round(float(q.time - t0), 1)
         75.1
-        >>> q.nArrivals[1] + q.nDepartures - nEvents
+        >>> q.num_arrivals[1] + q.num_departures - num_events
         1597
 
         To simulate forward until 1000 new departures are observed run:
 
-        >>> nA0, nD0 = q.nArrivals[1], q.nDepartures
+        >>> nA0, nD0 = q.num_arrivals[1], q.num_departures
         >>> q.simulate(nD=1000)
-        >>> q.nDepartures - nD0, q.nArrivals[1] - nA0
+        >>> q.num_departures - nD0, q.num_arrivals[1] - nA0
         (1000, 983)
 
         To simulate until 1000 new arrivals are observed run:
 
-        >>> nA0, nD0 = q.nArrivals[1], q.nDepartures
+        >>> nA0, nD0 = q.num_arrivals[1], q.num_departures
         >>> q.simulate(nA=1000)
-        >>> q.nDepartures - nD0, q.nArrivals[1] - nA0,
+        >>> q.num_departures - nD0, q.num_arrivals[1] - nA0,
         (987, 1000)
         """
         if t is None and nD is None and nA is None:
@@ -768,38 +796,38 @@ class QueueServer(object):
             while self._current_t < then and self._time < infty:
                 self.next_event()
         elif nD is not None:
-            nDepartures = self.nDepartures + nD
-            while self.nDepartures < nDepartures and self._time < infty:
+            num_departures = self.num_departures + nD
+            while self.num_departures < num_departures and self._time < infty:
                 self.next_event()
         elif nA is not None:
-            nArrivals = self._oArrivals + nA
-            while self._oArrivals < nArrivals and self._time < infty:
+            num_arrivals = self._oArrivals + nA
+            while self._oArrivals < num_arrivals and self._time < infty:
                 self.next_event()
 
 
     def __deepcopy__(self, memo):
-        new_server              = self.__class__()
-        new_server.edge         = copy.copy(self.edge)
-        new_server.nServers     = copy.copy(self.nServers)
-        new_server.active_cap   = copy.copy(self.active_cap)
-        new_server.deactive_t   = copy.copy(self.deactive_t)
-        new_server.collect_data = copy.copy(self.collect_data)
-        new_server.nDepartures  = copy.copy(self.nDepartures)
-        new_server.nSystem      = copy.copy(self.nSystem)
-        new_server._nTotal      = copy.copy(self._nTotal)
-        new_server._active      = copy.copy(self._active)
-        new_server._current_t   = copy.copy(self._current_t)
-        new_server._time        = copy.copy(self._time)
-        new_server._next_ct     = copy.copy(self._next_ct)
-        new_server._nArrivals   = copy.copy(self._nArrivals)
-        new_server._oArrivals   = copy.copy(self._oArrivals)
-        new_server.data         = copy.deepcopy(self.data)
-        new_server.colors       = copy.deepcopy(self.colors)
-        new_server.queue        = copy.deepcopy(self.queue, memo)
-        new_server._arrivals    = copy.deepcopy(self._arrivals, memo)
-        new_server._departures  = copy.deepcopy(self._departures, memo)
-        new_server.arrival_f    = self.arrival_f
-        new_server.service_f    = self.service_f
+        new_server                = self.__class__()
+        new_server.edge           = copy.deepcopy(self.edge)
+        new_server.num_servers    = copy.deepcopy(self.num_servers)
+        new_server.active_cap     = copy.deepcopy(self.active_cap)
+        new_server.deactive_t     = copy.deepcopy(self.deactive_t)
+        new_server.collect_data   = copy.deepcopy(self.collect_data)
+        new_server.num_departures = copy.deepcopy(self.num_departures)
+        new_server.num_system     = copy.deepcopy(self.num_system)
+        new_server._nTotal        = copy.deepcopy(self._nTotal)
+        new_server._active        = copy.deepcopy(self._active)
+        new_server._current_t     = copy.deepcopy(self._current_t)
+        new_server._time          = copy.deepcopy(self._time)
+        new_server._next_ct       = copy.deepcopy(self._next_ct)
+        new_server._num_arrivals  = copy.deepcopy(self._num_arrivals)
+        new_server._oArrivals     = copy.deepcopy(self._oArrivals)
+        new_server.data           = copy.deepcopy(self.data)
+        new_server.colors         = copy.deepcopy(self.colors)
+        new_server.queue          = copy.deepcopy(self.queue, memo)
+        new_server._arrivals      = copy.deepcopy(self._arrivals, memo)
+        new_server._departures    = copy.deepcopy(self._departures, memo)
+        new_server.arrival_f      = self.arrival_f
+        new_server.service_f      = self.service_f
         new_server.AgentFactory   = self.AgentFactory
         return new_server
 
@@ -854,8 +882,8 @@ class LossQueue(QueueServer):
     def __repr__(self):
         tmp = ("LossQueue:{0}. Servers: {1}, queued: {2}, arrivals: {3}, "
                "departures: {4}, next time: {5}")
-        arg = (self.edge[2], self.nServers, len(self.queue), self.nArrivals,\
-               self.nDepartures, round(self._time, 3))
+        arg = (self.edge[2], self.num_servers, len(self.queue), self.num_arrivals,\
+               self.num_departures, round(self._time, 3))
         return tmp.format(*arg)
 
 
@@ -867,9 +895,9 @@ class LossQueue(QueueServer):
         out : bool
             Returns whether the number of agents in the system -- the
             number of agents being serviced plus those waiting to be
-            serviced -- is equal to ``nServers + buffer``.
+            serviced -- is equal to ``num_servers + buffer``.
         """
-        return self.nSystem >= self.nServers + self.buffer
+        return self.num_system >= self.num_servers + self.buffer
 
 
     def clear(self):
@@ -882,7 +910,7 @@ class LossQueue(QueueServer):
         if self._departures[0]._time < self._arrivals[0]._time:
             return super(LossQueue, self).next_event()
         elif self._arrivals[0]._time < infty:
-            if self.nSystem < self.nServers + self.buffer:
+            if self.num_system < self.num_servers + self.buffer:
                 super(LossQueue, self).next_event()
             else:
                 self.nBlocked += 1
@@ -898,9 +926,9 @@ class LossQueue(QueueServer):
 
                 if self.collect_data:
                     if arrival.agent_id in self.data:
-                        self.data[arrival.agent_id].append([arrival._time, 0, 0, len(self.queue), self.nSystem])
+                        self.data[arrival.agent_id].append([arrival._time, 0, 0, len(self.queue), self.num_system])
                     else:
-                        self.data[arrival.agent_id] = [[arrival._time, 0, 0, len(self.queue), self.nSystem]]
+                        self.data[arrival.agent_id] = [[arrival._time, 0, 0, len(self.queue), self.num_system]]
 
                 if self._arrivals[0]._time < self._departures[0]._time:
                     self._time = self._arrivals[0]._time
@@ -910,8 +938,8 @@ class LossQueue(QueueServer):
 
     def __deepcopy__(self, memo):
         new_server = super(LossQueue, self).__deepcopy__(memo)
-        new_server.nBlocked = copy.copy(self.nBlocked)
-        new_server.buffer   = copy.copy(self.buffer)
+        new_server.nBlocked = copy.deepcopy(self.nBlocked)
+        new_server.buffer   = copy.deepcopy(self.buffer)
         return new_server
 
 
@@ -944,7 +972,7 @@ class NullQueue(QueueServer):
             kwargs['edge'] = (0, 0, 0, 0)
 
         super(NullQueue, self).__init__(**kwargs)
-        self.nServers = 0
+        self.num_servers = 0
 
     def __repr__(self):
         return "NullQueue:{0}.".format(self.edge[2])
@@ -952,7 +980,7 @@ class NullQueue(QueueServer):
     def initialize(self, *args, **kwargs):
         pass
 
-    def set_nServers(self, *args, **kwargs):
+    def set_num_servers(self, *args, **kwargs):
         pass
 
     def number_queued(self):

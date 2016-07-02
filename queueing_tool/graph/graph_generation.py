@@ -63,7 +63,7 @@ def generate_transition_matrix(g, seed=None):
     return mat
 
 
-def generate_random_graph(nVertices=250, prob_loop=0.5, **kwargs):
+def generate_random_graph(num_vertices=250, prob_loop=0.5, **kwargs):
     """Creates a random graph where the edges have different types.
 
     This method calls :func:`.minimal_random_graph`, and then adds
@@ -72,7 +72,7 @@ def generate_random_graph(nVertices=250, prob_loop=0.5, **kwargs):
 
     Parameters
     ----------
-    nVertices : int (optional, default: 250)
+    num_vertices : int (optional, default: 250)
         The number of vertices in the graph.
     prob_loop : float (optional, default: 0.5)
         The probability that a loop gets added to a vertex.
@@ -112,13 +112,13 @@ def generate_random_graph(nVertices=250, prob_loop=0.5, **kwargs):
     >>> p = np.random.rand(4)
     >>> p = p / sum(p)
     >>> p = {k + 1: p[k] for k in range(4)}
-    >>> g = qt.generate_random_graph(nVertices=25, is_directed=False, proportions=p)
+    >>> g = qt.generate_random_graph(num_vertices=25, is_directed=False, proportions=p)
 
     Note that none of the edge types in the above example are 0. It is
     recommended use edge type indices starting at 1, since 0 is
     typically used for terminal edges.
     """
-    g = minimal_random_graph(nVertices, **kwargs)
+    g = minimal_random_graph(num_vertices, **kwargs)
     for v in g.nodes():
         e = (v, v)
         if not g.is_edge(e):
@@ -128,7 +128,7 @@ def generate_random_graph(nVertices=250, prob_loop=0.5, **kwargs):
     return g
 
 
-def generate_pagerank_graph(nVertices=250, **kwargs):
+def generate_pagerank_graph(num_vertices=250, **kwargs):
     """Creates a random graph where the vertex types are
     selected using their pagerank.
 
@@ -138,7 +138,7 @@ def generate_pagerank_graph(nVertices=250, **kwargs):
 
     Parameters
     ----------
-    nVertices : int (optional, the default is 250)
+    num_vertices : int (optional, the default is 250)
         The number of vertices in the graph.
     **kwargs :
         Any parameters to send to :func:`.minimal_random_graph` or
@@ -162,20 +162,20 @@ def generate_pagerank_graph(nVertices=250, **kwargs):
     loops then have edge types that correspond to the vertices type.
     The rest of the edges are set to type 1.
     """
-    g = minimal_random_graph(nVertices, **kwargs)
-    r = np.zeros(nVertices)
+    g = minimal_random_graph(num_vertices, **kwargs)
+    r = np.zeros(num_vertices)
     for k, pr in nx.pagerank(g).items():
         r[k] = pr
     g = set_types_rank(g, rank=r, **kwargs)
     return g
 
 
-def minimal_random_graph(nVertices, seed=None, **kwargs):
+def minimal_random_graph(num_vertices, seed=None, **kwargs):
     """Creates a connected graph with random vertex locations.
 
     Parameters
     ----------
-    nVertices : int
+    num_vertices : int
         The number of vertices in the graph.
     seed : int (optional)
         An integer used to initialize numpy's psuedorandom number
@@ -191,7 +191,7 @@ def minimal_random_graph(nVertices, seed=None, **kwargs):
 
     Notes
     -----
-    This function first places ``nVertices`` points in the unit square
+    This function first places ``num_vertices`` points in the unit square
     randomly (using the uniform distribution). Then, for every vertex
     ``v``, all other vertices with Euclidean distance less or equal to
     ``r`` are connect by an edge --- where ``r`` is the smallest number
@@ -200,18 +200,18 @@ def minimal_random_graph(nVertices, seed=None, **kwargs):
     if isinstance(seed, numbers.Integral):
         np.random.seed(seed)
 
-    points = np.random.random((nVertices, 2)) * 10
+    points = np.random.random((num_vertices, 2)) * 10
     edges  = []
 
-    for k in range(nVertices-1):
-        for j in range(k+1, nVertices):
+    for k in range(num_vertices-1):
+        for j in range(k+1, num_vertices):
             v = points[k] - points[j]
             edges.append((k, j, v[0]**2 + v[1]**2))
 
     mytype = [('n1', int), ('n2', int), ('distance', np.float)]
     edges  = np.array(edges, dtype=mytype)
     edges  = np.sort(edges, order='distance')
-    unionF = UnionFind([k for k in range(nVertices)])
+    unionF = UnionFind([k for k in range(num_vertices)])
 
     g = nx.Graph()
 
