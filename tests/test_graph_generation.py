@@ -88,7 +88,7 @@ class TestGraphFunctions(unittest.TestCase):
 
         g   = qt.adjacency2graph(adj, edge_type=ety, adjust=1)
         ans = qt.graph2dict(g)
-        self.assertTrue(ans == self.expected_response0)
+        self.assertEqual(ans, self.expected_response0)
 
 
     def test_adjacency2graph_errors(self):

@@ -169,7 +169,7 @@ class ResourceQueue(LossQueue):
                     super(ResourceQueue, self).next_event()
 
                 else:
-                    self.nBlocked   += 1
+                    self.num_blocked   += 1
                     self._num_arrivals += 1
                     self._nTotal    -= 1
                     arrival          = heappop(self._arrivals)
@@ -219,7 +219,7 @@ class ResourceQueue(LossQueue):
 
     def clear(self):
         super(ResourceQueue, self).clear()
-        self.nBlocked = 0
+        self.num_blocked = 0
         self.over_max = 0
 
 

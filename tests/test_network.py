@@ -109,11 +109,11 @@ class TestQueueNetwork(unittest.TestCase):
 
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
         qn.blocking = 'RS'
-        self.assertTrue(qn.blocking == 'RS')
-        self.assertTrue(qn._blocking == False)
+        self.assertEqual(qn.blocking, 'RS')
+        self.assertEqual(qn._blocking, False)
 
         qn.clear()
-        self.assertTrue(qn._initialized == False)
+        self.assertEqual(qn._initialized, False)
 
 
     def test_QueueNetwork_blocking_setter_error(self):
@@ -249,7 +249,7 @@ class TestQueueNetwork(unittest.TestCase):
         qn.simulate(n=k)
 
         data = qn.get_queue_data()
-        self.assertTrue(data.shape == (k, 6))
+        self.assertEqual(data.shape, (k, 6))
         qn.stop_collecting_data()
         qn.clear_data()
 
@@ -333,7 +333,7 @@ class TestQueueNetwork(unittest.TestCase):
         self.qn.initialize(queues=k)
 
         ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
-        self.assertTrue(ans == [k])
+        self.assertEqual(ans, [k])
 
         # Multiple edge indices
         k = np.unique(np.random.randint(0, self.qn.nE, 5))
@@ -351,7 +351,7 @@ class TestQueueNetwork(unittest.TestCase):
         self.qn.initialize(edges=e)
 
         ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
-        self.assertTrue(ans == [k])
+        self.assertEqual(ans, [k])
 
         # Single edge as tuple
         k = np.random.randint(0, self.qn.nE)
@@ -360,7 +360,7 @@ class TestQueueNetwork(unittest.TestCase):
         self.qn.initialize(edges=e)
 
         ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
-        self.assertTrue(ans == [k])
+        self.assertEqual(ans, [k])
 
         # Multiple edges as tuples
         k  = np.unique(np.random.randint(0, self.qn.nE, 5))
@@ -400,7 +400,7 @@ class TestQueueNetwork(unittest.TestCase):
         self.qn.max_agents = 3
         self.qn.initialize(nActive=self.qn.num_edges)
         ans = np.array([q.active for q in self.qn.edge2queue])
-        self.assertTrue(ans.sum() == 3)
+        self.assertEqual(ans.sum(), 3)
 
 
     def test_QueueNetwork_max_agents(self):
@@ -424,10 +424,10 @@ class TestQueueNetwork(unittest.TestCase):
 
     def test_QueueNetwork_properties(self):
         self.qn.clear()
-        self.assertTrue(self.qn.time == np.infty)
-        self.assertTrue(self.qn.num_edges == self.qn.nE)
-        self.assertTrue(self.qn.num_vertices == self.qn.nV)
-        self.assertTrue(self.qn.num_nodes == self.qn.nV)
+        self.assertEqual(self.qn.time, np.infty)
+        self.assertEqual(self.qn.num_edges, self.qn.nE)
+        self.assertEqual(self.qn.num_vertices, self.qn.nV)
+        self.assertEqual(self.qn.num_nodes, self.qn.nV)
 
 
     def test_QueueNetwork_set_transitions_Error(self):
@@ -471,7 +471,7 @@ class TestQueueNetwork(unittest.TestCase):
         qn.max_agents = 2000
         qn.simulate(t=t0)
 
-        self.assertTrue(qn.current_time > t0)
+        self.assertGreater(qn.current_time, t0)
 
 
     def test_QueueNetwork_simulate_error(self):

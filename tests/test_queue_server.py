@@ -31,8 +31,8 @@ class TestQueueServers(unittest.TestCase):
         Se2 = q.num_servers
         q.set_num_servers(np.infty)
 
-        self.assertTrue(Se1 == nSe)
-        self.assertTrue(Se2 == 2*nSe)
+        self.assertEqual(Se1, nSe)
+        self.assertEqual(Se2, 2*nSe)
         self.assertTrue(q.num_servers is np.inf)
 
     def test_QueueServer_set_num_servers_errors(self):
@@ -78,8 +78,8 @@ class TestQueueServers(unittest.TestCase):
         q.set_active()
         q.simulate(n=3000)
 
-        self.assertTrue(q.num_departures == 1000)
-        self.assertTrue(q.num_arrivals == [1000, 1000])
+        self.assertEqual(q.num_departures, 1000)
+        self.assertEqual(q.num_arrivals, [1000, 1000])
 
 
     def test_QueueServer_accounting(self):
@@ -196,9 +196,9 @@ class TestQueueServers(unittest.TestCase):
 
         while c < nE:
             if q.next_event_description() == 1 and q.at_capacity():
-                nB0 = q.nBlocked
+                nB0 = q.num_blocked
                 q.simulate(n=1)
-                ans[c] = nB0 + 1 == q.nBlocked
+                ans[c] = nB0 + 1 == q.num_blocked
                 c += 1
             else:
                 q.simulate(n=1)
@@ -301,15 +301,15 @@ class TestQueueServers(unittest.TestCase):
 
         a0 = qt.Agent()
         a1 = qt.Agent()
-        self.assertTrue(a0 == a1)
+        self.assertEqual(a0, a1)
 
         a1._time = 10
-        self.assertTrue(a0 <= a1)
-        self.assertTrue(a0 < a1)
+        self.assertLessEqual(a0, a1)
+        self.assertLess(a0, a1)
 
         a0._time = 20
-        self.assertTrue(a0 >= a1)
-        self.assertTrue(a0 > a1)
+        self.assertGreaterEqual(a0, a1)
+        self.assertGreater(a0, a1)
 
 
 

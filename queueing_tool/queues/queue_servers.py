@@ -859,9 +859,10 @@ class LossQueue(QueueServer):
 
     Attributes
     ----------
-    nBlocked : int
+    num_blocked : int
         The number of times arriving agents have been blocked because
-        the server was full.
+        the server was full. Note: nBlocked is an alias for
+        num_blocked.
     buffer : int
         Specifies how many agents can be waiting to be serviced.
 
@@ -883,8 +884,16 @@ class LossQueue(QueueServer):
     def __init__(self, qbuffer=0, **kwargs):
         super(LossQueue, self).__init__(**kwargs)
 
-        self.nBlocked   = 0
-        self.buffer     = qbuffer
+        self.num_blocked = 0
+        self.buffer = qbuffer
+
+
+    @property
+    def nBlocked(self):
+        return self.num_blocked
+    @nBlocked.setter
+    def nBlocked(self, num_blocked):
+        self.num_blocked = num_blocked
 
 
     def __repr__(self):
@@ -910,7 +919,7 @@ class LossQueue(QueueServer):
 
     def clear(self):
         super(LossQueue, self).clear()
-        self.nBlocked = 0
+        self.num_blocked = 0
 
 
     def next_event(self):
@@ -921,8 +930,8 @@ class LossQueue(QueueServer):
             if self.num_system < self.num_servers + self.buffer:
                 super(LossQueue, self).next_event()
             else:
-                self.nBlocked += 1
-                self._nTotal  -= 1
+                self.num_blocked += 1
+                self._nTotal -= 1
 
                 arrival = heappop(self._arrivals)
                 arrival.add_loss(self.edge)
@@ -946,8 +955,8 @@ class LossQueue(QueueServer):
 
     def __deepcopy__(self, memo):
         new_server = super(LossQueue, self).__deepcopy__(memo)
-        new_server.nBlocked = copy.deepcopy(self.nBlocked)
-        new_server.buffer   = copy.deepcopy(self.buffer)
+        new_server.num_blocked = copy.deepcopy(self.num_blocked)
+        new_server.buffer = copy.deepcopy(self.buffer)
         return new_server
 
 

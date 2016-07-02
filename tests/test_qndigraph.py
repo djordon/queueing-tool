@@ -45,8 +45,8 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
 
         a, b = self.g.lines_scatter_args(line_args, scat_args, **kwargs)
 
-        self.assertTrue(a['linewidths'] == 77)
-        self.assertTrue(b['vmax'] == 107)
+        self.assertEqual(a['linewidths'], 77)
+        self.assertEqual(b['vmax'], 107)
         self.assertTrue('beefy' not in a and 'beefy' not in b)
 
 
@@ -66,7 +66,7 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
 
         pixel_diff = (img0 != img1).flatten()
         num_pixels = pixel_diff.shape[0] + 0.0
-        self.assertTrue(pixel_diff.sum() / num_pixels < 0.0001)
+        self.assertLess(pixel_diff.sum() / num_pixels, 0.0001)
 
         with mock.patch('queueing_tool.graph.graph_wrapper.HAS_MATPLOTLIB', False):
             with self.assertRaises(ImportError):

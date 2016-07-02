@@ -1349,7 +1349,7 @@ class QueueNetwork(object):
             q2k = q2._key()
 
             if q2.at_capacity() and e2 != e1:
-                q2.nBlocked += 1
+                q2.num_blocked += 1
                 q1._departures[0].blocked += 1
                 if self._blocking:
                     t = q2._departures[0]._time + EPS * uniform(0.33, 0.66)

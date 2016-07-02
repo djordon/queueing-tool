@@ -66,7 +66,7 @@ class TestQueueServers(unittest.TestCase):
         x, y = dep[1:], dep[:-1]
         cc   = np.corrcoef(x,y)[0, 1]
         self.assertAlmostEqual(cc, 0, 1)
-        self.assertTrue(p1 > 0.05)
+        self.assertGreater(p1, 0.05)
 
     @unittest.skipIf(TRAVIS_TEST, reason)
     def test_QueueServer_Littleslaw(self):
@@ -109,12 +109,12 @@ class TestQueueServers(unittest.TestCase):
         q2.simulate(n=100000)    # Burn in period
 
         nA0 = q2.num_arrivals[1]
-        nB0 = q2.nBlocked
+        nB0 = q2.num_blocked
 
         q2.simulate(n=250000)
 
         nA1 = q2.num_arrivals[1]
-        nB1 = q2.nBlocked
+        nB1 = q2.num_blocked
 
         a = self.lam / mu
         f = np.array([math.factorial(j) for j in range(nSe+1)])
