@@ -1,5 +1,8 @@
-import queueing_tool as qt
+import functools
+
 import numpy as np
+import queueing_tool as qt
+
 
 # Make an adjacency list
 adja_list = {0: {1: {}}, 1: {k: {} for k in range(2, 22)}}
@@ -16,17 +19,25 @@ g = qt.adjacency2graph(adjacency=adja_list, edge_type=edge_list)
 q_classes = {0: qt.NullQueue, 1: qt.QueueServer, 2: qt.QueueServer}
 
 # Define the parameters for each of the queues
-rate  = lambda t: 25 + 350 * np.sin(np.pi * t / 2)**2
-arr_f = lambda t: qt.poisson_random_measure(t, rate, 375)
-ser_f = lambda t: t + np.random.exponential(0.2 / 2.5)
+def rate(t):
+    return 25 + 350 * np.sin(np.pi * t / 2)**2
+
+def ser_f(t):
+    return t + np.random.exponential(0.2 / 2.5)
+
+def identity(t):
+    return t
+
+arr_f = functools.partial(qt.poisson_random_measure, rate=rate, rate_max=375)
+
 
 # Make a mapping between the edge types and the parameters used to make those
 # queues. If a particular parameter is not given then th defaults are used.
 q_args = {
     1: {'arrival_f': arr_f,
-        'service_f': lambda t: t,
+        'service_f': identity,
         'AgentFactory': qt.GreedyAgent},
-    2: {'nServers': 1,
+    2: {'num_servers': 1,
         'service_f': ser_f}
 }
 

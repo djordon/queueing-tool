@@ -50,8 +50,8 @@ class ResourceAgent(Agent):
                 self._has_resource = False
                 self._had_resource = True
             else:
-                if queue.nServers > 0:
-                    queue.set_nServers(queue.nServers - 1)
+                if queue.num_servers > 0:
+                    queue.set_num_servers(queue.num_servers - 1)
                     self._has_resource = True
                     self._had_resource = False
 
@@ -95,28 +95,28 @@ class ResourceQueue(LossQueue):
         'vertex_pen_color' : [0.0, 0.235, 0.718, 1.0]
     }
 
-    def __init__(self, nServers=10, AgentFactory=ResourceAgent, qbuffer=0, **kwargs):
+    def __init__(self, num_servers=10, AgentFactory=ResourceAgent, qbuffer=0, **kwargs):
         super(ResourceQueue, self).__init__(
-            nServers=nServers,
+            num_servers=num_servers,
             AgentFactory=AgentFactory,
             qbuffer=qbuffer,
             **kwargs
         )
 
-        self.max_servers  = 2 * nServers
-        self.over_max     = 0
+        self.max_servers = 2 * num_servers
+        self.over_max    = 0
 
 
     def __repr__(self):
         my_str = ("ResourceQueue:{0}. Servers: {1}, max servers: {2}, "
                   "arrivals: {3}, departures: {4}, next time: {5}")
-        arg = (self.edge[2], self.nServers, self.max_servers,
-               self.nArrivals, self.nDepartures, round(self._time, 3))
+        arg = (self.edge[2], self.num_servers, self.max_servers,
+               self.num_arrivals, self.num_departures, round(self._time, 3))
         return my_str.format(*arg)
 
 
-    def set_nServers(self, n):
-        self.nServers = n
+    def set_num_servers(self, n):
+        self.num_servers = n
         if n > self.max_servers:
             self.over_max += 1
 
@@ -131,14 +131,14 @@ class ResourceQueue(LossQueue):
         Arriving:
 
         * If the :class:`.ResourceAgent` has a resource then it deletes
-          the agent upon arrival and adds one to ``nServers``.
+          the agent upon arrival and adds one to ``num_servers``.
         * If the :class:`.ResourceAgent` is arriving without a resource
           then nothing special happens.
 
         Departing:
 
         * If the :class:`.ResourceAgent` does not have a resource, then
-          ``nServers`` decreases by one and the agent then *has a
+          ``num_servers`` decreases by one and the agent then *has a
           resource*.
 
         Use :meth:`~QueueServer.simulate` for simulating instead.
@@ -151,35 +151,35 @@ class ResourceQueue(LossQueue):
                     arrival   = heappop(self._arrivals)
                     self._current_t = arrival._time
                     self._nTotal  -= 1
-                    self.set_nServers(self.nServers+1)
+                    self.set_num_servers(self.num_servers+1)
 
                     if self.collect_data:
                         t = arrival._time
                         if arrival.agent_id not in self.data:
-                            self.data[arrival.agent_id] = [[t, t, t, len(self.queue), self.nSystem]]
+                            self.data[arrival.agent_id] = [[t, t, t, len(self.queue), self.num_system]]
                         else:
-                            self.data[arrival.agent_id].append([t, t, t, len(self.queue), self.nSystem])
+                            self.data[arrival.agent_id].append([t, t, t, len(self.queue), self.num_system])
 
                     if self._arrivals[0]._time < self._departures[0]._time:
                         self._time = self._arrivals[0]._time
                     else:
                         self._time = self._departures[0]._time
 
-                elif self.nSystem < self.nServers:
+                elif self.num_system < self.num_servers:
                     super(ResourceQueue, self).next_event()
 
                 else:
-                    self.nBlocked   += 1
-                    self._nArrivals += 1
+                    self.num_blocked   += 1
+                    self._num_arrivals += 1
                     self._nTotal    -= 1
                     arrival          = heappop(self._arrivals)
                     self._current_t  = arrival._time
 
                     if self.collect_data:
                         if arrival.agent_id not in self.data:
-                            self.data[arrival.agent_id] = [[arrival._time, 0, 0, len(self.queue), self.nSystem]]
+                            self.data[arrival.agent_id] = [[arrival._time, 0, 0, len(self.queue), self.num_system]]
                         else:
-                            self.data[arrival.agent_id].append([arrival._time, 0, 0, len(self.queue), self.nSystem])
+                            self.data[arrival.agent_id].append([arrival._time, 0, 0, len(self.queue), self.num_system])
 
                     if self._arrivals[0]._time < self._departures[0]._time:
                         self._time = self._arrivals[0]._time
@@ -191,7 +191,7 @@ class ResourceQueue(LossQueue):
 
     def _current_color(self, which=0):
         if which == 1:
-            nSy = self.nServers
+            nSy = self.num_servers
             cap = self.max_servers
             div = 5. if cap <= 1 else (3. * cap)
             tmp = 0.9 - min(nSy / div, 0.9)
@@ -202,7 +202,7 @@ class ResourceQueue(LossQueue):
         elif which == 2:
             color = self.colors['vertex_pen_color']
         else:
-            nSy = self.nServers
+            nSy = self.num_servers
             cap = self.max_servers
             div = 5. if cap <= 1 else (3. * cap)
             tmp = 0.9 - min(nSy / div, 0.9)
@@ -219,14 +219,14 @@ class ResourceQueue(LossQueue):
 
     def clear(self):
         super(ResourceQueue, self).clear()
-        self.nBlocked = 0
+        self.num_blocked = 0
         self.over_max = 0
 
 
     def __deepcopy__(self, memo):
         new_server  = super(ResourceQueue, self).__deepcopy__(memo)
-        new_server.max_servers = copy.copy(self.max_servers)
-        new_server.over_max    = copy.copy(self.over_max)
+        new_server.max_servers = copy.deepcopy(self.max_servers)
+        new_server.over_max    = copy.deepcopy(self.over_max)
         return new_server
 
 
@@ -282,7 +282,7 @@ class InfoAgent(Agent):
                 tmp = queue.data[self.agent_id][-1][1] - queue.data[self.agent_id][-1][0]
                 self.stats[n, 0]  = self.stats[n, 0] + tmp
                 self.stats[n, 1] += 1 if tmp > 0 else 0
-            self.net_data[n, :] = queue._current_t, queue.nServers, queue.nSystem / queue.nServers
+            self.net_data[n, :] = queue._current_t, queue.num_servers, queue.num_system / queue.num_servers
 
 
     def __deepcopy__(self, memo):
@@ -326,8 +326,8 @@ class InfoQueue(LossQueue):
     def __repr__(self):
         my_str = ("InfoQueue:{0}. Servers: {1}, queued: {2}, "
                   "arrivals: {3}, departures: {4}, next time: {5}")
-        arg =  my_str % (self.edge[2], self.nServers, len(self.queue),\
-                         self.nArrivals, self.nDepartures, round(self._time, 3))
+        arg =  my_str % (self.edge[2], self.num_servers, len(self.queue),\
+                         self.num_arrivals, self.num_departures, round(self._time, 3))
         return my_str.format(*arg)
 
 
@@ -381,5 +381,5 @@ class InfoQueue(LossQueue):
 
     def __deepcopy__(self, memo):
         new_server = super(InfoQueue, self).__deepcopy__(memo)
-        new_server.net_data = copy.copy(self.net_data)
+        new_server.net_data = copy.deepcopy(self.net_data)
         return new_server

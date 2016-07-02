@@ -176,9 +176,9 @@ def _set_queues(g, q_cls, q_arg, has_cap):
         eType = g.ep(e, 'edge_type')
         qedge = (e[0], e[1], g.edge_index[e], eType)
 
-        if has_cap and 'nServers' not in q_arg[eType]:
+        if has_cap and 'num_servers' not in q_arg[eType]:
             cap = g.vp(e[1], 'cap') if g.vp(e[1], 'cap') is not None else 0
-            q_arg[eType]['nServers'] = max(cap, 1)
+            q_arg[eType]['num_servers'] = max(cap, 1)
 
         queues[qedge[2]] = q_cls[eType](edge=qedge, **q_arg[eType])
 

@@ -39,14 +39,14 @@ class TestQueueNetwork(unittest.TestCase):
 
     def test_QueueNetwork_accounting(self):
 
-        nEvents = 2500
-        ans = np.zeros(nEvents, bool)
+        num_events = 2500
+        ans = np.zeros(num_events, bool)
         na  = np.zeros(self.qn.nE, int)
         for q in self.qn.edge2queue:
             na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q.queue) - 2
 
-        for k in range(nEvents):
-            ans[k] = (self.qn.nAgents == na).all()
+        for k in range(num_events):
+            ans[k] = (self.qn.num_agents == na).all()
             self.qn.simulate(n=1)
             for q in self.qn.edge2queue:
                 na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q.queue) - 2
@@ -103,17 +103,17 @@ class TestQueueNetwork(unittest.TestCase):
 
         q_arg = {
             3: {'net_size': g.number_of_edges()},
-            4: {'nServers': 500},
+            4: {'num_servers': 500},
             6: {'AgentFactory' : qt.GreedyAgent}
         }
 
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
         qn.blocking = 'RS'
-        self.assertTrue(qn.blocking == 'RS')
-        self.assertTrue(qn._blocking == False)
+        self.assertEqual(qn.blocking, 'RS')
+        self.assertEqual(qn._blocking, False)
 
         qn.clear()
-        self.assertTrue(qn._initialized == False)
+        self.assertEqual(qn._initialized, False)
 
 
     def test_QueueNetwork_blocking_setter_error(self):
@@ -124,14 +124,14 @@ class TestQueueNetwork(unittest.TestCase):
 
     def test_QueueNetwork_closedness(self):
 
-        nEvents = 2500
-        ans = np.zeros(nEvents, bool)
+        num_events = 2500
+        ans = np.zeros(num_events, bool)
         na  = np.zeros(self.qn.nE, int)
         for q in self.qn.edge2queue:
             na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q.queue) - 2
 
-        for k in range(nEvents):
-            ans[k] = np.sum(self.qn.nAgents) >= np.sum(na)
+        for k in range(num_events):
+            ans[k] = np.sum(self.qn.num_agents) >= np.sum(na)
             for q in self.qn.edge2queue:
                 na[q.edge[2]] = len(q._arrivals) + len(q._departures) + len(q.queue) - 2
 
@@ -153,7 +153,7 @@ class TestQueueNetwork(unittest.TestCase):
         }
 
         q_arg = {3: {'net_size' : g.number_of_edges()},
-                 4: {'nServers' : 500}}
+                 4: {'num_servers' : 500}}
 
         qn  = qt.QueueNetwork(g, q_classes=q_cls, q_args=q_arg, seed=17)
         qn.max_agents = np.infty
@@ -162,7 +162,7 @@ class TestQueueNetwork(unittest.TestCase):
         qn.simulate(n=50000)
         qn2 = qn.copy()
 
-        stamp = [(q.nArrivals, q.time) for q in qn2.edge2queue]
+        stamp = [(q.num_arrivals, q.time) for q in qn2.edge2queue]
         qn2.simulate(n=25000)
 
         self.assertFalse(qn.current_time == qn2.current_time)
@@ -249,7 +249,7 @@ class TestQueueNetwork(unittest.TestCase):
         qn.simulate(n=k)
 
         data = qn.get_queue_data()
-        self.assertTrue(data.shape == (k, 6))
+        self.assertEqual(data.shape, (k, 6))
         qn.stop_collecting_data()
         qn.clear_data()
 
@@ -262,8 +262,10 @@ class TestQueueNetwork(unittest.TestCase):
         rho = np.random.uniform(0.75, 1)
         nSe = np.random.randint(1, 10)
         mu  = lam / (3 * rho * nSe)
-        arr = lambda t: t + np.random.exponential(1 / lam)
-        ser = lambda t: t + np.random.exponential(1 / mu)
+
+        def arr(t): return t + np.random.exponential(1 / lam)
+        def ser(t): return t + np.random.exponential(1 / mu)
+        def ser_id(t): return t
 
         adj = {
             0 : {1: {'edge_type': 1}},
@@ -277,26 +279,26 @@ class TestQueueNetwork(unittest.TestCase):
         arg = {
             1: {
                 'arrival_f': arr,
-                'service_f': lambda t: t,
+                'service_f': ser_id,
                 'AgentFactory': qt.GreedyAgent
             },
             2: {
                 'service_f': ser,
-                'nServers': nSe
+                'num_servers': nSe
             }
         }
 
-        qn  = qt.QueueNetwork(g, q_classes=qcl, q_args=arg)
+        qn = qt.QueueNetwork(g, q_classes=qcl, q_args=arg)
         qn.initialize(edges=(0, 1))
         qn.max_agents = 5000
 
-        nEvents = 1000
-        ans = np.zeros(nEvents, bool)
+        num_events = 1000
+        ans = np.zeros(num_events, bool)
         e01 = qn.g.edge_index[(0, 1)]
         edg = qn.edge2queue[e01].edge
-        c   = 0
+        c = 0
 
-        while c < nEvents:
+        while c < num_events:
             qn.simulate(n=1)
             if qn.next_event_description() == ('Departure', e01):
                 d0 = qn.edge2queue[e01]._departures[0].desired_destination(qn, edg)
@@ -325,14 +327,13 @@ class TestQueueNetwork(unittest.TestCase):
                 self.qn.initialize(edge_type=1)
 
     def test_QueueNetwork_initialization(self):
-
         # Single edge index
         k = np.random.randint(0, self.qn.nE)
         self.qn.clear()
         self.qn.initialize(queues=k)
 
         ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
-        self.assertTrue(ans == [k])
+        self.assertEqual(ans, [k])
 
         # Multiple edge indices
         k = np.unique(np.random.randint(0, self.qn.nE, 5))
@@ -350,7 +351,7 @@ class TestQueueNetwork(unittest.TestCase):
         self.qn.initialize(edges=e)
 
         ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
-        self.assertTrue(ans == [k])
+        self.assertEqual(ans, [k])
 
         # Single edge as tuple
         k = np.random.randint(0, self.qn.nE)
@@ -359,7 +360,7 @@ class TestQueueNetwork(unittest.TestCase):
         self.qn.initialize(edges=e)
 
         ans = [q.edge[2] for q in self.qn.edge2queue if q.active]
-        self.assertTrue(ans == [k])
+        self.assertEqual(ans, [k])
 
         # Multiple edges as tuples
         k  = np.unique(np.random.randint(0, self.qn.nE, 5))
@@ -397,25 +398,25 @@ class TestQueueNetwork(unittest.TestCase):
 
         self.qn.clear()
         self.qn.max_agents = 3
-        self.qn.initialize(nActive=self.qn.nEdges)
+        self.qn.initialize(nActive=self.qn.num_edges)
         ans = np.array([q.active for q in self.qn.edge2queue])
-        self.assertTrue(ans.sum() == 3)
+        self.assertEqual(ans.sum(), 3)
 
 
     def test_QueueNetwork_max_agents(self):
 
-        nEvents = 1500
+        num_events = 1500
         self.qn.max_agents = 200
-        ans = np.zeros(nEvents, bool)
+        ans = np.zeros(num_events, bool)
 
-        for k in range(nEvents // 2):
-            ans[k] = np.sum(self.qn.nAgents) <= self.qn.max_agents
+        for k in range(num_events // 2):
+            ans[k] = np.sum(self.qn.num_agents) <= self.qn.max_agents
             self.qn.simulate(n=1)
 
         self.qn.simulate(n=20000)
 
-        for k in range(nEvents // 2, nEvents):
-            ans[k] = np.sum(self.qn.nAgents) <= self.qn.max_agents
+        for k in range(num_events // 2, num_events):
+            ans[k] = np.sum(self.qn.num_agents) <= self.qn.max_agents
             self.qn.simulate(n=1)
 
         self.assertTrue(ans.all())
@@ -423,10 +424,10 @@ class TestQueueNetwork(unittest.TestCase):
 
     def test_QueueNetwork_properties(self):
         self.qn.clear()
-        self.assertTrue(self.qn.time == np.infty)
-        self.assertTrue(self.qn.nEdges == self.qn.nE)
-        self.assertTrue(self.qn.nVertices == self.qn.nV)
-        self.assertTrue(self.qn.nNodes == self.qn.nV)
+        self.assertEqual(self.qn.time, np.infty)
+        self.assertEqual(self.qn.num_edges, self.qn.nE)
+        self.assertEqual(self.qn.num_vertices, self.qn.nV)
+        self.assertEqual(self.qn.num_nodes, self.qn.nV)
 
 
     def test_QueueNetwork_set_transitions_Error(self):
@@ -470,7 +471,7 @@ class TestQueueNetwork(unittest.TestCase):
         qn.max_agents = 2000
         qn.simulate(t=t0)
 
-        self.assertTrue(qn.current_time > t0)
+        self.assertGreater(qn.current_time, t0)
 
 
     def test_QueueNetwork_simulate_error(self):
@@ -534,9 +535,9 @@ class TestQueueNetwork(unittest.TestCase):
 
     def test_QueueNetwork_sorting(self):
 
-        nEvents = 2000
-        ans = np.zeros(nEvents, bool)
-        for k in range(nEvents // 2):
+        num_events = 2000
+        ans = np.zeros(num_events, bool)
+        for k in range(num_events // 2):
             queue_times = [q.time for q in self.qn.edge2queue]
             queue_times.sort()
             tmp = queue_times[0]
@@ -545,7 +546,7 @@ class TestQueueNetwork(unittest.TestCase):
 
         self.qn.simulate(n=10000)
 
-        for k in range(nEvents // 2, nEvents):
+        for k in range(num_events // 2, num_events):
             queue_times = [q.time for q in self.qn.edge2queue]
             queue_times.sort()
             tmp = queue_times[0]
