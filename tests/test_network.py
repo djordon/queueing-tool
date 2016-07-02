@@ -262,8 +262,10 @@ class TestQueueNetwork(unittest.TestCase):
         rho = np.random.uniform(0.75, 1)
         nSe = np.random.randint(1, 10)
         mu  = lam / (3 * rho * nSe)
-        arr = lambda t: t + np.random.exponential(1 / lam)
-        ser = lambda t: t + np.random.exponential(1 / mu)
+
+        def arr(t): return t + np.random.exponential(1 / lam)
+        def ser(t): return t + np.random.exponential(1 / mu)
+        def ser_id(t): return t
 
         adj = {
             0 : {1: {'edge_type': 1}},
@@ -277,7 +279,7 @@ class TestQueueNetwork(unittest.TestCase):
         arg = {
             1: {
                 'arrival_f': arr,
-                'service_f': lambda t: t,
+                'service_f': ser_id,
                 'AgentFactory': qt.GreedyAgent
             },
             2: {
@@ -286,7 +288,7 @@ class TestQueueNetwork(unittest.TestCase):
             }
         }
 
-        qn  = qt.QueueNetwork(g, q_classes=qcl, q_args=arg)
+        qn = qt.QueueNetwork(g, q_classes=qcl, q_args=arg)
         qn.initialize(edges=(0, 1))
         qn.max_agents = 5000
 
@@ -294,7 +296,7 @@ class TestQueueNetwork(unittest.TestCase):
         ans = np.zeros(num_events, bool)
         e01 = qn.g.edge_index[(0, 1)]
         edg = qn.edge2queue[e01].edge
-        c   = 0
+        c = 0
 
         while c < num_events:
             qn.simulate(n=1)
@@ -325,7 +327,6 @@ class TestQueueNetwork(unittest.TestCase):
                 self.qn.initialize(edge_type=1)
 
     def test_QueueNetwork_initialization(self):
-
         # Single edge index
         k = np.random.randint(0, self.qn.nE)
         self.qn.clear()
