@@ -102,7 +102,7 @@ class QueueServer(object):
 
     Parameters
     ----------
-    num_servers : int or ``infty`` (optional, default: ``1``)
+    num_servers : int or ``numpy.infty`` (optional, default: ``1``)
         The number of servers servicing agents.
     arrival_f : function (optional, default: ``lambda t: t + exponential(1)``)
         A function that returns the time of next arrival from outside
@@ -277,8 +277,8 @@ class QueueServer(object):
         'vertex_color'     : [0.0, 0.5, 1.0, 1.0]
     }
 
-    def __init__(self, num_servers=1, arrival_f=lambda t: t + exponential(1),
-                 service_f=lambda t: t + exponential(0.9), edge=(0, 0, 0, 1),
+    def __init__(self, num_servers=1, arrival_f=None,
+                 service_f=None, edge=(0, 0, 0, 1),
                  AgentFactory=Agent, collect_data=False, active_cap=infty,
                  deactive_t=infty, colors=None, seed=None,
                  coloring_sensitivity=2, **kwargs):
@@ -296,6 +296,14 @@ class QueueServer(object):
         self.num_system = 0
         self.data = {}   # times; agent_id : [arrival, service start, departure]
         self.queue = collections.deque()
+
+        if arrival_f is None:
+            def arrival_f(t):
+                return t + exponential(1.0)
+
+        if service_f is None:
+            def service_f(t):
+                return t + exponential(0.9)
 
         self.arrival_f = arrival_f
         self.service_f = service_f

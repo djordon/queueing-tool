@@ -612,7 +612,7 @@ class QueueNetwork(object):
         """Resets the queue to its initial state.
 
         The attributes ``t``, ``num_events``, ``num_agents`` are set to
-         zero, :meth:`.reset_colors` is called, and the
+        zero, :meth:`.reset_colors` is called, and the
         :meth:`.QueueServer.clear` method is called for each queue in
         the network.
 
