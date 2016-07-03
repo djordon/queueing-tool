@@ -809,11 +809,11 @@ class QueueNetwork(object):
             * Fifth: The total number of :class:`Agents<.Agent>` in the
               :class:`.QueueServer`.
             * Sixth: the :class:`QueueServer's<.QueueServer>` id
-              (it's edge index).
+              (its edge index).
 
         headers : str (optional)
             A comma seperated string of the column headers. Returns
-            ``'arrival,service,departure,num_queued,num_total,q_id'```
+            ``'arrival,service,departure,num_queued,num_total,q_id'``
         """
         queues = _get_queues(self.g, queues, edge, edge_type)
 
