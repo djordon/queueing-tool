@@ -181,15 +181,12 @@ class QueueServer(object):
     num_arrivals : list
         A list with two entries. The first slot is the total number of
         arrivals, while the second slot is the number of arrivals from
-        outside the network. Note: nArrivals is an alias for
-        num_arrivals.
+        outside the network.
     num_departures : int
-        The total number of departures from the queue. Note:
-        nDepartures is an alias for num_departures.
+        The total number of departures from the queue.
     num_system : int
         The number of agents in the entire :class:`.QueueServer` --
         this includes those being served and those waiting to be served.
-        Note: nSystem is an alias for num_system.
     queue : :class:`~.collections.deque`
         A queue for the agents waiting to enter service.
     time : float
@@ -206,9 +203,9 @@ class QueueServer(object):
 
     >>> import queueing_tool as qt
     >>> import numpy as np
-    >>> rate = lambda t: 2 + 16 * np.sin(np.pi * t / 8)**2
-    >>> arr = lambda t: qt.poisson_random_measure(t, rate, 18)
-    >>> ser = lambda t: t + np.random.gamma(4, 0.1)
+    >>> def rate(t): return 2 + 16 * np.sin(np.pi * t / 8)**2
+    >>> def arr(t): return qt.poisson_random_measure(t, rate, 18)
+    >>> def ser(t): return t + np.random.gamma(4, 0.1)
     >>> q = qt.QueueServer(5, arrival_f=arr, service_f=ser)
 
     Before you can simulate the queue, it must be set to active; also,
@@ -317,7 +314,7 @@ class QueueServer(object):
         self._departures = [inftyAgent]    # A list of departing agents.
         self._num_arrivals = 0
         self._oArrivals = 0
-        self._nTotal = 0       # The number of agents scheduled to arrive + num_system
+        self._num_total = 0       # The number of agents scheduled to arrive + num_system
         self._active = False
         self._current_t = 0       # The time of the last event.
         self._time = infty   # The time of the next event.
@@ -333,7 +330,6 @@ class QueueServer(object):
                 self.colors[col] = self._default_colors[col]
         else:
             self.colors = self._default_colors
-
 
     @property
     def active(self):
@@ -351,32 +347,6 @@ class QueueServer(object):
     def num_arrivals(self):
         return [self._num_arrivals, self._oArrivals]
 
-    @property
-    def nArrivals(self):
-        return self.num_arrivals
-
-    @property
-    def nDepartures(self):
-        return self.num_departures
-    @nDepartures.setter
-    def nDepartures(self, num_departures):
-        self.num_departures = num_departures
-
-    @property
-    def nSystem(self):
-        return self.num_system
-    @nSystem.setter
-    def nSystem(self, num_system):
-        self.num_system = num_system
-
-    @property
-    def nServers(self):
-        return self.num_servers
-    @nServers.setter
-    def nServers(self, num_servers):
-        self.num_servers = num_servers
-
-
     def __repr__(self):
         my_str = ("QueueServer:{0}. Servers: {1}, queued: {2}, arrivals: {3}, "
                   "departures: {4}, next time: {5}")
@@ -387,7 +357,7 @@ class QueueServer(object):
 
     def _add_arrival(self, agent=None):
         if agent is not None:
-            self._nTotal += 1
+            self._num_total += 1
             heappush(self._arrivals, agent)
         else:
             if self._current_t >= self._next_ct:
@@ -397,7 +367,7 @@ class QueueServer(object):
                     self._active = False
                     return
 
-                self._nTotal += 1
+                self._num_total += 1
                 new_agent = self.AgentFactory((self.edge[2], self._oArrivals))
                 new_agent._time = self._next_ct
                 heappush(self._arrivals, new_agent)
@@ -435,7 +405,7 @@ class QueueServer(object):
         self._oArrivals = 0
         self.num_departures = 0
         self.num_system = 0
-        self._nTotal = 0
+        self._num_total = 0
         self._current_t = 0
         self._time = infty
         self._next_ct = 0
@@ -521,11 +491,7 @@ class QueueServer(object):
                 agent._time = t
 
             heappush(self._departures, agent)
-
-            if self._arrivals[0]._time < self._departures[0]._time:
-                self._time = self._arrivals[0]._time
-            else:
-                self._time = self._departures[0]._time
+            self._update_time()
 
 
     def fetch_data(self, return_header=False):
@@ -613,10 +579,10 @@ class QueueServer(object):
         :meth:`.simulate` : Simulates the queue forward.
         """
         if self._departures[0]._time < self._arrivals[0]._time:
-            new_depart        = heappop(self._departures)
-            self._current_t   = new_depart._time
-            self._nTotal     -= 1
-            self.num_system     -= 1
+            new_depart = heappop(self._departures)
+            self._current_t = new_depart._time
+            self._num_total -= 1
+            self.num_system -= 1
             self.num_departures += 1
 
             if self.collect_data and new_depart.agent_id in self.data:
@@ -632,12 +598,7 @@ class QueueServer(object):
                 heappush(self._departures, agent)
 
             new_depart.queue_action(self, 2)
-
-            if self._arrivals[0]._time < self._departures[0]._time:
-                self._time = self._arrivals[0]._time
-            else:
-                self._time = self._departures[0]._time
-
+            self._update_time()
             return new_depart
 
         elif self._arrivals[0]._time < infty:
@@ -653,9 +614,11 @@ class QueueServer(object):
             if self.collect_data:
                 b = 0 if self.num_system <= self.num_servers else 1
                 if arrival.agent_id not in self.data:
-                    self.data[arrival.agent_id] = [[arrival._time, 0, 0, len(self.queue) + b, self.num_system]]
+                    self.data[arrival.agent_id] = \
+                        [[arrival._time, 0, 0, len(self.queue) + b, self.num_system]]
                 else:
-                    self.data[arrival.agent_id].append([arrival._time, 0, 0, len(self.queue) + b, self.num_system])
+                    self.data[arrival.agent_id]\
+                        .append([arrival._time, 0, 0, len(self.queue) + b, self.num_system])
 
             arrival.queue_action(self, 0)
 
@@ -669,11 +632,7 @@ class QueueServer(object):
             else:
                 self.queue.append(arrival)
 
-            if self._arrivals[0]._time < self._departures[0]._time:
-                self._time = self._arrivals[0]._time
-            else:
-                self._time = self._departures[0]._time
-
+            self._update_time()
 
     def next_event_description(self):
         """Returns an integer representing whether the next event is
@@ -715,8 +674,8 @@ class QueueServer(object):
         Parameters
         ----------
         n : int or :const:`numpy.infty`
-            A positive integer (or ``np.infty``) to set the number of
-            queues in the system to.
+            A positive integer (or ``numpy.infty``) to set the number
+            of queues in the system to.
 
         Raises
         ------
@@ -813,6 +772,13 @@ class QueueServer(object):
                 self.next_event()
 
 
+    def _update_time(self):
+        if self._arrivals[0]._time < self._departures[0]._time:
+            self._time = self._arrivals[0]._time
+        else:
+            self._time = self._departures[0]._time
+
+
     def __deepcopy__(self, memo):
         new_server                = self.__class__()
         new_server.edge           = copy.deepcopy(self.edge)
@@ -822,7 +788,7 @@ class QueueServer(object):
         new_server.collect_data   = copy.deepcopy(self.collect_data)
         new_server.num_departures = copy.deepcopy(self.num_departures)
         new_server.num_system     = copy.deepcopy(self.num_system)
-        new_server._nTotal        = copy.deepcopy(self._nTotal)
+        new_server._num_total     = copy.deepcopy(self._num_total)
         new_server._active        = copy.deepcopy(self._active)
         new_server._current_t     = copy.deepcopy(self._current_t)
         new_server._time          = copy.deepcopy(self._time)
@@ -861,8 +827,7 @@ class LossQueue(QueueServer):
     ----------
     num_blocked : int
         The number of times arriving agents have been blocked because
-        the server was full. Note: nBlocked is an alias for
-        num_blocked.
+        the server was full.
     buffer : int
         Specifies how many agents can be waiting to be serviced.
 
@@ -886,14 +851,6 @@ class LossQueue(QueueServer):
 
         self.num_blocked = 0
         self.buffer = qbuffer
-
-
-    @property
-    def nBlocked(self):
-        return self.num_blocked
-    @nBlocked.setter
-    def nBlocked(self, num_blocked):
-        self.num_blocked = num_blocked
 
 
     def __repr__(self):
@@ -931,7 +888,7 @@ class LossQueue(QueueServer):
                 super(LossQueue, self).next_event()
             else:
                 self.num_blocked += 1
-                self._nTotal -= 1
+                self._num_total -= 1
 
                 arrival = heappop(self._arrivals)
                 arrival.add_loss(self.edge)

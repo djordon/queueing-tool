@@ -99,7 +99,7 @@ class TestQueueServers(unittest.TestCase):
         for k in range(num_events):
             nt = len(q._departures) + len(q.queue) + len(q._arrivals) - 2
             nS = len(q._departures) + len(q.queue) - 1
-            ans[k, 0] = nt == q._nTotal
+            ans[k, 0] = nt == q._num_total
             ans[k, 1] = nS == q.num_system
             ans[k, 2] = len(q._departures) - 1 <= q.num_servers
             q.simulate(n=1)
@@ -170,7 +170,7 @@ class TestQueueServers(unittest.TestCase):
         for k in range(num_events):
             nt = len(q._departures) + len(q.queue) + len(q._arrivals) - 2
             nS = len(q._departures) + len(q.queue) - 1
-            ans[k, 0] = nt == q._nTotal
+            ans[k, 0] = nt == q._num_total
             ans[k, 1] = nS == q.num_system
             ans[k, 2] = len(q._departures) - 1 <= q.num_servers
             q.simulate(n=1)
