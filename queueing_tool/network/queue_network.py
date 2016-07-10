@@ -509,12 +509,10 @@ class QueueNetwork(object):
             raise ImportError(msg)
 
         self._update_all_colors()
-
-        if 'bgcolor' not in kwargs:
-            kwargs['bgcolor'] = self.colors['bgcolor']
+        kwargs.setdefault('bgcolor', self.colors['bgcolor'])
 
         fig = plt.figure(figsize=kwargs.get('figsize', (7, 7)))
-        ax  = fig.gca()
+        ax = fig.gca()
 
         mpl_kwargs = {
             'line_kwargs': line_kwargs,
@@ -581,6 +579,7 @@ class QueueNetwork(object):
             for key, value in save_kwargs.items():
                 if key in save_args:
                     save_args[key] = value
+
             animation.save(**save_args)
 
 
