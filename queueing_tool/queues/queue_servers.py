@@ -732,7 +732,7 @@ class QueueServer(object):
         >>> num_events
         50000
 
-        To simulate a 75 units of simulation time, do the following:
+        To simulate forward 75 time units, do the following:
 
         >>> t0 = q.time
         >>> q.simulate(t=75)
