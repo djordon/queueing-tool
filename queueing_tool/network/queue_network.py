@@ -576,7 +576,7 @@ class QueueNetwork(object):
                 'extra_anim': None,
                 'savefig_kwargs': None
             }
-            for key, value in save_kwargs.items():
+            for key, value in kwargs.items():
                 if key in save_args:
                     save_args[key] = value
 
