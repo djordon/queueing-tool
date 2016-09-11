@@ -80,8 +80,8 @@ class QueueNetwork(object):
     max_agents : int (optional, default: 1000)
         The maximum number of agents that can be in the network at any
         time.
-    blocking : str ``{'BAS', 'RS'}`` (optional, default: ``'BAS'``)
-        Specifies the blocking behavior for the system. If ``blocking``
+    blocking : ``{'BAS', 'RS'}`` (optional, default: ``'BAS'``)
+        Specifies the blocking behavior for the system. If `blocking
         is not ``'RS'``, then it is assumed to be ``'BAS'``.
 
         ``'BAS'``
@@ -218,14 +218,14 @@ class QueueNetwork(object):
 
       >>> default_colors = {
       ...     'vertex_fill_color': [0.9, 0.9, 0.9, 1.0],
-      ...     'vertex_color'     : [0.0, 0.5, 1.0, 1.0],
-      ...     'vertex_highlight' : [0.5, 0.5, 0.5, 1.0],
-      ...     'edge_departure'   : [0, 0, 0, 1],
-      ...     'vertex_active'    : [0.1, 1.0, 0.5, 1.0],
-      ...     'vertex_inactive'  : [0.9, 0.9, 0.9, 0.8],
-      ...     'edge_active'      : [0.1, 0.1, 0.1, 1.0],
-      ...     'edge_inactive'    : [0.8, 0.8, 0.8, 0.3],
-      ...     'bgcolor'          : [1, 1, 1, 1]
+      ...     'vertex_color': [0.0, 0.5, 1.0, 1.0],
+      ...     'vertex_highlight': [0.5, 0.5, 0.5, 1.0],
+      ...     'edge_departure': [0, 0, 0, 1],
+      ...     'vertex_active': [0.1, 1.0, 0.5, 1.0],
+      ...     'vertex_inactive': [0.9, 0.9, 0.9, 0.8],
+      ...     'edge_active': [0.1, 0.1, 0.1, 1.0],
+      ...     'edge_inactive': [0.8, 0.8, 0.8, 0.3],
+      ...     'bgcolor': [1, 1, 1, 1]
       ... }
 
     .. _Jackson network: http://en.wikipedia.org/wiki/Jackson_network
