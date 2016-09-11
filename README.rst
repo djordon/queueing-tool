@@ -1,7 +1,7 @@
 Queueing-tool
 =============
 
-|Build Status| |Coverage Status|
+|Build Status| |Coverage Status| |pyversion| |license|
 
 Queueing-tool is a package for simulating and analyzing networks. It is an
 event based simulator that uses
@@ -72,5 +72,14 @@ license <https://github.com/djordon/queueing-tool/blob/master/LICENSE.txt>`__.
 
 .. |Build Status| image:: https://travis-ci.org/djordon/queueing-tool.svg?branch=master
    :target: https://travis-ci.org/djordon/queueing-tool
+
 .. |Coverage Status| image:: https://coveralls.io/repos/djordon/queueing-tool/badge.svg?branch=master
    :target: https://coveralls.io/r/djordon/queueing-tool?branch=master
+
+.. |pyversion| image:: https://img.shields.io/pypi/pyversions/queueing-tool.svg
+    :alt: Supported Python versions.
+    :target: http://pypi.python.org/pypi/queueing-tool/
+
+.. |license| image:: https://img.shields.io/pypi/l/queueing-tool.svg
+    :alt: MIT License
+    :target: https://opensource.org/licenses/MIT
