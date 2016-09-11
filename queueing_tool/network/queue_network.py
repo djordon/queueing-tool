@@ -136,22 +136,18 @@ class QueueNetwork(object):
         the total number of agents in the :class:`.QueueServer` with
         edge index ``k``. This number includes agents that are
         scheduled to arrive at the queue at some future time but
-        haven't yet. Note: nAgents is an alias for num_agents.
+        haven't yet.
     num_edges : int
-        The number of edges in the graph. Note: nEdges is an alias for
-        num_edges.
+        The number of edges in the graph.
     num_events : int
         The number of events that have occurred thus far. Every arrival
         from outside the network counts as one event, but the departure
         of an agent from a queue and the arrival of that same agent to
-        another queue counts as one event. Note: nEvents is an alias
-        for num_events.
+        another queue counts as one event.
     num_vertices : int
-        The number of vertices in the graph. Note: nVertices is an
-        alias for num_vertices.
+        The number of vertices in the graph.
     num_nodes : int
-        The number of vertices in the graph. Note: nNodes is an
-        alias for num_nodes.
+        The number of vertices in the graph.
     out_edges : list
         A mapping between vertex indices and the out-edges at that
         vertex. Specifically, ``out_edges[v]`` returns a list
@@ -242,8 +238,8 @@ class QueueNetwork(object):
     >>>
     >>> g = nx.moebius_kantor_graph()
     >>> q_cl = {1: qt.QueueServer}
-    >>> arr = lambda t: t + np.random.gamma(4, 0.0025)
-    >>> ser = lambda t: t + np.random.exponential(0.025)
+    >>> def arr(t): return t + np.random.gamma(4, 0.0025)
+    >>> def ser(t): return t + np.random.exponential(0.025)
     >>> q_ar = {
     ...     1: {
     ...         'arrival_f': arr,
@@ -387,23 +383,7 @@ class QueueNetwork(object):
         self._blocking = True if tmp.lower() != 'rs' else False
 
     @property
-    def nAgents(self):
-        return self.num_agents
-
-    @property
-    def nEvents(self):
-        return self.num_events
-
-    @property
-    def nVertices(self):
-        return self.nV
-
-    @property
     def num_vertices(self):
-        return self.nV
-
-    @property
-    def nNodes(self):
         return self.nV
 
     @property
@@ -412,10 +392,6 @@ class QueueNetwork(object):
 
     @property
     def num_edges(self):
-        return self.nE
-
-    @property
-    def nEdges(self):
         return self.nE
 
     @property
@@ -533,12 +509,10 @@ class QueueNetwork(object):
             raise ImportError(msg)
 
         self._update_all_colors()
-
-        if 'bgcolor' not in kwargs:
-            kwargs['bgcolor'] = self.colors['bgcolor']
+        kwargs.setdefault('bgcolor', self.colors['bgcolor'])
 
         fig = plt.figure(figsize=kwargs.get('figsize', (7, 7)))
-        ax  = fig.gca()
+        ax = fig.gca()
 
         mpl_kwargs = {
             'line_kwargs': line_kwargs,
@@ -602,9 +576,10 @@ class QueueNetwork(object):
                 'extra_anim': None,
                 'savefig_kwargs': None
             }
-            for key, value in save_kwargs.items():
+            for key, value in kwargs.items():
                 if key in save_args:
                     save_args[key] = value
+
             animation.save(**save_args)
 
 
@@ -1006,7 +981,7 @@ class QueueNetwork(object):
 
         for ei in queues:
             self.edge2queue[ei].set_active()
-            self.num_agents[ei] = self.edge2queue[ei]._nTotal
+            self.num_agents[ei] = self.edge2queue[ei]._num_total
 
         keys = [q._key() for q in self.edge2queue if q._time < np.infty]
         self._fancy_heap = PriorityQueue(keys, self.nE)
@@ -1334,11 +1309,11 @@ class QueueNetwork(object):
             return
 
         q1k = self._fancy_heap.pop()
-        q1  = self.edge2queue[q1k[1]]
         q1t = q1k[0]
-        e1  = q1.edge[2]
+        q1 = self.edge2queue[q1k[1]]
+        e1 = q1.edge[2]
 
-        event   = q1.next_event_description()
+        event = q1.next_event_description()
         self._t = q1t
         self._qkey = q1k
         self.num_events += 1
@@ -1361,8 +1336,8 @@ class QueueNetwork(object):
                 agent._time = q1t
 
                 q2._add_arrival(agent)
-                self.num_agents[e1] = q1._nTotal
-                self.num_agents[e2] = q2._nTotal
+                self.num_agents[e1] = q1._num_total
+                self.num_agents[e2] = q2._num_total
 
                 if slow:
                     self._update_graph_colors(qedge=q1.edge)
@@ -1373,7 +1348,7 @@ class QueueNetwork(object):
                     q2._active = False
 
                 q2.next_event()
-                self.num_agents[e2] = q2._nTotal
+                self.num_agents[e2] = q2._num_total
 
                 if slow:
                     self._update_graph_colors(qedge=q2.edge)
@@ -1397,7 +1372,7 @@ class QueueNetwork(object):
                 q1._active = False
 
             q1.next_event()
-            self.num_agents[e1] = q1._nTotal
+            self.num_agents[e1] = q1._num_total
 
             if slow:
                 self._update_graph_colors(qedge=q1.edge)

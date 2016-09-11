@@ -414,7 +414,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
             raise ImportError("Matplotlib is required to draw the graph.")
 
         fig = plt.figure(figsize=kwargs.get('figsize', (7, 7)))
-        ax  = fig.gca()
+        ax = fig.gca()
 
         mpl_kwargs = {
             'line_kwargs': line_kwargs,

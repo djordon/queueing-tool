@@ -63,6 +63,13 @@ After installation, import with something like:
 
     import queueing_tool as qt
 
+
+Bugs and issues
+---------------
+
+The issue tracker is at https://github.com/djordon/queueing-tool. Please report any bugs or issue that you find there. Of course, pull requests are always welcome.
+
+
 Copyright and license
 ---------------------
 
