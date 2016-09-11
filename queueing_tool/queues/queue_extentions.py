@@ -150,7 +150,7 @@ class ResourceQueue(LossQueue):
                 if self._arrivals[0]._has_resource:
                     arrival   = heappop(self._arrivals)
                     self._current_t = arrival._time
-                    self._nTotal  -= 1
+                    self._num_total  -= 1
                     self.set_num_servers(self.num_servers+1)
 
                     if self.collect_data:
@@ -171,7 +171,7 @@ class ResourceQueue(LossQueue):
                 else:
                     self.num_blocked   += 1
                     self._num_arrivals += 1
-                    self._nTotal    -= 1
+                    self._num_total    -= 1
                     arrival          = heappop(self._arrivals)
                     self._current_t  = arrival._time
 
@@ -343,7 +343,7 @@ class InfoQueue(LossQueue):
 
     def _add_arrival(self, agent=None):
         if agent is not None:
-            self._nTotal += 1
+            self._num_total += 1
             heappush(self._arrivals, agent)
         else:
             if self._current_t >= self._next_ct:
@@ -353,7 +353,7 @@ class InfoQueue(LossQueue):
                     self.active = False
                     return
 
-                self._nTotal += 1
+                self._num_total += 1
                 new_agent = self.AgentFactory((self.edge[2], self._oArrivals), len(self.net_data))
                 new_agent._time = self._next_ct
                 heappush(self._arrivals, new_agent)
