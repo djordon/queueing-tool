@@ -20,6 +20,6 @@ before_script:
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
 script:
-  - py.test tests/ --cov=queueing_tool --cov-report term-missing -s --color=yes
+  - py.test --cov=queueing_tool --cov-report term-missing
 after_success:
   - coveralls
