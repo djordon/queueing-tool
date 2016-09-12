@@ -33,8 +33,11 @@ class TestQueueServers(unittest.TestCase):
         nSe = np.random.randint(1, 10)
         mu = self.lam / (self.rho * nSe)
 
-        def arr(t): return t + np.random.exponential(1 / self.lam)
-        def ser(t): return t + np.random.exponential(1 / mu)
+        def arr(t):
+            return t + np.random.exponential(1 / self.lam)
+
+        def ser(t):
+            return t + np.random.exponential(1 / mu)
 
         q = qt.QueueServer(num_servers=nSe, arrival_f=arr, service_f=ser)
         n = 50000
@@ -74,8 +77,11 @@ class TestQueueServers(unittest.TestCase):
         nSe = np.random.randint(1, 10)
         mu = self.lam / (self.rho * nSe)
 
-        def arr(t): return t + np.random.exponential(1 / self.lam)
-        def ser(t): return t + np.random.exponential(1 / mu)
+        def arr(t):
+            return t + np.random.exponential(1 / self.lam)
+
+        def ser(t):
+            return t + np.random.exponential(1 / mu)
 
         q = qt.QueueServer(num_servers=nSe, arrival_f=arr, service_f=ser)
         n = 500000
@@ -101,8 +107,11 @@ class TestQueueServers(unittest.TestCase):
         k   = np.random.randint(5, 15)
         scl = 1 / (mu * k)
 
-        def arr(t): return t + np.random.exponential(1 / self.lam)
-        def ser(t): return t + np.random.gamma(k, scl)
+        def arr(t):
+            return t + np.random.exponential(1 / self.lam)
+
+        def ser(t):
+            return t + np.random.gamma(k, scl)
 
         q2  = qt.LossQueue(num_servers=nSe, arrival_f=arr, service_f=ser)
         q2.set_active()
@@ -137,7 +146,9 @@ class TestRandomMeasure(unittest.TestCase):
         # random variables.
         # This test should fail some percentage of the time
 
-        def rate(t): return 0.5 + 4 * np.sin(np.pi * t / 12)**2
+        def rate(t):
+            return 0.5 + 4 * np.sin(np.pi * t / 12)**2
+
         arr_f = functools.partial(qt.poisson_random_measure, rate=rate, rate_max=4.5)
 
         nSamp = 15000

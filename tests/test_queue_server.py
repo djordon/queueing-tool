@@ -71,7 +71,8 @@ class TestQueueServers(unittest.TestCase):
 
     def test_QueueServer_active_cap(self):
 
-        def r(t): return 2 + np.sin(t)
+        def r(t):
+            return 2 + np.sin(t)
         arr = functools.partial(qt.poisson_random_measure, rate=r, rate_max=3)
 
         q = qt.QueueServer(active_cap=1000, arrival_f=arr, seed=12)
@@ -87,8 +88,10 @@ class TestQueueServers(unittest.TestCase):
         nSe = np.random.randint(1, 10)
         mu  = self.lam / (self.rho * nSe)
 
-        def arr(t): return t + np.random.exponential(1 / self.lam)
-        def ser(t): return t + np.random.exponential(1 / mu)
+        def arr(t):
+            return t + np.random.exponential(1 / self.lam)
+        def ser(t):
+            return t + np.random.exponential(1 / mu)
 
         q = qt.QueueServer(num_servers=nSe, arrival_f=arr, service_f=ser)
         q.set_active()
@@ -120,8 +123,10 @@ class TestQueueServers(unittest.TestCase):
         nSe = np.random.randint(1, 10)
         mu = self.lam / (self.rho * nSe)
 
-        def arr(t): return t + np.random.exponential(1 / self.lam)
-        def ser(t): return t + np.random.exponential(1 / mu)
+        def arr(t):
+            return t + np.random.exponential(1 / self.lam)
+        def ser(t):
+            return t + np.random.exponential(1 / mu)
 
         q = qt.QueueServer(num_servers=nSe, arrival_f=arr, service_f=ser)
         q.set_active()
@@ -158,8 +163,10 @@ class TestQueueServers(unittest.TestCase):
         nSe = np.random.randint(1, 10)
         mu = self.lam / (self.rho * nSe)
 
-        def arr(t): return t + np.random.exponential(1 / self.lam)
-        def ser(t): return t + np.random.exponential(1 / mu)
+        def arr(t):
+            return t + np.random.exponential(1 / self.lam)
+        def ser(t):
+            return t + np.random.exponential(1 / mu)
 
         q = qt.LossQueue(num_servers=nSe, arrival_f=arr, service_f=ser)
         q.set_active()
@@ -185,8 +192,10 @@ class TestQueueServers(unittest.TestCase):
         k   = np.random.randint(5, 15)
         scl = 1 / (mu * k)
 
-        def arr(t): return t + np.random.exponential(1 / self.lam)
-        def ser(t): return t + np.random.gamma(k, scl)
+        def arr(t):
+            return t + np.random.exponential(1 / self.lam)
+        def ser(t):
+            return t + np.random.gamma(k, scl)
 
         q  = qt.LossQueue(num_servers=nSe, arrival_f=arr, service_f=ser)
         q.set_active()

@@ -263,9 +263,12 @@ class TestQueueNetwork(unittest.TestCase):
         nSe = np.random.randint(1, 10)
         mu  = lam / (3 * rho * nSe)
 
-        def arr(t): return t + np.random.exponential(1 / lam)
-        def ser(t): return t + np.random.exponential(1 / mu)
-        def ser_id(t): return t
+        def arr(t):
+            return t + np.random.exponential(1 / lam)
+        def ser(t):
+            return t + np.random.exponential(1 / mu)
+        def ser_id(t):
+            return t
 
         adj = {
             0 : {1: {'edge_type': 1}},
