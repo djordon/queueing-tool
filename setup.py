@@ -90,7 +90,7 @@ setup(
     ext_modules=ext_modules,
     classifiers=classifiers,
     install_requires=[],
-    extra_require={'': install_requires},
+    extras_require={'': install_requires},
     keywords=keywords,
     long_description=long_description,
     license='MIT',
