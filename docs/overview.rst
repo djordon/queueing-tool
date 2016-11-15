@@ -27,7 +27,7 @@ includes several different types of each class.
       simulate `loss networks`_\. In Kendall's notation, these are
       :math:`\text{GI}_t/\text{GI}_t/c/c+b/N/\text{FIFO}` queues.
 
-2. An :class:`.Agent` is an objects that moves throughout the network. When an
+2. An :class:`.Agent` is an object that moves throughout the network. When an
    instance of the network is created it starts empty. Agents are created by a
    queue and once serviced the agent moves on to another queue in the network.
    Each agent *decides* where in the network it wants to arrive at next. Two
