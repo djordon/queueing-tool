@@ -41,6 +41,7 @@ v_pens = [
     [1, 0.135, 0, 1]
 ]
 
+
 class QueueNetwork(object):
     """A class that simulates a network of queues.
 
@@ -275,14 +276,14 @@ class QueueNetwork(object):
 
     default_colors = {
         'vertex_fill_color': [0.95, 0.95, 0.95, 1.0],
-        'vertex_color'     : [0.0, 0.5, 1.0, 1.0],
-        'vertex_highlight' : [0.5, 0.5, 0.5, 1.0],
-        'edge_departure'   : [0, 0, 0, 1],
-        'vertex_active'    : [0.1, 1.0, 0.5, 1.0],
-        'vertex_inactive'  : [0.95, 0.95, 0.95, 1.0],
-        'edge_active'      : [0.1, 0.1, 0.1, 1.0],
-        'edge_inactive'    : [0.8, 0.8, 0.8, 0.3],
-        'bgcolor'          : [1, 1, 1, 1]
+        'vertex_color': [0.0, 0.5, 1.0, 1.0],
+        'vertex_highlight': [0.5, 0.5, 0.5, 1.0],
+        'edge_departure': [0, 0, 0, 1],
+        'vertex_active': [0.1, 1.0, 0.5, 1.0],
+        'vertex_inactive': [0.95, 0.95, 0.95, 1.0],
+        'edge_active': [0.1, 0.1, 0.1, 1.0],
+        'edge_inactive': [0.8, 0.8, 0.8, 0.3],
+        'bgcolor': [1, 1, 1, 1]
     }
 
     default_classes = {
@@ -293,11 +294,11 @@ class QueueNetwork(object):
         4: LossQueue
     }
 
-    default_q_colors  = {
-        k: {'edge_loop_color'  : [0, 0, 0, 0],
-            'edge_color'       : [0.8, 0.8, 0.8, 1.0],
+    default_q_colors = {
+        k: {'edge_loop_color': [0, 0, 0, 0],
+            'edge_color': [0.8, 0.8, 0.8, 1.0],
             'vertex_fill_color': [0.95, 0.95, 0.95, 1.0],
-            'vertex_color'     : v_pens[k]}
+            'vertex_color': v_pens[k]}
         for k in range(5)
     }
 
@@ -312,9 +313,9 @@ class QueueNetwork(object):
         self.max_agents = max_agents
 
         self._initialized = False
-        self._prev_edge   = None
-        self._fancy_heap  = PriorityQueue()
-        self._blocking    = True if blocking.lower() != 'rs' else False
+        self._prev_edge = None
+        self._fancy_heap = PriorityQueue()
+        self._blocking = True if blocking.lower() != 'rs' else False
 
         if colors is None:
             colors = {}
@@ -332,7 +333,7 @@ class QueueNetwork(object):
                 q_classes[k] = self.default_classes[k]
 
         if q_args is None:
-            q_args  = {k: {} for k in range(5)}
+            q_args = {k: {} for k in range(5)}
         else:
             for k in set(q_classes.keys()) - set(q_args.keys()):
                 q_args[k] = {}
@@ -350,20 +351,17 @@ class QueueNetwork(object):
             self.nV = g.number_of_nodes()
             self.nE = g.number_of_edges()
 
-            self.edge2queue   = qs
-            self.num_agents   = np.zeros(g.number_of_edges(), int)
-            self.out_edges    = [0 for v in range(self.nV)]
-            self.in_edges     = [0 for v in range(self.nV)]
+            self.edge2queue = qs
+            self.num_agents = np.zeros(g.number_of_edges(), int)
+            self.out_edges = [0 for v in range(self.nV)]
+            self.in_edges = [0 for v in range(self.nV)]
             self._route_probs = [0 for v in range(self.nV)]
-
-            def edge_index(e):
-                return g.edge_index[e]
 
             for v in g.nodes():
                 vod = g.out_degree(v)
                 probs = array.array('d', [1. / vod for i in range(vod)])
-                self.out_edges[v] = [i for i in map(edge_index, g.out_edges(v))]
-                self.in_edges[v]  = [i for i in map(edge_index, g.in_edges(v))]
+                self.out_edges[v] = [g.edge_index[e] for e in g.out_edges(v)]
+                self.in_edges[v] = [g.edge_index[e] for e in g.in_edges(v)]
                 self._route_probs[v] = probs
 
             g.freeze()
@@ -407,7 +405,6 @@ class QueueNetwork(object):
         else:
             t = np.infty
         return t
-
 
     def animate(self, out=None, t=None, line_kwargs=None,
                 scatter_kwargs=None, **kwargs):
@@ -583,7 +580,6 @@ class QueueNetwork(object):
 
             animation.save(**save_args)
 
-
     def clear(self):
         """Resets the queue to its initial state.
 
@@ -597,16 +593,15 @@ class QueueNetwork(object):
         ``QueueNetwork`` must be re-initialized before any simulations
         can run.
         """
-        self._t           = 0
-        self.num_events   = 0
-        self.num_agents   = np.zeros(self.nE, int)
-        self._fancy_heap  = PriorityQueue()
-        self._prev_edge   = None
+        self._t = 0
+        self.num_events = 0
+        self.num_agents = np.zeros(self.nE, int)
+        self._fancy_heap = PriorityQueue()
+        self._prev_edge = None
         self._initialized = False
         self.reset_colors()
         for q in self.edge2queue:
             q.clear()
-
 
     def clear_data(self, queues=None, edge=None, edge_type=None):
         """Clears data from all queues.
@@ -638,24 +633,23 @@ class QueueNetwork(object):
         for k in queues:
             self.edge2queue[k].data = {}
 
-
     def copy(self):
         """Returns a deep copy of itself."""
-        net              = QueueNetwork(None)
-        net.g            = self.g.copy()
-        net.max_agents   = copy.deepcopy(self.max_agents)
-        net.nV           = copy.deepcopy(self.nV)
-        net.nE           = copy.deepcopy(self.nE)
-        net.num_agents   = copy.deepcopy(self.num_agents)
-        net.num_events   = copy.deepcopy(self.num_events)
-        net._t           = copy.deepcopy(self._t)
+        net = QueueNetwork(None)
+        net.g = self.g.copy()
+        net.max_agents = copy.deepcopy(self.max_agents)
+        net.nV = copy.deepcopy(self.nV)
+        net.nE = copy.deepcopy(self.nE)
+        net.num_agents = copy.deepcopy(self.num_agents)
+        net.num_events = copy.deepcopy(self.num_events)
+        net._t = copy.deepcopy(self._t)
         net._initialized = copy.deepcopy(self._initialized)
-        net._prev_edge   = copy.deepcopy(self._prev_edge)
-        net._blocking    = copy.deepcopy(self._blocking)
-        net.colors       = copy.deepcopy(self.colors)
-        net.out_edges    = copy.deepcopy(self.out_edges)
-        net.in_edges     = copy.deepcopy(self.in_edges)
-        net.edge2queue   = copy.deepcopy(self.edge2queue)
+        net._prev_edge = copy.deepcopy(self._prev_edge)
+        net._blocking = copy.deepcopy(self._blocking)
+        net.colors = copy.deepcopy(self.colors)
+        net.out_edges = copy.deepcopy(self.out_edges)
+        net.in_edges = copy.deepcopy(self.in_edges)
+        net.edge2queue = copy.deepcopy(self.edge2queue)
         net._route_probs = copy.deepcopy(self._route_probs)
 
         if net._initialized:
@@ -663,7 +657,6 @@ class QueueNetwork(object):
             net._fancy_heap = PriorityQueue(keys, net.nE)
 
         return net
-
 
     def draw(self, update_colors=True, line_kwargs=None,
              scatter_kwargs=None, **kwargs):
@@ -741,7 +734,6 @@ class QueueNetwork(object):
         self.g.draw_graph(line_kwargs=line_kwargs,
                           scatter_kwargs=scatter_kwargs, **kwargs)
 
-
     def get_agent_data(self, queues=None, edge=None, edge_type=None, return_header=False):
         """Gets data from queues and organizes it by agent.
 
@@ -797,7 +789,7 @@ class QueueNetwork(object):
         for qid in queues:
             for agent_id, dat in self.edge2queue[qid].data.items():
                 datum = np.zeros((len(dat), 6))
-                datum[:,:5] = np.array(dat)
+                datum[:, :5] = np.array(dat)
                 datum[:, 5] = qid
                 if agent_id in data:
                     data[agent_id] = np.vstack((data[agent_id], datum))
@@ -821,7 +813,6 @@ class QueueNetwork(object):
             return data, 'arrival,service,departure,num_queued,num_total,q_id'
 
         return data
-
 
     def get_queue_data(self, queues=None, edge=None, edge_type=None, return_header=False):
         """Gets data from all the queues.
@@ -906,7 +897,6 @@ class QueueNetwork(object):
 
         return data
 
-
     def initialize(self, nActive=1, queues=None, edges=None, edge_type=None):
         """Prepares the ``QueueNetwork`` for simulation.
 
@@ -960,7 +950,7 @@ class QueueNetwork(object):
         if queues is None and edges is None and edge_type is None:
             if nActive >= 1 and isinstance(nActive, numbers.Integral):
                 qs = [q.edge[2] for q in self.edge2queue if q.edge[3] != 0]
-                n  = min(nActive, len(qs))
+                n = min(nActive, len(qs))
                 queues = np.random.choice(qs, size=n, replace=False)
             elif not isinstance(nActive, numbers.Integral):
                 msg = "If queues is None, then nActive must be an integer."
@@ -986,8 +976,7 @@ class QueueNetwork(object):
 
         keys = [q._key() for q in self.edge2queue if q._time < np.infty]
         self._fancy_heap = PriorityQueue(keys, self.nE)
-        self._initialized  = True
-
+        self._initialized = True
 
     def next_event_description(self):
         """Returns whether the next event is an arrival or a departure
@@ -1016,14 +1005,12 @@ class QueueNetwork(object):
             edge_index = q.edge[2]
         return event_type, edge_index
 
-
     def reset_colors(self):
         """Resets all edge and vertex colors to their default values."""
         for k, e in enumerate(self.g.edges()):
             self.g.set_ep(e, 'edge_color', self.edge2queue[k].colors['edge_color'])
         for v in self.g.nodes():
             self.g.set_vp(v, 'vertex_fill_color', self.colors['vertex_fill_color'])
-
 
     def set_transitions(self, mat):
         """Change the routing transitions probabilities for the
@@ -1131,11 +1118,9 @@ class QueueNetwork(object):
 
             for k in range(self.nV):
                 for j, e in enumerate(self.g.out_edges(k)):
-                    #p = mat[k, [e[1] for e in self.g.out_edges(k)]]
-                    self._route_probs[k][j] = mat[k, e[1]]#p#.append(np.float64(p))
+                    self._route_probs[k][j] = mat[k, e[1]]
         else:
             raise TypeError("mat must be a numpy array or a dict.")
-
 
     def show_active(self, **kwargs):
         """Draws the network, highlighting active queues.
@@ -1159,11 +1144,11 @@ class QueueNetwork(object):
         are ``vertex_active``, ``vertex_inactive``, ``edge_active``,
         and ``edge_inactive``.
         """
-        g  = self.g
+        g = self.g
         for v in g.nodes():
             self.g.set_vp(v, 'vertex_color', [0, 0, 0, 0.9])
             is_active = False
-            my_iter   = g.in_edges(v) if g.is_directed() else g.out_edges(v)
+            my_iter = g.in_edges(v) if g.is_directed() else g.out_edges(v)
             for e in my_iter:
                 ei = g.edge_index[e]
                 if self.edge2queue[ei]._active:
@@ -1183,7 +1168,6 @@ class QueueNetwork(object):
 
         self.draw(update_colors=False, **kwargs)
         self._update_all_colors()
-
 
     def show_type(self, edge_type, **kwargs):
         """Draws the network, highlighting queues of a certain type.
@@ -1238,7 +1222,6 @@ class QueueNetwork(object):
 
         self.draw(update_colors=False, **kwargs)
         self._update_all_colors()
-
 
     def simulate(self, n=1, t=None):
         """Simulates the network forward.
@@ -1303,7 +1286,6 @@ class QueueNetwork(object):
             while self._t < now + t:
                 self._simulate_next_event(slow=False)
 
-
     def _simulate_next_event(self, slow=True):
         if self._fancy_heap.size == 0:
             self._t = np.infty
@@ -1319,9 +1301,9 @@ class QueueNetwork(object):
         self._qkey = q1k
         self.num_events += 1
 
-        if event == 2: # This is a departure
-            e2  = q1._departures[0].desired_destination(self, q1.edge)
-            q2  = self.edge2queue[e2]
+        if event == 2:  # This is a departure
+            e2 = q1._departures[0].desired_destination(self, q1.edge)
+            q2 = self.edge2queue[e2]
             q2k = q2._key()
 
             if q2.at_capacity() and e2 != e1:
@@ -1367,7 +1349,7 @@ class QueueNetwork(object):
                 if new_q1k[0] < np.infty:
                     self._fancy_heap.push(*new_q1k)
 
-        elif event == 1: # This is an arrival
+        elif event == 1:  # This is an arrival
             if q1._active and self.max_agents < np.infty and \
                     np.sum(self.num_agents) > self.max_agents - 1:
                 q1._active = False
@@ -1382,7 +1364,6 @@ class QueueNetwork(object):
             new_q1k = q1._key()
             if new_q1k[0] < np.infty:
                 self._fancy_heap.push(*new_q1k)
-
 
     def start_collecting_data(self, queues=None, edge=None, edge_type=None):
         """Tells the queues to collect data on agents' arrival, service
@@ -1415,7 +1396,6 @@ class QueueNetwork(object):
         for k in queues:
             self.edge2queue[k].collect_data = True
 
-
     def stop_collecting_data(self, queues=None, edge=None, edge_type=None):
         """Tells the queues to stop collecting data on agents.
 
@@ -1445,7 +1425,6 @@ class QueueNetwork(object):
 
         for k in queues:
             self.edge2queue[k].collect_data = False
-
 
     def transitions(self, return_matrix=True):
         """Returns the routing probabilities for each vertex in the
@@ -1532,12 +1511,11 @@ class QueueNetwork(object):
                 mat[v, ind] = self._route_probs[v]
         else:
             mat = {
-                k: {e[1]: p for e, p in zip(self.g.out_edges(k), value.tolist())}
-                    for k, value in enumerate(self._route_probs)
+                k: {e[1]: p for e, p in zip(self.g.out_edges(k), value)}
+                for k, value in enumerate(self._route_probs)
             }
 
         return mat
-
 
     def _update_all_colors(self):
         do = [True for v in range(self.nV)]
@@ -1559,7 +1537,6 @@ class QueueNetwork(object):
                     self._update_vertex_color(q.edge[0])
                     do[q.edge[0]] = False
 
-
     def _update_vertex_color(self, v):
         ee = (v, v)
         ee_is_edge = self.g.is_edge(ee)
@@ -1575,20 +1552,19 @@ class QueueNetwork(object):
             div = (2 * cap) + 2.
             tmp = 1. - min(nSy / div, 1.)
 
-            color    = [i * tmp for i in self.colors['vertex_fill_color']]
+            color = [i * tmp for i in self.colors['vertex_fill_color']]
             color[3] = 1.0
             self.g.set_vp(v, 'vertex_fill_color', color)
             if not ee_is_edge:
                 self.g.set_vp(v, 'vertex_color', self.colors['vertex_color'])
 
-
     def _update_graph_colors(self, qedge):
-        e  = qedge[:2]
-        v  = qedge[1]
+        e = qedge[:2]
+        v = qedge[1]
         if self._prev_edge is not None:
             pe = self._prev_edge[:2]
             pv = self._prev_edge[1]
-            q  = self.edge2queue[self._prev_edge[2]]
+            q = self.edge2queue[self._prev_edge[2]]
 
             if pe[0] == pe[1]:
                 self.g.set_ep(pe, 'edge_color', q._current_color(1))
@@ -1610,7 +1586,6 @@ class QueueNetwork(object):
         else:
             self.g.set_ep(e, 'edge_color', q._current_color())
             self._update_vertex_color(v)
-
 
 
 def _get_queues(g, queues, edge, edge_type):
