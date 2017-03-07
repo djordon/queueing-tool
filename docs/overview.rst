@@ -159,7 +159,7 @@ immediately try to checkout.
 
 The default layout was a little hard on the eyes so I changed it a little::
 
-    >>> g.new_vertex_property('pos')
+    >>> qn.g.new_vertex_property('pos')
     >>> pos = {}
     >>> for v in qn.g.nodes():
     ...     if v == 0:
