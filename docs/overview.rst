@@ -27,7 +27,7 @@ includes several different types of each class.
       simulate `loss networks`_\. In Kendall's notation, these are
       :math:`\text{GI}_t/\text{GI}_t/c/c+b/N/\text{FIFO}` queues.
 
-2. An :class:`.Agent` is an objects that moves throughout the network. When an
+2. An :class:`.Agent` is an object that moves throughout the network. When an
    instance of the network is created it starts empty. Agents are created by a
    queue and once serviced the agent moves on to another queue in the network.
    Each agent *decides* where in the network it wants to arrive at next. Two
@@ -129,13 +129,16 @@ We will take the arrival process to be time varying and random (more
 specifically, we'll let it be a non-homogeneous Poisson process), with a rate
 that's sinusoidal. To set that, run::
 
-    >>> def rate(t): return 25 + 350 * np.sin(np.pi * t / 2)**2
-    >>> def arr_f(t): return qt.poisson_random_measure(t, rate, 375)
+    >>> def rate(t):
+    ...     return 25 + 350 * np.sin(np.pi * t / 2)**2
+    >>> def arr_f(t):
+    ...     return qt.poisson_random_measure(t, rate, 375)
 
 Lastly, we need to specify the departure process for each checkout counter. Let's
 choose the exponential distribution::
 
-    >>> def ser_f(t): return t + np.random.exponential(0.2 / 2.1)
+    >>> def ser_f(t):
+    ...     return t + np.random.exponential(0.2 / 2.1)
 
 Now is time to put this all together to make out queueing network; we do this
 with the following::
@@ -159,7 +162,7 @@ immediately try to checkout.
 
 The default layout was a little hard on the eyes so I changed it a little::
 
-    >>> g.new_vertex_property('pos')
+    >>> qn.g.new_vertex_property('pos')
     >>> pos = {}
     >>> for v in qn.g.nodes():
     ...     if v == 0:
