@@ -16,7 +16,10 @@
 import sys
 import os
 
-# from mock import Mock as MagicMock
+try:
+    import unitest.mock as mock
+except ImportError:
+    from mock
 
 import alabaster
 
@@ -25,18 +28,18 @@ import alabaster
 #     @classmethod
 #     def __getattr__(cls, name):
 #         return Mock()
-#
-# MOCK_MODULES = [
-#     'choice',
-#     'queueing_tool.queues.choice',
-#     'matplotlib',
-#     'numpy',
-#     'numpy.random',
-#     'priority_queue',
-#     'queueing_tool.network.priority_queue',
-#     'pygraphviz'
-# ]
-# sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+MOCK_MODULES = [
+    'choice',
+    'queueing_tool.queues.choice',
+    'matplotlib',
+    'numpy',
+    'numpy.random',
+    'priority_queue',
+    'queueing_tool.network.priority_queue',
+    'pygraphviz'
+]
+sys.modules.update((mod_name, mock.Mock()) for mod_name in MOCK_MODULES)
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -102,7 +105,7 @@ copyright = '2016, Daniel Jordon'
 #
 
 # The full version, including alpha/beta/rc tags.
-with open('../VERSION', 'r') as a_file :
+with open('../VERSION', 'r') as a_file:
     release = a_file.read().strip()
 
 
@@ -131,7 +134,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes. http://sphinx-doc.org/theming.html
-html_theme = 'alabaster'#'qt_sphinx13'#
+html_theme = 'alabaster'  # 'qt_sphinx13'#
 #html_style = 'adjust_alabaster.css'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
