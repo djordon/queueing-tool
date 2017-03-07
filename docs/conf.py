@@ -19,7 +19,7 @@ import os
 try:
     import unitest.mock as mock
 except ImportError:
-    from mock
+    import mock
 
 import alabaster
 
