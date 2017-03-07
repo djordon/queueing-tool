@@ -371,11 +371,12 @@ class QueueNetwork(object):
 
     def __repr__(self):
         the_string = 'QueueNetwork. # nodes: {0}, edges: {1}, agents: {2}'
-        return  the_string.format(self.nV, self.nE, np.sum(self.num_agents))
+        return the_string.format(self.nV, self.nE, np.sum(self.num_agents))
 
     @property
     def blocking(self):
         return 'BAS' if self._blocking else 'RS'
+
     @blocking.setter
     def blocking(self, tmp):
         if not isinstance(tmp, str):
