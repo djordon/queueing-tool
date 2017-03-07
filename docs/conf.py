@@ -16,27 +16,27 @@
 import sys
 import os
 
-from mock import Mock as MagicMock
+# from mock import Mock as MagicMock
 
 import alabaster
 
 
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return Mock()
-
-MOCK_MODULES = [
-    'choice',
-    'queueing_tool.queues.choice',
-    'matplotlib',
-    'numpy',
-    'numpy.random',
-    'priority_queue',
-    'queueing_tool.network.priority_queue',
-    'pygraphviz'
-]
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+# class Mock(MagicMock):
+#     @classmethod
+#     def __getattr__(cls, name):
+#         return Mock()
+#
+# MOCK_MODULES = [
+#     'choice',
+#     'queueing_tool.queues.choice',
+#     'matplotlib',
+#     'numpy',
+#     'numpy.random',
+#     'priority_queue',
+#     'queueing_tool.network.priority_queue',
+#     'pygraphviz'
+# ]
+# sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
