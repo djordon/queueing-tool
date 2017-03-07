@@ -129,13 +129,16 @@ We will take the arrival process to be time varying and random (more
 specifically, we'll let it be a non-homogeneous Poisson process), with a rate
 that's sinusoidal. To set that, run::
 
-    >>> def rate(t): return 25 + 350 * np.sin(np.pi * t / 2)**2
-    >>> def arr_f(t): return qt.poisson_random_measure(t, rate, 375)
+    >>> def rate(t):
+    ...     return 25 + 350 * np.sin(np.pi * t / 2)**2
+    >>> def arr_f(t):
+    ...     return qt.poisson_random_measure(t, rate, 375)
 
 Lastly, we need to specify the departure process for each checkout counter. Let's
 choose the exponential distribution::
 
-    >>> def ser_f(t): return t + np.random.exponential(0.2 / 2.1)
+    >>> def ser_f(t):
+    ...     return t + np.random.exponential(0.2 / 2.1)
 
 Now is time to put this all together to make out queueing network; we do this
 with the following::
