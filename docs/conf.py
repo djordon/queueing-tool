@@ -16,12 +16,10 @@
 import sys
 import os
 
-try:
-    from unittest.mock import MagicMock
-except ImportError:
-    from mock import Mock as MagicMock
+from mock import Mock as MagicMock
 
 import alabaster
+
 
 class Mock(MagicMock):
     @classmethod
