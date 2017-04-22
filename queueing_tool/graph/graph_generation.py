@@ -3,22 +3,9 @@ import numbers
 import networkx as nx
 import numpy as np
 
-from queueing_tool.graph.graph_functions import _test_graph
+from queueing_tool.graph.graph_functions import _test_graph, _calculate_distance
 from queueing_tool.graph.graph_wrapper import QueueNetworkDiGraph
 from queueing_tool.union_find import UnionFind
-
-
-def _calculate_distance(latlon1, latlon2):
-    """Calculates the distance between two points on earth.
-    """
-    lat1, lon1 = latlon1
-    lat2, lon2 = latlon2
-    R     = 6371          # radius of the earth in kilometers
-    dlon  = lon2 - lon1
-    dlat  = lat2 - lat1
-    a = np.sin(dlat / 2.)**2 + np.cos(lat1) * np.cos(lat2) * (np.sin(dlon / 2.))**2
-    c = 2 * np.pi * R * np.arctan2(np.sqrt(a), np.sqrt(1-a)) / 180.
-    return c
 
 
 def generate_transition_matrix(g, seed=None):
@@ -45,7 +32,7 @@ def generate_transition_matrix(g, seed=None):
     if isinstance(seed, numbers.Integral):
         np.random.seed(seed)
 
-    nV  = g.number_of_nodes()
+    nV = g.number_of_nodes()
     mat = np.zeros((nV, nV))
 
     for v in g.nodes():
@@ -56,7 +43,7 @@ def generate_transition_matrix(g, seed=None):
         elif deg > 1:
             probs = np.ceil(np.random.rand(deg) * 100) / 100.
             if np.isclose(np.sum(probs), 0):
-                probs[np.random.randint(deg)]  = 1
+                probs[np.random.randint(deg)] = 1
 
             mat[v, ind] = probs / np.sum(probs)
 
@@ -201,16 +188,16 @@ def minimal_random_graph(num_vertices, seed=None, **kwargs):
         np.random.seed(seed)
 
     points = np.random.random((num_vertices, 2)) * 10
-    edges  = []
+    edges = []
 
-    for k in range(num_vertices-1):
-        for j in range(k+1, num_vertices):
+    for k in range(num_vertices - 1):
+        for j in range(k + 1, num_vertices):
             v = points[k] - points[j]
             edges.append((k, j, v[0]**2 + v[1]**2))
 
     mytype = [('n1', int), ('n2', int), ('distance', np.float)]
-    edges  = np.array(edges, dtype=mytype)
-    edges  = np.sort(edges, order='distance')
+    edges = np.array(edges, dtype=mytype)
+    edges = np.sort(edges, order='distance')
     unionF = UnionFind([k for k in range(num_vertices)])
 
     g = nx.Graph()
@@ -283,14 +270,14 @@ def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
         np.random.seed(seed)
 
     if proportions is None:
-        proportions = {k : 1. / 3 for k in range(1, 4)}
+        proportions = {k: 1. / 3 for k in range(1, 4)}
 
     if loop_proportions is None:
-        loop_proportions = {k : 1. / 4 for k in range(4)}
+        loop_proportions = {k: 1. / 4 for k in range(4)}
 
-    edges  = [e for e in g.edges() if e[0] != e[1]]
-    loops  = [e for e in g.edges() if e[0] == e[1]]
-    props  = list(proportions.values())
+    edges = [e for e in g.edges() if e[0] != e[1]]
+    loops = [e for e in g.edges() if e[0] == e[1]]
+    props = list(proportions.values())
     lprops = list(loop_proportions.values())
 
     if not np.isclose(sum(props), 1.0):
@@ -299,13 +286,13 @@ def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
         raise ValueError("loop_proportions values must sum to one.")
 
     eTypes = {}
-    types  = list(proportions.keys())
+    types = list(proportions.keys())
     values = np.random.choice(types, size=len(edges), replace=True, p=props)
 
     for k, e in enumerate(edges):
         eTypes[e] = values[k]
 
-    types  = list(loop_proportions.keys())
+    types = list(loop_proportions.keys())
     values = np.random.choice(types, size=len(loops), replace=True, p=lprops)
 
     for k, e in enumerate(loops):
@@ -366,21 +353,21 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
     if isinstance(seed, numbers.Integral):
         np.random.seed(seed)
 
-    tmp    = np.sort(np.array(rank))
+    tmp = np.sort(np.array(rank))
     nDests = int(np.ceil(g.number_of_nodes() * pType2))
-    dests  = np.where(rank >= tmp[-nDests])[0]
+    dests = np.where(rank >= tmp[-nDests])[0]
 
     if 'pos' not in g.vertex_properties():
         g.set_pos()
 
-    dest_pos   = np.array([g.vp(v, 'pos') for v in dests])
-    nFCQ       = int(pType3 * g.number_of_nodes())
+    dest_pos = np.array([g.vp(v, 'pos') for v in dests])
+    nFCQ = int(pType3 * g.number_of_nodes())
     min_g_dist = np.ones(nFCQ) * np.infty
     ind_g_dist = np.ones(nFCQ, int)
 
     r, theta = np.random.random(nFCQ) / 500., np.random.random(nFCQ) * 360.
-    xy_pos   = np.array([r * np.cos(theta), r * np.sin(theta)]).transpose()
-    g_pos    = xy_pos + dest_pos[np.array(np.mod(np.arange(nFCQ), nDests), int)]
+    xy_pos = np.array([r * np.cos(theta), r * np.sin(theta)]).transpose()
+    g_pos = xy_pos + dest_pos[np.array(np.mod(np.arange(nFCQ), nDests), int)]
 
     for v in g.nodes():
         if v not in dests:
@@ -389,7 +376,7 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
             ind_g_dist[min_g_dist == tmp] = v
 
     ind_g_dist = np.unique(ind_g_dist)
-    fcqs  = set(ind_g_dist[:min(nFCQ, len(ind_g_dist))])
+    fcqs = set(ind_g_dist[:min(nFCQ, len(ind_g_dist))])
     dests = set(dests)
     g.new_vertex_property('loop_type')
 

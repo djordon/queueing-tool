@@ -1,7 +1,20 @@
 import networkx as nx
+import numpy as np
 
 from queueing_tool.graph.graph_wrapper import QueueNetworkDiGraph
 
+
+def _calculate_distance(latlon1, latlon2):
+    """Calculates the distance between two points on earth.
+    """
+    lat1, lon1 = latlon1
+    lat2, lon2 = latlon2
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    R = 6371  # radius of the earth in kilometers
+    a = np.sin(dlat / 2)**2 + np.cos(lat1) * np.cos(lat2) * (np.sin(dlon / 2))**2
+    c = 2 * np.pi * R * np.arctan2(np.sqrt(a), np.sqrt(1 - a)) / 180
+    return c
 
 
 def _test_graph(graph):
@@ -72,4 +85,4 @@ def graph2dict(g, return_dict_of_dict=True):
     if return_dict_of_dict:
         return dict_of_dicts
     else:
-        return  {k: list(val.keys()) for k, val in dict_of_dicts.items()}
+        return {k: list(val.keys()) for k, val in dict_of_dicts.items()}
