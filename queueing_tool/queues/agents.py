@@ -1,5 +1,3 @@
-import copy
-
 from numpy import infty
 from numpy.random import uniform
 

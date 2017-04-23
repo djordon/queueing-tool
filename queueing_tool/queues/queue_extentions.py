@@ -1,4 +1,3 @@
-import copy
 from heapq import heappush, heappop
 
 from numpy import logical_or, infty
