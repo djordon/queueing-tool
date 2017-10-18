@@ -11,7 +11,7 @@ except ImportError:
 
 
 python_version = sys.version_info[:2]
-if python_version < (2, 7) or (3, 0) <=  python_version < (3, 3):
+if python_version < (2, 7) or (3, 0) <= python_version < (3, 3):
     raise RuntimeError('Python version 2.7 or >= 3.3 required.')
 
 cmdclass = {'build_ext': build_ext}

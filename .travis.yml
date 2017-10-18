@@ -6,6 +6,7 @@ python:
   - 3.3
   - 3.4
   - 3.5
+  - 3.6
 cache: pip
 env:
   global:
@@ -21,6 +22,6 @@ before_script:
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
 script:
-  - py.test --cov=queueing_tool --cov-report term-missing
+  - py.test --cov=queueing_tool --cov-report term-missing --doctest-modules
 after_success:
   - coveralls
