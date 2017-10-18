@@ -24,11 +24,6 @@ except ImportError:
 import alabaster
 
 
-# class Mock(MagicMock):
-#     @classmethod
-#     def __getattr__(cls, name):
-#         return Mock()
-
 MOCK_MODULES = [
     'choice',
     'queueing_tool.queues.choice',

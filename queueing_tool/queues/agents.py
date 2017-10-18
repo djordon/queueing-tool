@@ -1,5 +1,3 @@
-import copy
-
 from numpy import infty
 from numpy.random import uniform
 
@@ -40,7 +38,7 @@ class Agent(object):
     def __init__(self, agent_id=(0, 0), **kwargs):
         self.agent_id = agent_id
         self.blocked = 0
-        self._time   = 0         # agents arrival or departure time
+        self._time = 0  # The agents arrival or departure time
 
     def __repr__(self):
         return "Agent; agent_id:{0}. time: {1}".format(self.agent_id, round(self._time, 3))
@@ -60,13 +58,11 @@ class Agent(object):
     def __ge__(self, b):
         return self._time >= b._time
 
-
     def add_loss(self, *args, **kwargs):
         """Adds one to the number of times the agent has been blocked
         from entering a queue.
         """
         self.blocked += 1
-
 
     def desired_destination(self, network, edge):
         """Returns the agents next destination given their current
@@ -104,14 +100,13 @@ class Agent(object):
         if n <= 1:
             return network.out_edges[edge[1]][0]
 
-        u  = uniform()
+        u = uniform()
         pr = network._route_probs[edge[1]]
-        k  = _choice(pr, u, n)
+        k = _choice(pr, u, n)
 
         # _choice returns an integer between 0 and n-1 where the
         # probability of k being selected is equal to pr[k].
         return network.out_edges[edge[1]][k]
-
 
     def queue_action(self, queue, *args, **kwargs):
         """A method that acts on the queue the Agent is at. This method
@@ -123,14 +118,6 @@ class Agent(object):
         this method is overwritten.
         """
         pass
-
-
-    def __deepcopy__(self, memo):
-        new_agent = self.__class__()
-        new_agent.agent_id = copy.copy(self.agent_id)
-        new_agent._time    = copy.copy(self._time)
-        new_agent.blocked  = copy.copy(self.blocked)
-        return new_agent
 
 
 class GreedyAgent(Agent):
@@ -200,6 +187,3 @@ class InftyAgent(object):
 
     def __eq__(self, b):
         return self._time == b._time
-
-    def __deepcopy__(self, memo):
-        return self.__class__()

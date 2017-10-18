@@ -1,4 +1,3 @@
-import copy
 from heapq import heappush, heappop
 
 from numpy import logical_or, infty
@@ -28,7 +27,6 @@ class ResourceAgent(Agent):
     def __repr__(self):
         return "ResourceAgent; agent_id:{0}. Time: {1}".format(self.agent_id, round(self._time, 3))
 
-
     def queue_action(self, queue, *args, **kwargs):
         """Function that specifies the interaction with a
         :class:`.ResourceQueue` upon departure.
@@ -56,14 +54,6 @@ class ResourceAgent(Agent):
                     self._had_resource = False
 
 
-    def __deepcopy__(self, memo):
-        new_agent = super(ResourceAgent, self).__deepcopy__(memo)
-        new_agent._has_resource = copy.deepcopy(self._has_resource)
-        new_agent._had_resource = copy.deepcopy(self._had_resource)
-        return new_agent
-
-
-
 class ResourceQueue(LossQueue):
     """An queue designed to interact with the :class:`.ResourceAgent`
     class.
@@ -89,10 +79,10 @@ class ResourceQueue(LossQueue):
     """
 
     _default_colors = {
-        'edge_loop_color'  : [0.7, 0.7, 0.7, 0.50],
-        'edge_color'       : [0.7, 0.7, 0.7, 0.50],
+        'edge_loop_color': [0.7, 0.7, 0.7, 0.50],
+        'edge_color': [0.7, 0.7, 0.7, 0.50],
         'vertex_fill_color': [1.0, 1.0, 1.0, 1.0],
-        'vertex_pen_color' : [0.0, 0.235, 0.718, 1.0]
+        'vertex_pen_color': [0.0, 0.235, 0.718, 1.0]
     }
 
     def __init__(self, num_servers=10, AgentFactory=ResourceAgent, qbuffer=0, **kwargs):
@@ -104,8 +94,7 @@ class ResourceQueue(LossQueue):
         )
 
         self.max_servers = 2 * num_servers
-        self.over_max    = 0
-
+        self.over_max = 0
 
     def __repr__(self):
         my_str = ("ResourceQueue:{0}. Servers: {1}, max servers: {2}, "
@@ -114,12 +103,10 @@ class ResourceQueue(LossQueue):
                self.num_arrivals, self.num_departures, round(self._time, 3))
         return my_str.format(*arg)
 
-
     def set_num_servers(self, n):
         self.num_servers = n
         if n > self.max_servers:
             self.over_max += 1
-
 
     def next_event(self):
         """Simulates the queue forward one event.
@@ -148,10 +135,10 @@ class ResourceQueue(LossQueue):
                 return super(ResourceQueue, self).next_event()
             elif self._arrivals[0]._time < infty:
                 if self._arrivals[0]._has_resource:
-                    arrival   = heappop(self._arrivals)
+                    arrival = heappop(self._arrivals)
                     self._current_t = arrival._time
-                    self._num_total  -= 1
-                    self.set_num_servers(self.num_servers+1)
+                    self._num_total -= 1
+                    self.set_num_servers(self.num_servers + 1)
 
                     if self.collect_data:
                         t = arrival._time
@@ -169,11 +156,11 @@ class ResourceQueue(LossQueue):
                     super(ResourceQueue, self).next_event()
 
                 else:
-                    self.num_blocked   += 1
+                    self.num_blocked += 1
                     self._num_arrivals += 1
-                    self._num_total    -= 1
-                    arrival          = heappop(self._arrivals)
-                    self._current_t  = arrival._time
+                    self._num_total -= 1
+                    arrival = heappop(self._arrivals)
+                    self._current_t = arrival._time
 
                     if self.collect_data:
                         if arrival.agent_id not in self.data:
@@ -188,7 +175,6 @@ class ResourceQueue(LossQueue):
         else:
             return super(ResourceQueue, self).next_event()
 
-
     def _current_color(self, which=0):
         if which == 1:
             nSy = self.num_servers
@@ -196,7 +182,7 @@ class ResourceQueue(LossQueue):
             div = 5. if cap <= 1 else (3. * cap)
             tmp = 0.9 - min(nSy / div, 0.9)
 
-            color    = [i * tmp / 0.9 for i in self.colors['edge_loop_color']]
+            color = [i * tmp / 0.9 for i in self.colors['edge_loop_color']]
             color[3] = 0.0
 
         elif which == 2:
@@ -208,27 +194,18 @@ class ResourceQueue(LossQueue):
             tmp = 0.9 - min(nSy / div, 0.9)
 
             if self.edge[0] == self.edge[1]:
-                color    = [i * tmp / 0.9 for i in self.colors['vertex_fill_color']]
+                color = [i * tmp / 0.9 for i in self.colors['vertex_fill_color']]
                 color[3] = 1.0
             else:
-                color    = [i * tmp / 0.9 for i in self.colors['edge_color']]
+                color = [i * tmp / 0.9 for i in self.colors['edge_color']]
                 color[3] = 0.5
 
         return color
-
 
     def clear(self):
         super(ResourceQueue, self).clear()
         self.num_blocked = 0
         self.over_max = 0
-
-
-    def __deepcopy__(self, memo):
-        new_server  = super(ResourceQueue, self).__deepcopy__(memo)
-        new_server.max_servers = copy.deepcopy(self.max_servers)
-        new_server.over_max    = copy.deepcopy(self.over_max)
-        return new_server
-
 
 
 class InfoAgent(Agent):
@@ -261,36 +238,25 @@ class InfoAgent(Agent):
     def __repr__(self):
         return "InfoAgent; agent_id:{0}. Time: {1}".format(self.agent_id, round(self._time, 3))
 
-
-    def add_loss(self, qedge, *args, **kwargs): # qedge[2] is the edge_index of the queue
+    def add_loss(self, qedge, *args, **kwargs):  # qedge[2] is the edge_index of the queue
         self.stats[qedge[2], 2] += 1
-
 
     def get_beliefs(self):
         return self.net_data[:, 2]
 
-
     def queue_action(self, queue, *args, **kwargs):
         if isinstance(queue, InfoQueue):
-            ### update information
+            # update information
             a = logical_or(self.net_data[:, 0] < queue.net_data[:, 0], self.net_data[:, 0] == -1)
             self.net_data[a, :] = queue.net_data[a, :]
 
-            ### stamp this information
-            n   = queue.edge[2]    # This is the edge_index of the queue
+            # stamp this information
+            n = queue.edge[2]    # This is the edge_index of the queue
             if self.agent_id in queue.data:
                 tmp = queue.data[self.agent_id][-1][1] - queue.data[self.agent_id][-1][0]
-                self.stats[n, 0]  = self.stats[n, 0] + tmp
+                self.stats[n, 0] = self.stats[n, 0] + tmp
                 self.stats[n, 1] += 1 if tmp > 0 else 0
             self.net_data[n, :] = queue._current_t, queue.num_servers, queue.num_system / queue.num_servers
-
-
-    def __deepcopy__(self, memo):
-        new_agent          = super(InfoAgent, self).__deepcopy__(memo)
-        new_agent.stats    = copy.deepcopy(self.stats)
-        new_agent.net_data = copy.deepcopy(self.net_data)
-        return new_agent
-
 
 
 class InfoQueue(LossQueue):
@@ -326,20 +292,17 @@ class InfoQueue(LossQueue):
     def __repr__(self):
         my_str = ("InfoQueue:{0}. Servers: {1}, queued: {2}, "
                   "arrivals: {3}, departures: {4}, next time: {5}")
-        arg =  my_str % (self.edge[2], self.num_servers, len(self.queue),\
-                         self.num_arrivals, self.num_departures, round(self._time, 3))
+        arg = (self.edge[2], self.num_servers, len(self.queue),
+               self.num_arrivals, self.num_departures, round(self._time, 3))
         return my_str.format(*arg)
-
 
     def networking(self, network_size):
         self.net_data = -1 * np.ones((network_size, 3))
-
 
     def extract_information(self, agent):
         if isinstance(agent, InfoAgent):
             a = self.net_data[:, 0] < agent.net_data[:, 0]
             self.net_data[a, :] = agent.net_data[a, :]
-
 
     def _add_arrival(self, agent=None):
         if agent is not None:
@@ -366,20 +329,12 @@ class InfoQueue(LossQueue):
         if self._arrivals[0]._time < self._departures[0]._time:
             self._time = self._arrivals[0]._time
 
-
     def next_event(self):
         if self._arrivals[0]._time < self._departures[0]._time:
             self.extract_information(self._arrivals[0])
 
         return super(InfoQueue, self).next_event()
 
-
     def clear(self):
         super(InfoQueue, self).clear()
         self.networking(len(self.net_data))
-
-
-    def __deepcopy__(self, memo):
-        new_server = super(InfoQueue, self).__deepcopy__(memo)
-        new_server.net_data = copy.deepcopy(self.net_data)
-        return new_server

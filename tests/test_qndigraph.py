@@ -8,7 +8,8 @@ except ImportError:
 import networkx as nx
 import numpy as np
 
-import matplotlib.image as mpimg
+import matplotlib
+import matplotlib.image
 
 import queueing_tool as qt
 
@@ -49,7 +50,6 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
         self.assertEqual(b['vmax'], 107)
         self.assertTrue('beefy' not in a and 'beefy' not in b)
 
-
     def test_draw_graph(self):
         pos = np.random.uniform(size=(self.g.number_of_nodes(), 2))
         kwargs = {
@@ -58,8 +58,11 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
         }
         self.g.draw_graph(scatter_kwargs={'s': 100}, **kwargs)
 
-        img0 = mpimg.imread('tests/img/test.png')
-        img1 = mpimg.imread('test1.png')
+        version = 1 if matplotlib.__version__.startswith('1') else 2
+        filename = 'test-mpl-{version}.x.png'.format(version=version)
+
+        img0 = matplotlib.image.imread('tests/img/{filename}'.format(filename=filename))
+        img1 = matplotlib.image.imread('test1.png')
 
         if os.path.exists('test1.png'):
             os.remove('test1.png')

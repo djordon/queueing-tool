@@ -79,7 +79,6 @@ def poisson_random_measure(t, rate, rate_max):
     return t
 
 
-
 class QueueServer(object):
     """The base queue-server class.
 
@@ -268,10 +267,10 @@ class QueueServer(object):
     """
 
     _default_colors = {
-        'edge_loop_color'  : [0, 0, 0, 0],
-        'edge_color'       : [0.9, 0.9, 0.9, 0.5],
+        'edge_loop_color': [0, 0, 0, 0],
+        'edge_color': [0.9, 0.9, 0.9, 0.5],
         'vertex_fill_color': [1.0, 1.0, 1.0, 1.0],
-        'vertex_color'     : [0.0, 0.5, 1.0, 1.0]
+        'vertex_color': [0.0, 0.5, 1.0, 1.0]
     }
 
     def __init__(self, num_servers=1, arrival_f=None,
@@ -350,10 +349,9 @@ class QueueServer(object):
     def __repr__(self):
         my_str = ("QueueServer:{0}. Servers: {1}, queued: {2}, arrivals: {3}, "
                   "departures: {4}, next time: {5}")
-        arg = (self.edge[2], self.num_servers, len(self.queue), self.num_arrivals,\
+        arg = (self.edge[2], self.num_servers, len(self.queue), self.num_arrivals,
                self.num_departures, round(self._time, 3))
         return my_str.format(*arg)
-
 
     def _add_arrival(self, agent=None):
         if agent is not None:
@@ -380,7 +378,6 @@ class QueueServer(object):
         if self._arrivals[0]._time < self._departures[0]._time:
             self._time = self._arrivals[0]._time
 
-
     def at_capacity(self):
         """Returns whether the queue is at capacity or not.
 
@@ -391,7 +388,6 @@ class QueueServer(object):
             has infinite capacity.
         """
         return False
-
 
     def clear(self):
         """Clears out the queue. Removes all arrivals, departures, and
@@ -415,11 +411,9 @@ class QueueServer(object):
         self._arrivals = [inftyAgent]
         self._departures = [inftyAgent]
 
-
     def copy(self):
         """Returns a deep copy of itself."""
         return copy.deepcopy(self)
-
 
     def _current_color(self, which=0):
         """Returns a color for the queue.
@@ -462,14 +456,13 @@ class QueueServer(object):
             tmp = 1. - min(self.num_system / div, 1)
 
             if self.edge[0] == self.edge[1]:
-                color    = [i * tmp for i in self.colors['vertex_fill_color']]
+                color = [i * tmp for i in self.colors['vertex_fill_color']]
                 color[3] = 1.0
             else:
-                color    = [i * tmp for i in self.colors['edge_color']]
+                color = [i * tmp for i in self.colors['edge_color']]
                 color[3] = 1 / 2.
 
         return color
-
 
     def delay_service(self, t=None):
         """Adds an extra service time to the next departing
@@ -492,7 +485,6 @@ class QueueServer(object):
 
             heappush(self._departures, agent)
             self._update_time()
-
 
     def fetch_data(self, return_header=False):
         """Fetches data from the queue.
@@ -527,7 +519,7 @@ class QueueServer(object):
 
         dat = np.zeros((len(qdata), 6))
         if len(qdata) > 0:
-            dat[:,:5] = np.array(qdata)
+            dat[:, :5] = np.array(qdata)
             dat[:, 5] = self.edge[2]
 
             dType = [
@@ -547,10 +539,8 @@ class QueueServer(object):
 
         return dat
 
-
     def _key(self):
         return self._time, self.edge[2]
-
 
     def number_queued(self):
         """Returns the number of agents waiting in line to be served.
@@ -561,7 +551,6 @@ class QueueServer(object):
             The number of agents waiting in line to be served.
         """
         return len(self.queue)
-
 
     def next_event(self):
         """Simulates the queue forward one event.
@@ -608,7 +597,7 @@ class QueueServer(object):
             if self._active:
                 self._add_arrival()
 
-            self.num_system    += 1
+            self.num_system += 1
             self._num_arrivals += 1
 
             if self.collect_data:
@@ -653,7 +642,6 @@ class QueueServer(object):
         else:
             return 0
 
-
     def set_active(self):
         """Changes the ``active`` attribute to True. Agents may now
         arrive from outside the network.
@@ -662,11 +650,9 @@ class QueueServer(object):
             self._active = True
             self._add_arrival()
 
-
     def set_inactive(self):
         """Changes the ``active`` attribute to False."""
         self._active = False
-
 
     def set_num_servers(self, n):
         """Change the number of servers in the queue to ``n``.
@@ -693,7 +679,6 @@ class QueueServer(object):
             raise ValueError(the_str.format(str(self)))
         else:
             self.num_servers = n
-
 
     def simulate(self, n=1, t=None, nA=None, nD=None):
         """This method simulates the queue forward for a specified
@@ -771,40 +756,11 @@ class QueueServer(object):
             while self._oArrivals < num_arrivals and self._time < infty:
                 self.next_event()
 
-
     def _update_time(self):
         if self._arrivals[0]._time < self._departures[0]._time:
             self._time = self._arrivals[0]._time
         else:
             self._time = self._departures[0]._time
-
-
-    def __deepcopy__(self, memo):
-        new_server                = self.__class__()
-        new_server.edge           = copy.deepcopy(self.edge)
-        new_server.num_servers    = copy.deepcopy(self.num_servers)
-        new_server.active_cap     = copy.deepcopy(self.active_cap)
-        new_server.deactive_t     = copy.deepcopy(self.deactive_t)
-        new_server.collect_data   = copy.deepcopy(self.collect_data)
-        new_server.num_departures = copy.deepcopy(self.num_departures)
-        new_server.num_system     = copy.deepcopy(self.num_system)
-        new_server._num_total     = copy.deepcopy(self._num_total)
-        new_server._active        = copy.deepcopy(self._active)
-        new_server._current_t     = copy.deepcopy(self._current_t)
-        new_server._time          = copy.deepcopy(self._time)
-        new_server._next_ct       = copy.deepcopy(self._next_ct)
-        new_server._num_arrivals  = copy.deepcopy(self._num_arrivals)
-        new_server._oArrivals     = copy.deepcopy(self._oArrivals)
-        new_server.data           = copy.deepcopy(self.data)
-        new_server.colors         = copy.deepcopy(self.colors)
-        new_server.queue          = copy.deepcopy(self.queue, memo)
-        new_server._arrivals      = copy.deepcopy(self._arrivals, memo)
-        new_server._departures    = copy.deepcopy(self._departures, memo)
-        new_server.arrival_f      = self.arrival_f
-        new_server.service_f      = self.service_f
-        new_server.AgentFactory   = self.AgentFactory
-        return new_server
-
 
 
 class LossQueue(QueueServer):
@@ -840,10 +796,10 @@ class LossQueue(QueueServer):
     """
 
     _default_colors = {
-        'edge_loop_color'  : [0, 0, 0, 0],
-        'edge_color'       : [0.7, 0.7, 0.7, 0.5],
+        'edge_loop_color': [0, 0, 0, 0],
+        'edge_color': [0.7, 0.7, 0.7, 0.5],
         'vertex_fill_color': [1.0, 1.0, 1.0, 1.0],
-        'vertex_color'     : [0.133, 0.545, 0.133, 1.0]
+        'vertex_color': [0.133, 0.545, 0.133, 1.0]
     }
 
     def __init__(self, qbuffer=0, **kwargs):
@@ -852,14 +808,12 @@ class LossQueue(QueueServer):
         self.num_blocked = 0
         self.buffer = qbuffer
 
-
     def __repr__(self):
         tmp = ("LossQueue:{0}. Servers: {1}, queued: {2}, arrivals: {3}, "
                "departures: {4}, next time: {5}")
-        arg = (self.edge[2], self.num_servers, len(self.queue), self.num_arrivals,\
+        arg = (self.edge[2], self.num_servers, len(self.queue), self.num_arrivals,
                self.num_departures, round(self._time, 3))
         return tmp.format(*arg)
-
 
     def at_capacity(self):
         """Returns whether the queue is at capacity or not.
@@ -873,11 +827,9 @@ class LossQueue(QueueServer):
         """
         return self.num_system >= self.num_servers + self.buffer
 
-
     def clear(self):
         super(LossQueue, self).clear()
         self.num_blocked = 0
-
 
     def next_event(self):
 
@@ -910,14 +862,6 @@ class LossQueue(QueueServer):
                     self._time = self._departures[0]._time
 
 
-    def __deepcopy__(self, memo):
-        new_server = super(LossQueue, self).__deepcopy__(memo)
-        new_server.num_blocked = copy.deepcopy(self.num_blocked)
-        new_server.buffer = copy.deepcopy(self.buffer)
-        return new_server
-
-
-
 class NullQueue(QueueServer):
     """A terminal queue.
 
@@ -929,16 +873,16 @@ class NullQueue(QueueServer):
     This class can collect data on agents, but only collects each
     agent's arrival time. With the exception of
     ``next_event_description``, ``number_queued``, and
-    ``current_color``, all functions have been replaced with ``pass``.
-    The methods :meth:`~QueueServer.next_event_description` and
-    :meth:`~QueueServer.number_queued` will always return ``0``.
+    ``current_color``, all inherited methods have been replaced with
+    ``pass``. The methods :meth:`~QueueServer.next_event_description`
+    and :meth:`~QueueServer.number_queued` will always return ``0``.
     """
 
     _default_colors = {
-        'edge_loop_color'  : [0, 0, 0, 0],
-        'edge_color'       : [0.7, 0.7, 0.7, 0.5],
+        'edge_loop_color': [0, 0, 0, 0],
+        'edge_color': [0.7, 0.7, 0.7, 0.5],
         'vertex_fill_color': [1.0, 1.0, 1.0, 1.0],
-        'vertex_color'     : [0.5, 0.5, 0.5, 0.5]
+        'vertex_color': [0.5, 0.5, 0.5, 0.5]
     }
 
     def __init__(self, *args, **kwargs):
@@ -990,6 +934,3 @@ class NullQueue(QueueServer):
 
     def clear(self):
         pass
-
-    def __deepcopy__(self, memo):
-        return super(NullQueue, self).__deepcopy__(memo)

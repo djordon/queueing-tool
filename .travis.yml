@@ -9,17 +9,18 @@ python:
 cache: pip
 env:
   global:
+    - CFLAGS="-coverage"
     - TRAVIS_TEST=true
 install:
   - pip install --upgrade pip
   - pip install $(grep 'pytest' requirements.txt)
+  - pip install coveralls coverage matplotlib==1.5.1
   - pip install -e .
-  - pip install coveralls matplotlib==1.5.1
 before_script:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
 script:
-  - py.test tests/ --cov=queueing_tool --cov-report term-missing -s --color=yes
+  - py.test --cov=queueing_tool --cov-report term-missing --doctest-modules
 after_success:
   - coveralls

@@ -15,7 +15,7 @@ except ImportError:
 def _matrix2dict(matrix, etype=False):
     """Takes an adjacency matrix and returns an adjacency list."""
     n = len(matrix)
-    adj = {k : {} for k in range(n)}
+    adj = {k: {} for k in range(n)}
     for k in range(n):
         for j in range(n):
             if matrix[k, j] != 0:
@@ -184,7 +184,6 @@ def adjacency2graph(adjacency, edge_type=None, adjust=1, **kwargs):
     return nx.from_dict_of_dicts(adjacency, create_using=nx.DiGraph())
 
 
-
 SAVEFIG_KWARGS = set([
     'dpi',
     'facecolorw',
@@ -197,7 +196,6 @@ SAVEFIG_KWARGS = set([
     'pad_inches',
     'frameon'
 ])
-
 
 
 class QueueNetworkDiGraph(nx.DiGraph):
@@ -239,11 +237,11 @@ class QueueNetworkDiGraph(nx.DiGraph):
             data = adjacency2graph(data, **kwargs)
 
         super(QueueNetworkDiGraph, self).__init__(data, **kwargs)
-        edges = self.edges()
-        edges.sort()
+        edges = sorted(self.edges())
+
         self.edge_index = {e: k for k, e in enumerate(edges)}
 
-        pos = nx.get_node_attributes(self, 'pos')
+        pos = nx.get_node_attributes(self, name='pos')
         if len(pos) == self.number_of_nodes():
             self.pos = np.array([pos[v] for v in self.nodes()])
         else:
@@ -254,14 +252,11 @@ class QueueNetworkDiGraph(nx.DiGraph):
         self.vertex_fill_color = None
         self._nE = self.number_of_edges()
 
-
     def freeze(self):
         nx.freeze(self)
 
-
     def is_edge(self, e):
         return e in self.edge_index
-
 
     def add_edge(self, *args, **kwargs):
         super(QueueNetworkDiGraph, self).add_edge(*args, **kwargs)
@@ -270,25 +265,20 @@ class QueueNetworkDiGraph(nx.DiGraph):
             self.edge_index[e] = self._nE
             self._nE += 1
 
-
     def out_neighbours(self, v):
         return [e[1] for e in self.out_edges(v)]
 
-
     def ep(self, e, edge_property):
-        return self.edge[e[0]][e[1]].get(edge_property)
-
+        return self.adj[e[0]][e[1]].get(edge_property)
 
     def vp(self, v, vertex_property):
         return self.node[v].get(vertex_property)
 
-
     def set_ep(self, e, edge_property, value):
-        self.edge[e[0]][e[1]][edge_property] = value
+        self.adj[e[0]][e[1]][edge_property] = value
         if hasattr(self, edge_property):
             attr = getattr(self, edge_property)
             attr[self.edge_index[e]] = value
-
 
     def set_vp(self, v, vertex_property, value):
         self.node[v][vertex_property] = value
@@ -296,43 +286,37 @@ class QueueNetworkDiGraph(nx.DiGraph):
             attr = getattr(self, vertex_property)
             attr[v] = value
 
-
     def vertex_properties(self):
         props = set()
         for v in self.nodes():
             props.update(self.node[v].keys())
         return props
 
-
     def edge_properties(self):
         props = set()
         for e in self.edges():
-            props.update(self.edge[e[0]][e[1]].keys())
+            props.update(self.adj[e[0]][e[1]].keys())
         return props
-
 
     def new_vertex_property(self, name):
         values = {v: None for v in self.nodes()}
-        nx.set_node_attributes(self, name, values)
+        nx.set_node_attributes(self, name=name, values=values)
         if name == 'vertex_color':
             self.vertex_color = [0 for v in range(self.number_of_nodes())]
         if name == 'vertex_fill_color':
             self.vertex_fill_color = [0 for v in range(self.number_of_nodes())]
 
-
     def new_edge_property(self, name):
         values = {e: None for e in self.edges()}
-        nx.set_edge_attributes(self, name, values)
+        nx.set_edge_attributes(self, name=name, values=values)
         if name == 'edge_color':
             self.edge_color = np.zeros((self.number_of_edges(), 4))
-
 
     def set_pos(self, pos=None):
         if pos is None:
             pos = nx.spring_layout(self)
-        nx.set_node_attributes(self, 'pos', pos)
+        nx.set_node_attributes(self, name='pos', values=pos)
         self.pos = np.array([pos[v] for v in self.nodes()])
-
 
     def get_edge_type(self, edge_type):
         """Returns all edges with the specified edge type.
@@ -368,10 +352,9 @@ class QueueNetworkDiGraph(nx.DiGraph):
         """
         edges = []
         for e in self.edges():
-            if self.edge[e[0]][e[1]].get('edge_type') == edge_type:
+            if self.adj[e[0]][e[1]].get('edge_type') == edge_type:
                 edges.append(e)
         return edges
-
 
     def draw_graph(self, line_kwargs=None, scatter_kwargs=None, **kwargs):
         """Draws the graph.
@@ -439,7 +422,6 @@ class QueueNetworkDiGraph(nx.DiGraph):
         else:
             plt.ion()
             plt.show()
-
 
     def lines_scatter_args(self, line_kwargs=None, scatter_kwargs=None, pos=None):
         """Returns the arguments used when plotting.

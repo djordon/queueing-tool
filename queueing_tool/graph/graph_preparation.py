@@ -1,23 +1,11 @@
 import networkx as nx
 import numpy as np
 
-from queueing_tool.graph.graph_functions  import _test_graph
+from queueing_tool.graph.graph_functions import _test_graph, _calculate_distance
 from queueing_tool.graph.graph_wrapper import (
     adjacency2graph,
     QueueNetworkDiGraph
 )
-
-def _calculate_distance(latlon1, latlon2):
-    """Calculates the distance between two points on earth.
-    """
-    lat1, lon1  = latlon1
-    lat2, lon2  = latlon2
-    R     = 6371          # radius of the earth in kilometers
-    dlon  = lon2 - lon1
-    dlat  = lat2 - lat1
-    a     = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * (np.sin(dlon/2))**2
-    c     = 2 * np.pi * R * np.arctan2(np.sqrt(a), np.sqrt(1-a)) / 180
-    return c
 
 
 def add_edge_lengths(g):
@@ -56,7 +44,6 @@ def add_edge_lengths(g):
         g.set_ep(e, 'edge_length', np.round(_calculate_distance(latlon1, latlon2), 3))
 
     return g
-
 
 
 def _prepare_graph(g, g_colors, q_cls, q_arg, adjust_graph):
