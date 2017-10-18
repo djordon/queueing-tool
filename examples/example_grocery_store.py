@@ -18,12 +18,15 @@ g = qt.adjacency2graph(adjacency=adja_list, edge_type=edge_list)
 # edge. Do not use 0 as a key, it's used to map to NullQueues.
 q_classes = {0: qt.NullQueue, 1: qt.QueueServer, 2: qt.QueueServer}
 
+
 # Define the parameters for each of the queues
 def rate(t):
     return 25 + 350 * np.sin(np.pi * t / 2)**2
 
+
 def ser_f(t):
     return t + np.random.exponential(0.2 / 2.5)
+
 
 def identity(t):
     return t
@@ -57,7 +60,7 @@ for v in qn.g.nodes():
         pos[v] = [-5. + (v - 2.0) / 2, 0]
 
 qn.g.set_pos(pos)
-#qn.draw(fname="store1.png", transparent=True, figsize=(12, 3),
+# qn.draw(fname="store1.png", transparent=True, figsize=(12, 3),
 #        bgcolor=[0,0,0,0], bbox_inches='tight')
 
 # List the maximum number of agents from the default of 1000 to infinity
@@ -74,7 +77,7 @@ qn.start_collecting_data()
 
 # Simulate the network 1.8 simulation time units
 qn.simulate(t=1.9)
-#qn.draw(fname="sim1.png", transparent=True, figsize=(12, 3),
+# qn.draw(fname="sim1.png", transparent=True, figsize=(12, 3),
 #        bgcolor=[0,0,0,0], bbox_inches='tight')
 
 # Collect data
