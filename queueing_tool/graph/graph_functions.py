@@ -86,3 +86,49 @@ def graph2dict(g, return_dict_of_dict=True):
         return dict_of_dicts
     else:
         return {k: list(val.keys()) for k, val in dict_of_dicts.items()}
+
+
+def matrix2dict(matrix, graph):
+    """Takes an adjacency matrix and returns an adjacency list.
+
+    Parameters
+    ----------
+    graph : :any:`networkx.DiGraph`, :any:`networkx.Graph`, etc.
+        Any object that networkx can turn into a
+        :any:`DiGraph<networkx.DiGraph>`.
+    matrix : :class:`~numpy.ndarray`
+        An matrix related to an adjacency list. The ``matrix[i, j]``
+        represents some relationship between the vertex ``i`` and the
+        vertex ``j``.
+
+    Returns
+    -------
+    adj : dict
+        An adjacency representation of the matrix for the graph.
+
+    Examples
+    --------
+    >>> import queueing_tool as qt
+    >>> import networkx as nx
+    >>> adj = {0: [1, 2], 1: [0], 2: [0, 3], 3: [2]}
+    >>> g = nx.DiGraph(adj)
+    >>> mat = qt.generate_transition_matrix(g, seed=123)
+    >>> mat                     # doctest: +ELLIPSIS
+    ...                         # doctest: +NORMALIZE_WHITESPACE
+    array([[ 0.      ,  0.707...,  0.292...,  0.      ],
+           [ 1.      ,  0.      ,  0.      ,  0.      ],
+           [ 0.291...,  0.      ,  0.      ,  0.708...],
+           [ 0.      ,  0.      ,  1.      ,  0.      ]])
+    >>> qt.matrix2dict(mat, g)  # doctest: +ELLIPSIS
+    ...                         # doctest: +NORMALIZE_WHITESPACE
+    {0: {1: 0.707..., 2: 0.292...},
+     1: {0: 1.0},
+     2: {0: 0.291..., 3: 0.708...},
+     3: {2: 1.0}}
+    """
+    result = {}
+    adjacency_graph = graph2dict(graph, return_dict_of_dict=False)
+    for source, adjacents in adjacency_graph.items():
+        result[source] = {dest: matrix[source, dest] for dest in adjacents}
+
+    return result
