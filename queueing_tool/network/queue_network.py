@@ -17,7 +17,7 @@ try:
 except ImportError:
     HAS_MATPLOTLIB = False
 
-from queueing_tool.graph import _prepare_graph
+from queueing_tool.graph import _prepare_graph, matrix2dict
 from queueing_tool.queues import (
     NullQueue,
     QueueServer,
@@ -1091,40 +1091,24 @@ class QueueNetwork(object):
         :func:`.generate_transition_matrix` : Generate a random routing
             matrix.
         """
-        if isinstance(mat, dict):
-            for key, value in mat.items():
-                probs = list(value.values())
+        if isinstance(mat, np.ndarray):
+            mat = matrix2dict(mat)
 
-                if key not in self.g.node:
-                    msg = "One of the keys don't correspond to a vertex."
-                    raise ValueError(msg)
-                elif len(self.out_edges[key]) > 0 and not np.isclose(sum(probs), 1):
-                    msg = "Sum of transition probabilities at a vertex was not 1."
-                    raise ValueError(msg)
-                elif (np.array(probs) < 0).any():
-                    msg = "Some transition probabilities were negative."
-                    raise ValueError(msg)
+        for key, value in mat.items():
+            probs = list(value.values())
 
-                for k, e in enumerate(self.g.out_edges(key)):
-                    self._route_probs[key][k] = value.get(e[1], 0)
-
-        elif isinstance(mat, np.ndarray):
-            non_terminal = np.array([self.g.out_degree(v) > 0 for v in self.g.nodes()])
-            if mat.shape != (self.nV, self.nV):
-                msg = ("Matrix is the wrong shape, should "
-                       "be {0} x {1}.").format(self.nV, self.nV)
+            if key not in self.g.node:
+                msg = "One of the keys don't correspond to a vertex."
                 raise ValueError(msg)
-            elif not np.allclose(np.sum(mat[non_terminal, :], axis=1), 1):
+            elif len(self.out_edges[key]) > 0 and not np.isclose(sum(probs), 1):
                 msg = "Sum of transition probabilities at a vertex was not 1."
                 raise ValueError(msg)
-            elif (mat < 0).any():
-                raise ValueError("Some transition probabilities were negative.")
+            elif (np.array(probs) < 0).any():
+                msg = "Some transition probabilities were negative."
+                raise ValueError(msg)
 
-            for k in range(self.nV):
-                for j, e in enumerate(self.g.out_edges(k)):
-                    self._route_probs[k][j] = mat[k, e[1]]
-        else:
-            raise TypeError("mat must be a numpy array or a dict.")
+            for k, e in enumerate(self.g.out_edges(key)):
+                self._route_probs[key][k] = value.get(e[1], 0)
 
     def show_active(self, **kwargs):
         """Draws the network, highlighting active queues.
