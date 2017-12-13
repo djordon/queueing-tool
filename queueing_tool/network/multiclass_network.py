@@ -1,3 +1,4 @@
+import collections
 import copy
 
 import numpy as np
@@ -11,7 +12,11 @@ class MultiClassQueueNetwork(QueueNetwork):
 
     def __init__(self, *args, **kwargs):
         super(MultiClassQueueNetwork, self).__init__(*args, **kwargs)
-        self._routing_transitions = {None: copy.deepcopy(self._route_probs)}
+
+        def default_factory():
+            return copy.deepcopy(self._route_probs)
+
+        self._routing_transitions = collections.defaultdict(default_factory)
 
     def set_transitions(self, mat, category=None):
         for key, value in mat.items():
