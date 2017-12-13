@@ -7,6 +7,7 @@
     generate_pagerank_graph
     generate_transition_matrix
     graph2dict
+    matrix2dict
     minimal_random_graph
     set_types_rank
     set_types_random
@@ -15,7 +16,8 @@
 """
 
 from queueing_tool.graph.graph_functions import (
-    graph2dict
+    graph2dict,
+    matrix2dict
 )
 from queueing_tool.graph.graph_generation import (
     generate_random_graph,
@@ -42,6 +44,7 @@ __all__ = [
     'generate_pagerank_graph',
     'generate_transition_matrix',
     'graph2dict',
+    'matrix2dict',
     'minimal_random_graph',
     'set_types_rank',
     'set_types_random',
