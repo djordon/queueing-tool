@@ -119,6 +119,8 @@ class QueueServer(object):
         the edge type for this queue. This is automatically created
         when a :class:`.QueueNetwork` instance is created.
     AgentFactory : class (optional, default: the :class:`~Agent` class)
+        Deprecated. Use the :meth:`~QueueServer.agent_factory` method
+        instead.
         Any function that can create agents. Note that the function
         must take one parameter.
     active_cap : int (optional, default: ``infty``)
@@ -303,7 +305,7 @@ class QueueServer(object):
 
         self.arrival_f = arrival_f
         self.service_f = service_f
-        self.AgentFactory = AgentFactory
+        self._agent_factory = AgentFactory
         self.collect_data = collect_data
         self.active_cap = active_cap
         self.deactive_t = deactive_t
@@ -346,6 +348,11 @@ class QueueServer(object):
     def num_arrivals(self):
         return [self._num_arrivals, self._oArrivals]
 
+    @property
+    def AgentFactory(self):
+        # Deprecated
+        return self._agent_factory
+
     def __repr__(self):
         my_str = ("QueueServer:{0}. Servers: {1}, queued: {2}, arrivals: {3}, "
                   "departures: {4}, next time: {5}")
@@ -366,7 +373,7 @@ class QueueServer(object):
                     return
 
                 self._num_total += 1
-                new_agent = self.AgentFactory((self.edge[2], self._oArrivals))
+                new_agent = self.agent_factory()
                 new_agent._time = self._next_ct
                 heappush(self._arrivals, new_agent)
 
@@ -377,6 +384,9 @@ class QueueServer(object):
 
         if self._arrivals[0]._time < self._departures[0]._time:
             self._time = self._arrivals[0]._time
+
+    def agent_factory(self):
+        return self._agent_factory((self.edge[2], self._oArrivals), queue=self)
 
     def at_capacity(self):
         """Returns whether the queue is at capacity or not.
