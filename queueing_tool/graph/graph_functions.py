@@ -126,6 +126,13 @@ def matrix2dict(matrix, graph):
      2: {0: 0.291..., 3: 0.708...},
      3: {2: 1.0}}
     """
+    num_columns, num_rows = matrix.shape
+
+    if num_columns != num_rows or num_columns != graph.number_of_nodes():
+        msg = "Matrix has wrong shape, must be {} x {}"
+        non = graph.number_of_nodes()
+        raise ValueError(msg.format(non, non))
+
     result = {}
     adjacency_graph = graph2dict(graph, return_dict_of_dict=False)
     for source, adjacents in adjacency_graph.items():
