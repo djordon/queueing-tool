@@ -1092,7 +1092,7 @@ class QueueNetwork(object):
             matrix.
         """
         if isinstance(mat, np.ndarray):
-            mat = matrix2dict(mat)
+            mat = matrix2dict(mat, self.g)
 
         for key, value in mat.items():
             probs = list(value.values())
