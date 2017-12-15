@@ -300,11 +300,14 @@ class QueueNetworkDiGraph(nx.DiGraph):
         values = {e: None for e in self.edges()}
         nx.set_edge_attributes(self, name=name, values=values)
 
-    def set_pos(self, pos=None):
+    def set_node_positions(self, pos=None):
         if pos is None:
             pos = nx.spring_layout(self)
         nx.set_node_attributes(self, name='pos', values=pos)
         self.pos = np.array([pos[v] for v in self.nodes()])
+
+    def set_pos(self, pos=None):
+        self.set_node_positions(pos=pos)
 
     def get_edge_type(self, edge_type):
         """Returns all edges with the specified edge type.
