@@ -446,10 +446,6 @@ class TestQueueNetwork(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.qn.set_transitions(mat)
 
-        mat = 1
-        with self.assertRaises(TypeError):
-            self.qn.set_transitions(mat)
-
     def test_QueueNetwork_simulate(self):
 
         g = qt.generate_pagerank_graph(50)
