@@ -130,9 +130,6 @@ class GreedyAgent(Agent):
     with the shortest line (where the ordering is given by
     :class:`QueueNetwork's<.QueueNetwork>` ``out_edges`` attribute).
     """
-    def __init__(self, agent_id=(0, 0)):
-        Agent.__init__(self, agent_id)
-
     def __repr__(self):
         msg = "GreedyAgent; agent_id:{0}. time: {1}"
         return msg.format(self.agent_id, round(self._time, 3))
