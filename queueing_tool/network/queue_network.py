@@ -353,9 +353,9 @@ class QueueNetwork(object):
 
             self.edge2queue = qs
             self.num_agents = np.zeros(g.number_of_edges(), int)
-            self.out_edges = [0 for v in range(self.nV)]
-            self.in_edges = [0 for v in range(self.nV)]
-            self._route_probs = [0 for v in range(self.nV)]
+            self.out_edges = {}
+            self.in_edges = {}
+            self._route_probs = {}
 
             for v in g.nodes():
                 vod = g.out_degree(v)
