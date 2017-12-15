@@ -114,8 +114,7 @@ class Agent(object):
         ``args[0] == 0``), when service starts for the Agent (where
         ``args[0] == 1``), and when the Agent departs from the queue
         (where ``args[0] == 2``). By default, this method does nothing
-        to the queue, but is here if the Agent class is extended and
-        this method is overwritten.
+        to the queue.
         """
         pass
 
