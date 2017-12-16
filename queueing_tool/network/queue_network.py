@@ -266,7 +266,7 @@ class QueueNetwork(object):
     to have pygraphviz installed and your graph may be rotated):
 
     >>> net.simulate(n=500)
-    >>> pos = nx.nx_agraph.graphviz_layout(g.to_undirected(), prog='neato') # doctest: +SKIP
+    >>> pos = nx.nx_agraph.graphviz_layout(g.to_undirected(), prog='neato') # doctest: +SKIP # noqa: E501
     >>> net.draw(pos=pos) # doctest: +SKIP
     <...>
 
@@ -1197,7 +1197,7 @@ class QueueNetwork(object):
             if self.g.is_edge(e) and self.g.ep(e, 'edge_type') == edge_type:
                 ei = self.g.edge_index[e]
                 self.g.set_vp(v, 'vertex_fill_color', self.colors['vertex_highlight'])
-                self.g.set_vp(v, 'vertex_color', self.edge2queue[ei].colors['vertex_color'])
+                self.g.set_vp(v, 'vertex_color', self.edge2queue[ei].colors['vertex_color'])  # noqa: E501
             else:
                 self.g.set_vp(v, 'vertex_fill_color', self.colors['vertex_inactive'])
                 self.g.set_vp(v, 'vertex_color', [0, 0, 0, 0.9])
@@ -1500,7 +1500,7 @@ class QueueNetwork(object):
         else:
             mat = {
                 k: {e[1]: p for e, p in zip(self.g.out_edges(k), value)}
-                for k, value in enumerate(self._route_probs)
+                for k, value in self._route_probs.items()
             }
 
         return mat
