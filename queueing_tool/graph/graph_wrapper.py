@@ -1,3 +1,5 @@
+import itertools
+
 import networkx as nx
 import numpy as np
 
@@ -249,14 +251,20 @@ class QueueNetworkDiGraph(nx.DiGraph):
 
     @property
     def edge_color(self):
+        if 'edge_color' not in self.edge_properties():
+            return None
         return np.array([self.adj[e[0]][e[1]].get('edge_color') for e in self.edges()])
 
     @property
     def vertex_color(self):
+        if 'vertex_color' not in self.edge_properties():
+            return None
         return np.array([self.node[n].get('vertex_color') for n in self.nodes()])
 
     @property
     def vertex_fill_color(self):
+        if 'vertex_fill_color' not in self.edge_properties():
+            return None
         return np.array([self.node[n].get('vertex_fill_color') for n in self.nodes()])
 
     def freeze(self):
@@ -282,13 +290,13 @@ class QueueNetworkDiGraph(nx.DiGraph):
 
     def vertex_properties(self):
         props = set()
-        for v in self.nodes():
+        for v in itertools.islice(self.nodes(), 1):
             props.update(self.node[v].keys())
         return props
 
     def edge_properties(self):
         props = set()
-        for e in self.edges():
+        for e in itertools.islice(self.edges(), 1):
             props.update(self.adj[e[0]][e[1]].keys())
         return props
 
