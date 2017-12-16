@@ -266,8 +266,9 @@ class QueueNetwork(object):
     to have pygraphviz installed and your graph may be rotated):
 
     >>> net.simulate(n=500)
-    >>> pos = nx.nx_agraph.graphviz_layout(g.to_undirected(), prog='neato') # doctest: +SKIP # noqa: E501
-    >>> net.draw(pos=pos) # doctest: +SKIP
+    >>> pos = nx.nx_agraph.graphviz_layout(g.to_undirected(), prog='neato')
+    ...                    # doctest: +SKIP
+    >>> net.draw(pos=pos)  # doctest: +SKIP
     <...>
 
     .. figure:: my_network1.png
