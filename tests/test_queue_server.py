@@ -1,26 +1,32 @@
 import functools
-import unittest
 
 import networkx as nx
 import numpy as np
+import pytest
 
 import queueing_tool as qt
 
 
-class TestQueueServers(unittest.TestCase):
+@pytest.fixture
+def lam():
+    return float(np.random.randint(1, 10))
 
-    def setUp(self):
-        self.lam = np.random.randint(1, 10) + 0.0
-        self.rho = np.random.uniform(0.5, 1)
 
-    def test_QueueServer_init_errors(self):
-        with self.assertRaises(TypeError):
+@pytest.fixture
+def rho():
+    return np.random.uniform(0.5, 1)
+
+
+class TestQueueServer(object):
+
+    def test_init_errors(self):
+        with pytest.raises(TypeError):
             qt.QueueServer(num_servers=3.0)
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             qt.QueueServer(num_servers=0)
 
-    def test_QueueServer_set_num_servers(self):
+    def test_set_num_servers(self):
 
         nSe = np.random.randint(1, 10)
         q = qt.QueueServer(num_servers=nSe)
@@ -31,31 +37,31 @@ class TestQueueServers(unittest.TestCase):
         Se2 = q.num_servers
         q.set_num_servers(np.infty)
 
-        self.assertEqual(Se1, nSe)
-        self.assertEqual(Se2, 2 * nSe)
-        self.assertTrue(q.num_servers is np.inf)
+        assert Se1 == nSe
+        assert Se2 == 2 * nSe
+        assert q.num_servers is np.inf
 
-    def test_QueueServer_set_num_servers_errors(self):
+    def test_set_num_servers_errors(self):
         q = qt.QueueServer(num_servers=3)
 
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             q.set_num_servers(3.0)
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             q.set_num_servers(0)
 
-    def test_QueueServer_set_inactive(self):
+    def test_set_inactive(self):
 
         q = qt.QueueServer()
         q.set_active()
 
-        a = q.active
+        was_active = q.active
         q.set_inactive()
 
-        self.assertTrue(a)
-        self.assertTrue(not q.active)
+        assert was_active
+        assert not q.active
 
-    def test_QueueServer_copy(self):
+    def test_copy(self):
 
         q1 = qt.QueueServer(seed=15)
         q1.set_active()
@@ -65,9 +71,9 @@ class TestQueueServers(unittest.TestCase):
         t = q1.time
         q2.simulate(t=20)
 
-        self.assertTrue(t < q2.time)
+        assert t < q2.time
 
-    def test_QueueServer_active_cap(self):
+    def test_active_cap(self):
 
         def r(t):
             return 2 + np.sin(t)
@@ -78,16 +84,16 @@ class TestQueueServers(unittest.TestCase):
         q.set_active()
         q.simulate(n=3000)
 
-        self.assertEqual(q.num_departures, 1000)
-        self.assertEqual(q.num_arrivals, [1000, 1000])
+        assert q.num_departures == 1000
+        assert q.num_arrivals == [1000, 1000]
 
-    def test_QueueServer_accounting(self):
+    def test_accounting(self, lam, rho):
 
         nSe = np.random.randint(1, 10)
-        mu = self.lam / (self.rho * nSe)
+        mu = lam / (rho * nSe)
 
         def arr(t):
-            return t + np.random.exponential(1 / self.lam)
+            return t + np.random.exponential(1 / lam)
 
         def ser(t):
             return t + np.random.exponential(1 / mu)
@@ -106,22 +112,24 @@ class TestQueueServers(unittest.TestCase):
             ans[k, 2] = len(q._departures) - 1 <= q.num_servers
             q.simulate(n=1)
 
-        self.assertTrue(ans.all())
+        assert ans.all()
 
-    def test_QueueServer_deactivate(self):
+    def test_deactivate(self):
         q = qt.QueueServer(num_servers=3, deactive_t=10)
         q.set_active()
-        self.assertTrue(q.active)
-        q.simulate(t=10)
-        self.assertFalse(q.active)
 
-    def test_QueueServer_simulation(self):
+        assert q.active
+
+        q.simulate(t=10)
+        assert not q.active
+
+    def test_simulation(self, lam, rho):
 
         nSe = np.random.randint(1, 10)
-        mu = self.lam / (self.rho * nSe)
+        mu = lam / (rho * nSe)
 
         def arr(t):
-            return t + np.random.exponential(1 / self.lam)
+            return t + np.random.exponential(1 / lam)
 
         def ser(t):
             return t + np.random.exponential(1 / mu)
@@ -153,15 +161,18 @@ class TestQueueServers(unittest.TestCase):
         q.simulate(t=t)
         ans[3] = q.current_time - t0 >= t
 
-        self.assertTrue(ans.all())
+        assert ans.all()
 
-    def test_LossQueue_accounting(self):
+
+class TestLossQueueServer(object):
+
+    def test_accounting(self, lam, rho):
 
         nSe = np.random.randint(1, 10)
-        mu = self.lam / (self.rho * nSe)
+        mu = lam / (rho * nSe)
 
         def arr(t):
-            return t + np.random.exponential(1 / self.lam)
+            return t + np.random.exponential(1 / lam)
 
         def ser(t):
             return t + np.random.exponential(1 / mu)
@@ -180,17 +191,17 @@ class TestQueueServers(unittest.TestCase):
             ans[k, 2] = len(q._departures) - 1 <= q.num_servers
             q.simulate(n=1)
 
-        self.assertTrue(ans.all())
+        assert ans.all()
 
-    def test_LossQueue_blocking(self):
+    def test_blocking(self, lam, rho):
 
         nSe = np.random.randint(1, 10)
-        mu = self.lam / (self.rho * nSe)
+        mu = lam / (rho * nSe)
         k = np.random.randint(5, 15)
         scl = 1 / (mu * k)
 
         def arr(t):
-            return t + np.random.exponential(1 / self.lam)
+            return t + np.random.exponential(1 / lam)
 
         def ser(t):
             return t + np.random.gamma(k, scl)
@@ -210,9 +221,12 @@ class TestQueueServers(unittest.TestCase):
             else:
                 q.simulate(n=1)
 
-        self.assertTrue(ans.all())
+        assert ans.all()
 
-    def test_NullQueue_data_collection(self):
+
+class TestNullQueueServer(object):
+
+    def test_data_collection(self):
         adj = {
             0: {1: {'edge_type': 1}},
             1: {2: {'edge_type': 2},
@@ -226,16 +240,18 @@ class TestQueueServers(unittest.TestCase):
         qn = qt.QueueNetwork(g, q_classes=qcl)
         qn.initialize(edges=(0, 1))
         qn.start_collecting_data(edge_type=2)
-        qn.max_agents = 5000
-        qn.simulate(n=10000)
+        qn.max_agents = 500
+        qn.simulate(n=1000)
         data = qn.get_queue_data()
 
         # Data collected by NullQueues do not have departure and
         # service start times in the data
+        assert not data[:, (1, 2)].any()
 
-        self.assertFalse(data[:, (1, 2)].any())
 
-    def test_ResourceQueue_network(self):
+class TestResourceQueueServer(object):
+
+    def test_network(self):
 
         g = nx.random_geometric_graph(100, 0.2).to_directed()
         q_cls = {1: qt.ResourceQueue, 2: qt.ResourceQueue}
@@ -248,9 +264,9 @@ class TestQueueServers(unittest.TestCase):
 
         nServ = {1: 50, 2: 500}
         ans = np.array([q.num_servers != nServ[q.edge[3]] for q in qn.edge2queue])
-        self.assertTrue(ans.any())
+        assert ans.any()
 
-    def test_ResourceQueue_network_data_collection(self):
+    def test_network_data_collection(self):
         g = qt.generate_random_graph(100)
         q_cls = {1: qt.ResourceQueue, 2: qt.ResourceQueue}
         q_arg = {1: {'num_servers': 500},
@@ -264,27 +280,29 @@ class TestQueueServers(unittest.TestCase):
         qn.simulate(n=5000)
 
         data = qn.get_queue_data()
-        self.assertTrue(len(data) > 0)
+        assert len(data) > 0
 
-    def test_ResourceQueue_network_current_color(self):
+    def test_network_current_color(self):
         q = qt.ResourceQueue(num_servers=50)
         ans = q._current_color(0)
         col = q.colors['vertex_fill_color']
         col = [i * (0.9 - 1. / 6) / 0.9 for i in col]
         col[3] = 1.0
-        self.assertEqual(ans, col)
+        assert ans == col
 
         ans = q._current_color(1)
         col = q.colors['edge_loop_color']
         col = [i * (0.9 - 1. / 6) / 0.9 for i in col]
         col[3] = 0
-        self.assertEqual(ans, col)
+        assert ans == col
 
         ans = q._current_color(2)
         col = q.colors['vertex_pen_color']
-        self.assertEqual(ans, col)
+        assert ans == col
 
-    def test_InfoQueue_network(self):
+
+class TestInfoQueueServer(object):
+    def test_network(self):
 
         g = nx.random_geometric_graph(100, 0.2).to_directed()
         q_cls = {1: qt.InfoQueue}
@@ -296,18 +314,21 @@ class TestQueueServers(unittest.TestCase):
         qn.simulate(n=2000)
 
         # Finish this
-        self.assertTrue(True)
+        assert True
 
-    def test_Agent_compare(self):
+
+class TestAgents(object):
+
+    def test_compare(self):
 
         a0 = qt.Agent()
         a1 = qt.Agent()
-        self.assertEqual(a0, a1)
+        assert a0 == a1
 
         a1._time = 10
-        self.assertLessEqual(a0, a1)
-        self.assertLess(a0, a1)
+        assert a0 <= a1
+        assert a0 < a1
 
         a0._time = 20
-        self.assertGreaterEqual(a0, a1)
-        self.assertGreater(a0, a1)
+        assert a0 >= a1
+        assert a0 > a1

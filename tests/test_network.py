@@ -325,7 +325,7 @@ class TestQueueNetwork(object):
             with pytest.raises(qt.QueueingToolError):
                 queue_network.initialize(edge_type=1)
 
-    def test_initialization(self, queue_network):
+    def test_initialization_single_edge_index(self, queue_network):
         # Single edge index
         k = np.random.randint(0, queue_network.nE)
         queue_network.clear()
@@ -334,6 +334,7 @@ class TestQueueNetwork(object):
         ans = [q.edge[2] for q in queue_network.edge2queue if q.active]
         assert ans == [k]
 
+    def test_initialization_multiple_edge_index(self, queue_network):
         # Multiple edge indices
         k = np.unique(np.random.randint(0, queue_network.nE, 5))
         queue_network.clear()
@@ -343,6 +344,7 @@ class TestQueueNetwork(object):
         ans.sort()
         assert (ans == k).all()
 
+    def test_initialization_single_edge(self, queue_network):
         # Single edge as edge
         k = np.random.randint(0, queue_network.nE)
         e = queue_network.edge2queue[k].edge[:2]
@@ -352,15 +354,7 @@ class TestQueueNetwork(object):
         ans = [q.edge[2] for q in queue_network.edge2queue if q.active]
         assert ans == [k]
 
-        # Single edge as tuple
-        k = np.random.randint(0, queue_network.nE)
-        e = queue_network.edge2queue[k].edge[:2]
-        queue_network.clear()
-        queue_network.initialize(edges=e)
-
-        ans = [q.edge[2] for q in queue_network.edge2queue if q.active]
-        assert ans == [k]
-
+    def test_initialization_multiple_edges(self, queue_network):
         # Multiple edges as tuples
         k = np.unique(np.random.randint(0, queue_network.nE, 5))
         es = [queue_network.edge2queue[i].edge[:2] for i in k]
@@ -370,15 +364,7 @@ class TestQueueNetwork(object):
         ans = [q.edge[2] for q in queue_network.edge2queue if q.active]
         assert (ans == k).all()
 
-        # Multple edges as edges
-        k = np.unique(np.random.randint(0, queue_network.nE, 5))
-        es = [queue_network.edge2queue[i].edge[:2] for i in k]
-        queue_network.clear()
-        queue_network.initialize(edges=es)
-
-        ans = [q.edge[2] for q in queue_network.edge2queue if q.active]
-        assert (ans == k).all()
-
+    def test_initialization_single_edge_type(self, queue_network):
         # Single edge_type
         k = np.random.randint(1, 4)
         queue_network.clear()
@@ -387,6 +373,7 @@ class TestQueueNetwork(object):
         ans = np.array([q.edge[3] == k for q in queue_network.edge2queue if q.active])
         assert ans.all()
 
+    def test_initialization_multiple_edge_types(self, queue_network):
         # Multiple edge_types
         k = np.unique(np.random.randint(1, 4, 3))
         queue_network.clear()
@@ -395,6 +382,7 @@ class TestQueueNetwork(object):
         ans = np.array([q.edge[3] in k for q in queue_network.edge2queue if q.active])
         assert ans.all()
 
+    def test_initialization_num_active_edges(self, queue_network):
         queue_network.clear()
         queue_network.max_agents = 3
         queue_network.initialize(nActive=queue_network.num_edges)
@@ -426,29 +414,15 @@ class TestQueueNetwork(object):
         assert queue_network.num_vertices == queue_network.nV
         assert queue_network.num_nodes == queue_network.nV
 
-    def test_set_transitions_error(self, queue_network):
-        with pytest.raises(ValueError):
-            queue_network.set_transitions({-1: {0: 0.75, 1: 0.25}})
-
-        with pytest.raises(ValueError):
-            queue_network.set_transitions({queue_network.nV: {0: 0.75, 1: 0.25}})
-
-        with pytest.raises(ValueError):
-            queue_network.set_transitions({0: {0: 0.75, 1: -0.25}})
-
-        with pytest.raises(ValueError):
-            queue_network.set_transitions({0: {0: 1.25, 1: -0.25}})
-
-        mat = np.zeros((2, 2))
-        with pytest.raises(ValueError):
-            queue_network.set_transitions(mat)
-
-        mat = np.zeros((queue_network.nV, queue_network.nV))
-        with pytest.raises(ValueError):
-            queue_network.set_transitions(mat)
-
-        mat[0, 0] = -1
-        mat[0, 1] = 2
+    @pytest.mark.parametrize('mat', [
+        {-1: {0: 0.75, 1: 0.25}},
+        {200: {0: 0.75, 1: 0.25}},
+        {0: {0: 0.75, 1: -0.25}},
+        {0: {0: 1.25, 1: -0.25}},
+        np.zeros((2, 2)),
+        np.zeros((200, 200)),
+    ])
+    def test_set_transitions_error(self, mat, queue_network):
         with pytest.raises(ValueError):
             queue_network.set_transitions(mat)
 
