@@ -52,7 +52,7 @@ class MultiClassQueueNetwork(QueueNetwork):
         }
         return mat
 
-    def routing_transitions(self, destination, category=None):
+    def routing_transition(self, destination, category=None):
         if category not in self._routing_transitions:
             category = None
 
