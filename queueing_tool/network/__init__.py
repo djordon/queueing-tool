@@ -22,7 +22,11 @@
     QueueNetwork.transitions
 """
 
-from queueing_tool.network.multiclass_network import MultiClassQueueNetwork, ClassedAgent
+from queueing_tool.network.multiclass_network import (
+    ClassedAgent,
+    MultiClassQueueNetwork,
+    MultiClassQueueServer
+)
 from queueing_tool.network.priority_queue import PriorityQueue
 from queueing_tool.network.queue_network import (
     QueueingToolError,
@@ -32,6 +36,7 @@ from queueing_tool.network.queue_network import (
 __all__ = [
     'ClassedAgent',
     'MultiClassQueueNetwork',
+    'MultiClassQueueServer',
     'PriorityQueue',
     'QueueingToolError',
     'QueueNetwork'
