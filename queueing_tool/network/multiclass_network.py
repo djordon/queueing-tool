@@ -8,7 +8,7 @@ from numpy import infty
 from queueing_tool.network.queue_network import QueueNetwork
 from queueing_tool.queues.agents import Agent
 from queueing_tool.queues.choice import _choice
-from queueing_tool.queues.queue_server import QueueServer
+from queueing_tool.queues.queue_servers import QueueServer
 
 
 class MultiClassQueueNetwork(QueueNetwork):
