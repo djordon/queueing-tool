@@ -42,7 +42,7 @@ class Agent(object):
         self._time = 0  # The agents arrival or departure time
 
     def __repr__(self):
-        return "Agent; agent_id:{0}. time: {1}".format(self.agent_id, round(self._time, 3))
+        return "Agent; {0}. time: {1}".format(self.agent_id, round(self._time, 3))
 
     def __lt__(self, b):
         return self._time < b._time

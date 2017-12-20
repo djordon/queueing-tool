@@ -3,7 +3,7 @@ import collections
 
 EdgeID = collections.namedtuple(
     typename='EdgeID',
-    field_names=['source', 'target', 'edge_index', 'edge_index']
+    field_names=['source', 'target', 'edge_index', 'edge_type']
 )
 
 AgentID = collections.namedtuple(
