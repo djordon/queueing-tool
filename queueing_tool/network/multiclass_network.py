@@ -137,10 +137,17 @@ class MultiClassQueueServer(QueueServer):
             self._update_time()
 
 
+ClassAgentID = collections.namedtuple(
+    typename='AgentID',
+    field_names=['edge_index', 'agent_qid', 'category']
+)
+
+
 class ClassedAgent(Agent):
     def __init__(self, agent_id=(0, 0), category=None, **kwargs):
-        super(ClassedAgent, self).__init__(agent_id=agent_id, **kwargs)
         self._category = category
+        super(ClassedAgent, self).__init__(agent_id=agent_id, **kwargs)
+        self.agent_id = ClassAgentID(agent_id[0], agent_id[1], self.category)
 
     @property
     def category(self):
