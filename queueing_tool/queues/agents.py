@@ -1,6 +1,7 @@
 from numpy import infty
 from numpy.random import uniform
 
+from queueing_tool.common import AgentID
 from queueing_tool.queues.choice import _choice, _argmin
 
 
@@ -29,14 +30,14 @@ class Agent(object):
 
     Attributes
     ----------
-    agent_id : tuple
+    agent_id : namedtuple
         A unique identifier for an agent.
     blocked : int
         Specifies how many times an agent has been blocked by a finite
         capacity queue.
     """
     def __init__(self, agent_id=(0, 0), **kwargs):
-        self.agent_id = agent_id
+        self.agent_id = AgentID(*agent_id)
         self.blocked = 0
         self._time = 0  # The agents arrival or departure time
 

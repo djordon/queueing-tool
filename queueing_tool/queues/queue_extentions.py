@@ -19,7 +19,7 @@ class ResourceAgent(Agent):
     a resource to that queue by increasing the number of
     servers there by one; the ``ResourceAgent`` is then deleted.
     """
-    def __init__(self, agent_id=(0, 0) , **kwargs):
+    def __init__(self, agent_id=(0, 0), **kwargs):
         super(ResourceAgent, self).__init__(agent_id, **kwargs)
         self._has_resource = False
         self._had_resource = False

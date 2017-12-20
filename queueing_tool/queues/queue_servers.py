@@ -7,6 +7,7 @@ from numpy.random import uniform, exponential
 from numpy import infty
 import numpy as np
 
+from queueing_tool.common import EdgeID
 from queueing_tool.queues.agents import Agent, InftyAgent
 
 
@@ -288,7 +289,7 @@ class QueueServer(object):
             msg = "num_servers must be a positive integer or infinity."
             raise ValueError(msg)
 
-        self.edge = edge
+        self.edge = EdgeID(*edge)
         self.num_servers = kwargs.get('nServers', num_servers)
         self.num_departures = 0
         self.num_system = 0
