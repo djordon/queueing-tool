@@ -260,7 +260,7 @@ class QueueNetwork(object):
     >>> nA = [(q.num_system, q.edge[2]) for q in net.edge2queue if q.edge[3] == 1]
     >>> nA.sort(reverse=True)
     >>> nA[:5]
-    [(4, 37), (4, 34), (3, 43), (3, 32), (3, 30)]
+    [(4, 37), (4, 33), (3, 43), (3, 32), (3, 30)]
 
     To view the state of the network do the following (note, you need
     to have pygraphviz installed and your graph may be rotated):
