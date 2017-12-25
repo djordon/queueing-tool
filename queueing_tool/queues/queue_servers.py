@@ -312,15 +312,15 @@ class QueueServer(object):
         self.deactive_t = deactive_t
 
         inftyAgent = InftyAgent()
-        self._arrivals = [inftyAgent]    # A list of arriving agents.
-        self._departures = [inftyAgent]    # A list of departing agents.
+        self._arrivals = [inftyAgent]       # A list of arriving agents.
+        self._departures = [inftyAgent]     # A list of departing agents.
         self._num_arrivals = 0
         self._oArrivals = 0
-        self._num_total = 0       # The number of agents scheduled to arrive + num_system
+        self._num_total = 0         # noqa E501 The number of agents scheduled to arrive + num_system
         self._active = False
-        self._current_t = 0       # The time of the last event.
-        self._time = infty   # The time of the next event.
-        self._next_ct = 0       # The next time an arrival from outside the network can arrive.
+        self._current_t = 0         # The time of the last event.
+        self._time = infty          # The time of the next event.
+        self._next_ct = 0           # noqa E501 The next time an arrival from outside the network can arrive.
         self.coloring_sensitivity = coloring_sensitivity
 
         if isinstance(seed, numbers.Integral):
