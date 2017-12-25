@@ -1531,7 +1531,7 @@ class QueueNetwork(object):
         ee_is_edge = self.g.is_edge(ee)
         eei = self.g.edge_index[ee] if ee_is_edge else 0
 
-        if not ee_is_edge or (ee_is_edge and self.edge2queue[eei].edge[3] == 0):
+        if not ee_is_edge or (ee_is_edge and self.edge2queue[eei].edge.edge_type == 0):
             nSy = 0
             cap = 0
             for ei in self.in_edges[v]:
