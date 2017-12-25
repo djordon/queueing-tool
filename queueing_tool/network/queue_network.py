@@ -1552,13 +1552,13 @@ class QueueNetwork(object):
             if self._prev_edge.source == self._prev_edge.target:
                 self.g.set_ep(self._prev_edge, 'edge_color', q._current_color(1))
                 self.g.set_vp(self._prev_edge.target, 'vertex_color', q._current_color(2))
+
                 if q.edge.edge_type != 0:
                     self.g.set_vp(
                         v=self._prev_edge.target,
                         vertex_property='vertex_fill_color',
                         value=q._current_color()
                     )
-
             else:
                 self.g.set_ep(self._prev_edge, 'edge_color', q._current_color())
                 self._update_vertex_color(self._prev_edge.target)
