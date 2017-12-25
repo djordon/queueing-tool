@@ -1,4 +1,4 @@
-import itertools
+©import itertools
 
 import networkx as nx
 import numpy as np
@@ -239,13 +239,12 @@ class QueueNetworkDiGraph(nx.DiGraph):
             data = adjacency2graph(data, **kwargs)
 
         super(QueueNetworkDiGraph, self).__init__(data, **kwargs)
-        edges = sorted(self.edges())
 
-        self.edge_index = {e: k for k, e in enumerate(edges)}
+        self.edge_index = {e: k for k, e in enumerate(self.edges())}
 
         pos = nx.get_node_attributes(self, name='pos')
         if len(pos) == self.number_of_nodes():
-            self.pos = np.array([pos[v] for v in self.nodes()])
+            self.pos = pos
         else:
             self.pos = None
 
@@ -312,7 +311,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         if pos is None:
             pos = nx.spring_layout(self)
         nx.set_node_attributes(self, name='pos', values=pos)
-        self.pos = np.array([pos[v] for v in self.nodes()])
+        self.pos = {v: pos[v] for v in self.nodes()}
 
     def set_pos(self, pos=None):
         self.set_node_positions(pos=pos)
@@ -457,15 +456,10 @@ class QueueNetworkDiGraph(nx.DiGraph):
         If a specific keyword argument is not passed then the defaults
         are used.
         """
-        if pos is not None:
-            self.set_pos(pos)
-        elif self.pos is None:
-            self.set_pos()
+        self.set_pos(pos)
 
-        edge_pos = [0 for e in self.edges()]
-        for e in self.edges():
-            ei = self.edge_index[e]
-            edge_pos[ei] = (self.pos[e[0]], self.pos[e[1]])
+        edge_pos = [(self.pos[e[0]], self.pos[e[1]]) for e in self.edges()]
+        node_pos = np.array([self.pos[v] for v in self.nodes()])
 
         line_collecton_kwargs = {
             'segments': edge_pos,
@@ -484,8 +478,8 @@ class QueueNetworkDiGraph(nx.DiGraph):
             'hatch': None,
         }
         scatter_kwargs_ = {
-            'x': self.pos[:, 0],
-            'y': self.pos[:, 1],
+            'x': node_pos[:, 0],
+            'y': node_pos[:, 1],
             's': 50,
             'c': self.vertex_fill_color,
             'alpha': None,
