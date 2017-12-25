@@ -1548,33 +1548,33 @@ class QueueNetwork(object):
                 self.g.set_vp(v, 'vertex_color', self.colors['vertex_color'])
 
     def _update_graph_colors(self, qedge):
-        e = qedge[:2]
-        v = qedge[1]
         if self._prev_edge is not None:
-            pe = self._prev_edge[:2]
-            pv = self._prev_edge[1]
-            q = self.edge2queue[self._prev_edge[2]]
+            q = self.edge2queue[self._prev_edge.edge_index]
 
-            if pe[0] == pe[1]:
-                self.g.set_ep(pe, 'edge_color', q._current_color(1))
-                self.g.set_vp(pv, 'vertex_color', q._current_color(2))
-                if q.edge[3] != 0:
-                    self.g.set_vp(v, 'vertex_fill_color', q._current_color())
+            if self._prev_edge.source == self._prev_edge.target:
+                self.g.set_ep(self._prev_edge, 'edge_color', q._current_color(1))
+                self.g.set_vp(self._prev_edge.target, 'vertex_color', q._current_color(2))
+                if q.edge.edge_type != 0:
+                    self.g.set_vp(
+                        v=self._prev_edge.target,
+                        vertex_property='vertex_fill_color',
+                        value=q._current_color()
+                    )
 
             else:
-                self.g.set_ep(pe, 'edge_color', q._current_color())
-                self._update_vertex_color(pv)
+                self.g.set_ep(self._prev_edge, 'edge_color', q._current_color())
+                self._update_vertex_color(self._prev_edge.target)
 
-        q = self.edge2queue[qedge[2]]
-        if qedge[0] == qedge[1]:
-            self.g.set_ep(e, 'edge_color', q._current_color(1))
-            self.g.set_vp(v, 'vertex_color', q._current_color(2))
-            if q.edge[3] != 0:
-                self.g.set_vp(v, 'vertex_fill_color', q._current_color())
+        q = self.edge2queue[qedge.edge_index]
+        if qedge.source == qedge.target:
+            self.g.set_ep(qedge, 'edge_color', q._current_color(1))
+            self.g.set_vp(qedge.target, 'vertex_color', q._current_color(2))
+            if q.edge.edge_type != 0:
+                self.g.set_vp(qedge.target, 'vertex_fill_color', q._current_color())
 
         else:
-            self.g.set_ep(e, 'edge_color', q._current_color())
-            self._update_vertex_color(v)
+            self.g.set_ep(qedge, 'edge_color', q._current_color())
+            self._update_vertex_color(qedge.target)
 
 
 def _get_queues(g, queues, edge, edge_type):
