@@ -1507,24 +1507,22 @@ class QueueNetwork(object):
         return mat
 
     def _update_all_colors(self):
-        do = [True for v in range(self.nV)]
+        do = {v: True for v in self.g.nodes()}
         for q in self.edge2queue:
-            e = q.edge[:2]
-            v = q.edge[1]
-            if q.edge[0] == q.edge[1]:
-                self.g.set_ep(e, 'edge_color', q._current_color(1))
-                self.g.set_vp(v, 'vertex_color', q._current_color(2))
-                if q.edge[3] != 0:
-                    self.g.set_vp(v, 'vertex_fill_color', q._current_color())
-                do[v] = False
+            if q.edge.source == q.edge.target:
+                self.g.set_ep(q.edge, 'edge_color', q._current_color(1))
+                self.g.set_vp(q.edge.target, 'vertex_color', q._current_color(2))
+                if q.edge.edge_type != 0:
+                    self.g.set_vp(q.edge.target, 'vertex_fill_color', q._current_color())
+                do[q.edge.target] = False
             else:
-                self.g.set_ep(e, 'edge_color', q._current_color())
-                if do[v]:
-                    self._update_vertex_color(v)
-                    do[v] = False
-                if do[q.edge[0]]:
-                    self._update_vertex_color(q.edge[0])
-                    do[q.edge[0]] = False
+                self.g.set_ep(q.edge, 'edge_color', q._current_color())
+                if do[q.edge.target]:
+                    self._update_vertex_color(q.edge.target)
+                    do[q.edge.target] = False
+                if do[q.edge.source]:
+                    self._update_vertex_color(q.edge.source)
+                    do[q.edge.source] = False
 
     def _update_vertex_color(self, v):
         ee = (v, v)
