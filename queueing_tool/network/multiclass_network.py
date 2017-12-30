@@ -95,7 +95,7 @@ class MultiClassQueueServer(QueueServer):
                 if self.collect_data and agent.agent_id in self.data:
                     self.data[agent.agent_id][-1][1] = self._current_t
 
-                agent._time = self.service_f(self._current_t, self)
+                agent._time = self.service_f(self._current_t, agent, self)
                 agent.queue_action(self, 1)
                 heappush(self._departures, agent)
 
@@ -128,7 +128,7 @@ class MultiClassQueueServer(QueueServer):
                 if self.collect_data:
                     self.data[arrival.agent_id][-1][1] = arrival._time
 
-                arrival._time = self.service_f(arrival._time, self)
+                arrival._time = self.service_f(arrival._time, agent, self)
                 arrival.queue_action(self, 1)
                 heappush(self._departures, arrival)
             else:
