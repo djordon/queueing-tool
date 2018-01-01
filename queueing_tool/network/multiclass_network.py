@@ -138,20 +138,16 @@ class MultiClassQueueServer(QueueServer):
 
 
 ClassAgentID = collections.namedtuple(
-    typename='AgentID',
+    typename='ClassAgentID',
     field_names=['edge_index', 'agent_qid', 'category']
 )
 
 
 class ClassedAgent(Agent):
     def __init__(self, agent_id=(0, 0), category=None, **kwargs):
-        self._category = category
+        self.category = category or self.__class__.__name__
         super(ClassedAgent, self).__init__(agent_id=agent_id, **kwargs)
         self.agent_id = ClassAgentID(agent_id[0], agent_id[1], self.category)
-
-    @property
-    def category(self):
-        return self._category or self.__class__.__name__
 
     def desired_destination(self, network, edge):
 
