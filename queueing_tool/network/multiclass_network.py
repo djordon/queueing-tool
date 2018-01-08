@@ -45,8 +45,8 @@ class MultiClassQueueNetwork(QueueNetwork):
     def transitions(self):
         mat = {
             category: {
-                k: {e[1]: p for e, p in zip(self.g.out_edges(k), value)}
-                for k, value in enumerate(routing_probs)
+                node: {e[1]: p for e, p in zip(self.g.out_edges(node), value)}
+                for node, value in routing_probs.values()
             }
             for category, routing_probs in self._routing_transitions.items()
         }
