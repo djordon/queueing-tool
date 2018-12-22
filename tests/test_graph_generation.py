@@ -14,14 +14,16 @@ def generate_adjacency(a=3, b=25, c=6, n=12):
 
 class TestGraphFunctions(object):
 
-    def test_graph2dict(self):
+    @staticmethod
+    def test_graph2dict():
         adj = generate_adjacency()
         g1 = qt.adjacency2graph(adj, adjust=2)
         aj1 = qt.graph2dict(g1)
         g2 = qt.adjacency2graph(aj1, adjust=2)
         assert nx.is_isomorphic(g1, g2)
 
-    def test_add_edge_lengths(self):
+    @staticmethod
+    def test_add_edge_lengths():
         g1 = qt.generate_pagerank_graph(10)
         g2 = qt.add_edge_lengths(g1)
 
@@ -31,7 +33,8 @@ class TestGraphFunctions(object):
 
         assert 'edge_length' in edge_props
 
-    def test_generate_transition(self):
+    @staticmethod
+    def test_generate_transition():
         g = qt.generate_random_graph(20)
         mat = qt.generate_transition_matrix(g)
 
@@ -42,7 +45,8 @@ class TestGraphFunctions(object):
         ans = np.sum(mat, axis=1)
         np.testing.assert_allclose(ans, 1)
 
-    def test_adjacency2graph_matrix_adjacency(self):
+    @staticmethod
+    def test_adjacency2graph_matrix_adjacency():
 
         # Test adjacency argument using ndarray work
         adj = np.array([[0, 1, 0, 0],
@@ -61,7 +65,8 @@ class TestGraphFunctions(object):
         }
         assert actual == expected
 
-    def test_adjacency2graph_matrix_etype(self):
+    @staticmethod
+    def test_adjacency2graph_matrix_etype():
         # Test adjacency argument using ndarrays work
         adj = {0: {1: {}}, 1: {2: {}, 3: {}}, 2: {0: {}}, 3: {}}
         ety = np.array([[0, 5, 0, 0],
@@ -79,11 +84,13 @@ class TestGraphFunctions(object):
         }
         assert expected == actual
 
-    def test_adjacency2graph_errors(self):
+    @staticmethod
+    def test_adjacency2graph_errors():
         with pytest.raises(TypeError):
             qt.adjacency2graph([])
 
-    def test_set_types_random(self):
+    @staticmethod
+    def test_set_types_random():
 
         nV = 1200
         nT = np.random.randint(5, 10)
@@ -111,6 +118,7 @@ class TestGraphFunctions(object):
         with pytest.raises(ValueError):
             g = qt.set_types_random(g, loop_proportions=pType, seed=10)
 
-    def test_test_graph_importerror(self):
+    @staticmethod
+    def test_test_graph_importerror():
         with pytest.raises(TypeError):
             qt.generate_transition_matrix(1)

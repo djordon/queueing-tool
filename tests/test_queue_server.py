@@ -7,26 +7,28 @@ import pytest
 import queueing_tool as qt
 
 
-@pytest.fixture
-def lam():
+@pytest.fixture(name='lam')
+def fixture_lam():
     return float(np.random.randint(1, 10))
 
 
-@pytest.fixture
-def rho():
+@pytest.fixture(name='rho')
+def fixture_rho():
     return np.random.uniform(0.5, 1)
 
 
 class TestQueueServer(object):
 
-    def test_init_errors(self):
+    @staticmethod
+    def test_init_errors():
         with pytest.raises(TypeError):
             qt.QueueServer(num_servers=3.0)
 
         with pytest.raises(ValueError):
             qt.QueueServer(num_servers=0)
 
-    def test_set_num_servers(self):
+    @staticmethod
+    def test_set_num_servers():
 
         nSe = np.random.randint(1, 10)
         q = qt.QueueServer(num_servers=nSe)
@@ -41,7 +43,8 @@ class TestQueueServer(object):
         assert Se2 == 2 * nSe
         assert q.num_servers is np.inf
 
-    def test_set_num_servers_errors(self):
+    @staticmethod
+    def test_set_num_servers_errors():
         q = qt.QueueServer(num_servers=3)
 
         with pytest.raises(TypeError):
@@ -50,7 +53,8 @@ class TestQueueServer(object):
         with pytest.raises(ValueError):
             q.set_num_servers(0)
 
-    def test_set_inactive(self):
+    @staticmethod
+    def test_set_inactive():
 
         q = qt.QueueServer()
         q.set_active()
@@ -61,7 +65,8 @@ class TestQueueServer(object):
         assert was_active
         assert not q.active
 
-    def test_copy(self):
+    @staticmethod
+    def test_copy():
 
         q1 = qt.QueueServer(seed=15)
         q1.set_active()
@@ -73,7 +78,8 @@ class TestQueueServer(object):
 
         assert t < q2.time
 
-    def test_active_cap(self):
+    @staticmethod
+    def test_active_cap():
 
         def r(t):
             return 2 + np.sin(t)
@@ -87,7 +93,8 @@ class TestQueueServer(object):
         assert q.num_departures == 1000
         assert q.num_arrivals == [1000, 1000]
 
-    def test_accounting(self, lam, rho):
+    @staticmethod
+    def test_accounting(lam, rho):
 
         nSe = np.random.randint(1, 10)
         mu = lam / (rho * nSe)
@@ -114,7 +121,8 @@ class TestQueueServer(object):
 
         assert ans.all()
 
-    def test_deactivate(self):
+    @staticmethod
+    def test_deactivate():
         q = qt.QueueServer(num_servers=3, deactive_t=10)
         q.set_active()
 
@@ -123,7 +131,8 @@ class TestQueueServer(object):
         q.simulate(t=10)
         assert not q.active
 
-    def test_simulation(self, lam, rho):
+    @staticmethod
+    def test_simulation(lam, rho):
 
         nSe = np.random.randint(1, 10)
         mu = lam / (rho * nSe)
@@ -166,7 +175,8 @@ class TestQueueServer(object):
 
 class TestLossQueueServer(object):
 
-    def test_accounting(self, lam, rho):
+    @staticmethod
+    def test_accounting(lam, rho):
 
         nSe = np.random.randint(1, 10)
         mu = lam / (rho * nSe)
@@ -193,7 +203,8 @@ class TestLossQueueServer(object):
 
         assert ans.all()
 
-    def test_blocking(self, lam, rho):
+    @staticmethod
+    def test_blocking(lam, rho):
 
         nSe = np.random.randint(1, 10)
         mu = lam / (rho * nSe)
@@ -226,7 +237,8 @@ class TestLossQueueServer(object):
 
 class TestNullQueueServer(object):
 
-    def test_data_collection(self):
+    @staticmethod
+    def test_data_collection():
         adj = {
             0: {1: {'edge_type': 1}},
             1: {2: {'edge_type': 2},
@@ -251,7 +263,8 @@ class TestNullQueueServer(object):
 
 class TestResourceQueueServer(object):
 
-    def test_network(self):
+    @staticmethod
+    def test_network():
 
         g = nx.random_geometric_graph(100, 0.2).to_directed()
         q_cls = {1: qt.ResourceQueue, 2: qt.ResourceQueue}
@@ -266,7 +279,8 @@ class TestResourceQueueServer(object):
         ans = np.array([q.num_servers != nServ[q.edge[3]] for q in qn.edge2queue])
         assert ans.any()
 
-    def test_network_data_collection(self):
+    @staticmethod
+    def test_network_data_collection():
         g = qt.generate_random_graph(100)
         q_cls = {1: qt.ResourceQueue, 2: qt.ResourceQueue}
         q_arg = {1: {'num_servers': 500},
@@ -280,9 +294,10 @@ class TestResourceQueueServer(object):
         qn.simulate(n=5000)
 
         data = qn.get_queue_data()
-        assert len(data) > 0
+        assert data.size > 0
 
-    def test_network_current_color(self):
+    @staticmethod
+    def test_network_current_color():
         q = qt.ResourceQueue(num_servers=50)
         ans = q._current_color(0)
         col = q.colors['vertex_fill_color']
@@ -302,7 +317,8 @@ class TestResourceQueueServer(object):
 
 
 class TestInfoQueueServer(object):
-    def test_network(self):
+    @staticmethod
+    def test_network():
 
         g = nx.random_geometric_graph(100, 0.2).to_directed()
         q_cls = {1: qt.InfoQueue}
@@ -319,7 +335,8 @@ class TestInfoQueueServer(object):
 
 class TestAgents(object):
 
-    def test_compare(self):
+    @staticmethod
+    def test_compare():
 
         a0 = qt.Agent()
         a1 = qt.Agent()

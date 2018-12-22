@@ -1,4 +1,3 @@
-import os
 try:
     import unittest.mock as mock
 except ImportError:
@@ -17,11 +16,8 @@ import pytest
 import queueing_tool as qt
 
 
-TRAVIS_TEST = os.environ.get('TRAVIS_TEST', False)
-
-
-@pytest.fixture(scope='module')
-def queue_network():
+@pytest.fixture(name='queue_network', scope='module')
+def fixture_queue_network():
     g = qt.generate_pagerank_graph(200)
     qn = qt.QueueNetwork(g)
     qn.g.draw_graph = mock.MagicMock()
@@ -40,7 +36,8 @@ def clear_queue_network(queue_network):
 @pytest.mark.usefixtures('clear_queue_network')
 class TestQueueNetwork(object):
 
-    def test_accounting(self, queue_network):
+    @staticmethod
+    def test_accounting(queue_network):
 
         num_events = 1500
         ans = np.zeros(num_events, bool)
@@ -56,7 +53,8 @@ class TestQueueNetwork(object):
 
         assert ans.all()
 
-    def test_add_arrival(self):
+    @staticmethod
+    def test_add_arrival():
 
         adj = {0: [1], 1: [2, 3]}
         g = qt.adjacency2graph(adj)
@@ -80,7 +78,8 @@ class TestQueueNetwork(object):
         assert np.isclose(trans[1][2], p0, atol=1e-1)
         assert np.isclose(trans[1][3], p1, atol=1e-1)
 
-    def test_animate(self, queue_network):
+    @staticmethod
+    def test_animate(queue_network):
         if not HAS_MATPLOTLIB:
             with mock.patch('queueing_tool.network.queue_network.plt.show'):
                 queue_network.animate(frames=5)
@@ -88,7 +87,8 @@ class TestQueueNetwork(object):
             plt.switch_backend('Agg')
             queue_network.animate(frames=5)
 
-    def test_blocking(self):
+    @staticmethod
+    def test_blocking():
 
         g = nx.random_geometric_graph(100, 0.2).to_directed()
         g = qt.set_types_random(g, proportions={k: 1.0 / 6 for k in range(1, 7)})
@@ -115,12 +115,14 @@ class TestQueueNetwork(object):
         qn.clear()
         assert qn._initialized is False
 
-    def test_blocking_setter_error(self, queue_network):
+    @staticmethod
+    def test_blocking_setter_error(queue_network):
         queue_network.blocking = 'RS'
         with pytest.raises(TypeError):
             queue_network.blocking = 2
 
-    def test_closedness(self, queue_network):
+    @staticmethod
+    def test_closedness(queue_network):
 
         num_events = 2500
         ans = np.zeros(num_events, bool)
@@ -137,7 +139,8 @@ class TestQueueNetwork(object):
 
         assert ans.all()
 
-    def test_copy(self):
+    @staticmethod
+    def test_copy():
 
         g = nx.random_geometric_graph(100, 0.2).to_directed()
         g = qt.set_types_random(g, proportions={k: 0.2 for k in range(1, 6)})
@@ -172,8 +175,9 @@ class TestQueueNetwork(object):
 
         assert np.array(ans).all()
 
+    @staticmethod
     @mock.patch('queueing_tool.network.queue_network.HAS_MATPLOTLIB', True)
-    def test_drawing(self, queue_network):
+    def test_drawing(queue_network):
         scatter_kwargs = {'c': 'b'}
         kwargs = {'bgcolor': 'green'}
         queue_network.draw(scatter_kwargs=scatter_kwargs, **kwargs)
@@ -185,12 +189,14 @@ class TestQueueNetwork(object):
         queue_network.g.draw_graph.assert_called_with(scatter_kwargs=scatter_kwargs,
                                                       line_kwargs=None, bgcolor=bgcolor)
 
+    @staticmethod
     @mock.patch('queueing_tool.network.queue_network.HAS_MATPLOTLIB', False)
-    def test_drawing_importerror(self, queue_network):
+    def test_drawing_importerror(queue_network):
         with pytest.raises(ImportError):
             queue_network.draw()
 
-    def test_drawing_animation_error(self, queue_network):
+    @staticmethod
+    def test_drawing_animation_error(queue_network):
         queue_network.clear()
         with pytest.raises(qt.QueueingToolError):
             queue_network.animate()
@@ -200,12 +206,14 @@ class TestQueueNetwork(object):
             with pytest.raises(ImportError):
                 queue_network.animate()
 
-    def test_init_error(self):
+    @staticmethod
+    def test_init_error():
         g = qt.generate_pagerank_graph(7)
         with pytest.raises(TypeError):
             qt.QueueNetwork(g, blocking=2)
 
-    def test_get_agent_data(self, queue_network):
+    @staticmethod
+    def test_get_agent_data(queue_network):
 
         queue_network.clear()
         queue_network.initialize(queues=1)
@@ -228,7 +236,8 @@ class TestQueueNetwork(object):
         assert (c == dat0[dat0[:, 2] > 0, 2]).all()
         assert (dat0[1:, 0] == dat0[dat0[:, 2] > 0, 2]).all()
 
-    def test_get_queue_data(self):
+    @staticmethod
+    def test_get_queue_data():
 
         g = nx.random_geometric_graph(50, 0.5).to_directed()
         q_cls = {1: qt.QueueServer}
@@ -249,7 +258,8 @@ class TestQueueNetwork(object):
         ans = np.array([q.data == {} for q in qn.edge2queue])
         assert ans.all()
 
-    def test_greedy_routing(self):
+    @staticmethod
+    def test_greedy_routing():
 
         lam = np.random.randint(1, 10) + 0.0
         rho = np.random.uniform(0.75, 1)
@@ -309,7 +319,8 @@ class TestQueueNetwork(object):
 
         assert ans.all()
 
-    def test_initialize_error(self, queue_network):
+    @staticmethod
+    def test_initialize_error(queue_network):
         queue_network.clear()
         with pytest.raises(ValueError):
             queue_network.initialize(nActive=0)
@@ -325,7 +336,8 @@ class TestQueueNetwork(object):
             with pytest.raises(qt.QueueingToolError):
                 queue_network.initialize(edge_type=1)
 
-    def test_initialization_single_edge_index(self, queue_network):
+    @staticmethod
+    def test_initialization_single_edge_index(queue_network):
         # Single edge index
         k = np.random.randint(0, queue_network.nE)
         queue_network.clear()
@@ -334,7 +346,8 @@ class TestQueueNetwork(object):
         ans = [q.edge[2] for q in queue_network.edge2queue if q.active]
         assert ans == [k]
 
-    def test_initialization_multiple_edge_index(self, queue_network):
+    @staticmethod
+    def test_initialization_multiple_edge_index(queue_network):
         # Multiple edge indices
         k = np.unique(np.random.randint(0, queue_network.nE, 5))
         queue_network.clear()
@@ -344,7 +357,8 @@ class TestQueueNetwork(object):
         ans.sort()
         assert (ans == k).all()
 
-    def test_initialization_single_edge(self, queue_network):
+    @staticmethod
+    def test_initialization_single_edge(queue_network):
         # Single edge as edge
         k = np.random.randint(0, queue_network.nE)
         e = queue_network.edge2queue[k].edge[:2]
@@ -354,7 +368,8 @@ class TestQueueNetwork(object):
         ans = [q.edge[2] for q in queue_network.edge2queue if q.active]
         assert ans == [k]
 
-    def test_initialization_multiple_edges(self, queue_network):
+    @staticmethod
+    def test_initialization_multiple_edges(queue_network):
         # Multiple edges as tuples
         k = np.unique(np.random.randint(0, queue_network.nE, 5))
         es = [queue_network.edge2queue[i].edge[:2] for i in k]
@@ -364,7 +379,8 @@ class TestQueueNetwork(object):
         ans = [q.edge[2] for q in queue_network.edge2queue if q.active]
         assert (ans == k).all()
 
-    def test_initialization_single_edge_type(self, queue_network):
+    @staticmethod
+    def test_initialization_single_edge_type(queue_network):
         # Single edge_type
         k = np.random.randint(1, 4)
         queue_network.clear()
@@ -373,7 +389,8 @@ class TestQueueNetwork(object):
         ans = np.array([q.edge[3] == k for q in queue_network.edge2queue if q.active])
         assert ans.all()
 
-    def test_initialization_multiple_edge_types(self, queue_network):
+    @staticmethod
+    def test_initialization_multiple_edge_types(queue_network):
         # Multiple edge_types
         k = np.unique(np.random.randint(1, 4, 3))
         queue_network.clear()
@@ -382,14 +399,16 @@ class TestQueueNetwork(object):
         ans = np.array([q.edge[3] in k for q in queue_network.edge2queue if q.active])
         assert ans.all()
 
-    def test_initialization_num_active_edges(self, queue_network):
+    @staticmethod
+    def test_initialization_num_active_edges(queue_network):
         queue_network.clear()
         queue_network.max_agents = 3
         queue_network.initialize(nActive=queue_network.num_edges)
         ans = np.array([q.active for q in queue_network.edge2queue])
         assert ans.sum() == 3
 
-    def test_max_agents(self, queue_network):
+    @staticmethod
+    def test_max_agents(queue_network):
 
         num_events = 1500
         queue_network.max_agents = 200
@@ -407,13 +426,15 @@ class TestQueueNetwork(object):
 
         assert ans.all()
 
-    def test_properties(self, queue_network):
+    @staticmethod
+    def test_properties(queue_network):
         queue_network.clear()
         assert queue_network.time == np.infty
         assert queue_network.num_edges == queue_network.nE
         assert queue_network.num_vertices == queue_network.nV
         assert queue_network.num_nodes == queue_network.nV
 
+    @staticmethod
     @pytest.mark.parametrize('mat', [
         {-1: {0: 0.75, 1: 0.25}},
         {200: {0: 0.75, 1: 0.25}},
@@ -422,11 +443,12 @@ class TestQueueNetwork(object):
         np.zeros((2, 2)),
         np.zeros((200, 200)),
     ])
-    def test_set_transitions_error(self, mat, queue_network):
+    def test_set_transitions_error(mat, queue_network):
         with pytest.raises(ValueError):
             queue_network.set_transitions(mat)
 
-    def test_simulate(self):
+    @staticmethod
+    def test_simulate():
 
         g = qt.generate_pagerank_graph(50)
         qn = qt.QueueNetwork(g)
@@ -438,12 +460,14 @@ class TestQueueNetwork(object):
 
         assert qn.current_time > t0
 
-    def test_simulate_error(self, queue_network):
+    @staticmethod
+    def test_simulate_error(queue_network):
         queue_network.clear()
         with pytest.raises(qt.QueueingToolError):
             queue_network.simulate()
 
-    def test_simulate_slow(self, queue_network):
+    @staticmethod
+    def test_simulate_slow(queue_network):
         e = queue_network._fancy_heap.array_edges[0]
         edge = queue_network.edge2queue[e].edge
 
@@ -476,15 +500,17 @@ class TestQueueNetwork(object):
             else:
                 queue_network._simulate_next_event(slow=False)
 
+    @staticmethod
     @mock.patch('queueing_tool.network.queue_network.HAS_MATPLOTLIB', True)
-    def test_show_type(self, queue_network):
+    def test_show_type(queue_network):
         args = {'c': 'b', 'bgcolor': 'green'}
         queue_network.show_type(edge_type=2, **args)
         queue_network.g.draw_graph.assert_called_with(scatter_kwargs=None,
                                                       line_kwargs=None, **args)
 
+    @staticmethod
     @mock.patch('queueing_tool.network.queue_network.HAS_MATPLOTLIB', True)
-    def test_show_active(self, queue_network):
+    def test_show_active(queue_network):
         args = {
             'fname': 'types.png',
             'figsize': (3, 3),
@@ -494,7 +520,8 @@ class TestQueueNetwork(object):
         queue_network.g.draw_graph.assert_called_with(scatter_kwargs=None,
                                                       line_kwargs=None, **args)
 
-    def test_sorting(self, queue_network):
+    @staticmethod
+    def test_sorting(queue_network):
 
         num_events = 2000
         ans = np.zeros(num_events, bool)
@@ -516,7 +543,8 @@ class TestQueueNetwork(object):
 
         assert ans.all()
 
-    def test_transitions(self, queue_network):
+    @staticmethod
+    def test_transitions(queue_network):
 
         degree = [len(queue_network.out_edges[k]) for k in range(queue_network.nV)]
         v, deg = np.argmax(degree), max(degree)

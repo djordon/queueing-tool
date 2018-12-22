@@ -29,16 +29,17 @@ matplotlib_mock = {
 }
 
 
-@pytest.fixture(scope='module')
-def queue_network_graph():
+@pytest.fixture(name='queue_network_graph', scope='module')
+def fixture_queue_network_graph():
     np.random.seed(10)
     return qt.QueueNetworkDiGraph(nx.krackhardt_kite_graph())
 
 
 class TestQueueNetworkDiGraph(object):
 
+    @staticmethod
     @mock.patch.dict('sys.modules', matplotlib_mock)
-    def test_lines_scatter_args(self, queue_network_graph):
+    def test_lines_scatter_args(queue_network_graph):
         np.random.seed(10)
         ax = mock.Mock()
         ax.transData = mock.Mock()
@@ -52,7 +53,8 @@ class TestQueueNetworkDiGraph(object):
         assert b['vmax'] == 107
         assert 'beefy' not in a and 'beefy' not in b
 
-    def test_draw_graph(self, queue_network_graph):
+    @staticmethod
+    def test_draw_graph(queue_network_graph):
         np.random.seed(10)
         pos = np.random.uniform(size=(queue_network_graph.number_of_nodes(), 2))
         kwargs = {

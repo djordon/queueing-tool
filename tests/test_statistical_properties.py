@@ -18,20 +18,21 @@ def chi2_cdf(q, k, n=1000000, ns=1):
     return np.mean([empirical_cdf(q, np.random.chisquare(k, n), n) for i in range(ns)])
 
 
-@pytest.fixture
-def lam():
+@pytest.fixture(name='lam')
+def fixture_lam():
     return float(np.random.randint(1, 10))
 
 
-@pytest.fixture
-def rho():
+@pytest.fixture(name='rho')
+def fixture_rho():
     return np.random.uniform(0.5, 1)
 
 
 @pytest.mark.slow
 class TestQueueServerStatistically(object):
 
-    def test_markovian_property(self, lam, rho):
+    @staticmethod
+    def test_markovian_property(lam, rho):  # pylint: disable=R0914
 
         nSe = np.random.randint(1, 10)
         mu = lam / (rho * nSe)
@@ -74,7 +75,8 @@ class TestQueueServerStatistically(object):
         assert np.isclose(cc, 0, atol=1e-1)
         assert p1 > 0.05
 
-    def test_littles_law(self, lam, rho):
+    @staticmethod
+    def test_littles_law(lam, rho):
 
         nSe = np.random.randint(1, 10)
         mu = lam / (rho * nSe)
@@ -101,7 +103,8 @@ class TestQueueServerStatistically(object):
 
         assert np.isclose(ans, 0, atol=1e-1)
 
-    def test_queue_blocking(self, lam, rho):
+    @staticmethod
+    def test_queue_blocking(lam, rho):  # pylint: disable=R0914
 
         nSe = np.random.randint(1, 10)
         mu = lam / (rho * nSe)
@@ -137,7 +140,7 @@ class TestQueueServerStatistically(object):
 
 
 @pytest.mark.slow
-def test_poisson_random_measure():
+def test_poisson_random_measure():  # pylint: disable=R0914
     # This function tests to make sure the poisson_random_measure function
     # actually simulates a Poisson random measure. It does so looking for
     # Poisson random variables using a chi-squared test (testing the
@@ -165,8 +168,8 @@ def test_poisson_random_measure():
     mu2 = 4 * np.sum(rate(np.linspace(8, 12, 200))) / 200  # or 2*(4 - 3*sqrt(3)/pi) + 2
     mus = [mu1, mu2]
 
-    rv1 = np.sum(np.logical_and(3 < arrival_times, arrival_times < 8), axis=1)
-    rv2 = np.sum(np.logical_and(8 < arrival_times, arrival_times < 12), axis=1)
+    rv1 = np.sum(np.logical_and(arrival_times > 3, arrival_times < 8), axis=1)
+    rv2 = np.sum(np.logical_and(arrival_times > 8, arrival_times < 12), axis=1)
     rvs = [rv1, rv2]
     df = [max(rv1) + 2, max(rv2) + 2]
 
