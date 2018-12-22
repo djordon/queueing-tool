@@ -1,14 +1,13 @@
-import numbers
-
 import networkx as nx
 import numpy as np
+from numpy.random import RandomState
 
 from queueing_tool.graph.graph_functions import _test_graph, _calculate_distance
 from queueing_tool.graph.graph_wrapper import QueueNetworkDiGraph
 from queueing_tool.union_find import UnionFind
 
 
-def generate_transition_matrix(g, seed=None):
+def generate_transition_matrix(g, seed=None, random_state=None):
     """Generates a random transition matrix for the graph ``g``.
 
     Parameters
@@ -18,6 +17,10 @@ def generate_transition_matrix(g, seed=None):
     seed : int (optional)
         An integer used to initialize numpy's psuedo-random number
         generator.
+    random_state : :class:`~numpy.random.RandomState` (optional)
+        Used to initialize numpy's psuedo-random number generator. If
+        present, ``seed`` is ignored. If this is missing then the seed is
+        used to create a :class:`~numpy.random.RandomState`.
 
     Returns
     -------
@@ -29,8 +32,8 @@ def generate_transition_matrix(g, seed=None):
     """
     g = _test_graph(g)
 
-    if isinstance(seed, numbers.Integral):
-        np.random.seed(seed)
+    if random_state is None:
+        random_state = RandomState(seed)
 
     nV = g.number_of_nodes()
     mat = np.zeros((nV, nV))
@@ -41,16 +44,17 @@ def generate_transition_matrix(g, seed=None):
         if deg == 1:
             mat[v, ind] = 1
         elif deg > 1:
-            probs = np.ceil(np.random.rand(deg) * 100) / 100.
+            probs = np.ceil(random_state.rand(deg) * 100) / 100.
             if np.isclose(np.sum(probs), 0):
-                probs[np.random.randint(deg)] = 1
+                probs[random_state.randint(deg)] = 1
 
             mat[v, ind] = probs / np.sum(probs)
 
     return mat
 
 
-def generate_random_graph(num_vertices=250, prob_loop=0.5, **kwargs):
+def generate_random_graph(num_vertices=250, prob_loop=0.5,
+                          seed=None, random_state=None, **kwargs):
     """Creates a random graph where the edges have different types.
 
     This method calls :func:`.minimal_random_graph`, and then adds
@@ -63,6 +67,13 @@ def generate_random_graph(num_vertices=250, prob_loop=0.5, **kwargs):
         The number of vertices in the graph.
     prob_loop : float (optional, default: 0.5)
         The probability that a loop gets added to a vertex.
+    seed : int (optional)
+        An integer used to initialize numpy's psuedo-random number
+        generator.
+    random_state : :class:`~numpy.random.RandomState` (optional)
+        Used to initialize numpy's psuedo-random number generator. If
+        present, ``seed`` is ignored. If this is missing then the seed is
+        used to create a :class:`~numpy.random.RandomState`.
     **kwargs :
         Any parameters to send to :func:`.minimal_random_graph` or
         :func:`.set_types_random`.
@@ -105,17 +116,20 @@ def generate_random_graph(num_vertices=250, prob_loop=0.5, **kwargs):
     recommended use edge type indices starting at 1, since 0 is
     typically used for terminal edges.
     """
-    g = minimal_random_graph(num_vertices, **kwargs)
+    if random_state is None:
+        random_state = RandomState(seed)
+
+    g = minimal_random_graph(num_vertices, random_state=random_state, **kwargs)
     for v in g.nodes():
         e = (v, v)
         if not g.is_edge(e):
-            if np.random.uniform() < prob_loop:
+            if random_state.uniform() < prob_loop:
                 g.add_edge(*e)
-    g = set_types_random(g, **kwargs)
-    return g
+
+    return set_types_random(g, random_state=random_state, **kwargs)
 
 
-def generate_pagerank_graph(num_vertices=250, **kwargs):
+def generate_pagerank_graph(num_vertices=250, seed=None, random_state=None, **kwargs):
     """Creates a random graph where the vertex types are
     selected using their pagerank.
 
@@ -127,6 +141,13 @@ def generate_pagerank_graph(num_vertices=250, **kwargs):
     ----------
     num_vertices : int (optional, the default is 250)
         The number of vertices in the graph.
+    seed : int (optional)
+        An integer used to initialize numpy's psuedo-random number
+        generator.
+    random_state : :class:`~numpy.random.RandomState` (optional)
+        Used to initialize numpy's psuedo-random number generator. If
+        present, ``seed`` is ignored. If this is missing then the seed is
+        used to create a :class:`~numpy.random.RandomState`.
     **kwargs :
         Any parameters to send to :func:`.minimal_random_graph` or
         :func:`.set_types_rank`.
@@ -149,15 +170,18 @@ def generate_pagerank_graph(num_vertices=250, **kwargs):
     loops then have edge types that correspond to the vertices type.
     The rest of the edges are set to type 1.
     """
-    g = minimal_random_graph(num_vertices, **kwargs)
+    if random_state is None:
+        random_state = RandomState(seed)
+
+    g = minimal_random_graph(num_vertices, random_seed=random_state, **kwargs)
     r = np.zeros(num_vertices)
     for k, pr in nx.pagerank(g).items():
         r[k] = pr
-    g = set_types_rank(g, rank=r, **kwargs)
-    return g
+
+    return set_types_rank(g, rank=r, random_seed=random_state, **kwargs)
 
 
-def minimal_random_graph(num_vertices, seed=None, **kwargs):
+def minimal_random_graph(num_vertices, seed=None, random_state=None, **_kwargs):
     """Creates a connected graph with random vertex locations.
 
     Parameters
@@ -165,10 +189,12 @@ def minimal_random_graph(num_vertices, seed=None, **kwargs):
     num_vertices : int
         The number of vertices in the graph.
     seed : int (optional)
-        An integer used to initialize numpy's psuedorandom number
-        generators.
-    **kwargs :
-        Unused.
+        An integer used to initialize numpy's psuedo-random number
+        generator.
+    random_state : :class:`~numpy.random.RandomState` (optional)
+        Used to initialize numpy's psuedo-random number generator. If
+        present, ``seed`` is ignored. If this is missing then the seed is
+        used to create a :class:`~numpy.random.RandomState`.
 
     Returns
     -------
@@ -184,10 +210,10 @@ def minimal_random_graph(num_vertices, seed=None, **kwargs):
     ``r`` are connect by an edge --- where ``r`` is the smallest number
     such that the graph ends up connected.
     """
-    if isinstance(seed, numbers.Integral):
-        np.random.seed(seed)
+    if random_state is None:
+        random_state = RandomState(seed)
 
-    points = np.random.random((num_vertices, 2)) * 10
+    points = random_state.uniform(size=(num_vertices, 2)) * 10
     edges = []
 
     for k in range(num_vertices - 1):
@@ -215,7 +241,7 @@ def minimal_random_graph(num_vertices, seed=None, **kwargs):
 
 
 def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
-                     **kwargs):
+                     random_state=None, **_kwargs):
     """Randomly sets ``edge_type`` (edge type) properties of the graph.
 
     This function randomly assigns each edge a type. The probability of
@@ -237,10 +263,12 @@ def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
         that are expected to be of that type. The values can must sum
         to one.
     seed : int (optional)
-        An integer used to initialize numpy's psuedorandom number
+        An integer used to initialize numpy's psuedo-random number
         generator.
-    **kwargs :
-        Unused.
+    random_state : :class:`~numpy.random.RandomState` (optional)
+        Used to initialize numpy's psuedo-random number generator. If
+        present, ``seed`` is ignored. If this is missing then the seed is
+        used to create a :class:`~numpy.random.RandomState`.
 
     Returns
     -------
@@ -266,8 +294,8 @@ def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
     """
     g = _test_graph(g)
 
-    if isinstance(seed, numbers.Integral):
-        np.random.seed(seed)
+    if random_state is None:
+        random_state = RandomState(seed)
 
     if proportions is None:
         proportions = {k: 1. / 3 for k in range(1, 4)}
@@ -287,13 +315,13 @@ def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
 
     eTypes = {}
     types = list(proportions.keys())
-    values = np.random.choice(types, size=len(edges), replace=True, p=props)
+    values = random_state.choice(types, size=len(edges), replace=True, p=props)
 
     for k, e in enumerate(edges):
         eTypes[e] = values[k]
 
     types = list(loop_proportions.keys())
-    values = np.random.choice(types, size=len(loops), replace=True, p=lprops)
+    values = random_state.choice(types, size=len(loops), replace=True, p=lprops)
 
     for k, e in enumerate(loops):
         eTypes[e] = values[k]
@@ -305,7 +333,8 @@ def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
     return g
 
 
-def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
+def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None,
+                   random_state=None, **_kwargs):
     """Creates a stylized graph. Sets edge and types using `pagerank`_.
 
     This function sets the edge types of a graph to be either 1, 2, or
@@ -334,8 +363,10 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
     seed : int (optional)
         An integer used to initialize numpy's psuedo-random number
         generator.
-    **kwargs :
-        Unused.
+    random_state : :class:`~numpy.random.RandomState` (optional)
+        Used to initialize numpy's psuedo-random number generator. If
+        present, ``seed`` is ignored. If this is missing then the seed is
+        used to create a :class:`~numpy.random.RandomState`.
 
     Returns
     -------
@@ -350,8 +381,8 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
     """
     g = _test_graph(g)
 
-    if isinstance(seed, numbers.Integral):
-        np.random.seed(seed)
+    if random_state is None:
+        random_state = RandomState(seed)
 
     tmp = np.sort(np.array(rank))
     nDests = int(np.ceil(g.number_of_nodes() * pType2))
@@ -365,7 +396,8 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None, **kwargs):
     min_g_dist = np.ones(nFCQ) * np.infty
     ind_g_dist = np.ones(nFCQ, int)
 
-    r, theta = np.random.random(nFCQ) / 500., np.random.random(nFCQ) * 360.
+    r = random_state.uniform(size=nFCQ) / 500.0
+    theta = random_state.uniform(size=nFCQ) * 360.0
     xy_pos = np.array([r * np.cos(theta), r * np.sin(theta)]).transpose()
     g_pos = xy_pos + dest_pos[np.array(np.mod(np.arange(nFCQ), nDests), int)]
 

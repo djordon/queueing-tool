@@ -3,7 +3,7 @@ import copy
 import numbers
 from heapq import heappush, heappop
 
-from numpy.random import uniform, exponential
+from numpy.random import uniform, exponential, RandomState
 from numpy import infty
 import numpy as np
 
@@ -280,7 +280,7 @@ class QueueServer(object):
                  service_f=None, edge=(0, 0, 0, 1),
                  AgentFactory=Agent, collect_data=False, active_cap=infty,
                  deactive_t=infty, colors=None, seed=None,
-                 coloring_sensitivity=2, **kwargs):
+                 coloring_sensitivity=2, random_state=None, **kwargs):
 
         if not isinstance(num_servers, numbers.Integral) and num_servers is not infty:
             msg = "num_servers must be an integer or infinity."
@@ -296,13 +296,16 @@ class QueueServer(object):
         self.data = {}   # times; agent_id : [arrival, service start, departure]
         self.queue = collections.deque()
 
+        if random_state is None:
+            random_state = RandomState(seed)
+
         if arrival_f is None:
             def arrival_f(t):  # pylint: disable=E0102
-                return t + exponential(1.0)
+                return t + random_state.exponential(1.0)
 
         if service_f is None:
             def service_f(t):  # pylint: disable=E0102
-                return t + exponential(0.9)
+                return t + random_state.exponential(0.9)
 
         self.arrival_f = arrival_f
         self.service_f = service_f
@@ -322,9 +325,6 @@ class QueueServer(object):
         self._time = infty          # The time of the next event.
         self._next_ct = 0           # noqa E501 The next time an arrival from outside the network can arrive.
         self.coloring_sensitivity = coloring_sensitivity
-
-        if isinstance(seed, numbers.Integral):
-            np.random.seed(seed)
 
         if colors is not None:
             self.colors = colors
@@ -683,11 +683,11 @@ class QueueServer(object):
             If ``n`` is not positive.
         """
         if not isinstance(n, numbers.Integral) and n is not infty:
-            the_str = "n must be an integer or infinity.\n{0}"
-            raise TypeError(the_str.format(str(self)))
+            the_str = "n ({0}) must be an integer or infinity.\n{1}"
+            raise TypeError(the_str.format(n, str(self)))
         elif n <= 0:
-            the_str = "n must be a positive integer or infinity.\n{0}"
-            raise ValueError(the_str.format(str(self)))
+            the_str = "n ({0}) must be a positive integer or infinity.\n{1}"
+            raise ValueError(the_str.format(n, str(self)))
         else:
             self.num_servers = n
 

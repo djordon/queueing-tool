@@ -4,7 +4,7 @@ import copy
 import array
 
 import numpy as np
-from numpy.random import uniform
+from numpy.random import RandomState
 
 try:
     import matplotlib.pyplot as plt
@@ -73,6 +73,10 @@ class QueueNetwork(object):
     seed : int (optional)
         An integer used to initialize numpy's psuedo-random number
         generator.
+    random_state : :class:`~numpy.random.RandomState` (optional)
+        Used to initialize numpy's psuedo-random number generator. If
+        present, ``seed`` is ignored. If this is missing then the seed is
+        used to create a :class:`~numpy.random.RandomState`.
     colors : dict (optional)
         A dictionary of RGBA colors used to color the graph. The keys
         are specified in the Notes section. If this parameter is
@@ -304,7 +308,7 @@ class QueueNetwork(object):
     }
 
     def __init__(self, g, q_classes=None, q_args=None, seed=None, colors=None,
-                 max_agents=1000, blocking='BAS', adjust_graph=True):
+                 max_agents=1000, blocking='BAS', adjust_graph=True, random_state=None):
 
         if not isinstance(blocking, str):
             raise TypeError("blocking must be a string")
@@ -319,7 +323,7 @@ class QueueNetwork(object):
         self._initialized = False
         self._prev_edge = None
         self._fancy_heap = PriorityQueue()
-        self._blocking = True if blocking.lower() != 'rs' else False
+        self._blocking = blocking.lower() != 'rs'
 
         if colors is None:
             colors = {}
@@ -342,12 +346,17 @@ class QueueNetwork(object):
             for k in set(q_classes.keys()) - set(q_args.keys()):
                 q_args[k] = {}
 
+        if random_state is None:
+            random_state = RandomState(seed)
+
+        for kw in q_args.values():
+            kw.setdefault('random_state', random_state)
+
+        self.random_state = random_state
+
         for key, args in q_args.items():
             if 'colors' not in args:
                 args['colors'] = self.default_q_colors.get(key, self.default_q_colors[1])
-
-        if isinstance(seed, numbers.Integral):
-            np.random.seed(seed)
 
         if g is not None:
             g, qs = _prepare_graph(g, self.colors, q_classes, q_args, adjust_graph)
@@ -960,7 +969,7 @@ class QueueNetwork(object):
             if nActive >= 1 and isinstance(nActive, numbers.Integral):
                 qs = [q.edge[2] for q in self.edge2queue if q.edge[3] != 0]
                 n = min(nActive, len(qs))
-                queues = np.random.choice(qs, size=n, replace=False)
+                queues = self.random_state.choice(qs, size=n, replace=False)
             elif not isinstance(nActive, numbers.Integral):
                 msg = "If queues is None, then nActive must be an integer."
                 raise TypeError(msg)
@@ -1303,7 +1312,8 @@ class QueueNetwork(object):
                 q2.num_blocked += 1
                 q1._departures[0].blocked += 1
                 if self._blocking:
-                    t = q2._departures[0]._time + EPS * uniform(0.33, 0.66)
+                    jitter = EPS * self.random_state.uniform(0.33, 0.66)
+                    t = q2._departures[0]._time + jitter
                     q1.delay_service(t)
                 else:
                     q1.delay_service()
