@@ -317,7 +317,7 @@ class InfoQueue(LossQueue):
                     return
 
                 self._num_total += 1
-                new_agent = self.AgentFactory((self.edge[2], self._oArrivals), len(self.net_data))
+                new_agent = self._agent_factory((self.edge[2], self._oArrivals), len(self.net_data))
                 new_agent._time = self._next_ct
                 heappush(self._arrivals, new_agent)
 

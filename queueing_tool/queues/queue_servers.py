@@ -306,7 +306,6 @@ class QueueServer(object):
 
         self.arrival_f = arrival_f
         self.service_f = service_f
-        self.AgentFactory = AgentFactory
         self._agent_factory = AgentFactory
         self.collect_data = collect_data
         self.active_cap = active_cap
