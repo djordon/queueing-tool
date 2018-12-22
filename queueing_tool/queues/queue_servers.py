@@ -306,6 +306,7 @@ class QueueServer(object):
 
         self.arrival_f = arrival_f
         self.service_f = service_f
+        self.AgentFactory = AgentFactory
         self._agent_factory = AgentFactory
         self.collect_data = collect_data
         self.active_cap = active_cap
@@ -896,7 +897,7 @@ class NullQueue(QueueServer):
         'vertex_color': [0.5, 0.5, 0.5, 0.5]
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *_args, **kwargs):
         if 'edge' not in kwargs:
             kwargs['edge'] = (0, 0, 0, 0)
 
@@ -909,7 +910,7 @@ class NullQueue(QueueServer):
     def initialize(self, *args, **kwargs):
         pass
 
-    def set_num_servers(self, *args, **kwargs):
+    def set_num_servers(self, n):
         pass
 
     def number_queued(self):
@@ -922,7 +923,7 @@ class NullQueue(QueueServer):
             else:
                 self.data[agent.agent_id].append([agent._time, 0, 0, 0, 0])
 
-    def delay_service(self, *args, **kwargs):
+    def delay_service(self, t=None):
         pass
 
     def next_event_description(self):
