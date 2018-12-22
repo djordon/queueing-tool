@@ -411,7 +411,11 @@ class QueueNetworkDiGraph(nx.DiGraph):
         ax.add_collection(edge_collection)
         ax.scatter(**scatter_kwargs)
 
-        ax.set_axis_bgcolor(kwargs.get('bgcolor', [1, 1, 1, 1]))
+        if hasattr(ax, 'set_facecolor'):
+            ax.set_facecolor(kwargs.get('bgcolor', [1, 1, 1, 1]))
+        else:
+            ax.set_axis_bgcolor(kwargs.get('bgcolor', [1, 1, 1, 1]))
+
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 

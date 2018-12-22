@@ -536,7 +536,11 @@ class QueueNetwork(object):
             scatt.set_edgecolors(scat_args['edgecolors'])
             scatt.set_facecolor(scat_args['c'])
 
-        ax.set_axis_bgcolor(kwargs['bgcolor'])
+        if hasattr(ax, 'set_facecolor'):
+            ax.set_facecolor(kwargs['bgcolor'])
+        else:
+            ax.set_axis_bgcolor(kwargs['bgcolor'])
+
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
