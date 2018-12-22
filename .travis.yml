@@ -11,10 +11,13 @@ env:
   global:
     - CFLAGS="-coverage"
     - TRAVIS_TEST=true
+  matrix:
+    - MATPLOTLIB_VERSION=1.5.1
+    - MATPLOTLIB_VERSION=2.2.3
 install:
   - pip install --upgrade pip
   - pip install $(grep 'pytest' requirements.txt)
-  - pip install coveralls coverage matplotlib==1.5.1
+  - pip install coveralls coverage matplotlib==$MATPLOTLIB_VERSION
   - pip install -e .
 before_script:
   - "export DISPLAY=:99.0"
