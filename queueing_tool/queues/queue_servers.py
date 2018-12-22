@@ -276,7 +276,7 @@ class QueueServer(object):
         'vertex_color': [0.0, 0.5, 1.0, 1.0]
     }
 
-    def __init__(self, num_servers=1, arrival_f=None,
+    def __init__(self, num_servers=1, arrival_f=None,  # pylint: disable=R0914
                  service_f=None, edge=(0, 0, 0, 1),
                  AgentFactory=Agent, collect_data=False, active_cap=infty,
                  deactive_t=infty, colors=None, seed=None,
@@ -297,11 +297,11 @@ class QueueServer(object):
         self.queue = collections.deque()
 
         if arrival_f is None:
-            def arrival_f(t):
+            def arrival_f(t):  # pylint: disable=E0102
                 return t + exponential(1.0)
 
         if service_f is None:
-            def service_f(t):
+            def service_f(t):  # pylint: disable=E0102
                 return t + exponential(0.9)
 
         self.arrival_f = arrival_f
@@ -529,7 +529,7 @@ class QueueServer(object):
             qdata.extend(d)
 
         dat = np.zeros((len(qdata), 6))
-        if len(qdata) > 0:
+        if qdata:
             dat[:, :5] = np.array(qdata)
             dat[:, 5] = self.edge[2]
 
@@ -588,7 +588,7 @@ class QueueServer(object):
             if self.collect_data and new_depart.agent_id in self.data:
                 self.data[new_depart.agent_id][-1][2] = self._current_t
 
-            if len(self.queue) > 0:
+            if self.queue:
                 agent = self.queue.popleft()
                 if self.collect_data and agent.agent_id in self.data:
                     self.data[agent.agent_id][-1][1] = self._current_t

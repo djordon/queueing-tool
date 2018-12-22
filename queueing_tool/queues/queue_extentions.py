@@ -238,7 +238,7 @@ class InfoAgent(Agent):
     def __repr__(self):
         return "InfoAgent; agent_id:{0}. Time: {1}".format(self.agent_id, round(self._time, 3))
 
-    def add_loss(self, qedge, *args, **kwargs):  # qedge[2] is the edge_index of the queue
+    def add_loss(self, qedge, *_args, **_kwargs):  # qedge[2] is the edge_index of the queue
         self.stats[qedge[2], 2] += 1
 
     def get_beliefs(self):

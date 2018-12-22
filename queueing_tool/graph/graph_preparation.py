@@ -116,7 +116,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg, adjust_graph):
         ans = nx.to_dict_of_dicts(g)
         g = adjacency2graph(ans, adjust=2, is_directed=g.is_directed())
         g = QueueNetworkDiGraph(g)
-        if len(pos) > 0:
+        if pos:
             g.set_pos(pos)
 
     g.new_vertex_property('vertex_color')

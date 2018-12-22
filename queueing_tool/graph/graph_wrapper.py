@@ -56,7 +56,7 @@ def _adjacency_adjust(adjacency, adjust, is_directed):
             null_nodes = set()
 
             for k, adj in adjacency.items():
-                if len(adj) == 0:
+                if not adj:
                     null_nodes.add(k)
 
             for k, adj in adjacency.items():
@@ -66,13 +66,13 @@ def _adjacency_adjust(adjacency, adjust, is_directed):
 
         else:
             for k, adj in adjacency.items():
-                if len(adj) == 0:
+                if not adj:
                     adj[k] = {'edge_type': 0}
 
     return adjacency
 
 
-def adjacency2graph(adjacency, edge_type=None, adjust=1, **kwargs):
+def adjacency2graph(adjacency, edge_type=None, adjust=1, **_kwargs):
     """Takes an adjacency list, dict, or matrix and returns a graph.
 
     The purpose of this function is take an adjacency list (or matrix)

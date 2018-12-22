@@ -309,6 +309,9 @@ class QueueNetwork(object):
         if not isinstance(blocking, str):
             raise TypeError("blocking must be a string")
 
+        # Used for testing
+        self._qkey = None
+
         self._t = 0
         self.num_events = 0
         self.max_agents = max_agents
@@ -528,7 +531,7 @@ class QueueNetwork(object):
         t = np.infty if t is None else t
         now = self._t
 
-        def update(frame_number):
+        def update(_frame_number):
             if t is not None:
                 if self._t > now + t:
                     return False
@@ -536,6 +539,7 @@ class QueueNetwork(object):
             lines.set_color(line_args['colors'])
             scatt.set_edgecolors(scat_args['edgecolors'])
             scatt.set_facecolor(scat_args['c'])
+            return None
 
         if hasattr(ax, 'set_facecolor'):
             ax.set_facecolor(kwargs['bgcolor'])
@@ -894,7 +898,7 @@ class QueueNetwork(object):
         for q in queues:
             dat = self.edge2queue[q].fetch_data()
 
-            if len(dat) > 0:
+            if dat:
                 data = np.vstack((data, dat))
 
         if return_header:
@@ -969,7 +973,7 @@ class QueueNetwork(object):
 
         queues = [e for e in queues if self.edge2queue[e].edge[3] != 0]
 
-        if len(queues) == 0:
+        if not queues:
             raise QueueingToolError("There were no queues to initialize.")
 
         if len(queues) > self.max_agents:
@@ -1101,7 +1105,7 @@ class QueueNetwork(object):
             if key not in self.g.node:
                 msg = "One of the keys don't correspond to a vertex."
                 raise ValueError(msg)
-            elif len(self.out_edges[key]) > 0 and not np.isclose(sum(probs), 1):
+            elif self.out_edges[key] and not np.isclose(sum(probs), 1):
                 msg = "Sum of transition probabilities at a vertex was not 1."
                 raise ValueError(msg)
             elif (np.array(probs) < 0).any():

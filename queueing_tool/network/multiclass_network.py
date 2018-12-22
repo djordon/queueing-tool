@@ -28,7 +28,7 @@ class MultiClassQueueNetwork(QueueNetwork):
             if key not in self.g.node:
                 msg = "One of the keys don't correspond to a vertex."
                 raise ValueError(msg)
-            elif len(self.out_edges[key]) > 0 and not np.isclose(sum(probs), 1):
+            elif self.out_edges[key] and not np.isclose(sum(probs), 1):
                 msg = "Sum of transition probabilities at a vertex was not 1."
                 raise ValueError(msg)
             elif (np.array(probs) < 0).any():
@@ -90,7 +90,7 @@ class MultiClassQueueServer(QueueServer):
             if self.collect_data and new_depart.agent_id in self.data:
                 self.data[new_depart.agent_id][-1][2] = self._current_t
 
-            if len(self.queue) > 0:
+            if self.queue:
                 agent = self.queue.popleft()
                 if self.collect_data and agent.agent_id in self.data:
                     self.data[agent.agent_id][-1][1] = self._current_t
@@ -135,6 +135,8 @@ class MultiClassQueueServer(QueueServer):
                 self.queue.append(arrival)
 
             self._update_time()
+
+        return None
 
 
 ClassAgentID = collections.namedtuple(

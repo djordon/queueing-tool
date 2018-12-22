@@ -36,7 +36,7 @@ class Agent(object):
         Specifies how many times an agent has been blocked by a finite
         capacity queue.
     """
-    def __init__(self, agent_id=(0, 0), **kwargs):
+    def __init__(self, agent_id=(0, 0), **_kwargs):
         self.agent_id = AgentID(*agent_id)
         self.blocked = 0
         self._time = 0  # The agents arrival or departure time
@@ -59,13 +59,14 @@ class Agent(object):
     def __ge__(self, b):
         return self._time >= b._time
 
-    def add_loss(self, *args, **kwargs):
+    def add_loss(self, *_args, **_kwargs):
         """Adds one to the number of times the agent has been blocked
         from entering a queue.
         """
         self.blocked += 1
 
-    def desired_destination(self, network, edge):
+    @staticmethod
+    def desired_destination(network, edge):
         """Returns the agents next destination given their current
         location on the network.
 
