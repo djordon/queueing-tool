@@ -18,6 +18,8 @@ matrix:
   exclude:
   - python: 2.7
     env: MATPLOTLIB_VERSION=3.0.2
+  - python: 3.4
+    env: MATPLOTLIB_VERSION=3.0.2
 install:
   - pip install --upgrade pip
   - pip install $(grep 'pytest' requirements.txt)
