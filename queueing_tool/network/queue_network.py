@@ -410,7 +410,7 @@ class QueueNetwork(object):
             t = np.infty
         return t
 
-    def animate(self, out=None, t=None, line_kwargs=None,
+    def animate(self, filename=None, t=None, line_kwargs=None,
                 scatter_kwargs=None, **kwargs):
         """Animates the network as it's simulating.
 
@@ -423,7 +423,7 @@ class QueueNetwork(object):
 
         Parameters
         ----------
-        out : str (optional)
+        filename : str (optional)
             The location where the frames for the images will be saved.
             If this parameter is not given, then the animation is shown
             in interactive mode.
@@ -567,12 +567,12 @@ class QueueNetwork(object):
                 animation_args[key] = value
 
         animation = FuncAnimation(**animation_args)
-        if 'filename' not in kwargs:
+        if filename is None:
             plt.ioff()
             plt.show()
         else:
             save_args = {
-                'filename': None,
+                'filename': filename,
                 'writer': None,
                 'fps': None,
                 'dpi': None,
