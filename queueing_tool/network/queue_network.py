@@ -907,7 +907,7 @@ class QueueNetwork(object):
         for q in queues:
             dat = self.edge2queue[q].fetch_data()
 
-            if dat:
+            if dat.size > 0:
                 data = np.vstack((data, dat))
 
         if return_header:
