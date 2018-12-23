@@ -715,6 +715,7 @@ class QueueServer(object):
 
         >>> import queueing_tool as qt
         >>> import numpy as np
+        >>> np.random.seed(15)
         >>> rate = lambda t: 2 + 16 * np.sin(np.pi * t / 8)**2
         >>> arr = lambda t: qt.poisson_random_measure(t, rate, 18)
         >>> ser = lambda t: t + np.random.gamma(4, 0.1)
@@ -733,23 +734,23 @@ class QueueServer(object):
         >>> t0 = q.time
         >>> q.simulate(t=75)
         >>> round(float(q.time - t0), 1)
-        75.1
+        75.2
         >>> q.num_arrivals[1] + q.num_departures - num_events
-        1597
+        1594
 
         To simulate forward until 1000 new departures are observed run:
 
         >>> nA0, nD0 = q.num_arrivals[1], q.num_departures
         >>> q.simulate(nD=1000)
         >>> q.num_departures - nD0, q.num_arrivals[1] - nA0
-        (1000, 983)
+        (1000, 1019)
 
         To simulate until 1000 new arrivals are observed run:
 
         >>> nA0, nD0 = q.num_arrivals[1], q.num_departures
         >>> q.simulate(nA=1000)
         >>> q.num_departures - nD0, q.num_arrivals[1] - nA0,
-        (987, 1000)
+        (1010, 1000)
         """
         if t is None and nD is None and nA is None:
             for dummy in range(n):
