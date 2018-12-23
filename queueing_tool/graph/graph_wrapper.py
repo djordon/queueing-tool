@@ -2,6 +2,7 @@ import itertools
 
 import networkx as nx
 import numpy as np
+from numpy.random import RandomState
 
 try:
     import matplotlib.pyplot as plt
@@ -211,6 +212,13 @@ class QueueNetworkDiGraph(nx.DiGraph):
     data : :any:`networkx.DiGraph`, :class:`numpy.ndarray`, dict, etc.
         Any object that networkx can turn into a
         :any:`DiGraph<networkx.DiGraph>`.
+    seed : int (optional)
+        An integer used to initialize numpy's psuedo-random number
+        generator.
+    random_state : :class:`~numpy.random.RandomState` (optional)
+        Used to initialize numpy's psuedo-random number generator. If
+        present, ``seed`` is ignored. If this is missing then the seed is
+        used to create a :class:`~numpy.random.RandomState`.
     kwargs :
         Any additional arguments for :any:`networkx.DiGraph`.
 
@@ -234,12 +242,16 @@ class QueueNetworkDiGraph(nx.DiGraph):
     Not suitable for stand alone use; only use with a
     :class:`.QueueNetwork`.
     """
-    def __init__(self, data=None, **kwargs):
+    def __init__(self, data=None, seed=None, random_state=None, **kwargs):
         if isinstance(data, dict):
             data = adjacency2graph(data, **kwargs)
 
         super(QueueNetworkDiGraph, self).__init__(data, **kwargs)
 
+        if random_state is None:
+            random_state = RandomState(seed)
+
+        self.random_state = random_state
         self.edge_index = {e: k for k, e in enumerate(self.edges())}
 
         pos = nx.get_node_attributes(self, name='pos')
@@ -309,7 +321,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
 
     def set_node_positions(self, pos=None):
         if pos is None:
-            pos = nx.spring_layout(self)
+            pos = nx.spring_layout(self, seed=self.random_state)
         nx.set_node_attributes(self, name='pos', values=pos)
         self.pos = {v: pos[v] for v in self.nodes()}
 
