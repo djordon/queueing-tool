@@ -551,16 +551,17 @@ class TestQueueNetwork(object):
 
         trans = np.random.uniform(size=deg)
         trans = trans / sum(trans)
-        probs = {v: {e[1]: p for e, p in zip(queue_network.g.out_edges(v), trans)}}
+        edges = sorted(queue_network.g.out_edges(v))
+        probs = {v: {e[1]: p for e, p in zip(edges, trans)}}
 
         queue_network.set_transitions(probs)
         mat = queue_network.transitions()
-        tra = mat[v, [e[1] for e in queue_network.g.out_edges(v)]]
+        tra = mat[v, [e[1] for e in edges]]
 
         assert (tra == trans).all()
 
         tra = queue_network.transitions(return_matrix=False)
-        tra = np.array([tra[v][e[1]] for e in queue_network.g.out_edges(v)])
+        tra = np.array([tra[v][e[1]] for e in edges])
         assert (tra == trans).all()
 
         mat = qt.generate_transition_matrix(queue_network.g)
@@ -570,7 +571,7 @@ class TestQueueNetwork(object):
         assert np.allclose(tra, mat)
 
         mat = qt.generate_transition_matrix(queue_network.g)
-        queue_network.set_transitions({v: {e[1]: mat[e] for e in queue_network.g.out_edges(v)}})  # noqa: E501
+        queue_network.set_transitions({v: {e[1]: mat[e] for e in edges}})  # noqa: E501
         tra = queue_network.transitions()
 
         assert np.allclose(tra[v], mat[v])
