@@ -115,10 +115,10 @@ def matrix2dict(matrix, graph):
     >>> mat = qt.generate_transition_matrix(g, seed=123)
     >>> mat                     # doctest: +ELLIPSIS
     ...                         # doctest: +NORMALIZE_WHITESPACE
-    array([[ 0.      ,  0.707...,  0.292...,  0.      ],
-           [ 1.      ,  0.      ,  0.      ,  0.      ],
-           [ 0.291...,  0.      ,  0.      ,  0.708...],
-           [ 0.      ,  0.      ,  1.      ,  0.      ]])
+    array([[0.        , 0.70707071, 0.29292929, 0.        ],
+           [1.        , 0.        , 0.        , 0.        ],
+           [0.29113924, 0.        , 0.        , 0.70886076],
+           [0.        , 0.        , 1.        , 0.        ]])
     >>> qt.matrix2dict(mat, g)  # doctest: +ELLIPSIS
     ...                         # doctest: +NORMALIZE_WHITESPACE
     {0: {1: 0.707..., 2: 0.292...},

@@ -117,6 +117,7 @@ def adjacency2graph(adjacency, edge_type=None, adjust=1, **_kwargs):
     a loop is added with edge type 0.
 
     >>> import queueing_tool as qt
+    >>> import pprint
     >>> adj = {
     ...     0: {1: {}},
     ...     1: {2: {},
@@ -126,10 +127,9 @@ def adjacency2graph(adjacency, edge_type=None, adjust=1, **_kwargs):
     >>> # A loop will be added to vertex 2
     >>> g = qt.adjacency2graph(adj, edge_type=eTy)
     >>> ans = qt.graph2dict(g)
-    >>> ans                     # doctest: +NORMALIZE_WHITESPACE
+    >>> pprint.pprint(ans)      # doctest: +NORMALIZE_WHITESPACE
     {0: {1: {'edge_type': 1}},
-     1: {2: {'edge_type': 2},
-         3: {'edge_type': 4}},
+     1: {2: {'edge_type': 2}, 3: {'edge_type': 4}},
      2: {2: {'edge_type': 0}},
      3: {0: {'edge_type': 1}}}
 
@@ -138,10 +138,9 @@ def adjacency2graph(adjacency, edge_type=None, adjust=1, **_kwargs):
     >>> adj = {0 : [1], 1: [2, 3], 3: [0]}
     >>> g = qt.adjacency2graph(adj, edge_type=eTy)
     >>> ans = qt.graph2dict(g)
-    >>> ans                     # doctest: +NORMALIZE_WHITESPACE
+    >>> pprint.pprint(ans)      # doctest: +NORMALIZE_WHITESPACE
     {0: {1: {'edge_type': 1}},
-     1: {2: {'edge_type': 2},
-         3: {'edge_type': 4}},
+     1: {2: {'edge_type': 2}, 3: {'edge_type': 4}},
      2: {2: {'edge_type': 0}},
      3: {0: {'edge_type': 1}}}
 
@@ -151,12 +150,11 @@ def adjacency2graph(adjacency, edge_type=None, adjust=1, **_kwargs):
     >>> # The graph is unaltered
     >>> g = qt.adjacency2graph(adj, edge_type=eTy, adjust=2)
     >>> ans = qt.graph2dict(g)
-    >>> ans                     # doctest: +NORMALIZE_WHITESPACE
+    >>> pprint.pprint(ans)      # doctest: +NORMALIZE_WHITESPACE
     {0: {1: {'edge_type': 1}},
-     1: {2: {'edge_type': 0},
-         3: {'edge_type': 4}},
-    2: {},
-    3: {0: {'edge_type': 1}}}
+     1: {2: {'edge_type': 0}, 3: {'edge_type': 4}},
+     2: {},
+     3: {0: {'edge_type': 1}}}
     """
 
     if isinstance(adjacency, np.ndarray):

@@ -240,11 +240,12 @@ class QueueNetwork(object):
     >>> import queueing_tool as qt
     >>> import networkx as nx
     >>> import numpy as np
-    >>>
+
+    >>> rs = np.random.RandomState(seed=13)
     >>> g = nx.moebius_kantor_graph()
     >>> q_cl = {1: qt.QueueServer}
-    >>> def arr(t): return t + np.random.gamma(4, 0.0025)
-    >>> def ser(t): return t + np.random.exponential(0.025)
+    >>> def arr(t): return t + rs.gamma(4, 0.0025)
+    >>> def ser(t): return t + rs.exponential(0.025)
     >>> q_ar = {
     ...     1: {
     ...         'arrival_f': arr,
@@ -252,7 +253,7 @@ class QueueNetwork(object):
     ...         'num_servers': 5
     ...     }
     ... }
-    >>> net = qt.QueueNetwork(g, q_classes=q_cl, q_args=q_ar, seed=13)
+    >>> net = qt.QueueNetwork(g=g, q_classes=q_cl, q_args=q_ar, random_state=rs)
 
     To specify that arrivals enter from type 1 edges and simulate run:
 
@@ -263,8 +264,8 @@ class QueueNetwork(object):
 
     >>> nA = [(q.num_system, q.edge[2]) for q in net.edge2queue if q.edge[3] == 1]
     >>> nA.sort(reverse=True)
-    >>> nA[:5]
-    [(4, 37), (4, 33), (3, 43), (3, 32), (3, 30)]
+    >>> nA
+    ...                    # doctest: +SKIP
 
     To view the state of the network do the following (note, you need
     to have pygraphviz installed and your graph may be rotated):
@@ -891,15 +892,16 @@ class QueueNetwork(object):
         To get data from an edge connecting two vertices do the
         following:
 
-        >>> data = net.get_queue_data(edge=(1, 50))
+        >>> edges = list(g.edges())
+        >>> data = net.get_queue_data(edge=edges[0])
 
         To get data from several edges do the following:
 
-        >>> data = net.get_queue_data(edge=[(1, 50), (10, 91), (99, 99)])
+        >>> data = net.get_queue_data(edge=edges[:3])
 
         You can specify the edge indices as well:
 
-        >>> data = net.get_queue_data(queues=(20, 14, 0, 4))
+        >>> data = net.get_queue_data(queues=qt.EdgeID(20, 14, 0, 4))
         """
         queues = _get_queues(self.g, queues, edge, edge_type)
 
@@ -1062,10 +1064,12 @@ class QueueNetwork(object):
         likely:
 
         >>> import queueing_tool as qt
+        >>> import pprint
         >>> g = qt.generate_random_graph(5, seed=10)
         >>> net = qt.QueueNetwork(g)
-        >>> net.transitions(False)  # doctest: +ELLIPSIS
-        ...                         # doctest: +NORMALIZE_WHITESPACE
+        >>> ans = net.transitions(False) 
+        >>> pprint.pprint(ans)  # doctest: +ELLIPSIS
+        ...                     # doctest: +NORMALIZE_WHITESPACE
         {0: {2: 1.0},
          1: {2: 0.5, 3: 0.5},
          2: {0: 0.25, 1: 0.25, 2: 0.25, 4: 0.25},
@@ -1076,8 +1080,9 @@ class QueueNetwork(object):
         probabilities, you can do so with the following:
 
         >>> net.set_transitions({1 : {2: 0.75, 3: 0.25}})
-        >>> net.transitions(False)  # doctest: +ELLIPSIS
-        ...                         # doctest: +NORMALIZE_WHITESPACE
+        >>> ans = net.transitions(False)
+        >>> pprint.pprint(ans)  # doctest: +ELLIPSIS
+        ...                     # doctest: +NORMALIZE_WHITESPACE
         {0: {2: 1.0},
          1: {2: 0.75, 3: 0.25},
          2: {0: 0.25, 1: 0.25, 2: 0.25, 4: 0.25},
@@ -1088,13 +1093,14 @@ class QueueNetwork(object):
         :func:`.generate_transition_matrix`. You can change all
         transition probabilities with an :class:`~numpy.ndarray`:
 
-        >>> mat = qt.generate_transition_matrix(g, seed=10)
+        >>> mat = qt.generate_transition_matrix(g, seed=1234)
         >>> net.set_transitions(mat)
-        >>> net.transitions(False)  # doctest: +ELLIPSIS
-        ...                         # doctest: +NORMALIZE_WHITESPACE
+        >>> ans = net.transitions(False)
+        >>> pprint.pprint(ans)  # doctest: +ELLIPSIS
+        ...                     # doctest: +NORMALIZE_WHITESPACE
         {0: {2: 1.0},
-         1: {2: 0.962..., 3: 0.037...},
-         2: {0: 0.301..., 1: 0.353..., 2: 0.235..., 4: 0.108...},
+         1: {2: 0.240..., 3: 0.759...},
+         2: {0: 0.192..., 1: 0.344..., 2: 0.340..., 4: 0.122...},
          3: {1: 1.0},
          4: {2: 1.0}}
 
@@ -1455,12 +1461,15 @@ class QueueNetwork(object):
 
         >>> import queueing_tool as qt
         >>> import networkx as nx
+        >>> import pprint
         >>> g = nx.sedgewick_maze_graph()
         >>> net = qt.QueueNetwork(g)
 
         Below is an adjacency list for the graph ``g``.
 
-        >>> qt.graph2dict(g, False)
+        >>> ans = qt.graph2dict(g, False)
+        >>> ans = dict([(k, sorted(v)) for k, v in ans.items()])
+        >>> pprint.pprint(ans)
         ...                         # doctest: +NORMALIZE_WHITESPACE
         {0: [2, 5, 7],
          1: [7],
@@ -1489,8 +1498,9 @@ class QueueNetwork(object):
 
         >>> mat = qt.generate_transition_matrix(g, seed=96)
         >>> net.set_transitions(mat)
-        >>> net.transitions(False)  # doctest: +ELLIPSIS
-        ...                         # doctest: +NORMALIZE_WHITESPACE
+        >>> ans = net.transitions(False)
+        >>> pprint.pprint(ans)  # doctest: +ELLIPSIS
+        ...                     # doctest: +NORMALIZE_WHITESPACE
         {0: {2: 0.112..., 5: 0.466..., 7: 0.420...},
          1: {7: 1.0},
          2: {0: 0.561..., 6: 0.438...},
