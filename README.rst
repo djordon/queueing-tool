@@ -37,7 +37,7 @@ Installation
 ------------
 
 
-**Prerequisites:** Queueing-tool runs on Python 2.7 and 3.4-3.5 and it
+**Prerequisites:** Queueing-tool runs on Python 2.7 and 3.4-3.7 and it
 requires `networkx <http://networkx.readthedocs.org/en/stable/>`__ and
 `numpy <http://www.numpy.org/>`__. If you want to plot, you will need
 to install `matplotlib <http://matplotlib.org/>`__ as well.
@@ -73,7 +73,7 @@ The issue tracker is at https://github.com/djordon/queueing-tool/issues. Please 
 Copyright and license
 ---------------------
 
-Code and documentation Copyright 2014-2016 Daniel Jordon. Code released
+Code and documentation Copyright 2014-2019 Daniel Jordon. Code released
 under the `MIT
 license <https://github.com/djordon/queueing-tool/blob/master/LICENSE.txt>`__.
 
