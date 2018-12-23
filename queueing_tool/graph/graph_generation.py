@@ -38,8 +38,8 @@ def generate_transition_matrix(g, seed=None, random_state=None):
     nV = g.number_of_nodes()
     mat = np.zeros((nV, nV))
 
-    for v in g.nodes():
-        ind = [e[1] for e in g.out_edges(v)]
+    for v in sorted(g.nodes()):
+        ind = [e[1] for e in sorted(g.out_edges(v))]
         deg = len(ind)
         if deg == 1:
             mat[v, ind] = 1
@@ -120,8 +120,9 @@ def generate_random_graph(num_vertices=250, prob_loop=0.5,
         random_state = RandomState(seed)
 
     g = minimal_random_graph(num_vertices, random_state=random_state, **kwargs)
-    for v in g.nodes():
+    for v in sorted(g.nodes()):
         e = (v, v)
+
         if not g.is_edge(e):
             if random_state.uniform() < prob_loop:
                 g.add_edge(*e)
@@ -412,7 +413,7 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None,
     dests = set(dests)
     g.new_vertex_property('loop_type')
 
-    for v in g.nodes():
+    for v in sorted(g.nodes()):
         if v in dests:
             g.set_vp(v, 'loop_type', 3)
             if not g.is_edge((v, v)):
@@ -429,9 +430,6 @@ def set_types_rank(g, rank, pType2=0.1, pType3=0.1, seed=None,
     for v in g.nodes():
         if g.vp(v, 'loop_type') in [2, 3]:
             e = (v, v)
-            if g.vp(v, 'loop_type') == 2:
-                g.set_ep(e, 'edge_type', 2)
-            else:
-                g.set_ep(e, 'edge_type', 3)
+            g.set_ep(e, 'edge_type', g.vp(v, 'loop_type'))
 
     return g

@@ -134,7 +134,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg, adjust_graph):
     if 'pos' not in g.vertex_properties():
         g.set_pos()
 
-    for k, e in enumerate(g.edges()):
+    for k, e in enumerate(sorted(g.edges())):
         g.set_ep(e, 'edge_pen_width', 1.25)
         g.set_ep(e, 'edge_marker_size', 8)
         if e[0] == e[1]:
@@ -142,7 +142,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg, adjust_graph):
         else:
             g.set_ep(e, 'edge_color', queues[k].colors['edge_color'])
 
-    for v in g.nodes():
+    for v in sorted(g.nodes()):
         g.set_vp(v, 'vertex_pen_width', 1)
         g.set_vp(v, 'vertex_size', 8)
         e = (v, v)
@@ -159,7 +159,7 @@ def _prepare_graph(g, g_colors, q_cls, q_arg, adjust_graph):
 def _set_queues(g, q_cls, q_arg, has_cap):
     queues = [0 for k in range(g.number_of_edges())]
 
-    for e in g.edges():
+    for e in sorted(g.edges()):
         eType = g.ep(e, 'edge_type')
         qedge = (e[0], e[1], g.edge_index[e], eType)
 

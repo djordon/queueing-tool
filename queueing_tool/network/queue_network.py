@@ -371,11 +371,11 @@ class QueueNetwork(object):
             self.in_edges = {}
             self._route_probs = {}
 
-            for v in g.nodes():
+            for v in sorted(g.nodes()):
                 vod = g.out_degree(v)
                 probs = array.array('d', [1. / vod for i in range(vod)])
-                self.out_edges[v] = [g.edge_index[e] for e in g.out_edges(v)]
-                self.in_edges[v] = [g.edge_index[e] for e in g.in_edges(v)]
+                self.out_edges[v] = [g.edge_index[e] for e in sorted(g.out_edges(v))]
+                self.in_edges[v] = [g.edge_index[e] for e in sorted(g.in_edges(v))]
                 self._route_probs[v] = probs
 
             g.freeze()
@@ -1118,8 +1118,8 @@ class QueueNetwork(object):
             probs = list(value.values())
 
             if key not in self.g.node:
-                msg = "One of the keys don't correspond to a vertex."
-                raise ValueError(msg)
+                msg = "One of the keys ({0}) doesn't correspond to a vertex."
+                raise ValueError(msg.format(key))
             elif self.out_edges[key] and not np.isclose(sum(probs), 1):
                 msg = "Sum of transition probabilities at a vertex was not 1."
                 raise ValueError(msg)
@@ -1127,7 +1127,7 @@ class QueueNetwork(object):
                 msg = "Some transition probabilities were negative."
                 raise ValueError(msg)
 
-            for k, e in enumerate(self.g.out_edges(key)):
+            for k, e in enumerate(sorted(self.g.out_edges(key))):
                 self._route_probs[key][k] = value.get(e[1], 0)
 
     def show_active(self, **kwargs):
@@ -1520,11 +1520,11 @@ class QueueNetwork(object):
         if return_matrix:
             mat = np.zeros((self.nV, self.nV))
             for v in self.g.nodes():
-                ind = [e[1] for e in self.g.out_edges(v)]
+                ind = [e[1] for e in sorted(self.g.out_edges(v))]
                 mat[v, ind] = self._route_probs[v]
         else:
             mat = {
-                k: {e[1]: p for e, p in zip(self.g.out_edges(k), value)}
+                k: {e[1]: p for e, p in zip(sorted(self.g.out_edges(k)), value)}
                 for k, value in self._route_probs.items()
             }
 
@@ -1625,7 +1625,7 @@ def _get_queues(g, queues, edge, edge_type):
                 if g.ep(e, 'edge_type') in edge_type:
                     tmp.append(g.edge_index[e])
 
-            queues = np.array(tmp, int)
+            queues = np.array(sorted(tmp), int)
 
         if queues is None:
             queues = range(g.number_of_edges())
