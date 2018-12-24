@@ -1,6 +1,10 @@
 Queueing-tool
 =============
 
+.. image:: https://api.codacy.com/project/badge/Grade/652da56d377e458c82d2f5878e5dfd0e
+   :alt: Codacy Badge
+   :target: https://app.codacy.com/app/dan-jordon/queueing-tool?utm_source=github.com&utm_medium=referral&utm_content=djordon/queueing-tool&utm_campaign=Badge_Grade_Settings
+
 |Build Status| |Coverage Status| |pyversion| |license|
 
 Queueing-tool is a package for simulating and analyzing networks. It is an
