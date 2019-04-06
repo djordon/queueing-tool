@@ -7,7 +7,7 @@ try:
     from Cython.Distutils import build_ext
     ext = '.pyx'
 except ImportError:
-    ext = '-2.c' if sys.version_info[0] == 2 else '-3.c'
+    ext = '.c'
 
 
 python_version = sys.version_info[:2]

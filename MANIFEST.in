@@ -7,10 +7,8 @@ include examples/*.py
 include queueing_tool/__init__.py
 include queueing_tool/network/*.py
 include queueing_tool/network/priority_queue.pyx
-include queueing_tool/network/priority_queue-2.c
-include queueing_tool/network/priority_queue-3.c
+include queueing_tool/network/priority_queue.c
 include queueing_tool/graph/*.py
 include queueing_tool/queues/*.py
 include queueing_tool/queues/choice.pyx
-include queueing_tool/queues/choice-2.c
-include queueing_tool/queues/choice-3.c
+include queueing_tool/queues/choice.c
