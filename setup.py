@@ -7,7 +7,7 @@ try:
     from Cython.Distutils import build_ext
     ext = '.pyx'
 except ImportError:
-    ext = '.c'
+    ext = '-2.c' if sys.version_info[0] == 2 else '-3.c'
 
 
 python_version = sys.version_info[:2]
@@ -48,6 +48,8 @@ classifiers = [
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
     'Programming Language :: Cython',
     'Topic :: Scientific/Engineering :: Information Analysis',
     'Topic :: Scientific/Engineering :: Mathematics'
