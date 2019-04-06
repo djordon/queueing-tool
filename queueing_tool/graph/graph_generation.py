@@ -36,7 +36,7 @@ def generate_transition_matrix(g, seed=None):
     mat = np.zeros((nV, nV))
 
     for v in g.nodes():
-        ind = [e[1] for e in g.out_edges(v)]
+        ind = [e[1] for e in sorted(g.out_edges(v))]
         deg = len(ind)
         if deg == 1:
             mat[v, ind] = 1
