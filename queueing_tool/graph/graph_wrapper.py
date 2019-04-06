@@ -123,24 +123,22 @@ def adjacency2graph(adjacency, edge_type=None, adjust=1, **kwargs):
     >>> # A loop will be added to vertex 2
     >>> g = qt.adjacency2graph(adj, edge_type=eTy)
     >>> ans = qt.graph2dict(g)
-    >>> ans                     # doctest: +NORMALIZE_WHITESPACE
-    {0: {1: {'edge_type': 1}},
-     1: {2: {'edge_type': 2},
-         3: {'edge_type': 4}},
-     2: {2: {'edge_type': 0}},
-     3: {0: {'edge_type': 1}}}
+    >>> sorted(ans.items())     # doctest: +NORMALIZE_WHITESPACE
+    [(0, {1: {'edge_type': 1}}),
+     (1, {2: {'edge_type': 2}, 3: {'edge_type': 4}}), 
+     (2, {2: {'edge_type': 0}}),
+     (3, {0: {'edge_type': 1}})]
 
     You can use a dict of lists to represent the adjacency list.
 
     >>> adj = {0 : [1], 1: [2, 3], 3: [0]}
     >>> g = qt.adjacency2graph(adj, edge_type=eTy)
     >>> ans = qt.graph2dict(g)
-    >>> ans                     # doctest: +NORMALIZE_WHITESPACE
-    {0: {1: {'edge_type': 1}},
-     1: {2: {'edge_type': 2},
-         3: {'edge_type': 4}},
-     2: {2: {'edge_type': 0}},
-     3: {0: {'edge_type': 1}}}
+    >>> sorted(ans.items())     # doctest: +NORMALIZE_WHITESPACE
+    [(0, {1: {'edge_type': 1}}),
+     (1, {2: {'edge_type': 2}, 3: {'edge_type': 4}}),
+     (2, {2: {'edge_type': 0}}),
+     (3, {0: {'edge_type': 1}})]
 
     Alternatively, you could have this function adjust the edges that
     lead to terminal vertices by changing their edge type to 0:
@@ -148,12 +146,11 @@ def adjacency2graph(adjacency, edge_type=None, adjust=1, **kwargs):
     >>> # The graph is unaltered
     >>> g = qt.adjacency2graph(adj, edge_type=eTy, adjust=2)
     >>> ans = qt.graph2dict(g)
-    >>> ans                     # doctest: +NORMALIZE_WHITESPACE
-    {0: {1: {'edge_type': 1}},
-     1: {2: {'edge_type': 0},
-         3: {'edge_type': 4}},
-    2: {},
-    3: {0: {'edge_type': 1}}}
+    >>> sorted(ans.items())     # doctest: +NORMALIZE_WHITESPACE
+    [(0, {1: {'edge_type': 1}}),
+     (1, {2: {'edge_type': 0}, 3: {'edge_type': 4}}),
+     (2, {}),
+     (3, {0: {'edge_type': 1}})]
     """
 
     if isinstance(adjacency, np.ndarray):

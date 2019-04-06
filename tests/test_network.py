@@ -544,19 +544,20 @@ class TestQueueNetwork(unittest.TestCase):
 
         degree = [len(self.qn.out_edges[k]) for k in range(self.qn.nV)]
         v, deg = np.argmax(degree), max(degree)
+        out_edges = sorted(self.qn.g.out_edges(v))
 
         trans = np.random.uniform(size=deg)
         trans = trans / sum(trans)
-        probs = {v: {e[1]: p for e, p in zip(self.qn.g.out_edges(v), trans)}}
+        probs = {v: {e[1]: p for e, p in zip(out_edges, trans)}}
 
         self.qn.set_transitions(probs)
         mat = self.qn.transitions()
-        tra = mat[v, [e[1] for e in self.qn.g.out_edges(v)]]
+        tra = mat[v, [e[1] for e in out_edges]]
 
         self.assertTrue((tra == trans).all())
 
         tra = self.qn.transitions(return_matrix=False)
-        tra = np.array([tra[v][e[1]] for e in self.qn.g.out_edges(v)])
+        tra = np.array([tra[v][e[1]] for e in out_edges])
         self.assertTrue((tra == trans).all())
 
         mat = qt.generate_transition_matrix(self.g)
@@ -566,7 +567,7 @@ class TestQueueNetwork(unittest.TestCase):
         self.assertTrue(np.allclose(tra, mat))
 
         mat = qt.generate_transition_matrix(self.g)
-        self.qn.set_transitions({v: {e[1]: mat[e] for e in self.qn.g.out_edges(v)}})
+        self.qn.set_transitions({v: {e[1]: mat[e] for e in out_edges}})
         tra = self.qn.transitions()
 
         self.assertTrue(np.allclose(tra[v], mat[v]))
