@@ -1,5 +1,5 @@
 sudo: false
-dist: trusty
+dist: xenial
 language: python
 python:
   - 2.7
@@ -15,7 +15,7 @@ env:
   matrix:
     - MATPLOTLIB_VERSION=1.5.1
     - MATPLOTLIB_VERSION=2.2.3
-    - MATPLOTLIB_VERSION=3.0.2
+    - MATPLOTLIB_VERSION=3.0.3
 matrix:
   exclude:
   - python: 2.7
@@ -32,6 +32,6 @@ before_script:
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start
 script:
-  - py.test --cov=queueing_tool --cov-report term-missing --doctest-modules
+  - pytest --cov=queueing_tool --cov-report term-missing --doctest-modules
 after_success:
   - coveralls
