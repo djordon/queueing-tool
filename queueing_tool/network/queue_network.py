@@ -239,8 +239,10 @@ class QueueNetwork(object):
     >>>
     >>> g = nx.moebius_kantor_graph()
     >>> q_cl = {1: qt.QueueServer}
-    >>> def arr(t): return t + np.random.gamma(4, 0.0025)
-    >>> def ser(t): return t + np.random.exponential(0.025)
+    >>> def arr(t):
+    ...     return t + np.random.gamma(4, 0.0025)
+    >>> def ser(t):
+    ...     return t + np.random.exponential(0.025)
     >>> q_ar = {
     ...     1: {
     ...         'arrival_f': arr,
@@ -259,7 +261,7 @@ class QueueNetwork(object):
 
     >>> nA = [(q.num_system, q.edge[2]) for q in net.edge2queue if q.edge[3] == 1]
     >>> nA.sort(reverse=True)
-    >>> nA[:5]
+    >>> nA[:5]            # doctest: +SKIP
     [(4, 37), (4, 34), (3, 43), (3, 32), (3, 30)]
 
     To view the state of the network do the following (note, you need
@@ -360,8 +362,8 @@ class QueueNetwork(object):
             for v in g.nodes():
                 vod = g.out_degree(v)
                 probs = array.array('d', [1. / vod for i in range(vod)])
-                self.out_edges[v] = [g.edge_index[e] for e in g.out_edges(v)]
-                self.in_edges[v] = [g.edge_index[e] for e in g.in_edges(v)]
+                self.out_edges[v] = [g.edge_index[e] for e in sorted(g.out_edges(v))]
+                self.in_edges[v] = [g.edge_index[e] for e in sorted(g.in_edges(v))]
                 self._route_probs[v] = probs
 
             g.freeze()
@@ -1048,7 +1050,14 @@ class QueueNetwork(object):
         likely:
 
         >>> import queueing_tool as qt
-        >>> g = qt.generate_random_graph(5, seed=10)
+        >>> adjacency = {
+        ...     0: [2],
+        ...     1: [2, 3],
+        ...     2: [0, 1, 2, 4],
+        ...     3: [1],
+        ...     4: [2],
+        ... }
+        >>> g = qt.adjacency2graph(adjacency)
         >>> net = qt.QueueNetwork(g)
         >>> net.transitions(False)  # doctest: +ELLIPSIS
         ...                         # doctest: +NORMALIZE_WHITESPACE
@@ -1105,7 +1114,7 @@ class QueueNetwork(object):
                     msg = "Some transition probabilities were negative."
                     raise ValueError(msg)
 
-                for k, e in enumerate(self.g.out_edges(key)):
+                for k, e in enumerate(sorted(self.g.out_edges(key))):
                     self._route_probs[key][k] = value.get(e[1], 0)
 
         elif isinstance(mat, np.ndarray):
@@ -1121,7 +1130,7 @@ class QueueNetwork(object):
                 raise ValueError("Some transition probabilities were negative.")
 
             for k in range(self.nV):
-                for j, e in enumerate(self.g.out_edges(k)):
+                for j, e in enumerate(sorted(self.g.out_edges(k))):
                     self._route_probs[k][j] = mat[k, e[1]]
         else:
             raise TypeError("mat must be a numpy array or a dict.")
@@ -1461,7 +1470,8 @@ class QueueNetwork(object):
 
         Below is an adjacency list for the graph ``g``.
 
-        >>> qt.graph2dict(g, False)
+        >>> ans = qt.graph2dict(g, False)
+        >>> {k: sorted(v) for k, v in ans.items()}
         ...                         # doctest: +NORMALIZE_WHITESPACE
         {0: [2, 5, 7],
          1: [7],
@@ -1511,11 +1521,11 @@ class QueueNetwork(object):
         if return_matrix:
             mat = np.zeros((self.nV, self.nV))
             for v in self.g.nodes():
-                ind = [e[1] for e in self.g.out_edges(v)]
+                ind = [e[1] for e in sorted(self.g.out_edges(v))]
                 mat[v, ind] = self._route_probs[v]
         else:
             mat = {
-                k: {e[1]: p for e, p in zip(self.g.out_edges(k), value)}
+                k: {e[1]: p for e, p in zip(sorted(self.g.out_edges(k)), value)}
                 for k, value in enumerate(self._route_probs)
             }
 
