@@ -1,4 +1,4 @@
-Cython==0.23.4
+Cython==0.29.6
 matplotlib==1.5.1
 mock==1.0.1
 networkx==1.11
