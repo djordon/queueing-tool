@@ -269,7 +269,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         return self.adj[e[0]][e[1]].get(edge_property)
 
     def vp(self, v, vertex_property):
-        return self.node[v].get(vertex_property)
+        return self.nodes[v].get(vertex_property)
 
     def set_ep(self, e, edge_property, value):
         self.adj[e[0]][e[1]][edge_property] = value
@@ -278,7 +278,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
             attr[self.edge_index[e]] = value
 
     def set_vp(self, v, vertex_property, value):
-        self.node[v][vertex_property] = value
+        self.nodes[v][vertex_property] = value
         if hasattr(self, vertex_property):
             attr = getattr(self, vertex_property)
             attr[v] = value
@@ -286,7 +286,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
     def vertex_properties(self):
         props = set()
         for v in self.nodes():
-            props.update(self.node[v].keys())
+            props.update(self.nodes[v].keys())
         return props
 
     def edge_properties(self):
