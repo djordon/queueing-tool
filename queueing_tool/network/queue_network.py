@@ -1104,7 +1104,7 @@ class QueueNetwork(object):
             for key, value in mat.items():
                 probs = list(value.values())
 
-                if key not in self.g.node:
+                if key not in self.g.nodes:
                     msg = "One of the keys don't correspond to a vertex."
                     raise ValueError(msg)
                 elif len(self.out_edges[key]) > 0 and not np.isclose(sum(probs), 1):

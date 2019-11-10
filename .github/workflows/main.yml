@@ -1,0 +1,19 @@
+name: Tagging master using mix.exs
+on: 
+  push:
+    branches:
+      - master 
+jobs:
+  build:
+    name: Tag master using mix.exs
+    runs-on: ubuntu-18.04    
+    steps:
+    - name: Checkout master
+      uses: actions/checkout@master
+    - name: The current tag
+      run: echo $(git describe --dirty --tags)
+    - name: Tag master depending on the value in mix.exs
+      uses: djordon/git-autotag-action@v0.3.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VERSION_COMMAND: cat VERSION
