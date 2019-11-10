@@ -59,3 +59,6 @@ target/
 # Intellij
 .idea/*
 *.iml
+
+# pyenv file
+.python-version
