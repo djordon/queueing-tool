@@ -5,25 +5,27 @@ description = "A queueing network simulator"
 authors = ["djordon <dan.jordon@gmail.com>"]
 license = "MIT"
 readme = "README.rst"
-packages = [{include = "queueing_tool"}]
+packages = [
+    {include = "queueing_tool"},
+]
 classifiers=[
-    'Development Status :: 4 - Beta',
-    'Intended Audience :: Science/Research',
-    'License :: OSI Approved :: MIT License',
-    'Operating System :: MacOS :: MacOS X',
-    'Operating System :: Microsoft :: Windows',
-    'Operating System :: POSIX :: Linux',
-    'Operating System :: Unix',
-    'Programming Language :: Python :: 2',
-    'Programming Language :: Python :: 2.7',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.6',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
-    'Programming Language :: Cython',
-    'Topic :: Scientific/Engineering :: Information Analysis',
-    'Topic :: Scientific/Engineering :: Mathematics'
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Unix",
+    "Programming Language :: Python :: 2",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Cython",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Mathematics"
 ]
 
 [tool.poetry.dependencies]
@@ -60,5 +62,5 @@ plotting = ["matplotlib", "pygraphviz"]
 full = ["matplotlib", "pygraphviz", "scipy"]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools ~= 65.4"]
+build-backend = "setuptools.build_meta"
