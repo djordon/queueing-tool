@@ -195,7 +195,7 @@ def minimal_random_graph(num_vertices, seed=None, **kwargs):
             v = points[k] - points[j]
             edges.append((k, j, v[0]**2 + v[1]**2))
 
-    mytype = [('n1', int), ('n2', int), ('distance', np.float)]
+    mytype = [('n1', int), ('n2', int), ('distance', float)]
     edges = np.array(edges, dtype=mytype)
     edges = np.sort(edges, order='distance')
     unionF = UnionFind([k for k in range(num_vertices)])
