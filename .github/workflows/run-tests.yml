@@ -1,0 +1,35 @@
+name: Run unittests
+on:
+  push:
+
+permissions:
+  id-token: write
+  contents: read    # read is required for actions/checkout
+  pull-requests: write
+jobs:
+  evaluate:
+    name: Run all unittests
+    runs-on: ubuntu-22.04
+    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Install poetry
+      run: pipx install poetry
+
+    - name: Setup python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.9'
+        cache: 'poetry'
+
+    - name: Install python dependencies
+      run: |
+        poetry install --with ci,dev,plotting,test
+
+    - name: Run tests
+      run: |
+        source $(poetry env info --path)/bin/activate
+        pip install -e .
+        pytest --cov=queueing_tool --cov-report term-missing --doctest-modules
