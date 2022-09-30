@@ -478,7 +478,6 @@ class QueueNetworkDiGraph(nx.DiGraph):
             'facecolors': None,
             'norm': None,
             'offsets': None,
-            'offset_position': 'screen',
             'hatch': None,
         }
         scatter_kwargs_ = {
@@ -497,7 +496,6 @@ class QueueNetworkDiGraph(nx.DiGraph):
             'edgecolors': self.vertex_color,
             'facecolors': None,
             'antialiaseds': None,
-            'offset_position': 'screen',
             'hatch': None,
         }
 
