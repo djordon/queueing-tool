@@ -267,8 +267,8 @@ def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
     -----
     If ``pTypes`` is not explicitly specified in the arguments, then it
     defaults to four types in the graph (types 0, 1, 2, and 3). It sets
-    non-loop edges to be either 1, 2, or 3 33\% chance, and loops are
-    types 0, 1, 2, 3 with 25\% chance.
+    non-loop edges to be either 1, 2, or 3 33% chance, and loops are
+    types 0, 1, 2, 3 with 25% chance.
     """
     g = _test_graph(g)
 
