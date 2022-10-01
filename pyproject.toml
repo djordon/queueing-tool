@@ -50,6 +50,8 @@ pygraphviz = "^1.10"
 
 [tool.poetry.group.dev.dependencies]
 Cython = "^0.29.32"
+ipdb = "^0.13.9"
+ipython = "^8.5.0"
 
 
 [tool.poetry.group.ci.dependencies]
