@@ -74,7 +74,7 @@ class TestQueueServers:
 
         x, y = dep[1:], dep[:-1]
         cc = np.corrcoef(x, y)[0, 1]
-        np.testing.assert_approx_equal(cc, 0, 1)
+        np.testing.assert_allclose(cc, 0, atol=10**(-1))
         assert p1 > 0.05
 
     @staticmethod
@@ -104,7 +104,7 @@ class TestQueueServers:
         wait = data[ind, 1] - data[ind, 0]
         ans = np.mean(wait) * arrival_rate - np.mean(data[:, 3]) * departure_rate
 
-        np.testing.assert_approx_equal(ans, 0, 1)
+        np.testing.assert_allclose(ans, 0, atol=10**(-1))
 
     @staticmethod
     @pytest.mark.skipif(TRAVIS_TEST, reason="Test takes long.")
@@ -139,7 +139,7 @@ class TestQueueServers:
         pois_pmf = np.exp(-a) * a**nSe / math.factorial(nSe)
         pois_cdf = np.sum(np.exp(-a) * a**np.arange(nSe + 1) / f)
         p_block = (nB1 - nB0 + 0.0) / (nA1 - nA0)
-        np.testing.assert_approx_equal(pois_pmf / pois_cdf, p_block, 2)
+        np.testing.assert_allclose(pois_pmf / pois_cdf, p_block, atol=10**(-2))
 
 
 class TestRandomMeasure:

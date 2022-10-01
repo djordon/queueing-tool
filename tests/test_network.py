@@ -73,17 +73,17 @@ class TestQueueNetwork:
 
         trans = qn.transitions(False)
 
-        np.testing.assert_approx_equal(trans[1][2], p0, 2)
-        np.testing.assert_approx_equal(trans[1][3], p1, 2)
+        np.testing.assert_allclose(trans[1][2], p0, atol=10**(-2))
+        np.testing.assert_allclose(trans[1][3], p1, atol=10**(-2))
 
     @staticmethod
     def test_QueueNetwork_animate(qn):
-        if not HAS_MATPLOTLIB:
-            with mock.patch('queueing_tool.network.queue_network.plt.show'):
-                qn.animate(frames=5)
-        else:
+        if HAS_MATPLOTLIB:
             plt.switch_backend('Agg')
             qn.animate(frames=5)
+        else:
+            with mock.patch('queueing_tool.network.queue_network.plt.show'):
+                qn.animate(frames=5)
 
     @staticmethod
     def test_QueueNetwork_blocking(qn):
