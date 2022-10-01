@@ -77,6 +77,8 @@ class TestQueueNetwork:
         np.testing.assert_allclose(trans[1][3], p1, atol=10**(-2))
 
     @staticmethod
+    @pytest.mark.filterwarnings("ignore:Matplotlib is currently using agg")
+    @pytest.mark.filterwarnings("ignore:Animation was deleted without rendering anything")
     def test_QueueNetwork_animate(qn):
         if HAS_MATPLOTLIB:
             plt.switch_backend('Agg')
