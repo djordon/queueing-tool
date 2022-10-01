@@ -1,9 +1,5 @@
 import os
-import unittest
-try:
-    import unittest.mock as mock
-except ImportError:
-    import mock
+import unittest.mock as mock
 
 import matplotlib
 import matplotlib.image
@@ -29,36 +25,41 @@ matplotlib_mock = {
     'matplotlib.collections': a_mock.collections,
 }
 
+@pytest.fixture(scope="module", name="graph")
+def fixture_queue_network_graph():
+    return qt.QueueNetworkDiGraph(nx.krackhardt_kite_graph())
 
-class TestQueueNetworkDiGraph(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.g = qt.QueueNetworkDiGraph(nx.krackhardt_kite_graph())
-        np.random.seed(10)
+@pytest.fixture(scope="module", autouse=True)
+def fixture_set_seed():
+    np.random.seed(10)
+    return
 
-    @mock.patch.dict('sys.modules', matplotlib_mock)
-    def testlines_scatter_args(self):
-        ax = mock.Mock()
-        ax.transData = mock.Mock()
-        line_args = {'linewidths': 77, 'vmax': 107}
-        scat_args = {'vmax': 107}
-        kwargs = {'pos': {v: (910, 10) for v in self.g.nodes()}}
 
-        a, b = self.g.lines_scatter_args(line_args, scat_args, **kwargs)
+class TestQueueNetworkDiGraph:
+    @staticmethod
+    def testlines_scatter_args(graph):
+        with mock.patch.dict('sys.modules', matplotlib_mock):
+            ax = mock.Mock()
+            ax.transData = mock.Mock()
+            line_args = {'linewidths': 77, 'vmax': 107}
+            scat_args = {'vmax': 107}
+            kwargs = {'pos': {v: (910, 10) for v in graph.nodes()}}
 
-        self.assertEqual(a['linewidths'], 77)
-        self.assertEqual(b['vmax'], 107)
-        self.assertTrue('beefy' not in a and 'beefy' not in b)
+            a, b = graph.lines_scatter_args(line_args, scat_args, **kwargs)
+
+            assert a['linewidths'] == 77
+            assert b['vmax'] == 107
+            assert 'beefy' not in a and 'beefy' not in b
 
     @pytest.mark.xfail
-    def test_draw_graph(self):
-        pos = np.random.uniform(size=(self.g.number_of_nodes(), 2))
+    def test_draw_graph(graph):
+        pos = np.random.uniform(size=(graph.number_of_nodes(), 2))
         kwargs = {
             'fname': 'test1.png',
             'pos': pos
         }
-        self.g.draw_graph(scatter_kwargs={'s': 100}, **kwargs)
+        graph.draw_graph(scatter_kwargs={'s': 100}, **kwargs)
 
         version = 1 if matplotlib.__version__.startswith('1') else 2
         filename = 'test-mpl-{version}.x.png'.format(version=version)
@@ -71,15 +72,15 @@ class TestQueueNetworkDiGraph(unittest.TestCase):
 
         pixel_diff = (img0 != img1).flatten()
         num_pixels = pixel_diff.shape[0] + 0.0
-        self.assertLess(pixel_diff.sum() / num_pixels, 0.0001)
+        assert pixel_diff.sum() / num_pixels < 0.0001
 
         with mock.patch('queueing_tool.graph.graph_wrapper.HAS_MATPLOTLIB', False):
-            with self.assertRaises(ImportError):
-                self.g.draw_graph()
+            with pytest.raises(ImportError):
+                graph.draw_graph()
 
         kwargs = {'pos': 1}
-        self.g.set_pos = mock.MagicMock()
+        graph.set_pos = mock.MagicMock()
         with mock.patch.dict('sys.modules', matplotlib_mock):
-            self.g.draw_graph(**kwargs)
+            graph.draw_graph(**kwargs)
 
-        self.g.set_pos.assert_called_once_with(1)
+        graph.set_pos.assert_called_once_with(1)

@@ -1,9 +1,9 @@
 import functools
 import math
 import os
-import unittest
 
 import numpy as np
+import pytest
 
 import queueing_tool as qt
 
@@ -20,23 +20,27 @@ empirical_cdf = np.vectorize(empirical_cdf0, excluded={1, 2})
 def chi2_cdf(q, k, n=1000000, ns=1):
     return np.mean([empirical_cdf(q, np.random.chisquare(k, n), n) for i in range(ns)])
 
-reason = "Test takes long."
+
+@pytest.fixture(scope="module", name="arrival_rate")
+def fixture_arrival_rate():
+    return float(np.random.randint(1, 10))
 
 
-class TestQueueServers(unittest.TestCase):
+@pytest.fixture(scope="module", name="departure_rate")
+def fixture_departure_rate():
+    return np.random.uniform(0.5, 1)
 
-    def setUp(self):
-        self.lam = np.random.randint(1, 10) + 0.0
-        self.rho = np.random.uniform(0.5, 1)
 
-    @unittest.skipIf(TRAVIS_TEST, reason)
-    def test_Markovian_QueueServer(self):
+class TestQueueServers:
+    @staticmethod
+    @pytest.mark.skipif(TRAVIS_TEST, reason="Test takes long.")
+    def test_Markovian_QueueServer(arrival_rate, departure_rate):
 
         nSe = np.random.randint(1, 10)
-        mu = self.lam / (self.rho * nSe)
+        mu = arrival_rate / (departure_rate * nSe)
 
         def arr(t):
-            return t + np.random.exponential(1 / self.lam)
+            return t + np.random.exponential(1 / arrival_rate)
 
         def ser(t):
             return t + np.random.exponential(1 / mu)
@@ -70,17 +74,18 @@ class TestQueueServers(unittest.TestCase):
 
         x, y = dep[1:], dep[:-1]
         cc = np.corrcoef(x, y)[0, 1]
-        self.assertAlmostEqual(cc, 0, 1)
-        self.assertGreater(p1, 0.05)
+        np.testing.assert_approx_equal(cc, 0, 1)
+        assert p1 > 0.05
 
-    @unittest.skipIf(TRAVIS_TEST, reason)
-    def test_QueueServer_Littleslaw(self):
+    @staticmethod
+    @pytest.mark.skipif(TRAVIS_TEST, reason="Test takes long.")
+    def test_QueueServer_Littleslaw(arrival_rate, departure_rate):
 
         nSe = np.random.randint(1, 10)
-        mu = self.lam / (self.rho * nSe)
+        mu = arrival_rate / (departure_rate * nSe)
 
         def arr(t):
-            return t + np.random.exponential(1 / self.lam)
+            return t + np.random.exponential(1 / arrival_rate)
 
         def ser(t):
             return t + np.random.exponential(1 / mu)
@@ -97,20 +102,21 @@ class TestQueueServers(unittest.TestCase):
 
         ind = data[:, 2] > 0
         wait = data[ind, 1] - data[ind, 0]
-        ans = np.mean(wait) * self.lam - np.mean(data[:, 3]) * self.rho
+        ans = np.mean(wait) * arrival_rate - np.mean(data[:, 3]) * departure_rate
 
-        self.assertAlmostEqual(ans, 0, 1)
+        np.testing.assert_approx_equal(ans, 0, 1)
 
-    @unittest.skipIf(TRAVIS_TEST, reason)
-    def test_LossQueue_blocking(self):
+    @staticmethod
+    @pytest.mark.skipif(TRAVIS_TEST, reason="Test takes long.")
+    def test_LossQueue_blocking(arrival_rate, departure_rate):
 
         nSe = np.random.randint(1, 10)
-        mu = self.lam / (self.rho * nSe)
+        mu = arrival_rate / (departure_rate * nSe)
         k = np.random.randint(5, 15)
         scl = 1 / (mu * k)
 
         def arr(t):
-            return t + np.random.exponential(1 / self.lam)
+            return t + np.random.exponential(1 / arrival_rate)
 
         def ser(t):
             return t + np.random.gamma(k, scl)
@@ -127,21 +133,21 @@ class TestQueueServers(unittest.TestCase):
         nA1 = q2.num_arrivals[1]
         nB1 = q2.num_blocked
 
-        a = self.lam / mu
+        a = arrival_rate / mu
         f = np.array([math.factorial(j) for j in range(nSe + 1)])
 
         pois_pmf = np.exp(-a) * a**nSe / math.factorial(nSe)
         pois_cdf = np.sum(np.exp(-a) * a**np.arange(nSe + 1) / f)
         p_block = (nB1 - nB0 + 0.0) / (nA1 - nA0)
-        self.assertAlmostEqual(pois_pmf / pois_cdf, p_block, 2)
+        np.testing.assert_approx_equal(pois_pmf / pois_cdf, p_block, 2)
 
 
-class TestRandomMeasure(unittest.TestCase):
-
-    @unittest.skipIf(TRAVIS_TEST, reason)
-    def test_poisson_random_measure(self):
+class TestRandomMeasure:
+    @staticmethod
+    @pytest.mark.skipif(TRAVIS_TEST, reason="Test takes long.")
+    def test_poisson_random_measure():
         # This function tests to make sure the poisson_random_measure function
-        # actually simulates a Poisson random measure. It does so looking for
+        # actually simulates a Poisson random measure. It does so by looking for
         # Poisson random variables using a chi-squared test (testing the
         # composite null hypothesis). It does not look for independence of the
         # random variables.
@@ -185,4 +191,4 @@ class TestRandomMeasure(unittest.TestCase):
 
         Qs = np.sum(Q, axis=0)
         p = np.array([1 - chi2_cdf(Qs[i], df[i] - 2) for i in range(len(rvs))])
-        self.assertTrue((p > 0.1).any())
+        assert (p > 0.1).any()
