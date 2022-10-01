@@ -491,7 +491,6 @@ class QueueNetworkDiGraph(nx.DiGraph):
             'vmax': None,
             'marker': 'o',
             'zorder': 2,
-            'cmap': plt.cm.ocean_r,
             'linewidths': 1,
             'edgecolors': self.vertex_color,
             'facecolors': None,
