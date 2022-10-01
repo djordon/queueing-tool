@@ -406,7 +406,7 @@ class QueueServer(object):
         self._time = infty
         self._next_ct = 0
         self._active = False
-        self.queue = collections.deque()
+        self.queue.clear()
         inftyAgent = InftyAgent()
         self._arrivals = [inftyAgent]
         self._departures = [inftyAgent]
