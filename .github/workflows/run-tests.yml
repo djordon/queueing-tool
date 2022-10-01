@@ -31,8 +31,12 @@ jobs:
       run: |
         poetry install --with ci,dev,plotting,test
 
-    - name: Run tests
+    - name: Install queueing-tool
       run: |
         source $(poetry env info --path)/bin/activate
         pip install -e .
+
+    - name: Run tests
+      run: |
+        source $(poetry env info --path)/bin/activate
         pytest --cov=queueing_tool --cov-report term-missing --doctest-modules
