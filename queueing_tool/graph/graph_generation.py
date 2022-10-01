@@ -1,4 +1,5 @@
 import numbers
+import warnings
 
 import networkx as nx
 import numpy as np
@@ -151,7 +152,12 @@ def generate_pagerank_graph(num_vertices=250, **kwargs):
     """
     g = minimal_random_graph(num_vertices, **kwargs)
     r = np.zeros(num_vertices)
-    for k, pr in nx.pagerank(g).items():
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        page_rank = nx.pagerank(g)
+ 
+    for k, pr in page_rank.items():
         r[k] = pr
     g = set_types_rank(g, rank=r, **kwargs)
     return g
