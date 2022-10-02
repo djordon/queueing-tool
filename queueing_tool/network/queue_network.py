@@ -133,7 +133,7 @@ class QueueNetwork(object):
         The maximum number of agents that can be in the network at any
         time.
     num_agents : :class:`~numpy.ndarray`
-        A one-dimensional array where the ``k``\ th entry corresponds to
+        A one-dimensional array where the ``k``-th entry corresponds to
         the total number of agents in the :class:`.QueueServer` with
         edge index ``k``. This number includes agents that are
         scheduled to arrive at the queue at some future time but
