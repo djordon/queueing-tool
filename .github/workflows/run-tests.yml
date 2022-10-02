@@ -42,6 +42,13 @@ jobs:
         source $(poetry env info --path)/bin/activate
         pytest --cov=queueing_tool --cov-report term-missing --doctest-modules
 
+    - name: Coveralls Parallel
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.github_token }}
+        flag-name: run-python-${{ matrix.python-version }}
+        parallel: true
+
   coverage:
     needs: tests
     runs-on: ubuntu-20.04
