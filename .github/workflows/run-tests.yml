@@ -38,6 +38,8 @@ jobs:
         pip install -e .
 
     - name: Run tests
+      env:
+        CI_TEST: true
       run: |
         source $(poetry env info --path)/bin/activate
         pytest --cov=queueing_tool --cov-report term-missing --doctest-modules

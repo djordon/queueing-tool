@@ -11,7 +11,7 @@ import pytest
 import queueing_tool as qt
 
 
-TRAVIS_TEST = os.environ.get('TRAVIS_TEST', False)
+CI_TEST = os.environ.get('CI_TEST', False)
 
 a_mock = mock.Mock()
 a_mock.pyplot = mock.Mock()

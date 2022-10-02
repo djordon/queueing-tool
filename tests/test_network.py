@@ -14,7 +14,7 @@ import pytest
 import queueing_tool as qt
 
 
-TRAVIS_TEST = os.environ.get('TRAVIS_TEST', False)
+CI_TEST = os.environ.get('CI_TEST', False)
 
 @pytest.fixture(scope="module", name="queue_network")
 def fixture_queue_network():

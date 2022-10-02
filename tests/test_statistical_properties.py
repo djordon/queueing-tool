@@ -8,7 +8,7 @@ import pytest
 import queueing_tool as qt
 
 
-TRAVIS_TEST = os.environ.get('TRAVIS_TEST', False)
+CI_TEST = os.environ.get('CI_TEST', "false") == "true"
 
 
 def empirical_cdf0(x, z, n):
@@ -33,7 +33,7 @@ def fixture_departure_rate():
 
 class TestQueueServers:
     @staticmethod
-    @pytest.mark.skipif(TRAVIS_TEST, reason="Test takes long.")
+    @pytest.mark.skipif(CI_TEST, reason="Test takes long.")
     def test_Markovian_QueueServer(arrival_rate, departure_rate):
 
         nSe = np.random.randint(1, 10)
@@ -78,7 +78,7 @@ class TestQueueServers:
         assert p1 > 0.05
 
     @staticmethod
-    @pytest.mark.skipif(TRAVIS_TEST, reason="Test takes long.")
+    @pytest.mark.skipif(CI_TEST, reason="Test takes long.")
     def test_QueueServer_Littleslaw(arrival_rate, departure_rate):
 
         nSe = np.random.randint(1, 10)
@@ -107,7 +107,7 @@ class TestQueueServers:
         np.testing.assert_allclose(ans, 0, atol=10**(-1))
 
     @staticmethod
-    @pytest.mark.skipif(TRAVIS_TEST, reason="Test takes long.")
+    @pytest.mark.skipif(CI_TEST, reason="Test takes long.")
     def test_LossQueue_blocking(arrival_rate, departure_rate):
 
         nSe = np.random.randint(1, 10)
@@ -144,7 +144,7 @@ class TestQueueServers:
 
 class TestRandomMeasure:
     @staticmethod
-    @pytest.mark.skipif(TRAVIS_TEST, reason="Test takes long.")
+    @pytest.mark.skipif(CI_TEST, reason="Test takes long.")
     def test_poisson_random_measure():
         # This function tests to make sure the poisson_random_measure function
         # actually simulates a Poisson random measure. It does so by looking for
