@@ -40,12 +40,13 @@ jobs:
         CI_TEST: true
       run: |
         source $(poetry env info --path)/bin/activate
-        pytest --cov=queueing_tool --cov-report term-missing --doctest-modules
+        pytest --cov=queueing_tool --cov-report=lcov:lcov.info --cov-report=term-missing --doctest-modules
 
     - name: Coveralls Parallel
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.github_token }}
+        path-to-lcov: lcov.info
         flag-name: run-python-${{ matrix.python-version }}
         parallel: true
 
@@ -57,4 +58,5 @@ jobs:
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.github_token }}
+        path-to-lcov: lcov.info
         parallel-finished: true
