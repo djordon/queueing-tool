@@ -57,7 +57,10 @@ all optional packages, use:
     pip install numpy matplotlib pygraphviz
     pip install queueing-tool
 
-After installation, import with something like:
+Note that installing `pygraphviz <https://pygraphviz.github.io/documentation/stable/install.html>`__
+requires installation of graphviz. Moreover, pygraphviz is typically not needed,
+and is only required by some functions in `networkx`. After installation, import
+queueing-tool with something like:
 
 .. code:: python
 
