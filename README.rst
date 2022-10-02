@@ -22,7 +22,7 @@ Features
    the core algorithms were written in `cython <http://cython.org/>`__.
 -  **Visualizations**. There are several tools that allow you to easily
    view congestion and movement within your network. This includes ready
-   made functions for animating network dynamics, while your simulations
+   made functions for animating network dynamics while your simulations
    take place.
 -  **Full documentation**. Every function and class is fully documented
    both `online <http://queueing-tool.readthedocs.org/>`__ and in the
@@ -36,10 +36,10 @@ Features
 Installation
 ------------
 
-
-**Prerequisites:** Queueing-tool runs on Python 2.7 and 3.4-3.7 and it
-requires `networkx <http://networkx.readthedocs.org/en/stable/>`__ and
-`numpy <http://www.numpy.org/>`__. You will need to install
+**Prerequisites:** Queueing-tool runs on Python 2.7 and 3.4-3.10, but is currently
+only tested against Python 2.7 and 3.6-3.10. It requires 
+`networkx <http://networkx.readthedocs.org/en/stable/>`__ and
+`numpy <http://www.numpy.org/>`__, and you will need to install
 `matplotlib <http://matplotlib.org/>`__ as well if you want to plot.
 
 **Installation**: To install from
@@ -76,7 +76,7 @@ The issue tracker is at https://github.com/djordon/queueing-tool/issues. Please 
 Copyright and license
 ---------------------
 
-Code and documentation Copyright 2014-2019 Daniel Jordon. Code released
+Code and documentation Copyright 2014-2022 Daniel Jordon. Code released
 under the `MIT
 license <https://github.com/djordon/queueing-tool/blob/master/LICENSE.txt>`__.
 
