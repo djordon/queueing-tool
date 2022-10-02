@@ -153,9 +153,12 @@ def generate_pagerank_graph(num_vertices=250, **kwargs):
     g = minimal_random_graph(num_vertices, **kwargs)
     r = np.zeros(num_vertices)
 
+    # networkx 2.8.6 throws a warning with all pagerank functions except
+    # _pagerank_python. We would need to ignore the warning even if we used
+    # the recommended networkx.pagerank function.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        page_rank = nx.pagerank(g)
+        page_rank = nx.pagerank_numpy(g)
  
     for k, pr in page_rank.items():
         r[k] = pr
