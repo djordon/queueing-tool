@@ -158,7 +158,19 @@ def generate_pagerank_graph(num_vertices=250, **kwargs):
     # the recommended networkx.pagerank function.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        page_rank = nx.pagerank_numpy(g)
+        try:
+            # In networkx 2.8.6, this function requires scipy, which isn't
+            # a requirement of either networkx or queueing-tool. But the
+            # other pagerank_* functions are deprecated so we'll only try
+            # those if the recommended one fails.
+            page_rank = nx.pagerank(g)
+        except ImportError as exe:
+            try:
+                # This function is deprecated and is supposed to be removed
+                # in networkx 3.0.
+                page_rank = nx.pagerank_numpy(g)
+            except:
+                raise exe
  
     for k, pr in page_rank.items():
         r[k] = pr
