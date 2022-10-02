@@ -5,12 +5,13 @@ on:
 permissions:
   id-token: write
   contents: read    # read is required for actions/checkout
-  pull-requests: write
 jobs:
-  evaluate:
+  tests:
     name: Run all unittests
     runs-on: ubuntu-22.04
-    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -21,10 +22,10 @@ jobs:
     - name: Install graphviz
       run: sudo apt-get update -qq && sudo apt-get install graphviz graphviz-dev -y
 
-    - name: Setup python
+    - name: Setup python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
-        python-version: '3.9'
+        python-version: ${{ matrix.python-version }}
         cache: 'poetry'
 
     - name: Install python dependencies
