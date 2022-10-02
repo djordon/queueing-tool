@@ -27,7 +27,7 @@ jobs:
 
     - name: Install python dependencies
       run: |
-        poetry install --with ci,dev,plotting,test
+        poetry install --with plotting,test
 
     - name: Install queueing-tool
       env:
@@ -43,8 +43,12 @@ jobs:
         source $(poetry env info --path)/bin/activate
         pytest --cov=queueing_tool --cov-report term-missing --doctest-modules
 
-    - name: Code coverage
-      if: ${{ matrix.python-version }} == "3.9"
-      run: |
-        source $(poetry env info --path)/bin/activate
-        coveralls
+  coverage:
+    needs: test
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Submit code coverage to coveralls.io
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.github_token }}
+        parallel-finished: true
