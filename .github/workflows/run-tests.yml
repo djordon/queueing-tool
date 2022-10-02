@@ -19,9 +19,6 @@ jobs:
     - name: Install poetry
       run: pipx install poetry
 
-    - name: Install graphviz
-      run: sudo apt-get update -qq && sudo apt-get install graphviz graphviz-dev -y
-
     - name: Setup python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
