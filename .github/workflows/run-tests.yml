@@ -26,8 +26,7 @@ jobs:
         cache: 'poetry'
 
     - name: Install python dependencies
-      run: |
-        poetry install --with plotting,test
+      run: poetry install --with plotting,test
 
     - name: Install queueing-tool
       env:
@@ -44,7 +43,7 @@ jobs:
         pytest --cov=queueing_tool --cov-report term-missing --doctest-modules
 
   coverage:
-    needs: test
+    needs: tests
     runs-on: ubuntu-20.04
     steps:
     - name: Submit code coverage to coveralls.io
