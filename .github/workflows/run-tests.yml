@@ -30,6 +30,8 @@ jobs:
         poetry install --with ci,dev,plotting,test
 
     - name: Install queueing-tool
+      env:
+        CFLAGS: "-coverage"
       run: |
         source $(poetry env info --path)/bin/activate
         pip install -e .
@@ -40,3 +42,9 @@ jobs:
       run: |
         source $(poetry env info --path)/bin/activate
         pytest --cov=queueing_tool --cov-report term-missing --doctest-modules
+
+    - name: Code coverage
+      if: ${{ matrix.python-version }} == "3.9"
+      run: |
+        source $(poetry env info --path)/bin/activate
+        coveralls
