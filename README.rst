@@ -77,8 +77,8 @@ Code and documentation Copyright 2014-2019 Daniel Jordon. Code released
 under the `MIT
 license <https://github.com/djordon/queueing-tool/blob/master/LICENSE.txt>`__.
 
-.. |Build Status| image:: https://travis-ci.org/djordon/queueing-tool.svg?branch=master
-   :target: https://travis-ci.org/djordon/queueing-tool
+.. |Build Status| image:: https://github.com/djordon/queueing-tool/actions/workflows/run-tests.yml/badge.svg
+   :target: https://github.com/djordon/queueing-tool/actions/workflows/run-tests.yml/badge.svg
 
 .. |Coverage Status| image:: https://coveralls.io/repos/djordon/queueing-tool/badge.svg?branch=master
    :target: https://coveralls.io/r/djordon/queueing-tool?branch=master
