@@ -440,14 +440,6 @@ python-versions = ">=3.6"
 plugins = ["importlib-metadata"]
 
 [[package]]
-name = "pygraphviz"
-version = "1.10"
-description = "Python interface to Graphviz"
-category = "main"
-optional = false
-python-versions = ">=3.8"
-
-[[package]]
 name = "pyparsing"
 version = "3.0.9"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
@@ -658,13 +650,12 @@ optional = false
 python-versions = "*"
 
 [extras]
-full = ["matplotlib", "pygraphviz"]
-plotting = ["matplotlib", "pygraphviz"]
+plotting = ["matplotlib"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.12"
-content-hash = "4d9852a6c719d7d72bdf68d07823833b2fc9f54889952201f4c1ccf4ee88e9f4"
+content-hash = "eeb40fdee83dd4beacef8103fc1bb1b9af124e078e248810150a7130e154c605"
 
 [metadata.files]
 appnope = [
@@ -1152,9 +1143,6 @@ py = [
 Pygments = [
     {file = "Pygments-2.13.0-py3-none-any.whl", hash = "sha256:f643f331ab57ba3c9d89212ee4a2dabc6e94f117cf4eefde99a0574720d14c42"},
     {file = "Pygments-2.13.0.tar.gz", hash = "sha256:56a8508ae95f98e2b9bdf93a6be5ae3f7d8af858b43e02c5a2ff083726be40c1"},
-]
-pygraphviz = [
-    {file = "pygraphviz-1.10.zip", hash = "sha256:457e093a888128903251a266a8cc16b4ba93f3f6334b3ebfed92c7471a74d867"},
 ]
 pyparsing = [
     {file = "pyparsing-3.0.9-py3-none-any.whl", hash = "sha256:5026bae9a10eeaefb61dab2f09052b9f4307d44aee4eda64b309723d8d206bbc"},
