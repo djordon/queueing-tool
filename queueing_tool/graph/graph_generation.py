@@ -1,4 +1,5 @@
 import numbers
+import warnings
 
 import networkx as nx
 import numpy as np
@@ -151,7 +152,27 @@ def generate_pagerank_graph(num_vertices=250, **kwargs):
     """
     g = minimal_random_graph(num_vertices, **kwargs)
     r = np.zeros(num_vertices)
-    for k, pr in nx.pagerank(g).items():
+
+    # networkx 2.8.6 throws a warning with all pagerank functions except
+    # _pagerank_python. We would need to ignore the warning even if we used
+    # the recommended networkx.pagerank function.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        try:
+            # In networkx 2.8.6, this function requires scipy, which isn't
+            # a requirement of either networkx or queueing-tool. But the
+            # other pagerank_* functions are deprecated so we'll only try
+            # those if the recommended one fails.
+            page_rank = nx.pagerank(g)
+        except ImportError as exe:
+            try:
+                # This function is deprecated and is supposed to be removed
+                # in networkx 3.0.
+                page_rank = nx.pagerank_numpy(g)
+            except:
+                raise exe
+ 
+    for k, pr in page_rank.items():
         r[k] = pr
     g = set_types_rank(g, rank=r, **kwargs)
     return g
@@ -195,7 +216,7 @@ def minimal_random_graph(num_vertices, seed=None, **kwargs):
             v = points[k] - points[j]
             edges.append((k, j, v[0]**2 + v[1]**2))
 
-    mytype = [('n1', int), ('n2', int), ('distance', np.float)]
+    mytype = [('n1', int), ('n2', int), ('distance', float)]
     edges = np.array(edges, dtype=mytype)
     edges = np.sort(edges, order='distance')
     unionF = UnionFind([k for k in range(num_vertices)])
@@ -261,8 +282,8 @@ def set_types_random(g, proportions=None, loop_proportions=None, seed=None,
     -----
     If ``pTypes`` is not explicitly specified in the arguments, then it
     defaults to four types in the graph (types 0, 1, 2, and 3). It sets
-    non-loop edges to be either 1, 2, or 3 33\% chance, and loops are
-    types 0, 1, 2, 3 with 25\% chance.
+    non-loop edges to be either 1, 2, or 3 33% chance, and loops are
+    types 0, 1, 2, 3 with 25% chance.
     """
     g = _test_graph(g)
 

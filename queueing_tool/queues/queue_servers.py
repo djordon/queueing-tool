@@ -49,8 +49,7 @@ def poisson_random_measure(t, rate, rate_max):
     Poisson process. A Poisson process is a special type of Poisson
     random measure.
 
-    .. _pdf: http://www.springer.com/cda/content/document/\
-                cda_downloaddocument/9780387878584-c1.pdf
+    .. _pdf: http://www.springer.com/cda/content/document/cda_downloaddocument/9780387878584-c1.pdf
 
     Examples
     --------
@@ -406,7 +405,7 @@ class QueueServer(object):
         self._time = infty
         self._next_ct = 0
         self._active = False
-        self.queue = collections.deque()
+        self.queue.clear()
         inftyAgent = InftyAgent()
         self._arrivals = [inftyAgent]
         self._departures = [inftyAgent]
@@ -789,7 +788,7 @@ class LossQueue(QueueServer):
 
     Notes
     -----
-    In `Kendall's notation`_\, this is a
+    In `Kendall's notation`_, this is a
     :math:`\\text{GI}_t/\\text{GI}_t/c/c+b/N/\\text{FIFO}` queue, where
     :math:`b` is the ``qbuffer``. If the default parameters are used
     then the instance is an :math:`\\text{M}/\\text{M}/1/1` queue.

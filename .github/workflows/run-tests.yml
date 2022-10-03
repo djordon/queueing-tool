@@ -1,0 +1,62 @@
+name: Unittests
+on:
+  push:
+
+permissions:
+  id-token: write
+  contents: read    # read is required for actions/checkout
+jobs:
+  tests:
+    name: Run all unittests
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Install poetry
+      run: pipx install poetry
+
+    - name: Setup python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'poetry'
+
+    - name: Install python dependencies
+      run: poetry install --with plotting,test
+
+    - name: Install queueing-tool
+      env:
+        CFLAGS: "-coverage"
+      run: |
+        source $(poetry env info --path)/bin/activate
+        pip install -e .
+
+    - name: Run tests
+      env:
+        CI_TEST: true
+      run: |
+        source $(poetry env info --path)/bin/activate
+        pytest --cov=queueing_tool --cov-report=lcov:lcov.info --cov-report=term-missing --doctest-modules
+
+    - name: Coveralls Parallel
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.github_token }}
+        path-to-lcov: lcov.info
+        flag-name: run-python-${{ matrix.python-version }}
+        parallel: true
+
+  coverage:
+    needs: tests
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Submit code coverage to coveralls.io
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.github_token }}
+        path-to-lcov: lcov.info
+        parallel-finished: true

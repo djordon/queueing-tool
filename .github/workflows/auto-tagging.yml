@@ -1,0 +1,21 @@
+name: Tagging master using pyproject.toml
+on: 
+  push:
+    branches:
+      - master 
+jobs:
+  build:
+    name: Tag master using pyproject.toml
+    runs-on: ubuntu-20.04    
+    steps:
+    - name: Checkout master
+      uses: actions/checkout@v3
+    - name: Tag master depending on the value in pyproject.toml
+      uses: djordon/git-autotag-action@v0.5.4
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VERSION_COMMAND: >
+          cat pyproject.toml
+            | grep --extended-regexp "^version ="
+            | grep --extended-regexp --only-matching "[0-9]+\.[0-9]+.[0-9]+[-\.\+a-zA-Z0-9]*"
+            | head --lines=1

@@ -133,7 +133,7 @@ class QueueNetwork(object):
         The maximum number of agents that can be in the network at any
         time.
     num_agents : :class:`~numpy.ndarray`
-        A one-dimensional array where the ``k``\ th entry corresponds to
+        A one-dimensional array where the ``k``-th entry corresponds to
         the total number of agents in the :class:`.QueueServer` with
         edge index ``k``. This number includes agents that are
         scheduled to arrive at the queue at some future time but
@@ -1613,13 +1613,13 @@ def _get_queues(g, queues, edge, edge_type):
             if isinstance(edge, tuple):
                 if isinstance(edge[0], INT) and isinstance(edge[1], INT):
                     queues = [g.edge_index[edge]]
-            elif isinstance(edge[0], collections.Iterable):
+            elif isinstance(edge[0], collections.abc.Iterable):
                 if np.array([len(e) == 2 for e in edge]).all():
                     queues = [g.edge_index[e] for e in edge]
             else:
                 queues = [g.edge_index[edge]]
         elif edge_type is not None:
-            if isinstance(edge_type, collections.Iterable):
+            if isinstance(edge_type, collections.abc.Iterable):
                 edge_type = set(edge_type)
             else:
                 edge_type = set([edge_type])
