@@ -8,6 +8,7 @@ readme = "README.rst"
 packages = [
     {include = "queueing_tool"},
 ]
+documentation = "https://queueing-tool.readthedocs.io/en/latest/"
 classifiers=[
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
@@ -27,6 +28,15 @@ classifiers=[
     "Programming Language :: Cython",
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Scientific/Engineering :: Mathematics"
+]
+keywords = [
+    'queueing theory',
+    'queueing',
+    'simulation',
+    'queueing simulator',
+    'queueing network simulation',
+    'networks',
+    'queueing simulation'
 ]
 
 [tool.poetry.dependencies]
