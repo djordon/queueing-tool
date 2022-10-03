@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-20.04    
     steps:
     - name: Checkout master
-      uses: actions/checkout@master
-    - name: Tag master depending on the value in VERSION file
+      uses: actions/checkout@v3
+    - name: Tag master depending on the value in pyproject.toml
       uses: djordon/git-autotag-action@v0.5.4
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
