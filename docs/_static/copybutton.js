@@ -1,6 +1,7 @@
 // File originates from the cpython source
 // found in https://docs.python.org/3/_static/copybutton.js
 // and Doc/tools/sphinxext/static/copybutton.js
+
 $(document).ready(function() {
     /* Add a [>>>] button on the top-right corner of code samples to hide
      * the >>> and ... prompts and the output and thus make the code
@@ -32,7 +33,7 @@ $(document).ready(function() {
         var jthis = $(this);
         if (jthis.find('.gp').length > 0) {
             var button = $('<span class="copybutton">&gt;&gt;&gt;</span>');
-            button.css(button_styles)
+            button.css(button_styles);
             button.attr('title', hide_text);
             button.data('hidden', 'false');
             jthis.prepend(button);
