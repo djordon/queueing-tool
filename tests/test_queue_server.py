@@ -1,5 +1,4 @@
 import functools
-import unittest
 
 import networkx as nx
 import numpy as np
@@ -250,7 +249,6 @@ class TestQueueServers:
 
     @staticmethod
     def test_ResourceQueue_network():
-
         g = nx.random_geometric_graph(100, 0.2).to_directed()
         q_cls = {1: qt.ResourceQueue, 2: qt.ResourceQueue}
         q_arg = {1: {'num_servers': 50}, 2: {'num_servers': 500}}
@@ -328,3 +326,25 @@ class TestQueueServers:
         a0._time = 20
         assert a0 >= a1
         assert a0 > a1
+
+    @staticmethod
+    def test_increase_num_server_change_fix_64():
+        def arr(t):
+            return t + 1.0
+
+        def ser(t):
+            return t + 15.0
+
+        q = qt.QueueServer(num_servers=3, arrival_f=arr, service_f=ser)
+        q.set_active()
+        q.simulate(nA=5)
+
+        assert q.num_system == 5
+        # Should be max(q.num_system - q.num_servers, 0) == 2
+        assert q.number_queued() == 2
+
+        q.set_num_servers(8)
+
+        # Should be max(q.num_system - q.num_servers, 0) == 0
+        assert q.num_system == 5
+        assert q.number_queued() == 0
