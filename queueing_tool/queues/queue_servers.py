@@ -577,8 +577,7 @@ class QueueServer(object):
                 self.data[new_depart.agent_id][-1][2] = self._current_t
 
             num_queued = len(self.queue)
-            # We subtract 1 because we have one departure right now
-            num_serviced = self.num_system - num_queued - 1
+            num_serviced = self.num_system - num_queued
             if num_queued > 0 and num_serviced < self.num_servers:
                 agent = self.queue.popleft()
                 if self.collect_data and agent.agent_id in self.data:
