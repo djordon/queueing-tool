@@ -37,7 +37,7 @@ Installation
 ------------
 
 **Prerequisites:** Queueing-tool runs on Python 2.7 and 3.4-3.10, but is currently
-only tested against Python 2.7 and 3.6-3.10. It requires 
+only tested against Python 3.6-3.10. It requires 
 `networkx <http://networkx.readthedocs.org/en/stable/>`__ and
 `numpy <http://www.numpy.org/>`__, and you will need to install
 `matplotlib <http://matplotlib.org/>`__ as well if you want to plot.
