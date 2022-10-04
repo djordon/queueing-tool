@@ -576,7 +576,10 @@ class QueueServer(object):
             if self.collect_data and new_depart.agent_id in self.data:
                 self.data[new_depart.agent_id][-1][2] = self._current_t
 
-            if len(self.queue) > 0:
+            num_queued = len(self.queue)
+            # We subtract 1 because we have one departure right now
+            num_serviced = self.num_system - num_queued - 1
+            if num_queued > 0 and num_serviced < self.num_servers:
                 agent = self.queue.popleft()
                 if self.collect_data and agent.agent_id in self.data:
                     self.data[agent.agent_id][-1][1] = self._current_t
@@ -677,6 +680,20 @@ class QueueServer(object):
             the_str = "n must be a positive integer or infinity.\n{0}"
             raise ValueError(the_str.format(str(self)))
         else:
+            agents_to_queue = max(min(n - self.num_servers, len(self.queue)), 0)
+
+            for _ in range(agents_to_queue):
+                agent = self.queue.popleft()
+                if self.collect_data and agent.agent_id in self.data:
+                    self.data[agent.agent_id][-1][1] = self._current_t
+
+                agent._time = self.service_f(self._current_t)
+                agent.queue_action(self, 1)
+                heappush(self._departures, agent)
+
+            if agents_to_queue > 0:
+                self._update_time()
+
             self.num_servers = n
 
     def simulate(self, n=1, t=None, nA=None, nD=None):
