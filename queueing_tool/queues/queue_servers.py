@@ -579,8 +579,9 @@ class QueueServer(object):
             num_queued = len(self.queue)
             # This is the number of agents currently being serviced by
             # the QueueServer. This number need not be equal to 
-            # num_servers - 1 (although it typically is), especially if
-            # there was a change to the number of servers.
+            # num_servers - 1 (although it typically is), since there
+            # can be a change to the number of servers after the queue was
+            # created.
             num_servicing = self.num_system - num_queued
             if num_queued > 0 and num_servicing < self.num_servers:
                 agent = self.queue.popleft()
