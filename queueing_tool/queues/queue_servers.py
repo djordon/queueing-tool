@@ -485,6 +485,15 @@ class QueueServer(object):
             heappush(self._departures, agent)
             self._update_time()
 
+    def _service_from_queue(self):
+        agent = self.queue.popleft()
+        if self.collect_data and agent.agent_id in self.data:
+            self.data[agent.agent_id][-1][1] = self._current_t
+
+        agent._time = self.service_f(self._current_t)
+        agent.queue_action(self, 1)
+        heappush(self._departures, agent)
+
     def fetch_data(self, return_header=False):
         """Fetches data from the queue.
 
@@ -576,14 +585,15 @@ class QueueServer(object):
             if self.collect_data and new_depart.agent_id in self.data:
                 self.data[new_depart.agent_id][-1][2] = self._current_t
 
-            if len(self.queue) > 0:
-                agent = self.queue.popleft()
-                if self.collect_data and agent.agent_id in self.data:
-                    self.data[agent.agent_id][-1][1] = self._current_t
-
-                agent._time = self.service_f(self._current_t)
-                agent.queue_action(self, 1)
-                heappush(self._departures, agent)
+            num_queued = len(self.queue)
+            # This is the number of agents currently being serviced by
+            # the QueueServer. This number need not be equal to 
+            # num_servers - 1 (although it typically is), since there
+            # can be a change to the number of servers after the queue was
+            # created.
+            num_servicing = self.num_system - num_queued
+            if num_queued > 0 and num_servicing < self.num_servers:
+                self._service_from_queue()
 
             new_depart.queue_action(self, 2)
             self._update_time()
@@ -677,6 +687,14 @@ class QueueServer(object):
             the_str = "n must be a positive integer or infinity.\n{0}"
             raise ValueError(the_str.format(str(self)))
         else:
+            agents_to_queue = max(min(n - self.num_servers, len(self.queue)), 0)
+
+            for _ in range(agents_to_queue):
+                self._service_from_queue()
+
+            if agents_to_queue > 0:
+                self._update_time()
+
             self.num_servers = n
 
     def simulate(self, n=1, t=None, nA=None, nD=None):

@@ -1,5 +1,4 @@
 import functools
-import unittest
 
 import networkx as nx
 import numpy as np
@@ -250,7 +249,6 @@ class TestQueueServers:
 
     @staticmethod
     def test_ResourceQueue_network():
-
         g = nx.random_geometric_graph(100, 0.2).to_directed()
         q_cls = {1: qt.ResourceQueue, 2: qt.ResourceQueue}
         q_arg = {1: {'num_servers': 50}, 2: {'num_servers': 500}}
@@ -328,3 +326,84 @@ class TestQueueServers:
         a0._time = 20
         assert a0 >= a1
         assert a0 > a1
+
+    @staticmethod
+    def test_increasing_num_server_fix_64():
+        def arr(t):
+            return t + 1.0
+
+        def ser(t):
+            return t + 15.0
+
+        queue = qt.QueueServer(num_servers=3, arrival_f=arr, service_f=ser)
+        queue.set_active()
+        queue.simulate(nA=5)
+
+        assert queue.num_system == 5
+        # Should be max(queue.num_system - queue.num_servers, 0) == 2
+        assert queue.number_queued() == 2
+
+        queue.set_num_servers(8)
+
+        # Should be max(queue.num_system - queue.num_servers, 0) == 0
+        assert queue.number_queued() == 0
+        assert queue.num_system == 5
+
+        # Decreasing the number of servers doesn't change the number queued
+        queue.set_num_servers(3)
+
+        assert queue.number_queued() == 0
+        assert queue.num_system == 5
+
+    @staticmethod
+    def test_decreasing_num_server_fix_64():
+        def arr(t):
+            return t + 1.0
+
+        def ser(t):
+            return t + 15.0
+
+        queue = qt.QueueServer(num_servers=5, arrival_f=arr, service_f=ser)
+        queue.collect_data = True
+        queue.set_active()
+
+        # We want 7 agents in the system. After the 
+        queue.simulate(nA=6)
+        queue.set_inactive()
+        queue.next_event()
+
+        assert queue.num_system == 7
+        # Should be max(queue.num_system - queue.num_servers, 0) == 2
+        assert queue.number_queued() == 2
+
+        queue.set_num_servers(3)
+        # Decreasing the number of queues doesn't immediately eject any
+        # agents that are currently being serviced.
+        assert queue.number_queued() == 2
+        assert queue.num_system == 7
+        assert queue.num_departures == 0
+
+        # The next events are all departure since the queue is inactive
+        assert queue.next_event_description() == 2
+
+        # There are 5 agents being serviced but only 3 servers since we
+        # just changed the number of servers. So the next two departures
+        # won't result in us drawing agents from the queue to be serviced
+        for k in range(1, 3):
+            queue.next_event()
+            assert queue.number_queued() == 2
+            assert queue.num_system == 7 - k
+            assert queue.num_departures == k
+            assert queue.next_event_description() == 2
+
+        # Now there are 3 servers and 3 agents being serviced. The next
+        # departures will result in an agent being drawn from the queue to
+        # receive service.
+        queue.next_event()
+        assert queue.number_queued() == 1
+        assert queue.num_system == 4
+        assert queue.next_event_description() == 2
+
+        queue.next_event()
+        assert queue.number_queued() == 0
+        assert queue.num_system == 3
