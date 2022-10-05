@@ -184,8 +184,9 @@ class QueueServer(object):
     num_departures : int
         The total number of departures from the queue.
     num_system : int
-        The number of agents in the entire :class:`.QueueServer` --
-        this includes those being served and those waiting to be served.
+        The number of agents in the entire :class:`.QueueServer` at the 
+        ``current_time`` -- this includes those being served and those
+        waiting to be served.
     queue : :class:`~.collections.deque`
         A queue for the agents waiting to enter service.
     time : float
