@@ -33,7 +33,7 @@ $(document).ready(function() {
         var jthis = $(this);
         if (jthis.find('.gp').length > 0) {
             var button = $('<span class="copybutton">&gt;&gt;&gt;</span>');
-            button.css(button_styles)
+            button.css(button_styles);
             button.attr('title', hide_text);
             button.data('hidden', 'false');
             jthis.prepend(button);
