@@ -178,9 +178,9 @@ class QueueServer(object):
         version of this data.
     num_arrivals : list
         A list with two entries. The first slot is the total number of
-        arrivals, while the second slot is the number of arrivals from
-        outside the network and includes counts of arrivals that are
-        known to occur in the future.
+        arrivals up until the ``current_time``. The second slot is the number
+        of arrivals created using the servers AgentFactory, which includes
+        agents that have been created but arrive in the future.
     num_departures : int
         The total number of departures from the queue.
     num_system : int
