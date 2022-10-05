@@ -17,7 +17,7 @@ import sys
 import os
 
 try:
-    import unitest.mock as mock
+    import unittest.mock as mock
 except ImportError:
     import mock
 
