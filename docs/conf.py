@@ -281,4 +281,3 @@ texinfo_documents = [
 
 def setup(app):
     app.add_js_file('copybutton.js')
-    app.add_js_file('clipboard.min.js')
