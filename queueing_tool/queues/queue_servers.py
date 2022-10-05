@@ -485,6 +485,15 @@ class QueueServer(object):
             heappush(self._departures, agent)
             self._update_time()
 
+    def _service_from_queue(self):
+        agent = self.queue.popleft()
+        if self.collect_data and agent.agent_id in self.data:
+            self.data[agent.agent_id][-1][1] = self._current_t
+
+        agent._time = self.service_f(self._current_t)
+        agent.queue_action(self, 1)
+        heappush(self._departures, agent)
+
     def fetch_data(self, return_header=False):
         """Fetches data from the queue.
 
@@ -584,13 +593,7 @@ class QueueServer(object):
             # created.
             num_servicing = self.num_system - num_queued
             if num_queued > 0 and num_servicing < self.num_servers:
-                agent = self.queue.popleft()
-                if self.collect_data and agent.agent_id in self.data:
-                    self.data[agent.agent_id][-1][1] = self._current_t
-
-                agent._time = self.service_f(self._current_t)
-                agent.queue_action(self, 1)
-                heappush(self._departures, agent)
+                self._service_from_queue()
 
             new_depart.queue_action(self, 2)
             self._update_time()
@@ -687,13 +690,7 @@ class QueueServer(object):
             agents_to_queue = max(min(n - self.num_servers, len(self.queue)), 0)
 
             for _ in range(agents_to_queue):
-                agent = self.queue.popleft()
-                if self.collect_data and agent.agent_id in self.data:
-                    self.data[agent.agent_id][-1][1] = self._current_t
-
-                agent._time = self.service_f(self._current_t)
-                agent.queue_action(self, 1)
-                heappush(self._departures, agent)
+                self._service_from_queue()
 
             if agents_to_queue > 0:
                 self._update_time()
