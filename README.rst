@@ -36,9 +36,9 @@ Features
 Installation
 ------------
 
-**Prerequisites:** Queueing-tool runs on Python 2.7 and 3.4-3.10, but is currently
-only tested against Python 3.6-3.10. It requires 
-`networkx <http://networkx.readthedocs.org/en/stable/>`__ and
+**Prerequisites:** Queueing-tool runs on Python 2.7 and 3.4-3.10, but
+changes going forward are only tested against Python 3.6-3.10. Queueing-tool
+requires `networkx <http://networkx.readthedocs.org/en/stable/>`__ and
 `numpy <http://www.numpy.org/>`__, and you will need to install
 `matplotlib <http://matplotlib.org/>`__ as well if you want to plot.
 
@@ -54,7 +54,7 @@ all optional packages, use:
 
 .. code:: bash
 
-    pip install numpy matplotlib pygraphviz
+    pip install matplotlib pygraphviz
     pip install queueing-tool
 
 Note that installing `pygraphviz <https://pygraphviz.github.io/documentation/stable/install.html>`__

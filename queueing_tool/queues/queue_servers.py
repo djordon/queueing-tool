@@ -178,13 +178,16 @@ class QueueServer(object):
         version of this data.
     num_arrivals : list
         A list with two entries. The first slot is the total number of
-        arrivals, while the second slot is the number of arrivals from
-        outside the network.
+        arrivals up until the :attr:`.current_time`. The second slot is
+        the number of arrivals created using the servers AgentFactory,
+        which includes agents that have been created but arrive in the
+        future.
     num_departures : int
         The total number of departures from the queue.
     num_system : int
-        The number of agents in the entire :class:`.QueueServer` --
-        this includes those being served and those waiting to be served.
+        The number of agents in the entire :class:`.QueueServer` at the 
+        :attr:`.current_time` -- this includes those being served and
+        those waiting to be served.
     queue : :class:`~.collections.deque`
         A queue for the agents waiting to enter service.
     time : float
@@ -391,9 +394,9 @@ class QueueServer(object):
     def clear(self):
         """Clears out the queue. Removes all arrivals, departures, and
         queued agents from the :class:`.QueueServer`, resets
-        ``num_arrivals``, ``num_departures``, ``num_system``, and the clock to
-        zero. It also clears any stored ``data`` and the server is then
-        set to inactive.
+        :attr:`.num_arrivals`, :attr:`.num_departures`,
+        :attr:`.num_system`, and the clock to zero. It also clears any
+        stored ``data`` and the server is then set to inactive.
         """
         self.data = {}
         self._num_arrivals = 0

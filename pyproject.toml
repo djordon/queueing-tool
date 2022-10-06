@@ -65,6 +65,16 @@ ipython = "^8.5.0"
 [tool.poetry.extras]
 plotting = ["matplotlib"]
 
+
+[tool.coverage.report]
+exclude_lines = ["def __repr__"]
+omit = [
+    "*/python?.?/*",
+    "*/site-packages/nose/*",
+    "*__init__*",
+]
+
+
 [build-system]
 requires = ["setuptools ~= 65.4"]
 build-backend = "setuptools.build_meta"
