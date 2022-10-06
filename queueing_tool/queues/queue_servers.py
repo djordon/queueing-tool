@@ -394,9 +394,9 @@ class QueueServer(object):
     def clear(self):
         """Clears out the queue. Removes all arrivals, departures, and
         queued agents from the :class:`.QueueServer`, resets
-        ``num_arrivals``, ``num_departures``, :attr:`.num_system`, and the clock to
-        zero. It also clears any stored ``data`` and the server is then
-        set to inactive.
+        :attr:`.num_arrivals`, :attr:`.num_departures`,
+        :attr:`.num_system`, and the clock to zero. It also clears any
+        stored ``data`` and the server is then set to inactive.
         """
         self.data = {}
         self._num_arrivals = 0
