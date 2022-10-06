@@ -3,12 +3,6 @@ import sys
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 
-try:
-    from Cython.Distutils import build_ext
-    ext = '.pyx'
-except ImportError:
-    ext = '.c'
-
 
 python_version = sys.version_info[:2]
 if python_version < (2, 7) or (3, 0) <= python_version < (3, 3):
@@ -16,17 +10,15 @@ if python_version < (2, 7) or (3, 0) <= python_version < (3, 3):
 
 cmdclass = {'build_ext': build_ext}
 
-extension_paths = [
-    'queueing_tool.network.priority_queue',
-    'queueing_tool.queues.choice'
-]
-
 ext_modules = [
     Extension(
-        path,
-        [path.replace('.', '/') + ext]
-    )
-    for path in extension_paths
+        name='queueing_tool.network.priority_queue',
+        sources=['queueing_tool/network/priority_queue.c'],
+    ),
+    Extension(
+        name='queueing_tool.queues.choice',
+        sources=['queueing_tool/queues/choice.c'],
+    ),
 ]
 
 with open('README.rst', 'r') as a_file:
@@ -57,6 +49,10 @@ classifiers = [
     'Topic :: Scientific/Engineering :: Information Analysis',
     'Topic :: Scientific/Engineering :: Mathematics'
 ]
+
+extras_require = {
+    'plotting': ["matplotlib>=1.5.1"],
+}
 
 install_requires = ['networkx>=1.9', 'numpy>=1.9']
 
@@ -100,6 +96,7 @@ setup(
     name='queueing-tool',
     packages=packages,
     tests_require=tests_require,
+    extras_require=extras_require,
     test_suite='nose.collector',
     url='https://github.com/djordon/queueing-tool',
     version=version
