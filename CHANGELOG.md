@@ -41,15 +41,14 @@ All notable changes to this project will be documented in this file.
 
 ## [1.2.1] - 2017-10-18
 
-### Testing
+### Changed
 
-- Better testing ([#45](https://github.com/djordon/queueing-tool/pull/45))
+- [**breaking**] Better testing ([#45](https://github.com/djordon/queueing-tool/pull/45))
   * Code quality cleanup
-  * Linted the files. Some docstring copy edits. Removed deepcopy implementation
+  * Linted the files. Some docstring copy edits. Removed deepcopy implementation.
   * Remove unused imports
   * Renamed am image file, and added another image file for testing matplotlib 2.x
   * Updated the graph object to work with networkx 1.x and 2.x
-  * Bumped the version of the library
 
 
 ## [1.2.0] - 2016-09-11
@@ -58,10 +57,8 @@ All notable changes to this project will be documented in this file.
 
 - [**breaking**] QueueServer fixes ([#44](https://github.com/djordon/queueing-tool/pull/44))
   * Removed lowerCammelCase variables.
-  * Moved QueueServer time updates into a function
-  * Minor QueueNetwork.animation code clean-up.
-  * Added more to the readme.
-  * Fixed a typo in animate method
+  * Moved `QueueServer` time updates into a `_update_time` functoin.
+  * Minor `QueueNetwork.animation` code clean-up.
 
 - Added some shields, switched to using pytest ([#43](https://github.com/djordon/queueing-tool/pull/43))
 
@@ -92,7 +89,7 @@ All notable changes to this project will be documented in this file.
 ### Documentation
 
 - Fix rtfd ([#34](https://github.com/djordon/queueing-tool/pull/34))
-  * Edited conf.py so that it can be installed in python 2
+  * Edited `conf.py` so that it can be installed in python 2
   * Add documentation packages to the requirements
   * Fixed annoying readthedocs bug
 - Code quality changes ([#33](https://github.com/djordon/queueing-tool/pull/33))
@@ -137,15 +134,15 @@ times faster.
 
 ### Changed
 
-- Modified various functions. Better simulation for QueueServer.
+- [**breaking**] Modified various functions. Better simulation for QueueServer.
 
-  QueueNetwork
+  **QueueNetwork**
   - Changed the name of the `collect_data` method to
     `start_collecting_data`.
   - Changed the `time` attribute to tract the time of next event.
   - Added a `current_time` attribute.
 
-  QueueServer
+  **QueueServer**
   - Changed the `simulate` method to exit when no new events
     are scheduled.
   - The `fetch_data` method now sorts the entries by arrival time.
