@@ -178,15 +178,16 @@ class QueueServer(object):
         version of this data.
     num_arrivals : list
         A list with two entries. The first slot is the total number of
-        arrivals up until the ``current_time``. The second slot is the number
-        of arrivals created using the servers AgentFactory, which includes
-        agents that have been created but arrive in the future.
+        arrivals up until the :attr:`.current_time`. The second slot is
+        the number of arrivals created using the servers AgentFactory,
+        which includes agents that have been created but arrive in the
+        future.
     num_departures : int
         The total number of departures from the queue.
     num_system : int
         The number of agents in the entire :class:`.QueueServer` at the 
-        ``current_time`` -- this includes those being served and those
-        waiting to be served.
+        :attr:`.current_time` -- this includes those being served and
+        those waiting to be served.
     queue : :class:`~.collections.deque`
         A queue for the agents waiting to enter service.
     time : float
