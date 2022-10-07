@@ -573,7 +573,7 @@ plotting = ["matplotlib"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.12"
-content-hash = "41909c5d6be81a00faafce818662d041a7cffa02f89ab8bdac2865f26c2b694f"
+content-hash = "945e186ed8db7272df27f5b7ddfd0f3a8e40ab39570fee7de55c1c5d1e0b888b"
 
 [metadata.files]
 appnope = [
