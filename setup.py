@@ -13,7 +13,4 @@ ext_modules = [
     ),
 ]
 
-setup(
-    ext_modules=ext_modules,
-    name='queueing-tool',
-)
+setup(ext_modules=ext_modules)
