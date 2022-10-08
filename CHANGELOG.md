@@ -12,10 +12,10 @@ All notable changes to this project will be documented in this file.
   * Update the javascript files included in the documentation.
 
 - Address issues related to newer versions of dependencies ([#75](https://github.com/djordon/queueing-tool/pull/75))
-  * Move CI over from travis-ci to Github actions.
-  * Use poetry for package management. I still need to use setup.py for extension compilation.
+  * Move CI over from travis-ci to Github actions. Test python versions 3.6-3.10.
+  * Use poetry for package management.
   * Make sure queueing-tool works with updated dependencies (fixes [#74](https://github.com/djordon/queueing-tool/issues/74)).
-  * Address a bunch of warnings after python version and dependency updates.
+  * Address warnings after python version and dependency updates.
   * Use the `collections.deque.clear()` method in the `QueueNetwork.clear()` function, (addresses [#68](https://github.com/djordon/queueing-tool/issues/68)).
 
 
