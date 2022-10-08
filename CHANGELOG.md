@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.5] - 2022-10-08
+
+### Bug Fixes
+
+- Address queue server bugs when changing the number of servers ([#77](https://github.com/djordon/queueing-tool/pull/77))
+  * Make sure we correctly handle queueing when the number of servers changes for the `QueueServer` (fixes [#64](https://github.com/djordon/queueing-tool/issues/64)).
+  * Update the requirements file for building the documentation.
+  * Update the javascript files included in the documentation.
+
+- Address issues related to newer versions of dependencies ([#75](https://github.com/djordon/queueing-tool/pull/75))
+  * Move CI over from travis-ci to Github actions.
+  * Use poetry for package management. I still need to use setup.py for extension compilation.
+  * Make sure queueing-tool works with updated dependencies (fixes [#74](https://github.com/djordon/queueing-tool/issues/74)).
+  * Address a bunch of warnings after python version and dependency updates.
+  * Use the `collections.deque.clear()` method in the `QueueNetwork.clear()` function, (addresses [#68](https://github.com/djordon/queueing-tool/issues/68)).
+
+
+### Build
+
+- Use pyproject.toml for all build and test related configuration ([#79](https://github.com/djordon/queueing-tool/pull/79))
+  * Move build metadata from `setup.py` to `pyproject.toml`.
+  * Move pytest settings from `setup.cfg` to `pyproject.toml`.
+  * Use `importlib.metadata` for setting the package version.
+  * Remove the version file.
+
+
+### Documentation
+
+- Update documentation for QueueServer attributes ([#78](https://github.com/djordon/queueing-tool/pull/78))
+  * Clarified the documentation of `QueueServer.num_arrivals` and `QueueServer.num_system` (addresses [#65](https://github.com/djordon/queueing-tool/issues/65)).
+  * Setup a `CHANGELOG.md` file.
+
+
 
 ## [1.2.4] - 2019-11-10
 
