@@ -39,8 +39,8 @@ Installation
 **Prerequisites:** Queueing-tool runs on Python 2.7 and 3.4-3.10, but
 changes going forward are only tested against Python 3.6-3.10. Queueing-tool
 requires `networkx <http://networkx.readthedocs.org/en/stable/>`__ and
-`numpy <http://www.numpy.org/>`__, and you will need to install
-`matplotlib <http://matplotlib.org/>`__ as well if you want to plot.
+`numpy <http://www.numpy.org/>`__, and depends on
+`matplotlib <http://matplotlib.org/>`__ if you want to plot.
 
 **Installation**: To install from
 `PyPI <https://pypi.python.org/pypi/queueing-tool>`__ use:
@@ -49,18 +49,18 @@ requires `networkx <http://networkx.readthedocs.org/en/stable/>`__ and
 
     pip install queueing-tool
 
-The above will automatically install networkx and numpy. If you want to install
-all optional packages, use:
+The above will automatically install networkx and numpy. If you want to plot use:
 
 .. code:: bash
 
-    pip install matplotlib pygraphviz
-    pip install queueing-tool
+    pip install queueing-tool[plotting]
 
-Note that installing `pygraphviz <https://pygraphviz.github.io/documentation/stable/install.html>`__
-requires installation of graphviz. Moreover, pygraphviz is typically not needed,
-and is only required by some functions in `networkx`. After installation, import
-queueing-tool with something like:
+Note that `queueing-tool` uses `networkx`'s pagerank implementation. As of
+networkx 2.8.6, they have several versions of the pagerank algorithm and
+`queueing-tool` defaults to using the version that requires `scipy`. If
+`scipy` is not installed then it trys the `numpy` based implementation. 
+
+After installation, import queueing-tool with something like:
 
 .. code:: python
 

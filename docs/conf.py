@@ -99,14 +99,13 @@ copyright = '2016, Daniel Jordon'
 # built documents.
 #
 
-# The full version, including alpha/beta/rc tags.
-with open('../VERSION', 'r') as a_file:
-    release = a_file.read().strip()
-
 
 # The short X.Y version.
 import queueing_tool as qt
 version = qt.__version__
+
+# The full version, including alpha/beta/rc tags.
+release = qt.__version__
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
