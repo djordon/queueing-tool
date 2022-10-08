@@ -3,7 +3,7 @@ name = "queueing-tool"
 description = "A queueing network simulator"
 readme = "README.rst"
 authors = [{name = "Daniel Jordon", email = "dan.jordon@gmail.com"}]
-version = "1.2.4"
+version = "1.2.5"
 license = {text = "MIT"}
 requires-python = ">=2.7,!=3.0,!=3.1,!=3.2"
 dependencies = [
@@ -57,7 +57,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.poetry]
 name = "queueing-tool"
-version = "1.2.4"
+version = "1.2.5"
 description = "A queueing network simulator"
 authors = ["djordon <dan.jordon@gmail.com>"]
 
