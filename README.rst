@@ -1,7 +1,7 @@
 Queueing-tool
 =============
 
-|Build Status| |Coverage Status| |pyversion| |license|
+|Build Status| |Coverage Status| |pyversion| |license| |cite|
 
 Queueing-tool is a package for simulating and analyzing networks. It is an
 event based simulator that uses
@@ -93,3 +93,6 @@ license <https://github.com/djordon/queueing-tool/blob/master/LICENSE.txt>`__.
 .. |license| image:: https://img.shields.io/pypi/l/queueing-tool.svg
     :alt: MIT License
     :target: https://opensource.org/licenses/MIT
+
+.. |cite| image:: https://zenodo.org/badge/21639582.svg
+   :target: https://zenodo.org/badge/latestdoi/21639582
