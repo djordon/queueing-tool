@@ -3,7 +3,9 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: Jordon
     given-names: Daniel
-    orcid: https://orcid.org/0000-0001-8633-4359
-title: djordon/queueing-tool: v1.2.5
+    orcid: "https://orcid.org/0000-0001-8633-4359"
+title: "Queueing-tool: a queueing network simulator"
 version: v1.2.5
+doi: 10.5281/zenodo.8057970
 date-released: 2023-06-20
+url: "https://github.com/djordon/queueing-tool"
