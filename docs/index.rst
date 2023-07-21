@@ -20,7 +20,7 @@ Getting set up is simple::
     >>> q.initialize(100)
     >>> q.simulate(10000)
     ...
-    >>> pos = nx.nx_agraph.graphviz_layout(g.to_undirected(), prog='fdp')
+    >>> pos = nx.nx_agraph.graphviz_layout(g.to_undirected(), prog='dot')
     >>> scatter_kwargs = {'s': 30}
     >>> q.draw(pos=pos, scatter_kwargs=scatter_kwargs, bgcolor=[0,0,0,0],
     ...        figsize=(10, 16), fname='fig.png',
