@@ -1,4 +1,4 @@
-Module documenation
+Module documentation
 ===================
 
 .. raw:: html
