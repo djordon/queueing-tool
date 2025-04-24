@@ -1,11 +1,12 @@
-from numpy import infty
+from numpy import inf
 from numpy.random import uniform
 
-from queueing_tool.queues.choice import _choice, _argmin
+from queueing_tool.queues.choice import _argmin, _choice
 
 
-class Agent(object):
-    """The base class for an agent.
+class Agent:
+    """
+    The base class for an agent.
 
     ``Agents`` are the objects that move throughout the network.
     ``Agents`` are instantiated by a queue, and once serviced the
@@ -34,14 +35,16 @@ class Agent(object):
     blocked : int
         Specifies how many times an agent has been blocked by a finite
         capacity queue.
+
     """
+
     def __init__(self, agent_id=(0, 0), **kwargs):
         self.agent_id = agent_id
         self.blocked = 0
         self._time = 0  # The agents arrival or departure time
 
     def __repr__(self):
-        return "Agent; agent_id:{0}. time: {1}".format(self.agent_id, round(self._time, 3))
+        return f"Agent; agent_id:{self.agent_id}. time: {round(self._time, 3)}"
 
     def __lt__(self, b):
         return self._time < b._time
@@ -59,13 +62,15 @@ class Agent(object):
         return self._time >= b._time
 
     def add_loss(self, *args, **kwargs):
-        """Adds one to the number of times the agent has been blocked
+        """
+        Adds one to the number of times the agent has been blocked
         from entering a queue.
         """
         self.blocked += 1
 
     def desired_destination(self, network, edge):
-        """Returns the agents next destination given their current
+        """
+        Returns the agents next destination given their current
         location on the network.
 
         An ``Agent`` chooses one of the out edges at random. The
@@ -95,6 +100,7 @@ class Agent(object):
         :meth:`.transitions` : :class:`QueueNetwork's<.QueueNetwork>`
             method that returns the transition probabilities for each
             edge in the graph.
+
         """
         n = len(network.out_edges[edge[1]])
         if n <= 1:
@@ -109,7 +115,8 @@ class Agent(object):
         return network.out_edges[edge[1]][k]
 
     def queue_action(self, queue, *args, **kwargs):
-        """A method that acts on the queue the Agent is at. This method
+        """
+        A method that acts on the queue the Agent is at. This method
         is called when the Agent arrives at the queue (where
         ``args[0] == 0``), when service starts for the Agent (where
         ``args[0] == 1``), and when the Agent departs from the queue
@@ -117,11 +124,11 @@ class Agent(object):
         to the queue, but is here if the Agent class is extended and
         this method is overwritten.
         """
-        pass
 
 
 class GreedyAgent(Agent):
-    """An agent that chooses the queue with the shortest line as their
+    """
+    An agent that chooses the queue with the shortest line as their
     next destination.
 
     Notes
@@ -129,7 +136,9 @@ class GreedyAgent(Agent):
     If there are any ties, the ``GreedyAgent`` chooses the first queue
     with the shortest line (where the ordering is given by
     :class:`QueueNetwork's<.QueueNetwork>` ``out_edges`` attribute).
+
     """
+
     def __init__(self, agent_id=(0, 0)):
         Agent.__init__(self, agent_id)
 
@@ -138,7 +147,8 @@ class GreedyAgent(Agent):
         return msg.format(self.agent_id, round(self._time, 3))
 
     def desired_destination(self, network, edge):
-        """Returns the agents next destination given their current
+        """
+        Returns the agents next destination given their current
         location on the network.
 
         ``GreedyAgents`` choose their next destination with-in the
@@ -161,20 +171,23 @@ class GreedyAgent(Agent):
         out : int
             Returns an the edge index corresponding to the agents next
             edge to visit in the network.
+
         """
         adjacent_edges = network.out_edges[edge[1]]
         d = _argmin([network.edge2queue[d].number_queued() for d in adjacent_edges])
         return adjacent_edges[d]
 
 
-class InftyAgent(object):
-    """An special agent that only operates within the
+class InftyAgent:
+    """
+    An special agent that only operates within the
     :class:`.QueueServer` class.
 
     This agent never interacts with the :class:`.QueueNetwork`.
     """
+
     def __init__(self):
-        self._time = infty
+        self._time = inf
 
     def __repr__(self):
         return "InftyAgent"

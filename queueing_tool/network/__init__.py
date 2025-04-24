@@ -23,13 +23,6 @@
 """
 
 from queueing_tool.network.priority_queue import PriorityQueue
-from queueing_tool.network.queue_network import (
-    QueueingToolError,
-    QueueNetwork
-)
+from queueing_tool.network.queue_network import QueueingToolError, QueueNetwork
 
-__all__ = [
-    'PriorityQueue',
-    'QueueingToolError',
-    'QueueNetwork'
-]
+__all__ = ["PriorityQueue", "QueueNetwork", "QueueingToolError"]

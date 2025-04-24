@@ -1,15 +1,13 @@
 import networkx as nx
 import numpy as np
 
-from queueing_tool.graph.graph_functions import _test_graph, _calculate_distance
-from queueing_tool.graph.graph_wrapper import (
-    adjacency2graph,
-    QueueNetworkDiGraph
-)
+from queueing_tool.graph.graph_functions import _calculate_distance, _test_graph
+from queueing_tool.graph.graph_wrapper import QueueNetworkDiGraph, adjacency2graph
 
 
 def add_edge_lengths(g):
-    """Add add the edge lengths as a :any:`DiGraph<networkx.DiGraph>`
+    """
+    Add add the edge lengths as a :any:`DiGraph<networkx.DiGraph>`
     for the graph.
 
     Uses the ``pos`` vertex property to get the location of each
@@ -36,18 +34,19 @@ def add_edge_lengths(g):
 
     """
     g = _test_graph(g)
-    g.new_edge_property('edge_length')
+    g.new_edge_property("edge_length")
 
     for e in g.edges():
-        latlon1 = g.vp(e[1], 'pos')
-        latlon2 = g.vp(e[0], 'pos')
-        g.set_ep(e, 'edge_length', np.round(_calculate_distance(latlon1, latlon2), 3))
+        latlon1 = g.vp(e[1], "pos")
+        latlon2 = g.vp(e[0], "pos")
+        g.set_ep(e, "edge_length", np.round(_calculate_distance(latlon1, latlon2), 3))
 
     return g
 
 
 def _prepare_graph(g, g_colors, q_cls, q_arg, adjust_graph):
-    """Prepares a graph for use in :class:`.QueueNetwork`.
+    """
+    Prepares a graph for use in :class:`.QueueNetwork`.
 
     This function is called by ``__init__`` in the
     :class:`.QueueNetwork` class. It creates the :class:`.QueueServer`
@@ -108,50 +107,51 @@ def _prepare_graph(g, g_colors, q_cls, q_arg, adjust_graph):
     TypeError
         Raised when the parameter ``g`` is not of a type that can be
         made into a :any:`networkx.DiGraph`.
+
     """
     g = _test_graph(g)
 
     if adjust_graph:
-        pos = nx.get_node_attributes(g, 'pos')
+        pos = nx.get_node_attributes(g, "pos")
         ans = nx.to_dict_of_dicts(g)
         g = adjacency2graph(ans, adjust=2, is_directed=g.is_directed())
         g = QueueNetworkDiGraph(g)
         if len(pos) > 0:
             g.set_pos(pos)
 
-    g.new_vertex_property('vertex_color')
-    g.new_vertex_property('vertex_fill_color')
-    g.new_vertex_property('vertex_pen_width')
-    g.new_vertex_property('vertex_size')
+    g.new_vertex_property("vertex_color")
+    g.new_vertex_property("vertex_fill_color")
+    g.new_vertex_property("vertex_pen_width")
+    g.new_vertex_property("vertex_size")
 
-    g.new_edge_property('edge_control_points')
-    g.new_edge_property('edge_color')
-    g.new_edge_property('edge_marker_size')
-    g.new_edge_property('edge_pen_width')
+    g.new_edge_property("edge_control_points")
+    g.new_edge_property("edge_color")
+    g.new_edge_property("edge_marker_size")
+    g.new_edge_property("edge_pen_width")
 
-    queues = _set_queues(g, q_cls, q_arg, 'cap' in g.vertex_properties())
+    queues = _set_queues(g, q_cls, q_arg, "cap" in g.vertex_properties())
 
-    if 'pos' not in g.vertex_properties():
+    if "pos" not in g.vertex_properties():
         g.set_pos()
 
     for k, e in enumerate(g.edges()):
-        g.set_ep(e, 'edge_pen_width', 1.25)
-        g.set_ep(e, 'edge_marker_size', 8)
+        g.set_ep(e, "edge_pen_width", 1.25)
+        g.set_ep(e, "edge_marker_size", 8)
         if e[0] == e[1]:
-            g.set_ep(e, 'edge_color', queues[k].colors['edge_loop_color'])
+            g.set_ep(e, "edge_color", queues[k].colors["edge_loop_color"])
         else:
-            g.set_ep(e, 'edge_color', queues[k].colors['edge_color'])
+            g.set_ep(e, "edge_color", queues[k].colors["edge_color"])
 
     for v in g.nodes():
-        g.set_vp(v, 'vertex_pen_width', 1)
-        g.set_vp(v, 'vertex_size', 8)
+        g.set_vp(v, "vertex_pen_width", 1)
+        g.set_vp(v, "vertex_size", 8)
         e = (v, v)
         if g.is_edge(e):
-            g.set_vp(v, 'vertex_color', queues[g.edge_index[e]]._current_color(2))
-            g.set_vp(v, 'vertex_fill_color', queues[g.edge_index[e]]._current_color())
+            g.set_vp(v, "vertex_color", queues[g.edge_index[e]]._current_color(2))
+            g.set_vp(v, "vertex_fill_color", queues[g.edge_index[e]]._current_color())
         else:
-            g.set_vp(v, 'vertex_color', g_colors['vertex_color'])
-            g.set_vp(v, 'vertex_fill_color', g_colors['vertex_fill_color'])
+            g.set_vp(v, "vertex_color", g_colors["vertex_color"])
+            g.set_vp(v, "vertex_fill_color", g_colors["vertex_fill_color"])
 
     return g, queues
 
@@ -160,12 +160,12 @@ def _set_queues(g, q_cls, q_arg, has_cap):
     queues = [0 for k in range(g.number_of_edges())]
 
     for e in g.edges():
-        eType = g.ep(e, 'edge_type')
+        eType = g.ep(e, "edge_type")
         qedge = (e[0], e[1], g.edge_index[e], eType)
 
-        if has_cap and 'num_servers' not in q_arg[eType]:
-            cap = g.vp(e[1], 'cap') if g.vp(e[1], 'cap') is not None else 0
-            q_arg[eType]['num_servers'] = max(cap, 1)
+        if has_cap and "num_servers" not in q_arg[eType]:
+            cap = g.vp(e[1], "cap") if g.vp(e[1], "cap") is not None else 0
+            q_arg[eType]["num_servers"] = max(cap, 1)
 
         queues[qedge[2]] = q_cls[eType](edge=qedge, **q_arg[eType])
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # queueuing-tool documentation build configuration file, created by
 # sphinx-quickstart on Sun Feb  1 14:13:20 2015.
@@ -13,27 +12,25 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
 import os
+import sys
 
 try:
-    import unittest.mock as mock
+    from unittest import mock
 except ImportError:
-    import mock
+    from unittest import mock
 
 import alabaster
-import numpydoc
-
 
 MOCK_MODULES = [
-    'choice',
-    'queueing_tool.queues.choice',
-    'matplotlib',
-    'numpy',
-    'numpy.random',
-    'priority_queue',
-    'queueing_tool.network.priority_queue',
-    'pygraphviz'
+    "choice",
+    "queueing_tool.queues.choice",
+    "matplotlib",
+    "numpy",
+    "numpy.random",
+    "priority_queue",
+    "queueing_tool.network.priority_queue",
+    "pygraphviz",
 ]
 sys.modules.update((mod_name, mock.Mock()) for mod_name in MOCK_MODULES)
 
@@ -41,58 +38,58 @@ sys.modules.update((mod_name, mock.Mock()) for mod_name in MOCK_MODULES)
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath(".."))
 
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.0'
+# needs_sphinx = '1.0'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.doctest',
-    'sphinx.ext.extlinks',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.todo',
-    'sphinx.ext.viewcode',
-    'numpydoc',
-    'alabaster',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.doctest",
+    "sphinx.ext.extlinks",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
+    "numpydoc",
+    "alabaster",
 ]
 
 intersphinx_mapping = {
-    'python': ('http://docs.python.org/3', None),
-    'matplotlib': ('http://matplotlib.sourceforge.net', None),
-    'numpy': ('http://docs.scipy.org/doc/numpy', None),
-    'networkx': ('http://networkx.readthedocs.org/en/networkx-1.11/', None)
+    "python": ("http://docs.python.org/3", None),
+    "matplotlib": ("http://matplotlib.sourceforge.net", None),
+    "numpy": ("http://docs.scipy.org/doc/numpy", None),
+    "networkx": ("http://networkx.readthedocs.org/en/networkx-1.11/", None),
 }
 
 extlinks = {
-    'doi': ('http://dx.doi.org/%s', 'DOI: '),
-    'arxiv': ('http://arxiv.org/abs/%s', 'arXiv: ')
+    "doi": ("http://dx.doi.org/%s", "DOI: "),
+    "arxiv": ("http://arxiv.org/abs/%s", "arXiv: "),
 }
 
 numpydoc_show_class_members = False
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = ".rst"
 
 # The encoding of source files.
-#source_encoding = 'utf-8-sig'
+# source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = 'Queueing-tool'
-copyright = '2024, Daniel Jordon'
+project = "Queueing-tool"
+copyright = "2024, Daniel Jordon"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -102,6 +99,7 @@ copyright = '2024, Daniel Jordon'
 
 # The short X.Y version.
 import queueing_tool as qt
+
 version = qt.__version__
 
 # The full version, including alpha/beta/rc tags.
@@ -109,137 +107,140 @@ release = qt.__version__
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ["_build"]
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
-#add_function_parentheses = True
+# add_function_parentheses = True
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
-#add_module_names = True
+# add_module_names = True
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = "sphinx"
 
 # A list of ignored prefixes for module index sorting.
-#modindex_common_prefix = []
+# modindex_common_prefix = []
 
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes. http://sphinx-doc.org/theming.html
-html_theme = 'alabaster'  # 'qt_sphinx13'#
-#html_style = 'adjust_alabaster.css'
+html_theme = "alabaster"  # 'qt_sphinx13'#
+# html_style = 'adjust_alabaster.css'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    'code_font_size': '0.81em',
-    'github_user': 'djordon',
-    'github_repo': 'queueing-tool',
+    "code_font_size": "0.81em",
+    "github_user": "djordon",
+    "github_repo": "queueing-tool",
 }
-#html_context = {'css_files': ['_static/adjust_alabaster.css',]}
+# html_context = {'css_files': ['_static/adjust_alabaster.css',]}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = [alabaster.get_path()]#'_themes']
+html_theme_path = [alabaster.get_path()]  #'_themes']
 
 html_sidebars = {
-    '**': [
-        'about.html',
-        'navigation.html',
-        'relations.html',
-        'searchbox.html',
-        'donate.html',
+    "**": [
+        "about.html",
+        "navigation.html",
+        "relations.html",
+        "searchbox.html",
+        "donate.html",
     ]
 }
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-#html_title = None
+# html_title = None
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-#html_short_title = None
+# html_short_title = None
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+# html_logo = None
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-#html_favicon = None
+# html_favicon = None
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
 # directly to the root of the documentation.
-#html_extra_path = []
+# html_extra_path = []
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
+# html_show_sourcelink = True
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
-#html_show_sphinx = True
+# html_show_sphinx = True
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
-#html_show_copyright = True
+# html_show_copyright = True
 
 # If true, an OpenSearch description file will be output, and all pages will
 # contain a <link> tag referring to it.  The value of this option must be the
 # base URL from which the finished HTML is served.
-#html_use_opensearch = ''
+# html_use_opensearch = ''
 
 # This is the file name suffix for HTML files (e.g. ".xhtml").
-#html_file_suffix = None
+# html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'queueuing-tooldoc'
+htmlhelp_basename = "queueuing-tooldoc"
 
 
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
-
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
-
-# Additional stuff for the LaTeX preamble.
-#'preamble': '',
+    # The paper size ('letterpaper' or 'a4paper').
+    #'papersize': 'letterpaper',
+    # The font size ('10pt', '11pt' or '12pt').
+    #'pointsize': '10pt',
+    # Additional stuff for the LaTeX preamble.
+    #'preamble': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'queueuing-tool.tex', 'queueuing-tool Documentation',
-   'Daniel Jordon', 'manual'),
+    (
+        "index",
+        "queueuing-tool.tex",
+        "queueuing-tool Documentation",
+        "Daniel Jordon",
+        "manual",
+    ),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-#latex_logo = None
+# latex_logo = None
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
-#latex_use_parts = False
+# latex_use_parts = False
 
 # If true, show page references after internal links.
-#latex_show_pagerefs = False
+# latex_show_pagerefs = False
 
 # If true, show URL addresses after external links.
-#latex_show_urls = False
+# latex_show_urls = False
 
 # Documents to append as an appendix to all manuals.
-#latex_appendices = []
+# latex_appendices = []
 
 # If false, no module index is generated.
-#latex_domain_indices = True
+# latex_domain_indices = True
 
 
 # -- Options for manual page output ---------------------------------------
@@ -247,12 +248,11 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'queueuing-tool', 'queueuing-tool Documentation',
-     ['Daniel Jordon'], 1)
+    ("index", "queueuing-tool", "queueuing-tool Documentation", ["Daniel Jordon"], 1)
 ]
 
 # If true, show URL addresses after external links.
-#man_show_urls = False
+# man_show_urls = False
 
 
 # -- Options for Texinfo output -------------------------------------------
@@ -261,22 +261,29 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'queueuing-tool', 'queueuing-tool Documentation',
-   'Daniel Jordon', 'queueuing-tool', 'One line description of project.',
-   'Miscellaneous'),
+    (
+        "index",
+        "queueuing-tool",
+        "queueuing-tool Documentation",
+        "Daniel Jordon",
+        "queueuing-tool",
+        "One line description of project.",
+        "Miscellaneous",
+    ),
 ]
 
 # Documents to append as an appendix to all manuals.
-#texinfo_appendices = []
+# texinfo_appendices = []
 
 # If false, no module index is generated.
-#texinfo_domain_indices = True
+# texinfo_domain_indices = True
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
-#texinfo_show_urls = 'footnote'
+# texinfo_show_urls = 'footnote'
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
-#texinfo_no_detailmenu = False
+# texinfo_no_detailmenu = False
+
 
 def setup(app):
-    app.add_js_file('copybutton.js')
+    app.add_js_file("copybutton.js")

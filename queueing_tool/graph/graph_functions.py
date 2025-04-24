@@ -5,20 +5,20 @@ from queueing_tool.graph.graph_wrapper import QueueNetworkDiGraph
 
 
 def _calculate_distance(latlon1, latlon2):
-    """Calculates the distance between two points on earth.
-    """
+    """Calculates the distance between two points on earth."""
     lat1, lon1 = latlon1
     lat2, lon2 = latlon2
     dlon = lon2 - lon1
     dlat = lat2 - lat1
     R = 6371  # radius of the earth in kilometers
-    a = np.sin(dlat / 2)**2 + np.cos(lat1) * np.cos(lat2) * (np.sin(dlon / 2))**2
+    a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * (np.sin(dlon / 2)) ** 2
     c = 2 * np.pi * R * np.arctan2(np.sqrt(a), np.sqrt(1 - a)) / 180
     return c
 
 
 def _test_graph(graph):
-    """A function that makes sure ``graph`` is either a
+    """
+    A function that makes sure ``graph`` is either a
     :any:`networkx.DiGraph` or a string or file object to one.
 
     Parameters
@@ -34,6 +34,7 @@ def _test_graph(graph):
     TypeError
         Raises a :exc:`~TypeError` if ``graph`` cannot be turned into a
         :any:`networkx.DiGraph`.
+
     """
     if not isinstance(graph, QueueNetworkDiGraph):
         try:
@@ -44,7 +45,8 @@ def _test_graph(graph):
 
 
 def graph2dict(g, return_dict_of_dict=True):
-    """Takes a graph and returns an adjacency list.
+    """
+    Takes a graph and returns an adjacency list.
 
     Parameters
     ----------
@@ -77,6 +79,7 @@ def graph2dict(g, return_dict_of_dict=True):
     3: {2: {}}}
     >>> qt.graph2dict(g, return_dict_of_dict=False)
     {0: [1, 2], 1: [0], 2: [0, 3], 3: [2]}
+
     """
     if not isinstance(g, nx.DiGraph):
         g = QueueNetworkDiGraph(g)
@@ -84,5 +87,4 @@ def graph2dict(g, return_dict_of_dict=True):
     dict_of_dicts = nx.to_dict_of_dicts(g)
     if return_dict_of_dict:
         return dict_of_dicts
-    else:
-        return {k: list(val.keys()) for k, val in dict_of_dicts.items()}
+    return {k: list(val.keys()) for k, val in dict_of_dicts.items()}

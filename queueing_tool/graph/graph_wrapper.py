@@ -5,7 +5,7 @@ try:
     import matplotlib.pyplot as plt
     from matplotlib.collections import LineCollection
 
-    plt.style.use('ggplot')
+    plt.style.use("ggplot")
     HAS_MATPLOTLIB = True
 
 except ImportError:
@@ -25,7 +25,8 @@ def _matrix2dict(matrix, etype=False):
 
 
 def _dict2dict(adj_dict):
-    """Takes a dictionary based representation of an adjacency list
+    """
+    Takes a dictionary based representation of an adjacency list
     and returns a dict of dicts based representation.
     """
     item = adj_dict.popitem()
@@ -40,14 +41,14 @@ def _dict2dict(adj_dict):
 
 
 def _adjacency_adjust(adjacency, adjust, is_directed):
-    """Takes an adjacency list and returns a (possibly) modified
+    """
+    Takes an adjacency list and returns a (possibly) modified
     adjacency list.
     """
-
     for v, adj in adjacency.items():
         for properties in adj.values():
-            if properties.get('edge_type') is None:
-                properties['edge_type'] = 1
+            if properties.get("edge_type") is None:
+                properties["edge_type"] = 1
 
     if is_directed:
         if adjust == 2:
@@ -60,18 +61,19 @@ def _adjacency_adjust(adjacency, adjust, is_directed):
             for k, adj in adjacency.items():
                 for v in adj.keys():
                     if v in null_nodes:
-                        adj[v]['edge_type'] = 0
+                        adj[v]["edge_type"] = 0
 
         else:
             for k, adj in adjacency.items():
                 if len(adj) == 0:
-                    adj[k] = {'edge_type': 0}
+                    adj[k] = {"edge_type": 0}
 
     return adjacency
 
 
 def adjacency2graph(adjacency, edge_type=None, adjust=1, **kwargs):
-    """Takes an adjacency list, dict, or matrix and returns a graph.
+    """
+    Takes an adjacency list, dict, or matrix and returns a graph.
 
     The purpose of this function is take an adjacency list (or matrix)
     and return a :class:`.QueueNetworkDiGraph` that can be used with a
@@ -125,7 +127,7 @@ def adjacency2graph(adjacency, edge_type=None, adjust=1, **kwargs):
     >>> ans = qt.graph2dict(g)
     >>> sorted(ans.items())     # doctest: +NORMALIZE_WHITESPACE
     [(0, {1: {'edge_type': 1}}),
-     (1, {2: {'edge_type': 2}, 3: {'edge_type': 4}}), 
+     (1, {2: {'edge_type': 2}, 3: {'edge_type': 4}}),
      (2, {2: {'edge_type': 0}}),
      (3, {0: {'edge_type': 1}})]
 
@@ -151,28 +153,29 @@ def adjacency2graph(adjacency, edge_type=None, adjust=1, **kwargs):
      (1, {2: {'edge_type': 0}, 3: {'edge_type': 4}}),
      (2, {}),
      (3, {0: {'edge_type': 1}})]
-    """
 
+    """
     if isinstance(adjacency, np.ndarray):
         adjacency = _matrix2dict(adjacency)
     elif isinstance(adjacency, dict):
         adjacency = _dict2dict(adjacency)
     else:
-        msg = ("If the adjacency parameter is supplied it must be a "
-               "dict, or a numpy.ndarray.")
+        msg = (
+            "If the adjacency parameter is supplied it must be a "
+            "dict, or a numpy.ndarray."
+        )
         raise TypeError(msg)
 
     if edge_type is None:
         edge_type = {}
-    else:
-        if isinstance(edge_type, np.ndarray):
-            edge_type = _matrix2dict(edge_type, etype=True)
-        elif isinstance(edge_type, dict):
-            edge_type = _dict2dict(edge_type)
+    elif isinstance(edge_type, np.ndarray):
+        edge_type = _matrix2dict(edge_type, etype=True)
+    elif isinstance(edge_type, dict):
+        edge_type = _dict2dict(edge_type)
 
     for u, ty in edge_type.items():
         for v, et in ty.items():
-            adjacency[u][v]['edge_type'] = et
+            adjacency[u][v]["edge_type"] = et
 
     g = nx.from_dict_of_dicts(adjacency, create_using=nx.DiGraph())
     adjacency = nx.to_dict_of_dicts(g)
@@ -181,18 +184,20 @@ def adjacency2graph(adjacency, edge_type=None, adjust=1, **kwargs):
     return nx.from_dict_of_dicts(adjacency, create_using=nx.DiGraph())
 
 
-SAVEFIG_KWARGS = set([
-    'dpi',
-    'facecolorw',
-    'edgecolorw',
-    'orientationportrait',
-    'papertype',
-    'format',
-    'transparent',
-    'bbox_inches',
-    'pad_inches',
-    'frameon'
-])
+SAVEFIG_KWARGS = set(
+    [
+        "dpi",
+        "facecolorw",
+        "edgecolorw",
+        "orientationportrait",
+        "papertype",
+        "format",
+        "transparent",
+        "bbox_inches",
+        "pad_inches",
+        "frameon",
+    ]
+)
 
 
 class QueueNetworkDiGraph(nx.DiGraph):
@@ -228,7 +233,9 @@ class QueueNetworkDiGraph(nx.DiGraph):
     -----
     Not suitable for stand alone use; only use with a
     :class:`.QueueNetwork`.
+
     """
+
     def __init__(self, data=None, **kwargs):
         if isinstance(data, dict):
             data = adjacency2graph(data, **kwargs)
@@ -238,7 +245,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
 
         self.edge_index = {e: k for k, e in enumerate(edges)}
 
-        pos = nx.get_node_attributes(self, name='pos')
+        pos = nx.get_node_attributes(self, name="pos")
         if len(pos) == self.number_of_nodes():
             self.pos = np.array([pos[v] for v in self.nodes()])
         else:
@@ -296,27 +303,28 @@ class QueueNetworkDiGraph(nx.DiGraph):
         return props
 
     def new_vertex_property(self, name):
-        values = {v: None for v in self.nodes()}
+        values = dict.fromkeys(self.nodes())
         nx.set_node_attributes(self, name=name, values=values)
-        if name == 'vertex_color':
+        if name == "vertex_color":
             self.vertex_color = [0 for v in range(self.number_of_nodes())]
-        if name == 'vertex_fill_color':
+        if name == "vertex_fill_color":
             self.vertex_fill_color = [0 for v in range(self.number_of_nodes())]
 
     def new_edge_property(self, name):
-        values = {e: None for e in self.edges()}
+        values = dict.fromkeys(self.edges())
         nx.set_edge_attributes(self, name=name, values=values)
-        if name == 'edge_color':
+        if name == "edge_color":
             self.edge_color = np.zeros((self.number_of_edges(), 4))
 
     def set_pos(self, pos=None):
         if pos is None:
             pos = nx.spring_layout(self)
-        nx.set_node_attributes(self, name='pos', values=pos)
+        nx.set_node_attributes(self, name="pos", values=pos)
         self.pos = np.array([pos[v] for v in self.nodes()])
 
     def get_edge_type(self, edge_type):
-        """Returns all edges with the specified edge type.
+        """
+        Returns all edges with the specified edge type.
 
         Parameters
         ----------
@@ -346,15 +354,17 @@ class QueueNetworkDiGraph(nx.DiGraph):
         >>> ans.sort()
         >>> ans
         [(0, 1), (2, 0)]
+
         """
         edges = []
         for e in self.edges():
-            if self.adj[e[0]][e[1]].get('edge_type') == edge_type:
+            if self.adj[e[0]][e[1]].get("edge_type") == edge_type:
                 edges.append(e)
         return edges
 
     def draw_graph(self, line_kwargs=None, scatter_kwargs=None, **kwargs):
-        """Draws the graph.
+        """
+        Draws the graph.
 
         Uses matplotlib, specifically
         :class:`~matplotlib.collections.LineCollection` and
@@ -389,17 +399,18 @@ class QueueNetworkDiGraph(nx.DiGraph):
         -----
         If the ``fname`` keyword is passed, then the figure is saved
         locally.
+
         """
         if not HAS_MATPLOTLIB:
             raise ImportError("Matplotlib is required to draw the graph.")
 
-        fig = plt.figure(figsize=kwargs.get('figsize', (7, 7)))
+        fig = plt.figure(figsize=kwargs.get("figsize", (7, 7)))
         ax = fig.gca()
 
         mpl_kwargs = {
-            'line_kwargs': line_kwargs,
-            'scatter_kwargs': scatter_kwargs,
-            'pos': kwargs.get('pos')
+            "line_kwargs": line_kwargs,
+            "scatter_kwargs": scatter_kwargs,
+            "pos": kwargs.get("pos"),
         }
 
         line_kwargs, scatter_kwargs = self.lines_scatter_args(**mpl_kwargs)
@@ -408,24 +419,25 @@ class QueueNetworkDiGraph(nx.DiGraph):
         ax.add_collection(edge_collection)
         ax.scatter(**scatter_kwargs)
 
-        if hasattr(ax, 'set_facecolor'):
-            ax.set_facecolor(kwargs.get('bgcolor', [1, 1, 1, 1]))
+        if hasattr(ax, "set_facecolor"):
+            ax.set_facecolor(kwargs.get("bgcolor", [1, 1, 1, 1]))
         else:
-            ax.set_axis_bgcolor(kwargs.get('bgcolor', [1, 1, 1, 1]))
+            ax.set_axis_bgcolor(kwargs.get("bgcolor", [1, 1, 1, 1]))
 
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
-        if 'fname' in kwargs:
+        if "fname" in kwargs:
             # savefig needs a positional argument for some reason
             new_kwargs = {k: v for k, v in kwargs.items() if k in SAVEFIG_KWARGS}
-            fig.savefig(kwargs['fname'], **new_kwargs)
+            fig.savefig(kwargs["fname"], **new_kwargs)
         else:
             plt.ion()
             plt.show()
 
     def lines_scatter_args(self, line_kwargs=None, scatter_kwargs=None, pos=None):
-        """Returns the arguments used when plotting.
+        """
+        Returns the arguments used when plotting.
 
         Takes any keyword arguments for
         :class:`~matplotlib.collections.LineCollection` and
@@ -454,6 +466,7 @@ class QueueNetworkDiGraph(nx.DiGraph):
         -----
         If a specific keyword argument is not passed then the defaults
         are used.
+
         """
         if pos is not None:
             self.set_pos(pos)
@@ -466,36 +479,36 @@ class QueueNetworkDiGraph(nx.DiGraph):
             edge_pos[ei] = (self.pos[e[0]], self.pos[e[1]])
 
         line_collecton_kwargs = {
-            'segments': edge_pos,
-            'colors': self.edge_color,
-            'linewidths': (1,),
-            'antialiaseds': (1,),
-            'linestyle': 'solid',
-            'transOffset': None,
-            'cmap': plt.cm.ocean_r,
-            'pickradius': 5,
-            'zorder': 0,
-            'facecolors': None,
-            'norm': None,
-            'offsets': None,
-            'hatch': None,
+            "segments": edge_pos,
+            "colors": self.edge_color,
+            "linewidths": (1,),
+            "antialiaseds": (1,),
+            "linestyle": "solid",
+            "transOffset": None,
+            "cmap": plt.cm.ocean_r,
+            "pickradius": 5,
+            "zorder": 0,
+            "facecolors": None,
+            "norm": None,
+            "offsets": None,
+            "hatch": None,
         }
         scatter_kwargs_ = {
-            'x': self.pos[:, 0],
-            'y': self.pos[:, 1],
-            's': 50,
-            'c': self.vertex_fill_color,
-            'alpha': None,
-            'norm': None,
-            'vmin': None,
-            'vmax': None,
-            'marker': 'o',
-            'zorder': 2,
-            'linewidths': 1,
-            'edgecolors': self.vertex_color,
-            'facecolors': None,
-            'antialiaseds': None,
-            'hatch': None,
+            "x": self.pos[:, 0],
+            "y": self.pos[:, 1],
+            "s": 50,
+            "c": self.vertex_fill_color,
+            "alpha": None,
+            "norm": None,
+            "vmin": None,
+            "vmax": None,
+            "marker": "o",
+            "zorder": 2,
+            "linewidths": 1,
+            "edgecolors": self.vertex_color,
+            "facecolors": None,
+            "antialiaseds": None,
+            "hatch": None,
         }
 
         line_kwargs = {} if line_kwargs is None else line_kwargs
